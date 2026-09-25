@@ -21,6 +21,7 @@ const SEARCH: Record<string, MessageKey> = {
   home: 'search_albums',
   albums: 'search_albums',
   artists: 'search_artists',
+  genres: 'search_genres',
   playlists: 'search_playlists',
 }
 const placeholder = computed(() => t(SEARCH[String(route.name)] ?? 'search_tracks'))

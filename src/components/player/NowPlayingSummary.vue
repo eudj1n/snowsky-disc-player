@@ -28,7 +28,15 @@ const emit = defineEmits<{ open: [opener: HTMLElement]; favorite: [] }>()
       @click="emit('open', $event.currentTarget as HTMLElement)"
     >
       <span class="block size-56 overflow-hidden rounded-8 bg-soft phone:size-44 phone:rounded-7">
-        <Artwork :title="artworkTitle" :cover="cover" />
+        <Transition
+          mode="out-in"
+          enter-from-class="opacity-0 scale-[0.96]"
+          enter-active-class="transition-[opacity,scale] duration-300 ease-out motion-reduce:transition-none"
+          leave-active-class="transition-opacity duration-150 ease-in motion-reduce:transition-none"
+          leave-to-class="opacity-0"
+        >
+          <Artwork :key="artworkTitle ?? 'none'" :title="artworkTitle" :cover="cover" />
+        </Transition>
       </span>
     </button>
     <div class="min-w-0">

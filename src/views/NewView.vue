@@ -24,7 +24,7 @@ import UiSkeleton from '../ui/UiSkeleton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { albumLines, albumCardRoute, albumRoute, artistRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
-import { playFrom } from './playAlbum'
+import { playFrom, playAlbumCard } from './playAlbum'
 
 const newTracks = computed(() =>
   filterBy(recentlyAdded(tracks.value, 12), ui.query, (track) => [track.title, track.artist, track.album]),
@@ -93,6 +93,9 @@ const artistTo = (track: Track) => (track.artist ? artistRoute(track.artist) : n
         :cover="albumCover(album, albumScope(album))"
         :lines="albumLines(album)"
         :open-label="t('open_item', { name: album.title })"
+        :play-label="t('play_item', { name: album.title })"
+        :play-disabled="selection.busy"
+        @play="playAlbumCard(album)"
       />
     </CoverRow>
     <template v-if="played.length">

@@ -15,6 +15,8 @@ import { ui } from '../stores/ui'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { albumCardRoute, artistAlbumLines } from './captions'
 import SectionHeading from '../components/common/SectionHeading.vue'
+import { playAlbumCard } from './playAlbum'
+import { selection } from '../stores/selection'
 import CollectionGate from './CollectionGate.vue'
 
 const route = useRoute()
@@ -55,6 +57,9 @@ const items = computed(() => filterBy(own.value, ui.query, (album) => [album.tit
         :cover="albumCover(album, album.trackArtists.includes(name) ? name : null)"
         :lines="artistAlbumLines(album, name, albumTracks(tracks, album.title, name).length)"
         :open-label="t('open_item', { name: album.title })"
+        :play-label="t('play_item', { name: album.title })"
+        :play-disabled="selection.busy"
+        @play="playAlbumCard(album, album.trackArtists.includes(name) ? name : null)"
       />
     </CoverGrid>
   </CollectionGate>

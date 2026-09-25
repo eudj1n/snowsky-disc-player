@@ -54,6 +54,11 @@ there is no application server: the browser talks to the gateway directly.
   lead with the track number. A favorite heart sits in the gutter left of the
   row; only the current track's heart changes the favorite.
 - Album pages end with "More by" shelves of the same artist's albums.
+- Genres get their own section. A genre page shows the latest tracks,
+  albums and artists rather than every track; the full list is Tracks
+  filtered by the genre.
+- Cover cards play on hover through a round button instead of showing an
+  arrow; album pages order tracks by tag numbers.
 
 ## Invariants carried over
 

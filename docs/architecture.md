@@ -43,8 +43,14 @@ retried. The queue is read the same way from `curlist/song` with a stable
 
 Sources: whole album or album track (type 3, the stock title group), one
 artist's release of an album title (type 7, `artist/album/song`, confirmed by
-playerflag 7 and the exact artist), library track (1), favorite (6) and
-playlist (5, its position resolved by unique name and rechecked). The stock
+playerflag 7 and the exact artist), a whole artist (type 7 with an empty
+album, Play all only), a whole genre (type 8 with an empty album, playerflag
+8), a track in a genre (type 000A, playerflag 10), a genre narrowed to an album
+(type 8, `style/album/song`), library track (1), favorite (6) and playlist (5,
+its position resolved by unique name and rechecked). Each target maps to one
+read, send and confirmation plan in `src/gateway/selection.ts`. When `a202`
+reports a shortened album name, a prefix is accepted only if exactly one name
+of the scope's fresh, stable album list starts with it. The stock
 groups albums by title only, so the UI keeps the literal track artist as the
 album scope in links (`#/album/<title>/<artist>`) and never infers an album
 artist; an unscoped title group with several artists offers them as filters.

@@ -1,4 +1,5 @@
 /** Playback actions shared by views: whole albums and single tracks. */
+import { albumScope, type Album } from '../domain/album'
 import type { SelectionTarget } from '../gateway/selection'
 import type { MessageKey } from '../i18n'
 import { play } from '../stores/selection'
@@ -24,3 +25,7 @@ export async function playFrom(target: SelectionTarget): Promise<void> {
 /** A whole album: one artist's release when scoped, else the stock title group. */
 export const playAlbumAction = (album: string, artist: string | null = null) =>
   playFrom(artist ? { kind: 'artistAlbum', artist, album } : { kind: 'album', album })
+
+/** A card's play button: the album in the card's scope (its only artist, or the page's artist). */
+export const playAlbumCard = (album: Album, artist: string | null = null) =>
+  playAlbumAction(album.title, artist ?? albumScope(album))

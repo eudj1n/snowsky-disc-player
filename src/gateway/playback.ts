@@ -4,7 +4,7 @@
  * models.py): absent fields stay absent, a snapshot alone never proves a final
  * stop, and playing/paused require an observed track.
  */
-import { PLAYBACK_SOURCES, UNKNOWN_PLAYBACK, type Playback, type PlaybackState } from '../domain/playback'
+import { playbackSource, UNKNOWN_PLAYBACK, type Playback, type PlaybackState } from '../domain/playback'
 import type { Track } from '../domain/track'
 
 type Wire = Record<string, unknown>
@@ -68,6 +68,6 @@ export function parsePlayback(payload: string): Playback {
     state,
     track,
     favorite: typeof wire.love === 'boolean' ? wire.love : null,
-    source: typeof flag === 'number' ? (PLAYBACK_SOURCES[flag] ?? null) : null,
+    source: typeof flag === 'number' ? playbackSource(flag) : null,
   }
 }

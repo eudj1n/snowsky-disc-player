@@ -78,11 +78,15 @@ const LINK = 'hover:text-ink hover:underline hover:underline-offset-3 focus-visi
 const REVEAL = 'opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100'
 /** The heart lives in the page gutter, left of the row (owner's reference). */
 const HEART =
-  'absolute top-1/2 -left-32 grid size-22 -translate-y-1/2 place-items-center rounded-full p-0 transition-opacity duration-150 compact:-left-27 listening:-left-30 phone:-left-18 phone:size-16'
+  'absolute top-1/2 -left-32 grid size-22 -translate-y-1/2 place-items-center rounded-full p-0 transition-[opacity,transform,color] duration-150 compact:-left-27 listening:-left-30 phone:-left-18 phone:size-16'
 const isCurrent = (track: Track) => props.currentPath !== null && track.path === props.currentPath
 const album = computed(() => props.showAlbum && props.tracks.some((track) => track.album))
 const duration = computed(() => props.tracks.some((track) => formatDuration(track.durationMs)))
 const columns = computed(() => trackColumns(props.lead, album.value, duration.value, props.menuLabel !== null))
+/** Numbered album rows by one artist leave the artist out (owner's reference): shorter rows. */
+const soloArtist = computed(
+  () => props.lead === 'number' && new Set(props.tracks.map((track) => track.artist ?? '')).size <= 1,
+)
 const numberOf = (track: Track, index: number) => {
   const number = (track as Partial<LibraryTrack>).trackNumber
   return typeof number === 'number' && number > 0 ? number : index + 1
@@ -112,9 +116,16 @@ function contextMenu(event: MouseEvent, index: number): void {
       v-for="(track, index) in tracks"
       :key="`${track.path ?? ''}#${index}`"
       role="row"
-      class="group/row min-h-59 hover:bg-soft"
+      class="group/row hover:bg-soft"
+      :data-solo="soloArtist"
       :aria-current="isCurrent(track) ? 'true' : undefined"
-      :class="[TRACK_ROW, ROW_DIVIDER, columns, { 'bg-selected hover:bg-selected': isCurrent(track) }]"
+      :class="[
+        TRACK_ROW,
+        ROW_DIVIDER,
+        columns,
+        soloArtist ? 'min-h-46' : 'min-h-59',
+        { 'bg-selected hover:bg-selected': isCurrent(track) },
+      ]"
       @contextmenu="contextMenu($event, index)"
     >
       <span role="cell" class="flex justify-center">
@@ -125,7 +136,7 @@ function contextMenu(event: MouseEvent, index: number): void {
             :aria-pressed="favoriteOf(track) === true"
             :aria-label="favoriteOf(track) ? favoriteLabels.remove : favoriteLabels.add"
             :title="favoriteOf(track) ? favoriteLabels.remove : favoriteLabels.add"
-            class="text-muted hover:text-ink aria-pressed:text-accent"
+            class="text-muted hover:scale-110 hover:text-accent focus-visible:text-accent aria-pressed:text-accent aria-pressed:hover:text-accent/80 [&>svg]:transition-[fill,stroke] hover:[&>svg]:stroke-[2.2]"
             :class="[HEART, favoriteOf(track) ? '' : `${REVEAL} focus-visible:opacity-100`]"
             @click="emit('favorite')"
           >
@@ -139,7 +150,7 @@ function contextMenu(event: MouseEvent, index: number): void {
           <span
             v-else
             aria-hidden="true"
-            class="text-muted/70"
+            class="cursor-help text-muted/70"
             :class="[HEART, REVEAL]"
             :title="favoriteLabels.onlyCurrent"
           >
@@ -195,8 +206,9 @@ function contextMenu(event: MouseEvent, index: number): void {
       </span>
       <div role="cell" class="min-w-0">
         <strong class="block truncate font-[550]">{{ track.title }}</strong>
+        <template v-if="soloArtist" />
         <RouterLink
-          v-if="track.artist && artistTo(track)"
+          v-else-if="track.artist && artistTo(track)"
           :to="artistTo(track) ?? ''"
           class="mt-5 block w-fit max-w-full truncate text-10 text-muted"
           :class="LINK"

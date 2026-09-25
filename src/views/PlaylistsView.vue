@@ -9,6 +9,8 @@ import { t } from '../i18n'
 import { library } from '../stores/library'
 import { ui } from '../stores/ui'
 import { countLine, playlistLines, playlistRoute } from './captions'
+import { playFrom } from './playAlbum'
+import { selection } from '../stores/selection'
 import CollectionGate from './CollectionGate.vue'
 
 const searching = computed(() => ui.query.trim() !== '')
@@ -36,6 +38,9 @@ const skeletonCards = computed(() => Math.max(1, Math.min(library.summary?.playl
         :to="playlistRoute(playlist.id)"
         :lines="playlistLines(playlist)"
         :open-label="t('open_item', { name: playlist.name })"
+        :play-label="t('play_item', { name: playlist.name })"
+        :play-disabled="selection.busy"
+        @play="playFrom({ kind: 'playlist', name: playlist.name })"
       />
     </CoverGrid>
   </CollectionGate>

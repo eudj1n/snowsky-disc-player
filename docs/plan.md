@@ -132,6 +132,26 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
 - [x] Filled icons (play overlays, hearts, transport play) render filled; the
       base `fill-none` used to override them.
 
+## Owner requests (round 4)
+
+- [x] Album pages list tracks in tag order (disc, then track number);
+      unnumbered tracks follow in library order. Selection still resolves
+      positions in the stock's own order.
+- [x] Album, artist and playlist covers show a round play button on hover
+      instead of the arrow (albums in their scope, whole artists with the
+      empty-album type-7 form, playlists); touch screens without hover do not
+      get an invisible button over the cover.
+- [x] The favorite heart colors on hover and every interactive control shows
+      the pointer cursor (Tailwind 4 resets buttons to the default one).
+- [x] Polish: album rows by one artist leave the repeated artist out and are
+      shorter; loaded content and decoded covers fade in; detail headers glow
+      softly in the artwork's tone (observed cover average, else the sleeve
+      palette); the cover crossfades when the track changes; slider thumbs
+      grow under the pointer. Reduced motion turns the motion off.
+- [x] Confirmation accepts a shortened album name in `a202` only when exactly
+      one name of the scope's fresh album list starts with it (reference
+      `album_matches`).
+
 ## M1.5 — Caching, enrichment and artwork
 
 - [x] Collection snapshot in IndexedDB keyed by the library signature
@@ -159,15 +179,21 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
 
 ## M2 — Library browsing
 
-- [ ] Genres (possible with the current build, no service change): the
+- [x] Genres (possible with the current build, no service change): the
       library rows carry `GENRE`; stock serves `style`, `style/song`,
       `style/album` and `style/album/song`; playback uses the reference
       Controller's `genre_command` forms — whole genre `0101 000A<genre>`,
       indexed `0100 <pos> 000A<genre>`, and genre album with the type-8
       selector `0008{"style":"G", "album":"A"}` — with fresh `style/*`
       membership and preflight. Genre view, filters on Albums and Tracks,
-      playback.
-- [ ] Sorting and virtualization for large libraries within the gateway's row
+      playback. Done: Genres section (tiles; on phones reached from the Albums
+      heading, the bottom bar has no room), a genre page like New (latest
+      tracks, albums, then artists; "All tracks" opens Tracks filtered by the
+      genre), `?genre=` filters on Albums and Tracks that keep playback in the
+      genre, and albums that mix genres open narrowed to one (type 8).
+      Evidence: `tests/unit/selection.test.ts`, `library.test.ts`, e2e
+      "browses genres…" and "plays an album from its cover and a whole genre".
+- [ ] Virtualization for large libraries within the gateway's row
       and byte bounds; offline snapshot of the collection (M6).
 
 ## M3 — Playback from the library

@@ -292,3 +292,19 @@ describe('TrackList links and header', () => {
     expect(list.find('button[aria-label="Add"]').exists()).toBe(false)
   })
 })
+
+describe('CoverCard play', () => {
+  it('offers a round play button instead of the arrow and keeps it outside the link', async () => {
+    const card = mount(CoverCard, {
+      props: { title: 'Blue Hours', to: '/album/Blue%20Hours', openLabel: 'Open', playLabel: 'Play Blue Hours' },
+      ...LINK_STUB,
+    })
+    expect(card.html()).not.toContain('↗')
+    const button = card.get('button[aria-label="Play Blue Hours"]')
+    expect(button.element.closest('a')).toBeNull()
+    await button.trigger('click')
+    expect(card.emitted('play')).toHaveLength(1)
+    const plain = mount(CoverCard, { props: { title: 'X', to: '/x', openLabel: 'Open' }, ...LINK_STUB })
+    expect(plain.find('button').exists()).toBe(false)
+  })
+})

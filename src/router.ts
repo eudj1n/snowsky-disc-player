@@ -12,10 +12,11 @@ export const SECTIONS = [
   { name: 'new', path: '/new', icon: 'clock', title: 'new_section' },
   { name: 'albums', path: '/albums', icon: 'album', title: 'albums' },
   { name: 'artists', path: '/artists', icon: 'artist', title: 'artists' },
+  { name: 'genres', path: '/genres', icon: 'genre', title: 'genres', phone: false },
   { name: 'tracks', path: '/tracks', icon: 'music', title: 'tracks' },
   { name: 'favorites', path: '/favorites', icon: 'heart', title: 'favorites' },
   { name: 'playlists', path: '/playlists', icon: 'playlist', title: 'playlists' },
-] as const satisfies readonly { name: string; path: string; icon: IconName; title: MessageKey }[]
+] as const satisfies readonly { name: string; path: string; icon: IconName; title: MessageKey; phone?: false }[]
 
 export type SectionName = (typeof SECTIONS)[number]['name']
 
@@ -24,6 +25,7 @@ export function sectionOf(name: unknown): SectionName {
   if (name === 'album') return 'albums'
   if (name === 'artist') return 'artists'
   if (name === 'playlist') return 'playlists'
+  if (name === 'genre') return 'genres'
   return SECTIONS.find((section) => section.name === name)?.name ?? 'home'
 }
 
@@ -32,6 +34,8 @@ const routes: RouteRecordRaw[] = [
   { path: '/new', name: 'new', component: () => import('./views/NewView.vue') },
   { path: '/albums', name: 'albums', component: () => import('./views/AlbumsView.vue') },
   { path: '/artists', name: 'artists', component: () => import('./views/ArtistsView.vue') },
+  { path: '/genres', name: 'genres', component: () => import('./views/GenresView.vue') },
+  { path: '/genre/:name', name: 'genre', component: () => import('./views/GenreView.vue') },
   { path: '/tracks', name: 'tracks', component: () => import('./views/TracksView.vue') },
   { path: '/favorites', name: 'favorites', component: () => import('./views/FavoritesView.vue') },
   { path: '/playlists', name: 'playlists', component: () => import('./views/PlaylistsView.vue') },

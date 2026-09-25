@@ -4,21 +4,35 @@ import CoverCard from '../components/collection/CoverCard.vue'
 import CoverCardSkeleton from '../components/collection/CoverCardSkeleton.vue'
 import CoverGrid from '../components/collection/CoverGrid.vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
-import { ALBUM_SORTS, sortAlbums, albumScope } from '../domain/album'
+import { ALBUM_SORTS, albumScope, albumTracks, sortAlbums, type Album } from '../domain/album'
+import { genreAlbums } from '../domain/genre'
 import { filterBy } from '../domain/search'
 import { locale, t } from '../i18n'
 import { albumSort } from '../stores/preferences'
 import UiChips from '../ui/UiChips.vue'
 import { albumCover } from '../stores/enrichment'
-import { albums } from '../stores/library'
+import { albums, genres, tracks } from '../stores/library'
 import { ui } from '../stores/ui'
-import { albumLines, albumCardRoute, countLine } from './captions'
+import { albumCardRoute, albumLines, countLine, genreAlbumRoute } from './captions'
+import { playAlbumCard, playFrom } from './playAlbum'
+import { selection } from '../stores/selection'
 import CollectionGate from './CollectionGate.vue'
+import { useGenreFilter } from './genreFilter'
+import GenreFilter from '../components/genre/GenreFilter.vue'
+import UiTextButton from '../ui/UiTextButton.vue'
 
+const { genre, options } = useGenreFilter()
 const searching = computed(() => ui.query.trim() !== '')
+const current = computed(() => genres.value.find((item) => item.name === genre.value) ?? null)
+const source = computed(() =>
+  genre.value ? (current.value ? genreAlbums(albums.value, current.value) : []) : albums.value,
+)
+/** The album also holds tracks outside the filtered genre. */
+const mixed = (album: Album) =>
+  genre.value !== null && albumTracks(tracks.value, album.title, null).some((track) => track.genre !== genre.value)
 const items = computed(() =>
   sortAlbums(
-    filterBy(albums.value, ui.query, (album) => [album.title, ...album.artists]),
+    filterBy(source.value, ui.query, (album) => [album.title, ...album.artists]),
     albumSort.value,
     locale.value,
   ),
@@ -32,9 +46,21 @@ const sorts = computed(() => ALBUM_SORTS.map((value) => ({ value, text: t(`sort_
       <ViewHeading
         :eyebrow="t('my_collection')"
         :title="t('albums')"
-        :meta="loading ? null : countLine(searching, items.length)"
+        :meta="loading ? null : countLine(searching || genre !== null, items.length)"
       >
-        <UiChips v-model="albumSort" :label="t('sort_by')" :options="sorts" class="self-end" />
+        <div class="flex flex-wrap items-center gap-x-16 gap-y-10 self-end">
+          <GenreFilter
+            v-if="options.length"
+            v-model="genre"
+            :label="t('genre_filter')"
+            :all-label="t('all_genres')"
+            :options="options"
+          />
+          <span class="hidden phone:contents">
+            <UiTextButton icon="arrow" @click="$router.push('/genres')">{{ t('genres') }}</UiTextButton>
+          </span>
+          <UiChips v-model="albumSort" :label="t('sort_by')" :options="sorts" />
+        </div>
       </ViewHeading>
     </template>
     <template #skeleton>
@@ -45,10 +71,15 @@ const sorts = computed(() => ALBUM_SORTS.map((value) => ({ value, text: t(`sort_
         v-for="album in items"
         :key="album.title"
         :title="album.title"
-        :to="albumCardRoute(album)"
+        :to="genre ? genreAlbumRoute(album, genre, mixed(album)) : albumCardRoute(album)"
         :cover="albumCover(album, albumScope(album))"
         :lines="albumLines(album)"
         :open-label="t('open_item', { name: album.title })"
+        :play-label="t('play_item', { name: album.title })"
+        :play-disabled="selection.busy"
+        @play="
+          genre && mixed(album) ? playFrom({ kind: 'genreAlbum', genre, album: album.title }) : playAlbumCard(album)
+        "
       />
     </CoverGrid>
   </CollectionGate>

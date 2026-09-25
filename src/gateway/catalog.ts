@@ -30,13 +30,20 @@ export type Category =
   | 'album/song'
   | 'artist'
   | 'artist/song'
+  | 'artist/album'
   | 'artist/album/song'
+  | 'style'
+  | 'style/song'
+  | 'style/album'
+  | 'style/album/song'
   | 'custom'
   | 'custom/song'
 
 export interface CatalogFilters {
   album?: string
   artist?: string
+  /** Genre (stock `style`). */
+  style?: string
   /** Playlist position for custom/song (src_list_id). */
   listId?: number
 }
@@ -78,6 +85,7 @@ export async function catalogPage(
   const headers: Record<string, string> = { type: category, 'start-pos': String(offset), 'num-max': String(limit) }
   if (filters.album !== undefined) headers.album = nameHeader(filters.album)
   if (filters.artist !== undefined) headers.artist = nameHeader(filters.artist)
+  if (filters.style !== undefined) headers.style = nameHeader(filters.style)
   if (filters.listId !== undefined) headers.src_list_id = String(filters.listId)
   const response = await http.stockRead('/song_category_tree/', headers)
   const body = await response.text()

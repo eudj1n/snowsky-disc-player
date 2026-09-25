@@ -62,7 +62,15 @@ const emit = defineEmits<{
     <div
       class="mx-auto mb-24 aspect-square w-[min(100%,28dvh)] overflow-hidden rounded-14 shadow-[0_12px_28px_#07100820] phone:mb-22 phone:w-[min(100%,30dvh)]"
     >
-      <Artwork :title="playback.track?.title ?? null" :cover="cover" />
+      <Transition
+        mode="out-in"
+        enter-from-class="opacity-0 scale-[0.96]"
+        enter-active-class="transition-[opacity,scale] duration-300 ease-out motion-reduce:transition-none"
+        leave-active-class="transition-opacity duration-150 ease-in motion-reduce:transition-none"
+        leave-to-class="opacity-0"
+      >
+        <Artwork :key="identity ?? 'none'" :title="playback.track?.title ?? null" :cover="cover" />
+      </Transition>
     </div>
     <p class="flex items-center justify-between gap-10 text-11 text-muted">
       <span>{{ status }}</span>

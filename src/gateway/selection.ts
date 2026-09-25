@@ -1,18 +1,18 @@
 /**
  * Guarded playback selection, after the reference Controller (session.py
- * play_album, source_playback.py select, link_commands.py
- * play_catalog_track, playback.py GuardedHTTP and verify_playing):
+ * play_album, genre_playback.py select, source_playback.py select,
+ * link_commands.py play_catalog_track, playback.py GuardedHTTP and
+ * verify_playing):
  *
  * 1. Read the source's stock membership twice; it must be non-empty and equal.
  * 2. Resolve the target position in that stock order (a track must match by
  *    title and artist exactly once; data-level IDs are never positions).
  * 3. Immediately before sending, re-read the target row and the total.
- * 4. Send one selection with a fresh request ID:
- *    whole album `0101 0003<album>`, album track `0100 <pos> 0003<album>`,
- *    one artist's album `0101 0007{"artist":"A", "album":"B"}` (or `0100
- *    <pos> 0007…`), library track `0100 <pos> 0001`, favorite `0100 <pos> 0006`.
- * 5. Confirm with fresh reads: playing, the expected source, and the exact
- *    target (or, for a whole album, a member of it).
+ * 4. Send one selection with a fresh request ID (see `plan` for each form).
+ * 5. Confirm with fresh reads: playing, the expected source (playerflag), and
+ *    the exact target (or, for a whole source, a member of it). The stock may
+ *    shorten the album name it reports; a prefix is accepted only when the
+ *    fresh album list of that scope has exactly one compatible name.
  *
  * Anything else is `uncertain`; the selection is never retried.
  */
@@ -29,6 +29,12 @@ export type SelectionTarget =
   | { kind: 'album'; album: string; track?: TrackKey }
   /** One literal track artist's part of an album title: separates releases sharing a title. */
   | { kind: 'artistAlbum'; artist: string; album: string; track?: TrackKey }
+  /** All of one literal artist's tracks (type 7 with an empty album; Play all only). */
+  | { kind: 'artist'; artist: string }
+  /** A whole stock genre (`style`). */
+  | { kind: 'genre'; genre: string; track?: TrackKey }
+  /** The tracks of an album title that carry this genre. */
+  | { kind: 'genreAlbum'; genre: string; album: string; track?: TrackKey }
   | { kind: 'library'; track: TrackKey }
   | { kind: 'favorites'; track: TrackKey }
   | { kind: 'playlist'; name: string; track?: TrackKey }
@@ -53,12 +59,109 @@ export interface SelectionDeps {
   sleep?: (ms: number) => Promise<void>
 }
 
-const SOURCES: Record<SelectionTarget['kind'], { category: Category; list: string; source: PlaybackSource }> = {
-  album: { category: 'album/song', list: '0003', source: 'album' },
-  artistAlbum: { category: 'artist/album/song', list: '0007', source: 'artistAlbum' },
-  library: { category: 'all/song', list: '0001', source: 'library' },
-  favorites: { category: 'love/song', list: '0006', source: 'favorites' },
-  playlist: { category: 'custom/song', list: '0005', source: 'playlist' },
+/** How one target is read, sent and confirmed. */
+interface Plan {
+  category: Category
+  filters: CatalogFilters
+  /** List type and name after the optional position: `0003<album>`. */
+  payload: string
+  source: PlaybackSource
+  /** The album the playing track must belong to, and the list to resolve a shortened name. */
+  album?: { name: string; category: Category; filters: CatalogFilters }
+  /** The playing track's artist must be this literal credit. */
+  artist?: string
+}
+
+const hex4 = (value: number) => value.toString(16).toUpperCase().padStart(4, '0')
+const RESERVED = ['unknown_artist', 'unknown_album', 'unknown_style']
+const sscanfSafe = (...names: string[]) => names.every((name) => !/["\\]/.test(name) && !RESERVED.includes(name))
+
+/**
+ * The stock parses the type-7 selector with sscanf, not JSON: key order and
+ * the space after the comma matter, and quotes or backslashes cannot be
+ * escaped. Reserved "unknown" tokens select nothing real (reference
+ * fiio_library.artist_command).
+ */
+export function artistAlbumSelector(artist: string, album: string): string | null {
+  return sscanfSafe(artist, album) ? `{"artist":"${artist}", "album":"${album}"}` : null
+}
+
+/** The type-8 genre selector, same sscanf rules; an empty album means the whole genre. */
+export function genreSelector(genre: string, album: string): string | null {
+  return sscanfSafe(genre, album) && genre !== '' ? `{"style":"${genre}", "album":"${album}"}` : null
+}
+
+/** The read, send and confirmation plan for a target, or null when the stock cannot carry it. */
+function plan(target: SelectionTarget, indexed: boolean): Plan | null {
+  switch (target.kind) {
+    case 'album':
+      return {
+        category: 'album/song',
+        filters: { album: target.album },
+        payload: `0003${target.album}`,
+        source: 'album',
+        album: { name: target.album, category: 'album', filters: {} },
+      }
+    case 'artistAlbum': {
+      const selector = artistAlbumSelector(target.artist, target.album)
+      if (selector === null) return null
+      return {
+        category: 'artist/album/song',
+        filters: { artist: target.artist, album: target.album },
+        payload: `0007${selector}`,
+        source: 'artistAlbum',
+        album: { name: target.album, category: 'artist/album', filters: { artist: target.artist } },
+        artist: target.artist,
+      }
+    }
+    case 'artist': {
+      // Controller artist_command: the empty-album type-7 form is reviewed for Play all only.
+      const selector = target.artist === '' ? null : artistAlbumSelector(target.artist, '')
+      return selector === null
+        ? null
+        : {
+            category: 'artist/song',
+            filters: { artist: target.artist },
+            payload: `0007${selector}`,
+            source: 'artistAlbum',
+            artist: target.artist,
+          }
+    }
+    case 'genre': {
+      if (target.genre === '' || RESERVED.includes(target.genre)) return null
+      // Controller genre_command: Play all uses type 8 with an empty album;
+      // a position in the whole genre uses type 000A (a different stock path).
+      if (indexed)
+        return {
+          category: 'style/song',
+          filters: { style: target.genre },
+          payload: `000A${target.genre}`,
+          source: 'genreTrack',
+        }
+      const selector = genreSelector(target.genre, '')
+      return selector === null
+        ? null
+        : { category: 'style/song', filters: { style: target.genre }, payload: `0008${selector}`, source: 'genre' }
+    }
+    case 'genreAlbum': {
+      const selector = genreSelector(target.genre, target.album)
+      if (selector === null) return null
+      return {
+        category: 'style/album/song',
+        filters: { style: target.genre, album: target.album },
+        payload: `0008${selector}`,
+        source: 'genre',
+        album: { name: target.album, category: 'style/album', filters: { style: target.genre } },
+      }
+    }
+    case 'library':
+      return { category: 'all/song', filters: {}, payload: '0001', source: 'library' }
+    case 'favorites':
+      return { category: 'love/song', filters: {}, payload: '0006', source: 'favorites' }
+    case 'playlist':
+      // The list position is resolved from `custom` before the read.
+      return { category: 'custom/song', filters: {}, payload: '0005', source: 'playlist' }
+  }
 }
 
 /** The playlist's position in the stock `custom` order, found by its unique name. */
@@ -75,38 +178,39 @@ async function playlistPosition(
   return { position: match.pos, lists }
 }
 
-const hex4 = (value: number) => value.toString(16).toUpperCase().padStart(4, '0')
-
-/**
- * The stock parses the type-7 selector with sscanf, not JSON: key order and
- * the space after the comma matter, and quotes or backslashes cannot be
- * escaped. Reserved "unknown" tokens select nothing real (reference
- * fiio_library.artist_command).
- */
-export function artistAlbumSelector(artist: string, album: string): string | null {
-  if (artist === 'unknown_artist' || album === 'unknown_album' || /["\\]/.test(artist + album)) return null
-  return `{"artist":"${artist}", "album":"${album}"}`
-}
-
 function resolve(rows: readonly CatalogRow[], track: TrackKey): number | 'ambiguous' | 'missing' {
   const matches = rows.flatMap((row, index) => (row.name === track.title && row.author === track.artist ? [index] : []))
   if (!matches.length) return 'missing'
   return matches.length === 1 && matches[0] !== undefined ? matches[0] : 'ambiguous'
 }
 
+/**
+ * The reported album matches the wanted one: equal, or a shortened prefix
+ * that exactly one name of the scope's fresh, stable album list starts with
+ * (reference playback.album_matches).
+ */
+async function albumMatches(
+  http: GatewayHttp,
+  observed: string | null,
+  album: NonNullable<Plan['album']>,
+): Promise<boolean> {
+  if (observed === album.name) return true
+  if (!observed || !album.name.startsWith(observed)) return false
+  const names = await catalogRows(http, album.category, album.filters, 10_000)
+  const again = await catalogRows(http, album.category, album.filters, 10_000)
+  if (!sameRows(names, again)) return false
+  const compatible = names.filter((row) => row.name.startsWith(observed)).map((row) => row.name)
+  return compatible.length === 1 && compatible[0] === album.name
+}
+
 export async function selectSource(deps: SelectionDeps, target: SelectionTarget): Promise<SelectionOutcome> {
   const { session, http, timeoutMs } = deps
   const now = deps.now ?? Date.now
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((done) => setTimeout(done, ms)))
-  const spec = SOURCES[target.kind]
-  let filters: CatalogFilters =
-    target.kind === 'album'
-      ? { album: target.album }
-      : target.kind === 'artistAlbum'
-        ? { artist: target.artist, album: target.album }
-        : {}
-  const selector = target.kind === 'artistAlbum' ? artistAlbumSelector(target.artist, target.album) : null
-  if (target.kind === 'artistAlbum' && selector === null) return 'unavailable'
+  const spec = plan(target, 'track' in target && target.track !== undefined)
+  if (!spec) return 'unavailable'
+  let filters = spec.filters
+  let payload = spec.payload
   let rows: CatalogRow[]
   let position: number | null = null
   let playlist: { position: number; lists: CatalogRow[] } | null = null
@@ -116,12 +220,14 @@ export async function selectSource(deps: SelectionDeps, target: SelectionTarget)
       if (found === 'ambiguous') return 'ambiguous'
       playlist = found
       filters = { listId: found.position }
+      payload = `0005{"id":${found.position}}`
     }
     rows = await catalogRows(http, spec.category, filters, 10_000)
     const again = await catalogRows(http, spec.category, filters, 10_000)
     if (!rows.length || !sameRows(rows, again)) return 'changed'
-    if (target.track) {
-      const found = resolve(rows, target.track)
+    const wantedTrack = 'track' in target ? target.track : undefined
+    if (wantedTrack) {
+      const found = resolve(rows, wantedTrack)
       if (found === 'ambiguous') return 'ambiguous'
       if (found === 'missing') return 'changed'
       position = found
@@ -149,38 +255,33 @@ export async function selectSource(deps: SelectionDeps, target: SelectionTarget)
     return 'unavailable'
   }
   deps.attempted?.()
-  const name =
-    target.kind === 'album'
-      ? target.album
-      : target.kind === 'artistAlbum'
-        ? (selector ?? '')
-        : target.kind === 'playlist' && playlist
-          ? `{"id":${playlist.position}}`
-          : ''
   const outcome =
     position === null
-      ? await session.mutate('0101', `${spec.list}${name}`, null, timeoutMs)
-      : await session.mutate('0100', `${hex4(position)}${spec.list}${name}`, null, timeoutMs)
+      ? await session.mutate('0101', payload, null, timeoutMs)
+      : await session.mutate('0100', `${hex4(position)}${payload}`, null, timeoutMs)
   if (outcome.status === 'unsent') return 'unavailable'
   const wanted = position === null ? null : rows[position]
   const deadline = now() + (deps.confirmMs ?? 8000)
+  let albumChecked: boolean | null = null
   while (now() < deadline && session.open) {
     try {
       const observed = parsePlayback(await session.read('0202', 'a202'))
       const track = observed.track
-      const inSource =
-        observed.state === 'playing' &&
-        observed.source === spec.source &&
+      const member =
         track !== null &&
-        (target.kind !== 'album' || track.album === target.album) &&
-        (target.kind !== 'artistAlbum' || (track.album === target.album && track.artist === target.artist))
-      if (
-        inSource &&
         (wanted
           ? track.title === wanted.name && track.artist === wanted.author
           : rows.some((row) => row.name === track.title && row.author === track.artist))
+      if (
+        observed.state === 'playing' &&
+        observed.source === spec.source &&
+        member &&
+        (spec.artist === undefined || track.artist === spec.artist)
       ) {
-        return 'playing'
+        if (!spec.album) return 'playing'
+        // A fresh list read confirms a shortened album name once per selection.
+        albumChecked ??= await albumMatches(http, track.album, spec.album).catch(() => false)
+        if (albumChecked) return 'playing'
       }
     } catch (error) {
       if (!(error instanceof NoObservation)) break

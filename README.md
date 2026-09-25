@@ -6,10 +6,19 @@ player, so any browser on your home network becomes a remote for your music:
 browse the library, see what is playing and control playback. Music keeps
 playing on the DISC; nothing streams to the browser.
 
-> Status: early development. The first release connects to the player, shows
-> firmware identity, the library size and the current track, and controls
-> playback after pairing. The full collection interface of the reference
-> DISC Web is being ported next (see the [plan](docs/plan.md)).
+> Status: in active development (see the [plan](docs/plan.md)). Today you can:
+>
+> - browse Home, New, albums, artists, genres, tracks, favorites and
+>   playlists, with search, sorting and genre filters;
+> - play albums, tracks, playlists, artists and genres, and pick a row in the
+>   queue;
+> - follow what is playing, seek, change volume or mute, shuffle, repeat and
+>   mark the current track as a favorite;
+> - adjust gain, balance, the DAC filter and DRE;
+> - add music: upload files or album folders, then let the player scan.
+>
+> Covers and durations appear as tracks play: the player's library keeps
+> neither for most files.
 
 ## Requirements
 

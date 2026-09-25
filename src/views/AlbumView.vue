@@ -14,7 +14,7 @@ import DetailHeading from '../components/collection/DetailHeading.vue'
 import SectionHeading from '../components/common/SectionHeading.vue'
 import TrackList from '../components/track/TrackList.vue'
 import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
-import { albumTracks, albumsBy } from '../domain/album'
+import { albumTracks, albumsBy, byTrackNumber } from '../domain/album'
 import { filterBy } from '../domain/search'
 import type { SelectionTarget, TrackKey } from '../gateway/selection'
 import { t } from '../i18n'
@@ -24,10 +24,10 @@ import { selection } from '../stores/selection'
 import { openTrackMenu, ui } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumRoute, artistRoute } from './captions'
+import { albumRoute, artistRoute, genreRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { onRowFavorite, trackRowProps } from './trackRows'
-import { playAlbumAction, playFrom } from './playAlbum'
+import { playAlbumCard, playFrom } from './playAlbum'
 
 const MORE_BY_ARTISTS = 3
 const CHIP =
@@ -40,8 +40,19 @@ const scope = computed(() => {
   const artist = route.params.artist
   return typeof artist === 'string' && artist !== '' ? artist : null
 })
+/** A genre scope from the genre page (`?genre=`), used only without an artist scope. */
+const genre = computed(() => {
+  const value = route.query.genre
+  return scope.value === null && typeof value === 'string' && value !== '' ? value : null
+})
 const group = computed(() => albums.value.find((item) => item.title === name.value) ?? null)
-const tracks = computed(() => albumTracks(collection.value, name.value, scope.value))
+const tracks = computed(() =>
+  byTrackNumber(
+    albumTracks(collection.value, name.value, scope.value).filter(
+      (track) => genre.value === null || track.genre === genre.value,
+    ),
+  ),
+)
 const credits = computed(() => (scope.value ? [scope.value] : (group.value?.artists ?? [])))
 /** Several artists share this title: offer them as filters (and the whole group). */
 const choices = computed(() => ((group.value?.trackArtists.length ?? 0) > 1 ? (group.value?.trackArtists ?? []) : []))
@@ -54,9 +65,10 @@ const moreBy = computed(() =>
 )
 
 function target(track?: TrackKey): SelectionTarget {
-  return scope.value
-    ? { kind: 'artistAlbum', artist: scope.value, album: name.value, ...(track ? { track } : {}) }
-    : { kind: 'album', album: name.value, ...(track ? { track } : {}) }
+  const one = track ? { track } : {}
+  if (scope.value) return { kind: 'artistAlbum', artist: scope.value, album: name.value, ...one }
+  if (genre.value) return { kind: 'genreAlbum', genre: genre.value, album: name.value, ...one }
+  return { kind: 'album', album: name.value, ...one }
 }
 const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums')
 </script>
@@ -81,12 +93,9 @@ const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums
             <span v-if="credits.length"> · </span>{{ t('track_count', { count: tracks.length }) }}
           </template>
         </template>
-        <UiPillButton
-          icon="play"
-          :disabled="loading || !tracks.length || selection.busy"
-          @click="playAlbumAction(name, scope)"
-          >{{ t('play_album') }}</UiPillButton
-        >
+        <UiPillButton icon="play" :disabled="loading || !tracks.length || selection.busy" @click="playFrom(target())">{{
+          t('play_album')
+        }}</UiPillButton>
       </DetailHeading>
       <nav
         v-if="!loading && choices.length"
@@ -108,9 +117,18 @@ const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums
           >
         </div>
       </nav>
+      <nav
+        v-if="!loading && genre"
+        :aria-label="t('genre_filter')"
+        class="mb-24 flex flex-wrap items-center gap-6 rounded-12 border border-line bg-raised px-18 py-14"
+      >
+        <span class="mr-6 text-12 text-secondary">{{ t('in_genre', { genre }) }}</span>
+        <RouterLink :to="albumRoute(name)" :class="CHIP">{{ t('whole_album') }}</RouterLink>
+        <RouterLink :to="genreRoute(genre)" :class="CHIP">{{ genre }}</RouterLink>
+      </nav>
     </template>
     <template #skeleton>
-      <TrackListSkeleton :rows="8" lead="number" :album="false" actions />
+      <TrackListSkeleton :rows="8" lead="number" :lines="1" :album="false" actions />
     </template>
     <TrackList
       v-bind="trackRowProps"
@@ -139,6 +157,9 @@ const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums
           :cover="albumCover(album, shelf.artist)"
           :lines="[{ text: t('track_count', { count: albumTracks(collection, album.title, shelf.artist).length }) }]"
           :open-label="t('open_item', { name: album.title })"
+          :play-label="t('play_item', { name: album.title })"
+          :play-disabled="selection.busy"
+          @play="playAlbumCard(album, shelf.artist)"
         />
       </CoverRow>
     </section>

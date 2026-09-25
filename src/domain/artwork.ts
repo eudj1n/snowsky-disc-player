@@ -17,3 +17,6 @@ export function sleeve(title: string | null | undefined): Sleeve {
   for (const char of text) hash = (Math.imul(hash, 31) + (char.codePointAt(0) ?? 0)) >>> 0
   return { palette: hash % SLEEVE_PALETTES, letters: Array.from(text).slice(0, 2).join('').toUpperCase() }
 }
+
+/** The middle tone of each sleeve palette (ArtworkSleeve), for tinting around a sleeve. */
+export const SLEEVE_TONES = ['#638a78', '#ac746c', '#768ba6', '#b18b54', '#8a739a', '#84906b'] as const

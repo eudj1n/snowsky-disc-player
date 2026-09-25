@@ -1,19 +1,28 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
+import GenreFilter from '../components/genre/GenreFilter.vue'
 import TrackList from '../components/track/TrackList.vue'
 import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
+import { genreTracks } from '../domain/genre'
 import { filterBy } from '../domain/search'
+import type { SelectionTarget, TrackKey } from '../gateway/selection'
 import { t } from '../i18n'
 import { tracks, library } from '../stores/library'
 import { openTrackMenu, ui } from '../stores/ui'
 import { countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
+import { useGenreFilter } from './genreFilter'
 import { onRowFavorite, trackRowProps } from './trackRows'
 import { playFrom } from './playAlbum'
 
+const { genre, options } = useGenreFilter()
 const searching = computed(() => ui.query.trim() !== '')
-const items = computed(() => filterBy(tracks.value, ui.query, (track) => [track.title, track.artist, track.album]))
+const source = computed(() => (genre.value ? genreTracks(tracks.value, genre.value) : tracks.value))
+const items = computed(() => filterBy(source.value, ui.query, (track) => [track.title, track.artist, track.album]))
+/** With a genre filter, playback stays in that stock genre (reference). */
+const target = (track: TrackKey): SelectionTarget =>
+  genre.value ? { kind: 'genre', genre: genre.value, track } : { kind: 'library', track }
 const skeletonRows = computed(() => Math.max(1, Math.min(library.summary?.tracks ?? 10, 12)))
 const columns = computed(() => ({
   title: t('column_title'),
@@ -28,8 +37,17 @@ const columns = computed(() => ({
       <ViewHeading
         :eyebrow="t('my_collection')"
         :title="t('tracks')"
-        :meta="loading ? null : countLine(searching, items.length)"
-      />
+        :meta="loading ? null : countLine(searching || genre !== null, items.length)"
+      >
+        <GenreFilter
+          v-if="options.length"
+          v-model="genre"
+          :label="t('genre_filter')"
+          :all-label="t('all_genres')"
+          :options="options"
+          class="self-end"
+        />
+      </ViewHeading>
     </template>
     <template #skeleton>
       <TrackListSkeleton :rows="skeletonRows" actions :header="columns" />
@@ -38,10 +56,8 @@ const columns = computed(() => ({
       v-bind="trackRowProps"
       :tracks="items"
       :header="columns"
-      @menu="
-        (index, anchor) => items[index] && openTrackMenu(items[index], { kind: 'library', track: items[index] }, anchor)
-      "
-      @play="(index) => items[index] && playFrom({ kind: 'library', track: items[index] })"
+      @menu="(index, anchor) => items[index] && openTrackMenu(items[index], target(items[index]), anchor)"
+      @play="(index) => items[index] && playFrom(target(items[index]))"
       @favorite="onRowFavorite"
     />
   </CollectionGate>

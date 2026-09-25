@@ -86,6 +86,18 @@
   /* Current-track marker: an expanding halo around a softly breathing dot. */
   --animate-now-halo: now-halo 1.9s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
   --animate-now-breathe: now-breathe 1.9s ease-in-out infinite;
+  /* Loaded content settles in after its skeleton. */
+  --animate-content-in: content-in 0.32s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  @keyframes content-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
   @keyframes now-halo {
     0% {
       transform: scale(0.55);
@@ -121,6 +133,13 @@
       transform: translateX(0);
     }
   }
+}
+
+/* Detail headers glow in their artwork's tone; registered so it can transition. */
+@property --tint {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
 }
 
 /* Theme colors resolve at use site, so the dark overrides below apply. */
@@ -226,6 +245,13 @@
     scrollbar-gutter: stable;
     @apply bg-paper font-sans text-ink;
   }
+  /* Tailwind 4 resets buttons to the default cursor; interactive ones point. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  select:not(:disabled),
+  summary {
+    cursor: pointer;
+  }
   /* Scroll lock while a modal dialog is open (src/ui/dialogs.ts). */
   html.modal-open {
     overflow: hidden;
@@ -287,6 +313,16 @@
     border-radius: 50%;
     background: var(--progress-fill);
     margin-top: -4px;
+    transition:
+      transform 0.15s ease-out,
+      box-shadow 0.15s ease-out;
+  }
+  /* The thumb grows under the pointer and while dragged. */
+  &:hover:not(:disabled)::-webkit-slider-thumb,
+  &:active:not(:disabled)::-webkit-slider-thumb,
+  &:focus-visible::-webkit-slider-thumb {
+    transform: scale(1.4);
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--progress-fill) 18%, transparent);
   }
   &::-moz-range-track {
     height: 3px;
@@ -300,6 +336,11 @@
     width: 11px;
     height: 11px;
     background: var(--progress-fill);
+    transition: transform 0.15s ease-out;
+  }
+  &:hover:not(:disabled)::-moz-range-thumb,
+  &:active:not(:disabled)::-moz-range-thumb {
+    transform: scale(1.4);
   }
   &:disabled {
     opacity: 0.45;

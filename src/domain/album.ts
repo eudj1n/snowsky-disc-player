@@ -71,3 +71,27 @@ export function sortAlbums(albums: readonly Album[], sort: AlbumSort, locale: st
     return collator.compare(a.title, b.title)
   })
 }
+
+/**
+ * Album order for display: by disc, then track number, as the tags number
+ * them (the data level returns library order). Unnumbered tracks follow in
+ * their original order. Selection still resolves positions in the stock's
+ * own order, so display order never changes what is sent.
+ */
+export function byTrackNumber<T extends Pick<LibraryTrack, 'discNumber' | 'trackNumber'>>(tracks: readonly T[]): T[] {
+  const numbered = (track: T) => typeof track.trackNumber === 'number' && track.trackNumber > 0
+  return tracks
+    .map((track, index) => ({ track, index }))
+    .sort((a, b) => {
+      const an = numbered(a.track)
+      const bn = numbered(b.track)
+      if (an !== bn) return an ? -1 : 1
+      if (!an) return a.index - b.index
+      return (
+        (a.track.discNumber ?? 1) - (b.track.discNumber ?? 1) ||
+        (a.track.trackNumber ?? 0) - (b.track.trackNumber ?? 0) ||
+        a.index - b.index
+      )
+    })
+    .map((entry) => entry.track)
+}

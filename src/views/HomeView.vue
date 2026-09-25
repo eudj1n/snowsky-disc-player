@@ -27,7 +27,7 @@ import UiTextButton from '../ui/UiTextButton.vue'
 import { albumCardRoute, albumLines, countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { onRowFavorite, trackRowProps } from './trackRows'
-import { playAlbumAction, playFrom } from './playAlbum'
+import { playAlbumAction, playFrom, playAlbumCard } from './playAlbum'
 
 const router = useRouter()
 const searching = computed(() => ui.query.trim() !== '')
@@ -66,6 +66,9 @@ const heroLines = computed<[string, string]>(() =>
         :cover="albumCover(album, albumScope(album))"
         :lines="albumLines(album)"
         :open-label="t('open_item', { name: album.title })"
+        :play-label="t('play_item', { name: album.title })"
+        :play-disabled="selection.busy"
+        @play="playAlbumCard(album)"
       />
     </CoverGrid>
   </CollectionGate>
@@ -110,6 +113,9 @@ const heroLines = computed<[string, string]>(() =>
         :cover="albumCover(album, albumScope(album))"
         :lines="albumLines(album)"
         :open-label="t('open_item', { name: album.title })"
+        :play-label="t('play_item', { name: album.title })"
+        :play-disabled="selection.busy"
+        @play="playAlbumCard(album)"
       />
     </CoverGrid>
     <p v-else class="text-11 leading-[1.6] text-muted">{{ t('no_albums_in_your_library_yet') }}</p>

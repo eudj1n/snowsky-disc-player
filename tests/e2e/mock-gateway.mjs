@@ -10,7 +10,16 @@ import { createServer } from 'node:http'
 import { readFileSync, existsSync, statSync } from 'node:fs'
 import { extname, join, normalize } from 'node:path'
 import { WebSocketServer } from 'ws'
-import { FAVORITES, PLAYLISTS, TRACKS, artistAlbum, catalogPage, dataQuery, indexUpload } from './mock-collection.mjs'
+import {
+  FAVORITES,
+  PLAYLISTS,
+  TRACKS,
+  artistAlbum,
+  catalogPage,
+  dataQuery,
+  genre,
+  indexUpload,
+} from './mock-collection.mjs'
 
 const PORT = Number(process.env.MOCK_GATEWAY_PORT ?? 4870)
 const DIST = process.env.MOCK_GATEWAY_DIST ?? 'dist'
@@ -222,7 +231,13 @@ server.on('upgrade', (request, socket, head) => {
         // The stock sscanf form: {"artist":"A", "album":"B"} (no escapes).
         const scoped = (selector) => {
           const match = /^\{"artist":"([^"\\]*)", "album":"([^"\\]*)"\}$/.exec(selector)
-          return match ? artistAlbum(match[1], match[2]) : []
+          if (!match) return []
+          // An empty album selects all of the artist's tracks (Play all only).
+          return match[2] === '' ? TRACKS.filter((track) => track.ARTIST === match[1]) : artistAlbum(match[1], match[2])
+        }
+        const styled = (selector) => {
+          const match = /^\{"style":"([^"\\]*)", "album":"([^"\\]*)"\}$/.exec(selector)
+          return match ? genre(match[1], match[2] === '' ? null : match[2]) : []
         }
         const value = parseInt(payload.slice(0, 4), 16)
         if (tag === '0102') {
@@ -258,6 +273,7 @@ server.on('upgrade', (request, socket, head) => {
           return
         } else if (tag === '0101' && payload.startsWith('0003')) select(album(payload.slice(4)), 0, 3)
         else if (tag === '0101' && payload.startsWith('0007')) select(scoped(payload.slice(4)), 0, 7)
+        else if (tag === '0101' && payload.startsWith('0008')) select(styled(payload.slice(4)), 0, 8)
         else if (tag === '0101' && payload.startsWith('0005'))
           select(PLAYLISTS[JSON.parse(payload.slice(4)).id]?.members ?? [], 0, 5)
         else if (tag === '0100') {
@@ -265,6 +281,8 @@ server.on('upgrade', (request, socket, head) => {
           const type = payload.slice(4, 8)
           if (type === '0003') select(album(payload.slice(8)), index, 3)
           else if (type === '0007') select(scoped(payload.slice(8)), index, 7)
+          else if (type === '0008') select(styled(payload.slice(8)), index, 8)
+          else if (type === '000A') select(genre(payload.slice(8), null), index, 10)
           else if (type === '0001') select(TRACKS, index, 1)
           else if (type === '0006') select(FAVORITES, index, 6)
           else if (type === '0005') select(PLAYLISTS[JSON.parse(payload.slice(8)).id]?.members ?? [], index, 5)

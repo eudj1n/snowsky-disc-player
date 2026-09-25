@@ -15,6 +15,12 @@ export const trackArtistRoute = (track: { artist: string | null }) => (track.art
 export const trackAlbumRoute = (track: { album: string | null; artist: string | null }) =>
   track.album ? albumRoute(track.album, track.artist || null) : null
 
+/** A genre page's album link: genre-scoped only when the album also holds other genres. */
+export function genreAlbumRoute(album: Album, genre: string, mixed: boolean) {
+  return mixed ? { name: 'album', params: { name: album.title }, query: { genre } } : albumCardRoute(album)
+}
+export const genreRoute = (name: string) => ({ name: 'genre', params: { name } })
+
 export function albumLines(album: Album): CardLine[] {
   const lines: CardLine[] = []
   const [only] = album.artists

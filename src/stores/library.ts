@@ -10,6 +10,7 @@
 import { computed, reactive, readonly } from 'vue'
 import { groupAlbums } from '../domain/album'
 import { groupArtists } from '../domain/artist'
+import { groupGenres } from '../domain/genre'
 import { librarySignature, type LibrarySummary } from '../domain/library'
 import type { Playlist } from '../domain/playlist'
 import type { LibraryTrack } from '../domain/track'
@@ -66,6 +67,7 @@ export const tracks = computed(() => enriched(state.tracks))
 export const favorites = computed(() => enriched(state.favorites))
 export const albums = computed(() => groupAlbums(state.tracks))
 export const artists = computed(() => groupArtists(state.tracks))
+export const genres = computed(() => groupGenres(state.tracks))
 
 /** One album chosen at random per page load for the Home hero. */
 const seed = Math.random()

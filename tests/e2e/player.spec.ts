@@ -171,6 +171,31 @@ test('keeps albums that share a title apart by artist and offers more by the art
   await expect(page).toHaveURL(/#\/artist\/Northline$/)
 })
 
+test('browses genres, narrows mixed albums and filters tracks by genre', async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  await page.goto('/#/genres')
+  await page.getByRole('link', { name: /^Jazz\b/ }).click()
+  await expect(page).toHaveURL(/#\/genre\/Jazz$/)
+  await expect(page.getByRole('heading', { level: 1, name: 'Jazz' })).toBeVisible()
+  await expect(page.getByRole('list', { name: 'Artists' }).getByRole('heading', { name: 'Mira Sol' })).toBeVisible()
+  await page
+    .getByRole('list', { name: 'Albums' })
+    .getByRole('heading', { name: 'Velvet Season' })
+    .getByRole('link')
+    .click()
+  await expect(page).toHaveURL(/#\/album\/Velvet%20Season\?genre=Jazz$/)
+  await expect(page.getByRole('row')).toHaveCount(1)
+  await page.getByRole('link', { name: 'Whole album' }).click()
+  await expect(page.getByRole('row')).toHaveCount(4)
+  await page.goto('/#/tracks?genre=Jazz')
+  // Seven Jazz tracks and the header row.
+  await expect(page.getByRole('row')).toHaveCount(8)
+  await page.getByRole('combobox', { name: 'Genre' }).selectOption('Soul')
+  await expect(page).toHaveURL(/genre=Soul$/)
+  await expect(page.getByRole('row')).toHaveCount(4)
+})
+
 test('connects on the first Play when paired, then follows keyboard shortcuts', async ({ page }) => {
   test.skip(!TOKEN || external, 'Needs the mock collection and token')
   const errors = watchErrors(page)
@@ -261,6 +286,28 @@ test.describe('player controls on the mock', () => {
       timeout: 15_000,
     })
     await expect(page.getByTestId('track-title')).toHaveText('Late Train')
+    await disconnect(page)
+  })
+
+  test('plays an album from its cover and a whole genre', async ({ page }, info) => {
+    await english(page)
+    await connectAndPair(page)
+    if (info.project.name !== 'phone') {
+      await page.goto('/#/albums')
+      const card = page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Inner Space' }) })
+      await card.hover()
+      await card.getByRole('button', { name: 'Play Inner Space' }).click()
+      await expect(page.getByRole('status').filter({ hasText: 'Done. Verified on DISC.' })).toBeVisible({
+        timeout: 15_000,
+      })
+      await expect(page.getByTestId('track-title')).toHaveText('Orbit')
+    }
+    await page.goto('/#/genre/Jazz')
+    await page.getByRole('button', { name: 'Play genre' }).click()
+    await expect(page.getByRole('status').filter({ hasText: 'Done. Verified on DISC.' })).toBeVisible({
+      timeout: 15_000,
+    })
+    await expect(page.getByTestId('track-title')).toHaveText('Blue Hours')
     await disconnect(page)
   })
 

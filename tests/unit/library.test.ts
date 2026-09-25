@@ -133,3 +133,51 @@ describe('album sorting', () => {
     expect(sortAlbums(albums, 'artist', 'ru').map((a) => a.artists[0])).toEqual(['а', 'Б', 'В'])
   })
 })
+
+describe('album display order', () => {
+  it('follows disc and track numbers, unnumbered tracks last in library order', async () => {
+    const { byTrackNumber } = await import('../../src/domain/album')
+    const rows = [
+      { id: 1, discNumber: 1, trackNumber: 3 },
+      { id: 2, discNumber: null, trackNumber: null },
+      { id: 3, discNumber: 2, trackNumber: 1 },
+      { id: 4, discNumber: 1, trackNumber: 1 },
+      { id: 5, discNumber: null, trackNumber: 0 },
+      { id: 6, discNumber: null, trackNumber: 2 },
+    ]
+    expect(byTrackNumber(rows).map((row) => row.id)).toEqual([4, 6, 1, 3, 2, 5])
+  })
+})
+
+describe('genres', () => {
+  const tagged = (id: number, album: string, artist: string, genre: string | null, addedAt = id) => ({
+    ...track(id, album, artist, addedAt),
+    genre,
+  })
+
+  it('groups literal genres and leaves untagged and reserved ones out', async () => {
+    const { groupGenres, genreArtists, genreAlbums } = await import('../../src/domain/genre')
+    const rows = [
+      tagged(1, 'A', 'X', 'Jazz'),
+      tagged(2, 'A', 'X', 'Soul'),
+      tagged(3, 'B', 'Y', 'Jazz', 9),
+      tagged(4, 'B', 'Z', 'Jazz'),
+      tagged(5, 'C', 'Y', 'Jazz'),
+      tagged(6, 'D', 'Q', null),
+      tagged(7, 'E', 'Q', ' '),
+      tagged(8, 'F', 'Q', 'unknown_style'),
+    ]
+    const genres = groupGenres(rows)
+    expect(genres.map((genre) => [genre.name, genre.trackCount, genre.albums])).toEqual([
+      ['Jazz', 4, ['A', 'B', 'C']],
+      ['Soul', 1, ['A']],
+    ])
+    expect(genreArtists(rows, 'Jazz')).toEqual([
+      { name: 'Y', trackCount: 2 },
+      { name: 'X', trackCount: 1 },
+      { name: 'Z', trackCount: 1 },
+    ])
+    const jazz = genres[0]
+    expect(jazz && genreAlbums(groupAlbums(rows), jazz).map((album) => album.title)).toEqual(['B', 'C', 'A'])
+  })
+})

@@ -9,6 +9,8 @@ import { t } from '../i18n'
 import { artists } from '../stores/library'
 import { ui } from '../stores/ui'
 import { artistRoute, countLine } from './captions'
+import { playFrom } from './playAlbum'
+import { selection } from '../stores/selection'
 import CollectionGate from './CollectionGate.vue'
 
 const searching = computed(() => ui.query.trim() !== '')
@@ -35,6 +37,9 @@ const items = computed(() => filterBy(artists.value, ui.query, (artist) => [arti
         :to="artistRoute(artist.name)"
         artist
         :open-label="t('open_item', { name: artist.name })"
+        :play-label="t('play_item', { name: artist.name })"
+        :play-disabled="selection.busy"
+        @play="playFrom({ kind: 'artist', artist: artist.name })"
       />
     </CoverGrid>
   </CollectionGate>

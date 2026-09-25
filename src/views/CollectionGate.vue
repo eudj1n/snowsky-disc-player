@@ -59,7 +59,8 @@ const loading = computed(
       :title="t('a_little_quiet_here')"
       :text="t('collection_appears_after_adding_music')"
     />
-    <slot v-else />
+    <!-- Loaded content settles in after its skeleton. -->
+    <div v-else class="animate-content-in motion-reduce:animate-none"><slot /></div>
     <p v-if="library.truncated" class="mt-24 text-11 leading-[1.6] text-muted">
       {{ t('library_truncated', { count: 10000 }) }}
     </p>

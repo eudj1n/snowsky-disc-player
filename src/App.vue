@@ -26,9 +26,10 @@ import { setQuery, ui } from './stores/ui'
 import { handleShortcut } from './views/shortcuts'
 
 const route = useRoute()
-// A real navigation clears the search (reference hashchange handler).
+// A real navigation clears the search (reference hashchange handler); a
+// filter in the query string (genre) keeps it.
 watch(
-  () => route.fullPath,
+  () => route.path,
   () => setQuery(''),
 )
 

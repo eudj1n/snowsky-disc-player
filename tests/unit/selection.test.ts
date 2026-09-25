@@ -190,6 +190,99 @@ describe('guarded album selection', () => {
     expect(socket.sent.some((data) => data.startsWith('0101'))).toBe(false)
   })
 
+  it('plays a whole genre with type 8 and an empty album, confirmed by playerflag 8', async () => {
+    const { http: gateway, calls } = http(() => ({ rows: ROWS, total: 2 }))
+    const { socket, session } = await open((data) => (data === '02020008' ? [playing(ALBUM, 'Волны', 8)] : []))
+    const outcome = await selectSource(
+      { session, http: gateway, timeoutMs: 4000, pauseMs: 1 },
+      { kind: 'genre', genre: 'Indie' },
+    )
+    expect(outcome).toBe('playing')
+    expect(calls[0]?.type).toBe('style/song')
+    expect(calls[0]?.style).toBe('Indie')
+    expect(socket.sent.filter((data) => data.startsWith('0101'))).toEqual([
+      encodeRecord('0101', '0008{"style":"Indie", "album":""}'),
+    ])
+  })
+
+  it('selects a track in a whole genre with type 000A, confirmed by playerflag 10', async () => {
+    const { http: gateway } = http(() => ({ rows: ROWS, total: 2 }))
+    const { socket, session } = await open((data) => (data === '02020008' ? [playing(ALBUM, 'Тихий океан', 10)] : []))
+    const outcome = await selectSource(
+      { session, http: gateway, timeoutMs: 4000, pauseMs: 1 },
+      { kind: 'genre', genre: 'Indie', track: { title: 'Тихий океан', artist: 'Берег' } },
+    )
+    expect(outcome).toBe('playing')
+    expect(socket.sent.filter((data) => data.startsWith('0100'))).toEqual([encodeRecord('0100', '0001000AIndie')])
+  })
+
+  it('narrows a genre to an album with the type-8 selector', async () => {
+    const { http: gateway, calls } = http(() => ({ rows: ROWS, total: 2 }))
+    const { socket, session } = await open((data) => (data === '02020008' ? [playing(ALBUM, 'Тихий океан', 8)] : []))
+    const outcome = await selectSource(
+      { session, http: gateway, timeoutMs: 4000, pauseMs: 1 },
+      { kind: 'genreAlbum', genre: 'Indie', album: ALBUM, track: { title: 'Тихий океан', artist: 'Берег' } },
+    )
+    expect(outcome).toBe('playing')
+    expect(calls[0]?.type).toBe('style/album/song')
+    expect(socket.sent.filter((data) => data.startsWith('0100'))).toEqual([
+      encodeRecord('0100', `00010008{"style":"Indie", "album":"${ALBUM}"}`),
+    ])
+  })
+
+  it('accepts a shortened album name only when one name of the scope starts with it', async () => {
+    const albums = (names: string[]) => names.map((name) => ({ name, author: null }))
+    const run = async (names: string[]) => {
+      const impl = (_input: RequestInfo | URL, init?: RequestInit) => {
+        const headers = init?.headers as Record<string, string>
+        const rows = headers.type === 'album' ? albums(names) : ROWS
+        const start = Number(headers['start-pos'])
+        const body = JSON.stringify(rows.slice(start, start + Number(headers['num-max'])))
+        return Promise.resolve(new Response(body, { headers: { 'total-num': String(rows.length) } }))
+      }
+      const { session } = await open((data) => (data === '02020008' ? [playing('Тихий ок', 'Волны')] : []))
+      let now = 0
+      const outcome = selectAlbum(
+        {
+          session,
+          http: new GatewayHttp(impl),
+          timeoutMs: 4000,
+          confirmMs: 100,
+          now: () => now,
+          sleep: () => ((now += 50), Promise.resolve()),
+        },
+        ALBUM,
+      )
+      await vi.runAllTimersAsync()
+      return outcome
+    }
+    expect(await run([ALBUM, 'Другой'])).toBe('playing')
+    expect(await run([ALBUM, 'Тихий океан II'])).toBe('uncertain')
+  })
+
+  it('plays all of one artist with the empty-album type-7 form, confirmed by artist and playerflag 7', async () => {
+    const { http: gateway, calls } = http(() => ({ rows: ROWS, total: 2 }))
+    const { socket, session } = await open((data) => (data === '02020008' ? [playing(ALBUM, 'Волны', 7)] : []))
+    const outcome = await selectSource(
+      { session, http: gateway, timeoutMs: 4000, pauseMs: 1 },
+      { kind: 'artist', artist: 'Берег' },
+    )
+    expect(outcome).toBe('playing')
+    expect(calls[0]?.type).toBe('artist/song')
+    expect(socket.sent.filter((data) => data.startsWith('0101'))).toEqual([
+      encodeRecord('0101', '0007{"artist":"Берег", "album":""}'),
+    ])
+  })
+
+  it('refuses reserved or unscannable genre names before any read', async () => {
+    const { http: gateway, calls } = http(() => ({ rows: ROWS, total: 2 }))
+    const { session } = await open(() => [])
+    const deps = { session, http: gateway, timeoutMs: 4000 }
+    expect(await selectSource(deps, { kind: 'genre', genre: 'unknown_style' })).toBe('unavailable')
+    expect(await selectSource(deps, { kind: 'genreAlbum', genre: 'Rock "n" Roll', album: ALBUM })).toBe('unavailable')
+    expect(calls).toHaveLength(0)
+  })
+
   it('refuses a track that is ambiguous or missing in the stock order', async () => {
     const twice = [...ROWS, { name: 'Волны', author: 'Берег' }]
     const { http: gateway } = http(() => ({ rows: twice, total: 3 }))

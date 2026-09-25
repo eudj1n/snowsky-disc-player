@@ -21,6 +21,7 @@ export const ICON_PATHS = {
   volume: 'M11 4 6 8H2v8h4l5 4ZM15 8a6 6 0 0 1 0 8M18 4a11 11 0 0 1 0 16',
   // Project additions in the same 24×24 stroke style.
   muted: 'M11 4 6 8H2v8h4l5 4ZM16 9l6 6M22 9l-6 6',
+  genre: 'M3 12V4h8l10 10-8 8ZM8 8.5h.01',
   'add-music': 'M9 17V5l10-2v7M9 17a3 3 0 1 1-3-3 3 3 0 0 1 3 3ZM18 14v7M14.5 17.5h7',
   close: 'M6 6l12 12M6 18 18 6',
   arrow: 'M5 12h14m-5-5 5 5-5 5',

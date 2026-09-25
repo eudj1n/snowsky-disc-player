@@ -46,6 +46,7 @@ const label = () =>
         <RouterLink
           :to="section.path"
           :aria-current="sectionOf(route.name) === section.name ? 'page' : undefined"
+          :class="{ 'phone:hidden': 'phone' in section }"
           class="group my-3 flex w-full items-center gap-12 rounded-9 px-14 py-13 text-left font-[550] text-muted hover:bg-hover hover:text-ink aria-[current=page]:bg-selected aria-[current=page]:text-ink rail:mb-10 rail:justify-center rail:gap-0 rail:p-14 rail:text-[0px] phone:m-0 phone:w-auto phone:flex-1 phone:flex-col phone:gap-4 phone:rounded-none phone:px-4 phone:py-8 phone:text-7 phone:font-medium phone:aria-[current=page]:bg-transparent phone:aria-[current=page]:text-secondary"
         >
           <UiIcon :name="section.icon" class="group-aria-[current=page]:text-secondary phone:size-19" />

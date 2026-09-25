@@ -50,6 +50,10 @@ export const TRACKS = ALBUMS.flatMap(([album, artist, genre, songs, addedBase = 
   })),
 )
 
+// One mixed-genre album: a Soul album with a Jazz track, for genre-album scopes.
+const golden = TRACKS.find((track) => track.TITLE === 'Golden')
+if (golden) golden.GENRE = 'Jazz'
+
 export const FAVORITES = TRACKS.filter((track) => [2, 21, 43, 62].includes(track.ID))
 
 export const PLAYLISTS = [
@@ -122,12 +126,26 @@ export function catalogSource(headers) {
   if (headers.type === 'artist/album/song' && headers.album !== undefined && headers.artist !== undefined) {
     return artistAlbum(decodeURIComponent(headers.artist), decodeURIComponent(headers.album))
   }
+  if (headers.type === 'artist/song' && headers.artist !== undefined) {
+    const artist = decodeURIComponent(headers.artist)
+    return TRACKS.filter((track) => track.ARTIST === artist)
+  }
+  if (headers.type === 'style/song' && headers.style !== undefined)
+    return genre(decodeURIComponent(headers.style), null)
+  if (headers.type === 'style/album/song' && headers.style !== undefined && headers.album !== undefined) {
+    return genre(decodeURIComponent(headers.style), decodeURIComponent(headers.album))
+  }
   return null
 }
 
 /** One artist's tracks of an album title (stock type 7 membership). */
 export function artistAlbum(artist, album) {
   return TRACKS.filter((track) => track.ALBUM === album && track.ARTIST === artist)
+}
+
+/** A genre's tracks, optionally narrowed to one album title (stock type 8/10 membership). */
+export function genre(style, album) {
+  return TRACKS.filter((track) => track.GENRE === style && (album === null || track.ALBUM === album))
 }
 
 /** One page of a stock category, or null when the category is not modelled. */
