@@ -74,6 +74,7 @@ function album(title: string): Album {
       title,
       artists: [],
       trackArtists: [],
+      paths: {},
       trackCount: 0,
       addedAt: null,
     }

@@ -80,9 +80,9 @@ describe('albums', () => {
       track(4, 'Hits', 'B'),
       track(5, null, 'C'),
     ])
-    expect(albums).toEqual([
-      { title: 'Mezmerize', artists: ['SOAD'], trackArtists: ['SOAD'], trackCount: 2, addedAt: 2 },
-      { title: 'Hits', artists: ['A', 'B'], trackArtists: ['A', 'B'], trackCount: 2, addedAt: 4 },
+    expect(albums.map((album) => ({ ...album, paths: undefined }))).toEqual([
+      { title: 'Mezmerize', artists: ['SOAD'], trackArtists: ['SOAD'], paths: undefined, trackCount: 2, addedAt: 2 },
+      { title: 'Hits', artists: ['A', 'B'], trackArtists: ['A', 'B'], paths: undefined, trackCount: 2, addedAt: 4 },
     ])
   })
 
@@ -122,9 +122,9 @@ describe('album sorting', () => {
   it('orders by recent addition, title or artist with the locale collation', async () => {
     const { sortAlbums } = await import('../../src/domain/album')
     const albums = [
-      { title: 'Ёлка', artists: ['Б'], trackArtists: ['Б'], trackCount: 1, addedAt: 2 },
-      { title: 'album 10', artists: ['а'], trackArtists: ['а'], trackCount: 1, addedAt: 3 },
-      { title: 'Album 9', artists: ['В'], trackArtists: ['В'], trackCount: 1, addedAt: 1 },
+      { title: 'Ёлка', artists: ['Б'], trackArtists: ['Б'], paths: {}, trackCount: 1, addedAt: 2 },
+      { title: 'album 10', artists: ['а'], trackArtists: ['а'], paths: {}, trackCount: 1, addedAt: 3 },
+      { title: 'Album 9', artists: ['В'], trackArtists: ['В'], paths: {}, trackCount: 1, addedAt: 1 },
     ]
     expect(sortAlbums(albums, 'recent', 'ru').map((a) => a.title)).toEqual(['album 10', 'Ёлка', 'Album 9'])
     // Russian collation puts Cyrillic first; numbers compare numerically, case-insensitively.

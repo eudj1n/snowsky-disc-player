@@ -19,7 +19,7 @@ import { playerLanguage } from '../gateway/settings'
 import { adoptPlayerLanguage } from '../i18n'
 import { cacheGet, cacheSet } from '../lib/idb'
 import { http } from './connection'
-import { enrichment } from './enrichment'
+import { enrichment, wantDurations } from './enrichment'
 
 /** Same bound as the reference Library synchronization. */
 export const MAX_TRACKS = 10_000
@@ -113,6 +113,8 @@ function apply(snapshot: Omit<Snapshot, 'signature'>, source: 'player' | 'saved'
   state.playlists = snapshot.playlists
   state.truncated = (state.summary?.tracks ?? 0) > MAX_TRACKS
   state.status = 'ready'
+  // Durations the database lacks come from the files when the gateway serves media.
+  if (source === 'player') wantDurations(snapshot.tracks)
 }
 
 /**

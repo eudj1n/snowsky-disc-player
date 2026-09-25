@@ -9,6 +9,7 @@ import {
   addTracks,
   createPlaylist,
   deletePlaylist,
+  removeFavorite,
   removeTrack,
   renamePlaylist,
   type EditDeps,
@@ -69,6 +70,8 @@ export const renamePlaylistTo = (name: string, next: string) =>
   change('playlist', (deps) => renamePlaylist(deps, name, next))
 export const addToPlaylist = (playlist: string, tracks: readonly TrackKey[]) =>
   change('playlist', (deps) => addTracks(deps, playlist, tracks))
+/** Removes a track from the built-in favorites (not the playing one: that uses 0104). */
+export const removeFromFavorites = (track: TrackKey) => change('favorite', (deps) => removeFavorite(deps, track))
 export const removeFromPlaylist = (playlist: string, track: TrackKey) =>
   change('playlist', (deps) => removeTrack(deps, playlist, track))
 

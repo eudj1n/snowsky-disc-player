@@ -88,8 +88,11 @@ const labels = computed(() => ({
       :unmute-label="t('unmute')"
       :queue-label="t('open_queue')"
       :queue-expanded="ui.panel === 'queue'"
+      :lyrics-label="t('open_lyrics')"
+      :lyrics-expanded="ui.panel === 'lyrics'"
       :queue-disabled="connection.connection !== 'connected'"
       @queue="(opener) => togglePanel('queue', opener)"
+      @lyrics="(opener) => togglePanel('lyrics', opener)"
       @volume="player.onVolume"
       @mute="player.onMute"
     />

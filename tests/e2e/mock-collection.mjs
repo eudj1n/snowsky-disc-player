@@ -50,6 +50,10 @@ export const TRACKS = ALBUMS.flatMap(([album, artist, genre, songs, addedBase = 
   })),
 )
 
+// The database knows no duration for these (the media route supplies them).
+for (const track of TRACKS) if (track.ALBUM === 'Тихий океан') track.MEDIA_DURATION = track.DURATION
+for (const track of TRACKS) if (track.ALBUM === 'Тихий океан') track.DURATION = 0
+
 // One mixed-genre album: a Soul album with a Jazz track, for genre-album scopes.
 const golden = TRACKS.find((track) => track.TITLE === 'Golden')
 if (golden) golden.GENRE = 'Jazz'
@@ -212,6 +216,12 @@ export function editPlaylists(path, headers, body) {
     if (first === last && PLAYLISTS[first]) PLAYLISTS.splice(first, 1)
     return {}
   }
+  if (headers.type === 'love/song') {
+    const drop = new Set(body.map(([first]) => first))
+    const keep = FAVORITES.filter((_, index) => !drop.has(index))
+    FAVORITES.splice(0, FAVORITES.length, ...keep)
+    return {}
+  }
   if (headers.type === 'custom/song') {
     const list = PLAYLISTS[Number(headers.src_list_id)]
     if (!list) return {}
@@ -220,6 +230,49 @@ export function editPlaylists(path, headers, body) {
     return {}
   }
   return null
+}
+
+/** Albums whose files carry a cover, and tracks with lyrics (card media). */
+const COVERED = new Set(['Blue Hours', 'Inner Space', 'Afterglow'])
+const LYRICS = {
+  Weightless: {
+    source: 'sidecar',
+    text: '[00:00.00]Weightless, first line\n[00:05.00]Weightless, second line\n[00:10.00]Weightless, third line\n',
+  },
+  'Blue Hours': { source: 'embedded', text: 'Blue hours, plain line one\nBlue hours, plain line two\n' },
+}
+
+/** The gateway's media routes for the mock collection: { status, body, type, headers }. */
+export function mediaRoute(kind, path) {
+  const track = TRACKS.find((item) => item.PATH === path)
+  if (!track) return { status: 404, body: 'No such music file\n' }
+  const lyrics = LYRICS[track.TITLE]
+  const cover = COVERED.has(track.ALBUM)
+  if (kind === 'info') {
+    const info = {
+      path,
+      format: 'flac',
+      bytes: 1_000_000,
+      durationMs: track.MEDIA_DURATION ?? (track.DURATION || null),
+      sampleRate: 44100,
+      bitDepth: 16,
+      channels: 2,
+      tags: { title: track.TITLE, artist: track.ARTIST, album: track.ALBUM, genre: track.GENRE },
+      cover: cover ? 'embedded' : null,
+      lyrics: lyrics ? lyrics.source : null,
+    }
+    return { status: 200, body: JSON.stringify(info), type: 'application/json; charset=utf-8' }
+  }
+  if (kind === 'cover') return cover ? { status: 200, cover: true } : { status: 204, body: '' }
+  if (kind === 'lyrics' && lyrics) {
+    return {
+      status: 200,
+      body: lyrics.text,
+      type: 'text/plain; charset=utf-8',
+      headers: { 'X-Lyrics-Source': lyrics.source },
+    }
+  }
+  return { status: 204, body: '' }
 }
 
 /** Adds a file published by an upload to the library, as a scan would. */

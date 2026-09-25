@@ -26,5 +26,17 @@ tone 'Kestrel - Harbor' 'a Crossing.flac' 'Crossing' 1 Harbor Kestrel Jazz 494
 tone 'Kestrel - Harbor' 'b Salt.flac' 'Salt' 2 Harbor Kestrel Jazz 523
 tone 'Lumen - Night Lines' 'a Signal.flac' 'Signal' 1 'Night Lines' Lumen Jazz 587
 tone 'Lumen - Night Lines' 'b Streetlight.flac' 'Streetlight' 2 'Night Lines' Lumen Jazz 659
-find "$root" -name '*.flac' | sort
+# Lyrics: a same-stem .lrc next to Signal, an embedded LYRICS comment in Streetlight.
+printf '[00:00.00]Signal, first line\n[00:05.00]Signal, second line\n[00:10.00]Signal, third line\n' \
+  > "$root/Lumen - Night Lines/a Signal.lrc"
+rm "$root/Lumen - Night Lines/b Streetlight.flac"
+sox -n --comment 'TITLE=Streetlight' --add-comment 'TRACKNUMBER=2' --add-comment 'ALBUM=Night Lines' \
+  --add-comment 'ARTIST=Lumen' --add-comment 'GENRE=Jazz' \
+  --add-comment 'LYRICS=[00:00.00]Streetlight, embedded line' \
+  -r 44100 -c 2 -b 16 "$root/Lumen - Night Lines/b Streetlight.flac" synth 25 sine 659 vol 0.1
+find "$root" -type f | sort
 GUEST
+# Covers need Python inside the container (a folder PNG, an embedded PICTURE).
+docker cp "$(dirname "$0")/covers.py" "$container:/tmp/acceptance-covers.py"
+docker exec "$container" python3 /tmp/acceptance-covers.py "$root"
+docker exec "$container" rm -f /tmp/acceptance-covers.py

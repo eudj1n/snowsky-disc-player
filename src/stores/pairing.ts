@@ -1,28 +1,36 @@
-/** The card pairing token, kept in this browser only. Rotating or deleting
- * DISC_WEB_TOKEN on the card revokes it at the gateway. */
+/** The card pairing token (or the player's serial number where the card
+ * allows it), kept in this browser only. Rotating or deleting DISC_WEB_TOKEN,
+ * or removing DISC_WEB_SN_PAIRING, on the card revokes it at the gateway. */
 import { reactive, readonly } from 'vue'
-import { normalizeToken } from '../domain/pairing'
+import { normalizeCredential } from '../domain/pairing'
 import type { GatewaySession } from '../gateway/session'
 import { readPreference, writePreference } from '../lib/storage'
 import { activeSession, connection, onSessionOpened } from './connection'
 
 const KEY = 'disc-player.token'
-const state = reactive({ stored: normalizeToken(readPreference(KEY) ?? '') !== null, paired: false })
+/** The form admits a serial number only when the gateway reports SN pairing. */
+const stored = (): string | null => normalizeCredential(readPreference(KEY) ?? '', true)
+const state = reactive({ stored: stored() !== null, paired: false })
 export const pairing = readonly(state)
 
 function pair(session: GatewaySession): void {
-  const token = normalizeToken(readPreference(KEY) ?? '')
+  const token = stored()
   state.paired = false
   if (token && connection.identity?.compatible) {
     session.pair(token)
     state.paired = true
   }
-  session.onClose(() => (state.paired = false))
+  session.onClose((reason) => {
+    state.paired = false
+    // Refused at once: forget it, so reconnecting does not spend the gateway's
+    // attempt limit (five failures lock this address out for ten minutes).
+    if (reason === 'credential') forgetToken()
+  })
 }
 onSessionOpened(pair)
 
 export function saveToken(value: string): boolean {
-  const token = normalizeToken(value)
+  const token = normalizeCredential(value, true)
   if (!token) return false
   writePreference(KEY, token)
   state.stored = true
@@ -31,9 +39,9 @@ export function saveToken(value: string): boolean {
   return true
 }
 
-/** The stored card token for HTTP mutations (uploads). */
+/** The stored credential for HTTP mutations (uploads). */
 export function pairingToken(): string | null {
-  return normalizeToken(readPreference(KEY) ?? '')
+  return stored()
 }
 
 export function forgetToken(): void {

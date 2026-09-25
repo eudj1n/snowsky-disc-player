@@ -14,6 +14,7 @@ import {
   createPlaylistNamed,
   deletePlaylistNamed,
   playlistMessage,
+  removeFromFavorites,
   removeFromPlaylist,
   renamePlaylistTo,
   type PlaylistResult,
@@ -39,6 +40,7 @@ const TITLES = {
   delete: 'delete_playlist',
   add: 'add_to_playlist',
   remove: 'remove_from_playlist',
+  unfavorite: 'remove_from_favorites',
 } as const
 const SUBMITS = {
   create: 'create',
@@ -46,6 +48,7 @@ const SUBMITS = {
   delete: 'delete',
   add: 'add_to_playlist',
   remove: 'remove',
+  unfavorite: 'remove',
 } as const
 
 const names = computed(() => library.playlists.map((playlist) => playlist.name))
@@ -82,6 +85,8 @@ function perform(current: DeepReadonly<PlaylistDialog>): Promise<PlaylistResult>
       return addToPlaylist(choice.value, current.tracks)
     case 'remove':
       return removeFromPlaylist(current.playlist, current.track)
+    case 'unfavorite':
+      return removeFromFavorites(current.track)
   }
 }
 
@@ -108,7 +113,7 @@ async function submit(): Promise<void> {
 <template>
   <UiDialog
     :open="dialog !== null"
-    :eyebrow="t('playlists')"
+    :eyebrow="dialog?.mode === 'unfavorite' ? t('favorites') : t('playlists')"
     :close-label="t('close')"
     wide
     @close="closePlaylistDialog"
@@ -120,6 +125,9 @@ async function submit(): Promise<void> {
       </p>
       <p v-else-if="dialog.mode === 'delete'" class="mt-0 mb-16 text-12 leading-[1.6] text-secondary">
         {{ t('playlist_delete_confirm', { name: dialog.playlist }) }}
+      </p>
+      <p v-else-if="dialog.mode === 'unfavorite'" class="mt-0 mb-16 text-12 leading-[1.6] text-secondary">
+        {{ t('favorite_remove_confirm', { track: dialog.track.title }) }}
       </p>
       <p v-else-if="dialog.mode === 'remove'" class="mt-0 mb-16 text-12 leading-[1.6] text-secondary">
         {{ t('playlist_remove_confirm', { track: dialog.track.title, name: dialog.playlist }) }}
@@ -156,7 +164,9 @@ async function submit(): Promise<void> {
         </p>
       </template>
 
-      <p class="mt-0 mb-18 text-10 leading-[1.6] text-muted">{{ t('playlist_no_files') }}</p>
+      <p v-if="dialog.mode !== 'unfavorite'" class="mt-0 mb-18 text-10 leading-[1.6] text-muted">
+        {{ t('playlist_no_files') }}
+      </p>
       <p v-if="feedback" role="status" class="mt-0 mb-14 text-11 text-accent" data-testid="playlist-feedback">
         {{ feedback }}
       </p>

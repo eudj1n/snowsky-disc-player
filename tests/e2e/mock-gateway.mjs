@@ -20,8 +20,10 @@ import {
   editPlaylists,
   genre,
   indexUpload,
+  mediaRoute,
 } from './mock-collection.mjs'
 
+const busyOnce = new Set()
 const PORT = Number(process.env.MOCK_GATEWAY_PORT ?? 4870)
 const DIST = process.env.MOCK_GATEWAY_DIST ?? 'dist'
 const FIXTURES = new URL('./fixtures/', import.meta.url)
@@ -30,6 +32,9 @@ const LANGUAGE = Number(process.env.MOCK_GATEWAY_LANGUAGE ?? 9)
 // Optional latency for data reads, to see loading skeletons in development.
 const DELAY = Number(process.env.MOCK_GATEWAY_DELAY ?? 0)
 const TOKEN = process.env.MOCK_GATEWAY_TOKEN ?? 'mock-token-0123456789-abcdefghijklmnop'
+// The card of this mock enables SN pairing; the emulator's all-zero SN stands in.
+const SERIAL = '00000000000000'
+const credential = (value) => value === TOKEN || value === SERIAL
 const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'"
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -142,7 +147,14 @@ const server = createServer((request, response) => {
     return send(response, 405, 'Query strings are not accepted\n')
   }
   if (url.pathname === '/api/health') {
-    const health = { service: 'disc-native-probe', api: 1, controlActive: player.owner !== null, readOnly: false }
+    const health = {
+      service: 'disc-native-probe',
+      api: 1,
+      controlActive: player.owner !== null,
+      readOnly: false,
+      media: true,
+      snPairing: true,
+    }
     return send(response, 200, JSON.stringify(health), 'application/json')
   }
   if (url.pathname.startsWith('/api/data/')) {
@@ -157,7 +169,7 @@ const server = createServer((request, response) => {
   }
   if (url.pathname.startsWith('/api/stock/audio/tmp/sdcard/') && request.method === 'POST') {
     const path = decodeURIComponent(url.pathname.slice('/api/stock/audio'.length))
-    if (request.headers['x-disc-token'] !== TOKEN) return send(response, 403, 'Token required\n')
+    if (!credential(request.headers['x-disc-token'])) return send(response, 403, 'Token required\n')
     const id = request.headers['x-disc-request']
     if (!id || player.seen.has(id)) return send(response, 409, 'Request ID already used\n')
     player.seen.add(id)
@@ -165,6 +177,11 @@ const server = createServer((request, response) => {
     request.on('data', (chunk) => chunks.push(chunk))
     request.on('end', () => {
       const bytes = Buffer.concat(chunks).length
+      // A "Busy Once" file is refused before it is stored the first time only.
+      if (path.includes('Busy Once') && !busyOnce.has(path)) {
+        busyOnce.add(path)
+        return send(response, 503, 'Card busy\n')
+      }
       if (TRACKS.some((track) => track.PATH === path) || player.uploads.some((upload) => upload.path === path)) {
         return send(response, 409, 'File already exists; no overwrite\n')
       }
@@ -172,6 +189,15 @@ const server = createServer((request, response) => {
       send(response, 201, JSON.stringify({ path, bytes, indexed: false }), 'application/json')
     })
     return
+  }
+  if (url.pathname.startsWith('/api/media/')) {
+    if (request.method !== 'GET') return send(response, 405, 'Media routes are bodyless GET\n')
+    if (url.pathname === '/api/media/current-lyrics') return send(response, 204, '')
+    const match = /^\/api\/media\/(info|cover|lyrics)(\/.+)$/.exec(url.pathname)
+    if (!match) return send(response, 404, 'Unknown media route\n')
+    const result = mediaRoute(match[1], decodeURIComponent(match[2]))
+    if (result.cover) return send(response, 200, readFileSync(new URL('cover.png', FIXTURES)), 'image/png')
+    return send(response, result.status, result.body, result.type ?? 'text/plain; charset=utf-8', result.headers ?? {})
   }
   if (url.pathname === '/api/stock/image/cover/') {
     // Like the real gateway, the proxied body is labelled as JSON.
@@ -184,7 +210,7 @@ const server = createServer((request, response) => {
     (url.pathname === '/api/stock/add_custom_list/' && request.method === 'POST') ||
     (url.pathname === '/api/stock/song_category_tree/' && request.method === 'DELETE')
   if (playlistRoute) {
-    if (request.headers['x-disc-token'] !== TOKEN) return send(response, 403, 'Token required\n')
+    if (!credential(request.headers['x-disc-token'])) return send(response, 403, 'Token required\n')
     const id = request.headers['x-disc-request']
     if (!id || player.seen.has(id)) return send(response, 409, 'Request ID already used\n')
     player.seen.add(id)
@@ -235,7 +261,9 @@ server.on('upgrade', (request, socket, head) => {
     ws.on('message', (data) => {
       const text = data.toString()
       if (text.startsWith('token:')) {
-        session.token = text.slice(6) === TOKEN
+        session.token = credential(text.slice(6))
+        // Like the gateway: a wrong credential closes the session at once.
+        if (!session.token) ws.close(1008)
         return
       }
       if (text.startsWith('request:')) {

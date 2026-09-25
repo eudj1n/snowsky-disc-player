@@ -26,7 +26,7 @@ import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { albumRoute, artistRoute, genreRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
-import { onRowFavorite, trackRowProps } from './trackRows'
+import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
 import { playAlbumCard, playFrom } from './playAlbum'
 
 const MORE_BY_ARTISTS = 3
@@ -145,6 +145,7 @@ const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums
       @menu="(index, anchor) => items[index] && openTrackMenu(items[index], target(items[index]), anchor)"
       @play="(index) => items[index] && playFrom(target(items[index]))"
       @favorite="onRowFavorite"
+      @unfavorite="onRowUnfavorite"
     />
     <section
       v-for="shelf in searching ? [] : moreBy"

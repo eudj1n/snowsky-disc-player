@@ -14,6 +14,8 @@ import { connection } from '../stores/connection'
 import {
   addSelection,
   clearSelection,
+  removeItem,
+  retryItem,
   importFlow,
   imports,
   refreshCollection,
@@ -44,6 +46,7 @@ const limit = computed(() => sizeLabel(uploadLimit.value))
 const counts = computed(() => ({
   done: imports.items.filter((item) => item.phase === 'done').length,
   waiting: imports.items.filter((item) => item.phase === 'waiting').length,
+  present: imports.items.filter((item) => item.phase === 'exists').length,
   total: imports.items.length,
 }))
 const STEPS: MessageKey[] = ['import_step_card', 'import_step_index', 'import_step_saved']
@@ -185,7 +188,7 @@ function openNew(): void {
               :class="
                 item.phase === 'done'
                   ? 'text-secondary'
-                  : ['uncertain', 'not-sent', 'exists'].includes(item.phase)
+                  : ['uncertain', 'not-sent'].includes(item.phase)
                     ? 'text-accent'
                     : 'text-muted'
               "
@@ -197,12 +200,29 @@ function openNew(): void {
                     : ''
               }}<span class="sr-only"> {{ t(PHASE[item.phase]) }}</span></span
             >
+            <button
+              v-if="item.phase !== 'done' && item.phase !== 'sending'"
+              type="button"
+              :aria-label="`${t('import_remove_item')}: ${splitPath(item.path).name}`"
+              :title="t('import_remove_item')"
+              :disabled="imports.transferring"
+              class="inline-flex size-24 shrink-0 items-center justify-center rounded-full p-5 text-muted hover:enabled:bg-hover hover:enabled:text-ink disabled:opacity-40"
+              @click="removeItem(item.id)"
+            >
+              <UiIcon name="close" />
+            </button>
           </div>
+          <p v-if="item.phase === 'exists'" class="mt-4 mb-0 pl-25 text-10 text-muted">
+            {{ t(PHASE[item.phase]) }}
+          </p>
           <p
-            v-if="['uncertain', 'not-sent', 'exists'].includes(item.phase)"
-            class="mt-4 mb-0 pl-25 text-10 text-accent"
+            v-if="['uncertain', 'not-sent'].includes(item.phase)"
+            class="mt-4 mb-0 flex flex-wrap items-center gap-x-10 pl-25 text-10 text-accent"
           >
             {{ t(PHASE[item.phase]) }}
+            <UiTextButton class="text-10" :disabled="imports.transferring" @click="retryItem(item.id)">{{
+              t('import_retry')
+            }}</UiTextButton>
           </p>
           <div v-if="item.phase === 'sending'" class="mt-6 ml-25 h-3 overflow-hidden rounded-3 bg-progress-bg">
             <div class="h-full bg-progress-fill" :style="{ width: `${(100 * item.sent) / Math.max(1, item.size)}%` }" />
@@ -210,7 +230,10 @@ function openNew(): void {
         </li>
       </ul>
       <div class="mt-12 flex flex-wrap items-center justify-between gap-10">
-        <small class="text-10 text-muted">{{ counts.total ? t('import_batch_count', counts) : '' }}</small>
+        <small class="text-10 text-muted"
+          >{{ counts.total ? t('import_batch_count', counts) : ''
+          }}<template v-if="counts.present"> · {{ t('import_batch_present', counts) }}</template></small
+        >
         <div class="flex gap-10">
           <UiTextButton :disabled="locked || !counts.total" @click="clearSelection">{{
             t('import_clear')

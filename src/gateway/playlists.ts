@@ -245,6 +245,30 @@ export function addTracks(deps: EditDeps, playlist: string, tracks: readonly Tra
   })
 }
 
+/**
+ * Removes one track from the built-in favorites (`love/song`, delete_source 0:
+ * the file stays). Needs a catalog that admits it (service combined-006).
+ */
+export function removeFavorite(deps: EditDeps, track: TrackKey): Promise<EditOutcome> {
+  return edit(deps, async () => {
+    const members = await stable(deps.http, 'love/song')
+    const index = find(members, track)
+    const wanted = identities(members.filter((_, i) => i !== index))
+    return {
+      write: {
+        route: '/song_category_tree/',
+        method: 'DELETE',
+        headers: { type: 'love/song', delete_source: '0' },
+        body: JSON.stringify([[index, index]]),
+      },
+      recheck: async () => {
+        if (!sameRows(await catalogRows(deps.http, 'love/song', {}, MAX_ROWS), members)) throw new Changed()
+      },
+      confirm: async () => same(identities(await stable(deps.http, 'love/song')), wanted),
+    }
+  })
+}
+
 /** Removes one track from a playlist; the file stays on the card. */
 export function removeTrack(deps: EditDeps, playlist: string, track: TrackKey): Promise<EditOutcome> {
   return edit(deps, async () => {

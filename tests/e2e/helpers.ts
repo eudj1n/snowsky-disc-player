@@ -26,11 +26,15 @@ export async function openConnection(page: Page): Promise<void> {
   await expect(page.getByRole('dialog')).toBeVisible()
 }
 
+/** The pairing field; its label names the SN when the card enables SN pairing. */
+export const PAIRING_FIELD = /Pairing token|Serial number or token/
+
 export async function connectAndPair(page: Page): Promise<void> {
   await openConnection(page)
   const dialog = page.getByRole('dialog')
-  if (TOKEN && (await dialog.getByLabel('Pairing token').count())) {
-    await dialog.getByLabel('Pairing token').fill(TOKEN)
+  const field = dialog.getByLabel(PAIRING_FIELD)
+  if (TOKEN && (await field.count())) {
+    await field.fill(TOKEN)
     await dialog.getByRole('button', { name: 'Pair' }).click()
   }
   await dialog.getByRole('button', { name: 'Connect', exact: true }).click()

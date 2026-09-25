@@ -26,7 +26,7 @@ import { openTrackMenu, ui } from '../stores/ui'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { albumCardRoute, albumLines, countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
-import { onRowFavorite, trackRowProps } from './trackRows'
+import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
 import { playAlbumAction, playFrom, playAlbumCard } from './playAlbum'
 
 const router = useRouter()
@@ -134,6 +134,7 @@ const heroLines = computed<[string, string]>(() =>
               openTrackMenu(recentTracks[index], { kind: 'library', track: recentTracks[index] }, anchor)
           "
           @favorite="onRowFavorite"
+          @unfavorite="onRowUnfavorite"
         />
       </section>
       <section class="rail:hidden">

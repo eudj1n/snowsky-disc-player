@@ -13,9 +13,16 @@ defineProps<{
   unmuteLabel: string
   queueLabel: string
   queueExpanded: boolean
+  lyricsLabel: string
+  lyricsExpanded: boolean
   queueDisabled: boolean
 }>()
-const emit = defineEmits<{ queue: [opener: HTMLElement]; volume: [value: number]; mute: [] }>()
+const emit = defineEmits<{
+  queue: [opener: HTMLElement]
+  lyrics: [opener: HTMLElement]
+  volume: [value: number]
+  mute: []
+}>()
 </script>
 
 <template>
@@ -33,6 +40,15 @@ const emit = defineEmits<{ queue: [opener: HTMLElement]; volume: [value: number]
       @mute="emit('mute')"
     />
     <span class="mx-5 h-20 w-1 bg-line rail:hidden" />
+    <UiIconButton
+      icon="lyrics"
+      :label="lyricsLabel"
+      :disabled="queueDisabled"
+      aria-controls="now-panel"
+      :aria-expanded="lyricsExpanded"
+      class="aria-expanded:bg-soft aria-expanded:text-accent"
+      @click="emit('lyrics', $event.currentTarget as HTMLElement)"
+    />
     <UiIconButton
       icon="queue"
       :label="queueLabel"

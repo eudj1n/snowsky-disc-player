@@ -58,7 +58,7 @@ const status = computed(() => {
         {{ t('connect') }}
       </UiPillButton>
     </div>
-    <PairingForm :stored="pairing.stored" @save="saveToken" @forget="forgetToken" />
+    <PairingForm :stored="pairing.stored" :serial="connection.snPairing" @save="saveToken" @forget="forgetToken" />
     <p class="mt-23 text-10 leading-[1.7] text-muted">{{ t('one_control_connection') }}</p>
   </UiDialog>
 </template>

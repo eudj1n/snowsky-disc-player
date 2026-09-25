@@ -1,7 +1,7 @@
 /**
  * Adding music (reference imports.mjs, import-flow.mjs): validate the whole
- * selection, transfer files one by one (stop at the first that is not
- * confirmed), start one scan, then refresh the collection after the scan's
+ * selection, transfer files one by one (skip names already on the card, stop
+ * at the first other file that is not confirmed), start one scan, then refresh the collection after the scan's
  * observed end (owner's proposal 4; can be switched off). Each step starts
  * only on the user's action; nothing is resent.
  */
@@ -107,6 +107,26 @@ export function addSelection(picked: readonly PickedFile[], fromFolder: boolean)
   return true
 }
 
+/** Drops a file that has not arrived from the list; confirmed files stay as the batch record. */
+export function removeItem(id: number): void {
+  if (state.transferring) return
+  state.items = state.items.filter((item) => item.id !== id || item.phase === 'done')
+}
+
+/**
+ * Sends a file again at the listener's request. Safe: the gateway creates the
+ * file exclusively and never overwrites, so a file that did arrive answers
+ * "already on the card".
+ */
+export function retryItem(id: number): void {
+  if (state.transferring) return
+  const item = state.items.find((entry) => entry.id === id)
+  if (item && (item.phase === 'not-sent' || item.phase === 'uncertain')) {
+    item.phase = 'waiting'
+    item.sent = 0
+  }
+}
+
 export function clearSelection(): void {
   if (state.transferring) return
   state.items = []
@@ -136,6 +156,9 @@ export async function transferSelection(): Promise<void> {
             : outcome === 'uncertain'
               ? 'uncertain'
               : 'not-sent'
+      // A name already on the card is skipped (nothing is overwritten), so the
+      // same album folder can be dropped again: only new files travel.
+      if (item.phase === 'exists') continue
       if (item.phase !== 'done') {
         toast('import_stop_batch', true)
         break
@@ -182,9 +205,10 @@ export const importFlow = computed<{ step: 0 | 1 | 2 | 3; message: MessageKey }>
       ? { step: 3, message: 'import_flow_complete' }
       : { step: 2, message: 'import_flow_refresh_ready' }
   }
-  if (state.items.some((item) => ['uncertain', 'not-sent', 'exists'].includes(item.phase)))
+  if (state.items.some((item) => ['uncertain', 'not-sent'].includes(item.phase)))
     return { step: 0, message: 'import_flow_check' }
   if (state.items.some((item) => item.phase === 'waiting')) return { step: 0, message: 'import_flow_selected' }
   if (state.items.some((item) => item.phase === 'done')) return { step: 1, message: 'import_flow_scan_ready' }
+  if (state.items.some((item) => item.phase === 'exists')) return { step: 1, message: 'import_flow_all_present' }
   return { step: 0, message: 'import_flow_choose' }
 })

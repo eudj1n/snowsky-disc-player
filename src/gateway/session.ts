@@ -10,9 +10,18 @@
  */
 import { decodeRecord, encodeRecord, type DiscRecord } from './record'
 import { requestId as newRequestId } from './ids'
-import { TOKEN } from '../domain/pairing'
+import { SERIAL, TOKEN } from '../domain/pairing'
 
-export type CloseReason = 'client' | 'framing' | 'malformed' | 'not-admitted' | 'oversize' | 'stock-ended' | 'network'
+export type CloseReason =
+  | 'client'
+  | 'framing'
+  | 'malformed'
+  | 'not-admitted'
+  | 'credential'
+  | 'oversize'
+  | 'stock-ended'
+  | 'scanning'
+  | 'network'
 
 const CLOSE_REASONS: Record<number, CloseReason> = {
   1000: 'client',
@@ -21,6 +30,8 @@ const CLOSE_REASONS: Record<number, CloseReason> = {
   1008: 'not-admitted',
   1009: 'oversize',
   1011: 'stock-ended',
+  // Try again later: the gateway refused a mutation while stock scans the library.
+  1013: 'scanning',
 }
 
 export function closeReason(code: number): CloseReason {
@@ -55,6 +66,8 @@ export type MutationOutcome =
 
 interface Pending {
   expected: string
+  /** Sent after the credential: its reply proves the gateway accepted it. */
+  afterCredential: boolean
   resolve(record: DiscRecord): void
   reject(error: Error): void
   timer: ReturnType<typeof setTimeout>
@@ -69,6 +82,8 @@ export class GatewaySession {
   private queued = 0
   private closedReason: CloseReason | null = null
   private paired = false
+  /** From pair() until a request sent after the credential is answered. */
+  private credentialUnconfirmed = false
   private readonly recordListeners = new Set<(record: DiscRecord) => void>()
   private readonly closeListeners = new Set<(reason: CloseReason) => void>()
 
@@ -117,14 +132,18 @@ export class GatewaySession {
     return () => this.closeListeners.delete(listener)
   }
 
-  /** Sends the card pairing token once per session; mutations need it. The
-   * gateway does not acknowledge it: a wrong token closes the session with 1008
-   * at the first mutation. */
+  /** Sends the card pairing token (or the player's serial number, where the
+   * card allows it) once per session; mutations need it. The gateway does not
+   * acknowledge it: it handles frames in order and closes with 1008 at a wrong
+   * credential, so a 1008 before any later request is answered closes the
+   * session as 'credential'. */
   pair(token: string): void {
-    if (!TOKEN.test(token)) throw new RangeError('Pairing token must be 32..64 URL-safe characters')
+    if (!TOKEN.test(token) && !SERIAL.test(token))
+      throw new RangeError('Pairing needs a 32..64 character token or a serial number')
     this.assertOpen()
     this.socket.send(`token:${token}`)
     this.paired = true
+    this.credentialUnconfirmed = true
   }
 
   get isPaired(): boolean {
@@ -196,7 +215,7 @@ export class GatewaySession {
           this.retire()
         }
       }, timeoutMs)
-      this.pending = { expected, resolve, reject, timer }
+      this.pending = { expected, afterCredential: this.paired, resolve, reject, timer }
       this.socket.send(record)
     })
   }
@@ -218,6 +237,7 @@ export class GatewaySession {
     if (pending && pending.expected === record.tag) {
       this.pending = null
       clearTimeout(pending.timer)
+      if (pending.afterCredential) this.credentialUnconfirmed = false
       pending.resolve(record)
     }
     for (const listener of this.recordListeners) listener(record)
@@ -230,8 +250,9 @@ export class GatewaySession {
     }
   }
 
-  private finish(reason: CloseReason): void {
+  private finish(closed: CloseReason): void {
     if (this.closedReason !== null) return
+    const reason = closed === 'not-admitted' && this.credentialUnconfirmed ? 'credential' : closed
     this.closedReason = reason
     if (this.pending) {
       clearTimeout(this.pending.timer)

@@ -1,5 +1,15 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
-import { connectAndPair, disconnect, english, external, LANGUAGES, openConnection, TOKEN, watchErrors } from './helpers'
+import {
+  connectAndPair,
+  disconnect,
+  english,
+  external,
+  LANGUAGES,
+  openConnection,
+  TOKEN,
+  watchErrors,
+  PAIRING_FIELD,
+} from './helpers'
 
 test.describe.configure({ mode: 'serial' })
 
@@ -169,13 +179,54 @@ test('browses the saved copy while the player is unreachable and recovers', asyn
   await expect(page.getByRole('heading', { name: 'Blue Hours' })).toBeVisible()
 })
 
+test('loads covers and missing durations from the card media', async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  await page.goto('/#/albums')
+  const card = page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Inner Space' }) })
+  await expect(card.locator('canvas')).toHaveCount(1, { timeout: 15_000 })
+  // The database has no durations for this album; the files do.
+  await page.goto(
+    '/#/album/%D0%A2%D0%B8%D1%85%D0%B8%D0%B9%20%D0%BE%D0%BA%D0%B5%D0%B0%D0%BD/%D0%91%D0%B5%D1%80%D0%B5%D0%B3',
+  )
+  await expect(page.getByRole('row').first()).toContainText(/\d:\d\d/, { timeout: 15_000 })
+})
+
+test('pairs with the player serial number when the card allows it', async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  await openConnection(page)
+  const dialog = page.getByRole('dialog')
+  await expect(dialog.getByText('SN under About device')).toBeVisible()
+  await dialog.getByLabel('Serial number or token').fill('0000 0000 0000 00')
+  await dialog.getByRole('button', { name: 'Pair' }).click()
+  await expect(dialog.getByTestId('paired')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await page.goto('/#/album/Inner%20Space')
+  await page.getByRole('button', { name: 'Play Weightless' }).click()
+  await expect(page.getByRole('status').filter({ hasText: 'Done. Verified on DISC.' })).toBeVisible({ timeout: 15_000 })
+  await disconnect(page)
+})
+
+test('forgets a credential the player refuses at once', async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  await openConnection(page)
+  const dialog = page.getByRole('dialog')
+  await dialog.getByLabel('Serial number or token').fill('1111 1111 1111 11')
+  await dialog.getByRole('button', { name: 'Pair' }).click()
+  await dialog.getByRole('button', { name: 'Connect', exact: true }).click()
+  await expect(dialog.getByText('did not accept the saved token or serial number')).toBeVisible()
+  await expect(dialog.getByLabel('Serial number or token')).toBeVisible()
+})
+
 test('connects on the first Play when paired, then follows keyboard shortcuts', async ({ page }) => {
   test.skip(!TOKEN || external, 'Needs the mock collection and token')
   const errors = watchErrors(page)
   await english(page)
   await openConnection(page)
   const dialog = page.getByRole('dialog')
-  await dialog.getByLabel('Pairing token').fill(TOKEN ?? '')
+  await dialog.getByLabel(PAIRING_FIELD).fill(TOKEN ?? '')
   await dialog.getByRole('button', { name: 'Pair' }).click()
   await page.keyboard.press('Escape')
   await page.goto('/#/album/Inner%20Space')
@@ -363,6 +414,39 @@ test.describe('player controls on the mock', () => {
     await disconnect(page)
   })
 
+  test('shows the lyrics of the current track, synced with its position', async ({ page }) => {
+    await english(page)
+    await connectAndPair(page)
+    await page.goto('/#/album/Inner%20Space/Forma')
+    await page.getByRole('button', { name: 'Play Weightless' }).click()
+    await expect(page.getByTestId('track-title')).toHaveText('Weightless', { timeout: 15_000 })
+    await page.getByRole('button', { name: 'Lyrics' }).filter({ visible: true }).first().click()
+    const lyrics = page.getByTestId('lyrics')
+    await expect(lyrics.getByRole('button', { name: 'Weightless, first line' })).toBeVisible({ timeout: 15_000 })
+    await expect(lyrics.locator('[aria-current=true]')).toHaveCount(1, { timeout: 15_000 })
+    await expect(lyrics).toContainText('From the .lrc file beside the track')
+    await page.keyboard.press('Escape')
+    await disconnect(page)
+  })
+
+  test('removes a favorite that is not playing after confirmation', async ({ page }) => {
+    await english(page)
+    await connectAndPair(page)
+    await page.goto('/#/favorites')
+    const rows = page.getByRole('row')
+    await expect(rows.first()).toBeVisible()
+    const before = await rows.count()
+    const heart = page.getByRole('button', { name: /^Remove from favorites: / }).first()
+    const title = ((await heart.getAttribute('aria-label')) ?? '').replace('Remove from favorites: ', '')
+    await heart.click()
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toContainText(title)
+    await dialog.getByRole('button', { name: 'Remove', exact: true }).click()
+    await expect(dialog).toBeHidden({ timeout: 20_000 })
+    await expect(rows).toHaveCount(before - 1, { timeout: 20_000 })
+    await disconnect(page)
+  })
+
   test('a paused seek waits and confirms after playback resumes', async ({ page }) => {
     await english(page)
     await connectAndPair(page)
@@ -443,6 +527,51 @@ test.describe('player controls on the mock', () => {
     await expect(dialog.getByTestId('import-flow')).toHaveText(/collection is up to date/, { timeout: 20_000 })
     await dialog.getByRole('button', { name: 'Open New' }).click()
     await expect(page.getByRole('button', { name: `Play Fresh Tune ${tag}` })).toBeVisible()
+    await disconnect(page)
+  })
+
+  test('skips files already on the card and lets the list be trimmed', async ({ page }, info) => {
+    await english(page)
+    await connectAndPair(page)
+    const tag = `${info.project.name} ${Date.now()}`
+    const file = (name: string) => ({ name: `${name} ${tag}.flac`, mimeType: 'audio/flac', buffer: Buffer.from(name) })
+    await page.getByRole('button', { name: 'Add music' }).click()
+    const dialog = page.getByRole('dialog')
+    const picker = dialog.locator('input[type=file]:not([webkitdirectory])')
+    await picker.setInputFiles([file('A Present')])
+    await dialog.getByRole('button', { name: 'Transfer to DISC' }).click()
+    await expect(dialog.getByTestId('import-flow')).toHaveText(/confirmed files are on the card/, { timeout: 20_000 })
+
+    // The same file again, sorted first, plus a new one and one taken back out.
+    await picker.setInputFiles([file('A Present'), file('B Fresh'), file('C Dropped')])
+    await dialog.getByRole('button', { name: `Remove from the list: C Dropped ${tag}.flac` }).click()
+    await expect(dialog.getByTestId('import-files')).not.toContainText('C Dropped')
+    await dialog.getByRole('button', { name: 'Transfer to DISC' }).click()
+    await expect(dialog.getByTestId('import-flow')).toHaveText(/confirmed files are on the card/, { timeout: 20_000 })
+    const files = dialog.getByTestId('import-files')
+    await expect(files.getByRole('listitem').first()).toContainText('Already on the card: skipped')
+    await expect(files.getByRole('listitem').nth(1)).toContainText('On the memory card')
+    await expect(dialog.getByText('Already on the card: 1')).toBeVisible()
+    await page.keyboard.press('Escape')
+    await disconnect(page)
+  })
+
+  test('sends a refused file again only on request', async ({ page }, info) => {
+    await english(page)
+    await connectAndPair(page)
+    const tag = `${info.project.name} ${Date.now()}`
+    await page.getByRole('button', { name: 'Add music' }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog
+      .locator('input[type=file]:not([webkitdirectory])')
+      .setInputFiles([{ name: `Busy Once ${tag}.flac`, mimeType: 'audio/flac', buffer: Buffer.from('fLaC-busy') }])
+    await dialog.getByRole('button', { name: 'Transfer to DISC' }).click()
+    await expect(dialog.getByTestId('import-flow')).toHaveText(/Transfer stopped/, { timeout: 20_000 })
+    await expect(dialog.getByRole('button', { name: 'Transfer to DISC' })).toBeDisabled()
+    await dialog.getByRole('button', { name: 'Send again' }).click()
+    await dialog.getByRole('button', { name: 'Transfer to DISC' }).click()
+    await expect(dialog.getByTestId('import-flow')).toHaveText(/confirmed files are on the card/, { timeout: 20_000 })
+    await page.keyboard.press('Escape')
     await disconnect(page)
   })
 })

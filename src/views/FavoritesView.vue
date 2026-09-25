@@ -9,7 +9,7 @@ import { favorites, library } from '../stores/library'
 import { openTrackMenu, ui } from '../stores/ui'
 import { countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
-import { onRowFavorite, trackRowProps } from './trackRows'
+import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
 import { playFrom } from './playAlbum'
 
 const searching = computed(() => ui.query.trim() !== '')
@@ -44,6 +44,7 @@ const columns = computed(() => ({
       "
       @play="(index) => items[index] && playFrom({ kind: 'favorites', track: items[index] })"
       @favorite="onRowFavorite"
+      @unfavorite="onRowUnfavorite"
     />
   </CollectionGate>
 </template>

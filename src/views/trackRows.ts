@@ -5,12 +5,15 @@
  */
 import { computed } from 'vue'
 import { t } from '../i18n'
+import type { Track } from '../domain/track'
+import { commandCatalog } from '../stores/connection'
 import { controlsReady, toggleFavorite } from '../stores/controls'
 import { coverFor } from '../stores/enrichment'
 import { isFavorite } from '../stores/favorites'
 import { operation } from '../stores/operation'
 import { isPlaying, playback } from '../stores/playback'
 import { selection } from '../stores/selection'
+import { openPlaylistDialog } from '../stores/ui'
 import { trackAlbumRoute, trackArtistRoute } from './captions'
 
 export const trackRowProps = computed(() => ({
@@ -28,9 +31,26 @@ export const trackRowProps = computed(() => ({
     add: t('favorite_the_current_track'),
     remove: t('unfavorite_the_current_track'),
     onlyCurrent: t('favorite_only_current'),
+    removeAny: t('remove_from_favorites'),
   },
+  favoriteRemovable: favoritesRemovable.value && controlsReady.value && !operation.busy,
   favoriteDisabled: !controlsReady.value || operation.busy || typeof playback.current.favorite !== 'boolean',
 }))
+
+/** The catalog on the card admits removing favorites (love/song, service combined-006). */
+const favoritesRemovable = computed(() =>
+  Boolean(
+    commandCatalog()
+      ?.http?.find((route) => route.name === 'playlist_remove')
+      ?.headers?.type?.split('|')
+      .includes('love/song'),
+  ),
+)
+
+/** A favorite that is not playing: confirmed first, as adding it back needs it playing. */
+export const onRowUnfavorite = (track: Track): void => {
+  openPlaylistDialog({ mode: 'unfavorite', track: { ...track } })
+}
 
 /** The heart of the current row: one guarded 0104 with readback. */
 export const onRowFavorite = (): void => void toggleFavorite()

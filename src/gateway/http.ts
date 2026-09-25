@@ -7,6 +7,10 @@ export interface Health {
   api: number
   controlActive: boolean
   readOnly: boolean
+  /** The gateway serves /api/media (service combined-006 and later). */
+  media?: boolean
+  /** The card enables pairing with the player's serial number (combined-006). */
+  snPairing?: boolean
 }
 
 export interface DataResult {
@@ -34,6 +38,9 @@ const BUSY_RETRIES_MS = [400, 900]
 export class GatewayHttp {
   /** The gateway holds one stock HTTP reservation: stock requests from this page go one at a time. */
   private stockLane: Promise<unknown> = Promise.resolve()
+  /** The gateway runs at most two media reads at a time; the rest wait here. */
+  private mediaActive = 0
+  private readonly mediaWaiting: (() => void)[] = []
 
   constructor(
     private readonly fetchImpl: Fetch = (input, init) => fetch(input, init),
@@ -70,6 +77,27 @@ export class GatewayHttp {
     if (!/^[a-z][a-z0-9_]{1,40}$/.test(query)) throw new RangeError(`Invalid query name: ${query}`)
     const search = new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString()
     return this.retryBusy(() => this.json<DataResult>(`/api/data/${query}${search ? `?${search}` : ''}`))
+  }
+
+  /**
+   * One media read (/api/media/<route>), at most two at a time, repeated after
+   * a busy 503. A missing file (404), a refused path (403) and a file without
+   * the cover or lyrics asked for (204) are null.
+   */
+  async media(route: string): Promise<Response | null> {
+    while (this.mediaActive >= 2) await new Promise<void>((resume) => this.mediaWaiting.push(resume))
+    this.mediaActive++
+    try {
+      return await this.retryBusy(async () => {
+        const response = await this.fetchImpl(`/api/media${route}`, { cache: 'default' })
+        if (response.status === 404 || response.status === 403 || response.status === 204) return null
+        if (!response.ok) throw new HttpError(response.status, (await response.text()).trim())
+        return buffered(response)
+      })
+    } finally {
+      this.mediaActive--
+      this.mediaWaiting.shift()?.()
+    }
   }
 
   /** A stock read through /api/stock/<route>. Route segments are plain text and

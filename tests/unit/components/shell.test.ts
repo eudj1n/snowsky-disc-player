@@ -271,7 +271,13 @@ describe('TrackList links and header', () => {
   })
 
   it('shows a favorite heart in the gutter; only the current track can change it', async () => {
-    const labels = { favorite: 'In favorites', add: 'Add', remove: 'Remove', onlyCurrent: 'Only the playing track' }
+    const labels = {
+      favorite: 'In favorites',
+      add: 'Add',
+      remove: 'Remove',
+      onlyCurrent: 'Only the playing track',
+      removeAny: 'Remove from favorites',
+    }
     const a = track('Волны', 'Тихий океан', null)
     const b = track('Берег', 'Тихий океан', null)
     const list = mount(TrackList, {
@@ -290,6 +296,24 @@ describe('TrackList links and header', () => {
     expect(list.emitted('favorite')).toHaveLength(1)
     await list.setProps({ favoriteDisabled: true })
     expect(list.find('button[aria-label="Add"]').exists()).toBe(false)
+  })
+
+  it('offers removal of a favorite that is not playing only when the catalog admits it', async () => {
+    const labels = {
+      favorite: 'Fav',
+      add: 'Add',
+      remove: 'Remove',
+      onlyCurrent: 'Only',
+      removeAny: 'Remove from favorites',
+    }
+    const a = track('Волны', 'Тихий океан', null)
+    const list = mount(TrackList, {
+      props: { tracks: [a], favoriteLabels: labels, favoriteOf: () => true },
+    })
+    expect(list.find('button[aria-label^="Remove from favorites"]').exists()).toBe(false)
+    await list.setProps({ favoriteRemovable: true })
+    await list.get('button[aria-label^="Remove from favorites"]').trigger('click')
+    expect(list.emitted('unfavorite')?.[0]).toEqual([a])
   })
 })
 

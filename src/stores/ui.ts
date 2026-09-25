@@ -5,7 +5,7 @@ import type { Track } from '../domain/track'
 import type { MessageKey } from '../i18n'
 
 export type DialogName = 'connection' | 'appearance' | 'sound' | 'import'
-export type PanelSection = 'now' | 'queue'
+export type PanelSection = 'now' | 'lyrics' | 'queue'
 
 /** The open track actions menu: the row's track, what Play selects, and
  * where to anchor (reference openTrackMenu: right-aligned below the ⋯). */
@@ -25,6 +25,7 @@ export type PlaylistDialog =
   | { mode: 'delete'; playlist: string }
   | { mode: 'add'; tracks: Track[]; title: string }
   | { mode: 'remove'; playlist: string; track: Track }
+  | { mode: 'unfavorite'; track: Track }
 
 interface Toast {
   key: MessageKey

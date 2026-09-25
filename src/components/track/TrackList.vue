@@ -26,6 +26,8 @@ export interface FavoriteLabels {
   remove: string
   /** Why other rows cannot be changed from here. */
   onlyCurrent: string
+  /** Removing a favorite that is not playing. */
+  removeAny: string
 }
 
 const props = withDefaults(
@@ -54,6 +56,8 @@ const props = withDefaults(
     favoriteLabels?: FavoriteLabels | null
     /** The current track's favorite cannot be changed right now. */
     favoriteDisabled?: boolean
+    /** Favorites that are not playing can be removed (catalog admits love/song). */
+    favoriteRemovable?: boolean
   }>(),
   {
     lead: 'cover',
@@ -70,9 +74,15 @@ const props = withDefaults(
     favoriteOf: () => null,
     favoriteLabels: null,
     favoriteDisabled: true,
+    favoriteRemovable: false,
   },
 )
-const emit = defineEmits<{ play: [index: number]; menu: [index: number, anchor: HTMLElement]; favorite: [] }>()
+const emit = defineEmits<{
+  play: [index: number]
+  menu: [index: number, anchor: HTMLElement]
+  favorite: []
+  unfavorite: [track: Track]
+}>()
 const LINK = 'hover:text-ink hover:underline hover:underline-offset-3 focus-visible:text-ink focus-visible:underline'
 /** Shown on row hover or keyboard focus inside the row. */
 const REVEAL = 'opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100'
@@ -141,6 +151,18 @@ function contextMenu(event: MouseEvent, index: number): void {
             @click="emit('favorite')"
           >
             <UiIcon name="heart" class="size-13 phone:size-11" :filled="favoriteOf(track) === true" />
+          </button>
+          <button
+            v-else-if="favoriteOf(track) && favoriteRemovable"
+            type="button"
+            aria-pressed="true"
+            :aria-label="`${favoriteLabels.removeAny}: ${track.title}`"
+            :title="favoriteLabels.removeAny"
+            class="text-accent hover:scale-110 hover:text-accent/80"
+            :class="HEART"
+            @click="emit('unfavorite', track)"
+          >
+            <UiIcon name="heart" filled class="size-13 phone:size-11" />
           </button>
           <span v-else-if="favoriteOf(track)" class="text-accent" :class="HEART" :title="favoriteLabels.favorite">
             <UiIcon filled name="heart" class="size-13 phone:size-11" /><span class="sr-only">{{

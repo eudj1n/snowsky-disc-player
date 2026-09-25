@@ -13,6 +13,8 @@ export interface Album {
   artists: string[]
   /** Distinct literal track artists in first-seen order: the possible scopes. */
   trackArtists: string[]
+  /** A member's card path per scope (the whole title under ''), for its cover. */
+  paths: Record<string, string>
   trackCount: number
   /** Latest ADD_TIME among its tracks (seconds), for "recently added". */
   addedAt: number | null
@@ -25,13 +27,17 @@ export function groupAlbums(tracks: readonly LibraryTrack[]): Album[] {
     if (!track.album) continue
     let album = albums.get(track.album)
     if (!album) {
-      album = { title: track.album, artists: [], trackArtists: [], trackCount: 0, addedAt: null }
+      album = { title: track.album, artists: [], trackArtists: [], paths: {}, trackCount: 0, addedAt: null }
       albums.set(track.album, album)
     }
     album.trackCount++
     const credit = track.albumArtist ?? track.artist
     if (credit && !album.artists.includes(credit)) album.artists.push(credit)
     if (track.artist && !album.trackArtists.includes(track.artist)) album.trackArtists.push(track.artist)
+    if (track.path) {
+      album.paths[''] ??= track.path
+      if (track.artist) album.paths[track.artist] ??= track.path
+    }
     if (track.addedAt !== null && (album.addedAt === null || track.addedAt > album.addedAt))
       album.addedAt = track.addedAt
   }

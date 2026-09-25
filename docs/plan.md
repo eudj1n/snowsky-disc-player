@@ -334,6 +334,28 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
       `d378675b63677b13`, `da59199d06dcb558`, `fe0753a8ec469745`. Keep the
       active release and the previous one for rollback.
 
+## Combined-006 client (round 7)
+
+Built on snowsky-disc-service `1074215` (media, current lyrics, image types,
+path re-encoding, scan guard) and `d5968bb` (SN pairing, `.local` hosts, 204
+for absent covers and lyrics). Mock and unit tests pass; emulator acceptance
+of the new parts is the next step.
+
+- [x] Covers from the card for every album (embedded picture or folder
+      cover), durations from the file where stock has none, fetched two at a
+      time with covers first and negative results rechecked after a week.
+- [x] Lyrics tab in the listening panel: the track's `.lrc` or embedded
+      lyrics first, otherwise stock's converted current lyrics when their age
+      matches the track; synced lines follow playback and seek on click.
+- [x] Remove a favorite from any row (`love/song`, confirmed by readback).
+- [x] A mutation refused during a stock scan (1013) explains itself.
+- [x] Upload: names already on the card are skipped without stopping the
+      batch, any file not yet sent can be removed from the list, and an unsent
+      or unconfirmed file is sent again only on request (never overwritten).
+- [x] Pairing with the player's serial number where the card enables it
+      (`snPairing`); a credential the gateway refuses at once is forgotten, so
+      reconnecting does not spend its attempt limit.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
@@ -341,36 +363,37 @@ Capabilities the current engineering image (snowsky-disc-service
 while porting. Each needs a service change, emulator acceptance and a new
 image; card-only items (catalog or query additions) are marked as such.
 
-- [ ] **Media metadata endpoint.** Read-only, bounded reads from the card:
+- [x] **Media metadata endpoint.** Read-only, bounded reads from the card:
       FLAC STREAMINFO (duration, sample rate, bit depth, channels), embedded
       PICTURE blocks, folder `cover.jpg`/`folder.jpg`, served per path or per
       album with proper image types and cache headers. Stock fills DURATION
       only after playback (83 of 779 tracks on the owner's player) and keeps no
       artwork. Unblocks covers and durations for the whole collection.
-- [ ] **Forward stock Content-Type for image routes.** `/api/stock/image/cover/`
+- [x] **Forward stock Content-Type for image routes.** `/api/stock/image/cover/`
       is labelled `application/json` today, so the UI decodes bytes onto a
       canvas instead of using `<img>`.
-- [ ] Decide whether the page CSP should allow `img-src 'self' blob:` for
-      cached artwork, or whether the media endpoint makes that unnecessary.
+- [x] Decide whether the page CSP should allow `img-src 'self' blob:` for
+      cached artwork, or whether the media endpoint makes that unnecessary:
+      covers load as `/api/media/cover/…` under `default-src 'self'`.
 
-- [ ] **Re-encode stock paths in the proxy.** civetweb decodes the request
+- [x] **Re-encode stock paths in the proxy.** civetweb decodes the request
       path and `stock_proxy` writes it verbatim into the upstream request line,
       so `GET /dir/…/My Album/` (a space) breaks and a literal `%` is decoded
       twice; stock expects percent-encoded paths. Uploads are unaffected (the
       gateway writes decoded names). Blocks folder browsing and `/dir/` readback
       for typical album folders.
-- [ ] **Scan guard in the gateway.** The gateway admits uploads and other
+- [x] **Scan guard in the gateway.** The gateway admits uploads and other
       mutations while stock scans the card; today only the client refuses them
       (it watches `a622`/`a60a` on its own session).
-- [ ] _(card-only)_ Declare `start-pos` / `num-max` on `transfer_browse` and
+- [x] _(card-only)_ Declare `start-pos` / `num-max` on `transfer_browse` and
       `playback_browse` in the command catalog; undeclared headers are not
       forwarded, so folder listings cannot page.
-- [ ] _(card-only)_ Admit `love/song` in `playlist_remove` so a favorite can
+- [x] _(card-only)_ Admit `love/song` in `playlist_remove` so a favorite can
       be removed from any row (`DELETE` with `delete_source: 0` and `[[p,p]]`
       in fresh `love/song` order; emulator-verified in the reference, not yet
       captured on a physical player). Adding a favorite to a non-playing
       track has no known route.
-- [ ] _(card-only)_ Correct the `peq_presets` note in the query catalog: user
+- [x] _(card-only)_ Correct the `peq_presets` note in the query catalog: user
       slots are `STYLE_PRESET` 11..20; rows 160..169 hold `(null)`.
 - [ ] **Favorites for any track (research).** The stock remote protocol
       likes or unlikes only the playing track (`0104`); the player's own

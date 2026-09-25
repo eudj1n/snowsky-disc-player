@@ -8,6 +8,7 @@
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import NowPlayingDetails from '../components/player/NowPlayingDetails.vue'
+import LyricsView from '../components/player/LyricsView.vue'
 import QueueRows from '../components/player/QueueRows.vue'
 import { t } from '../i18n'
 import { connection } from '../stores/connection'
@@ -17,6 +18,7 @@ import { observations } from '../stores/observations'
 import { operation } from '../stores/operation'
 import { isPlaying, playback } from '../stores/playback'
 import { loadQueue, queue } from '../stores/queue'
+import { lyrics } from '../stores/lyrics'
 import { closePanel, showPanelSection, ui } from '../stores/ui'
 import UiIconButton from '../ui/UiIconButton.vue'
 import { usePlaybackContext } from './usePlaybackContext'
@@ -47,6 +49,21 @@ const labels = computed(() => ({
   format: t('format_from_filename'),
   playingFrom: t('playing_from'),
 }))
+const lyricsMessage = computed(() => {
+  if (!playback.current.track) return t('lyrics_idle')
+  if (lyrics.status === 'loading') return t('lyrics_loading')
+  if (lyrics.status === 'unavailable') return t('lyrics_unavailable')
+  return t('lyrics_none')
+})
+const lyricsSource = computed(() =>
+  lyrics.source === 'sidecar'
+    ? t('lyrics_source_sidecar')
+    : lyrics.source === 'embedded'
+      ? t('lyrics_source_embedded')
+      : lyrics.source === 'player'
+        ? t('lyrics_source_player')
+        : null,
+)
 const queueHint = computed(() => {
   if (connection.connection !== 'connected') return t('connect_your_disc')
   if (queue.status === 'loading') return t('reading_the_queue')
@@ -96,14 +113,14 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
     </div>
     <div class="mx-24 mb-20 flex shrink-0 gap-4 rounded-24 border border-line p-4 phone:mb-16" role="group">
       <button
-        v-for="section in ['now', 'queue'] as const"
+        v-for="section in ['now', 'lyrics', 'queue'] as const"
         :key="section"
         type="button"
         :aria-pressed="ui.panel === section"
         class="flex-1 rounded-20 px-12 py-9 text-12 text-muted aria-pressed:bg-paper aria-pressed:text-ink aria-pressed:shadow-[0_1px_5px_#0001]"
         @click="showPanelSection(section)"
       >
-        {{ t(section === 'now' ? 'now_playing' : 'queue') }}
+        {{ t(section === 'now' ? 'now_playing' : section === 'lyrics' ? 'lyrics_tab' : 'queue') }}
       </button>
     </div>
     <div
@@ -136,6 +153,24 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         @navigate="onNavigate"
       />
     </div>
+    <template v-else-if="ui.panel === 'lyrics'">
+      <div class="shrink-0 px-24 pb-10">
+        <span class="text-9 font-[650] tracking-[1.8px] text-muted uppercase">{{ t('lyrics_tab') }}</span>
+        <h2 class="mt-6 mb-0 truncate text-24 font-bold tracking-[-0.8px]">
+          {{ playback.current.track?.title ?? t('lyrics_tab') }}
+        </h2>
+        <p class="mt-2 mb-0 truncate text-11 text-muted">{{ playback.current.track?.artist ?? '' }}</p>
+      </div>
+      <LyricsView
+        :lyrics="lyrics.lyrics"
+        :position-ms="observations.positionMs"
+        :message="lyricsMessage"
+        :source="lyricsSource"
+        :seek-label="t('lyrics_seek')"
+        :seekable="!player.seekDisabled.value"
+        @seek="(ms) => player.identity.value && player.onSeek(Math.floor(ms / 1000), player.identity.value)"
+      />
+    </template>
     <div v-else class="min-h-0 flex-1 [scrollbar-width:thin] overflow-auto overscroll-contain px-24 pb-28">
       <div class="flex items-end justify-between">
         <div>

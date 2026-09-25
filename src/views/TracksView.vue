@@ -13,7 +13,7 @@ import { openTrackMenu, ui } from '../stores/ui'
 import { countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { useGenreFilter } from './genreFilter'
-import { onRowFavorite, trackRowProps } from './trackRows'
+import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
 import { playFrom } from './playAlbum'
 
 const { genre, options } = useGenreFilter()
@@ -59,6 +59,7 @@ const columns = computed(() => ({
       @menu="(index, anchor) => items[index] && openTrackMenu(items[index], target(items[index]), anchor)"
       @play="(index) => items[index] && playFrom(target(items[index]))"
       @favorite="onRowFavorite"
+      @unfavorite="onRowUnfavorite"
     />
   </CollectionGate>
 </template>

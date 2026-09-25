@@ -18,11 +18,20 @@ import { trackPlayback } from '../gateway/playback'
 import { currentVolume, socVersion } from '../gateway/settings'
 
 export type ConnectionNotice =
-  'gateway_unreachable' | 'control_busy' | 'incompatible' | 'closed_not_admitted' | 'closed_network' | 'closed_stock'
+  | 'gateway_unreachable'
+  | 'control_busy'
+  | 'incompatible'
+  | 'closed_not_admitted'
+  | 'closed_credential'
+  | 'closed_network'
+  | 'closed_stock'
+  | 'closed_scanning'
 
 const CLOSE_NOTICES: Partial<Record<CloseReason, ConnectionNotice>> = {
   'not-admitted': 'closed_not_admitted',
+  credential: 'closed_credential',
   'stock-ended': 'closed_stock',
+  scanning: 'closed_scanning',
 }
 
 export const http = new GatewayHttp()
@@ -36,6 +45,10 @@ const openedListeners = new Set<(session: GatewaySession) => void>()
 interface ConnectionModel {
   /** Whether /api/health answered; null before the first probe. */
   gateway: boolean | null
+  /** The gateway serves card media (covers, durations, lyrics). */
+  media: boolean
+  /** The card lets the player's serial number stand in for the token. */
+  snPairing: boolean
   connection: ConnectionState
   identity: PlayerIdentity | null
   /** currentVolume from the last 0501 read (0..120); null when unknown. */
@@ -45,6 +58,8 @@ interface ConnectionModel {
 
 const state = reactive<ConnectionModel>({
   gateway: null,
+  media: false,
+  snPairing: false,
   connection: 'disconnected',
   identity: null,
   volume: null,
@@ -69,8 +84,10 @@ export function onSessionOpened(listener: (session: GatewaySession) => void): vo
 /** Health and release files; no owner session. */
 export async function probeGateway(): Promise<boolean> {
   try {
-    await http.health()
+    const health = await http.health()
     state.gateway = true
+    state.media = health.media === true
+    state.snPairing = health.snPairing === true
   } catch {
     state.gateway = false
     state.notice = 'gateway_unreachable'

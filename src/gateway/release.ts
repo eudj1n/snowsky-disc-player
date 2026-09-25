@@ -33,6 +33,8 @@ export interface CatalogRoute {
   path: string
   kind: 'read' | 'mutation'
   max_body_bytes: number
+  /** Admitted header patterns (for capability checks such as favorites removal). */
+  headers?: Record<string, string>
 }
 
 export interface CommandCatalog {

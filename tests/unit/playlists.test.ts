@@ -4,6 +4,7 @@ import {
   addTracks,
   createPlaylist,
   deletePlaylist,
+  removeFavorite,
   removeTrack,
   renamePlaylist,
   toRanges,
@@ -24,6 +25,7 @@ function stock(options: { ignoreWrites?: boolean; status?: number } = {}) {
     { name: 'Road trip', members: [] },
   ]
   const writes: { path: string; method: string; headers: Record<string, string>; body: string | null }[] = []
+  const favorites: Row[] = [LIBRARY[2] as Row, LIBRARY[3] as Row]
   const handle = (input: RequestInfo | URL, init?: RequestInit): Response => {
     const url = new URL(input instanceof Request ? input.url : input.toString(), 'http://x')
     const path = url.pathname.replace('/api/stock', '')
@@ -45,6 +47,7 @@ function stock(options: { ignoreWrites?: boolean; status?: number } = {}) {
           for (const [first, last] of body) list?.members.push(...LIBRARY.slice(first, last + 1))
         }
         if (path === '/song_category_tree/' && headers.type === 'custom') lists.splice(body[0]?.[0] ?? -1, 1)
+        if (path === '/song_category_tree/' && headers.type === 'love/song') favorites.splice(body[0]?.[0] ?? -1, 1)
         if (path === '/song_category_tree/' && headers.type === 'custom/song') {
           const list = lists[Number(headers.src_list_id)]
           if (list) list.members = list.members.filter((_, index) => index !== body[0]?.[0])
@@ -57,14 +60,16 @@ function stock(options: { ignoreWrites?: boolean; status?: number } = {}) {
         ? lists.map((list, pos) => ({ pos, name: list.name, author: '', count: list.members.length }))
         : headers.type === 'custom/song'
           ? (lists[Number(headers.src_list_id)]?.members ?? [])
-          : LIBRARY
+          : headers.type === 'love/song'
+            ? favorites
+            : LIBRARY
     const start = Number(headers['start-pos'])
     const page = rows.slice(start, start + Number(headers['num-max']))
     return new Response(JSON.stringify(page), { headers: { 'total-num': String(rows.length) } })
   }
   const impl = (input: RequestInfo | URL, init?: RequestInit) => Promise.resolve(handle(input, init))
   const deps = { http: new GatewayHttp(impl), token: 't'.repeat(43) }
-  return { lists, writes, deps }
+  return { lists, favorites, writes, deps }
 }
 
 describe('playlist ranges', () => {
@@ -116,6 +121,15 @@ describe('guarded playlist editing', () => {
     expect(await deletePlaylist(deps, 'Evening')).toBe('confirmed')
     expect(writes[1]?.body).toBe('[[0,0]]')
     expect(lists.map((list) => list.name)).toEqual(['Road trip'])
+  })
+
+  it('removes a favorite by its fresh love/song position and confirms the rest', async () => {
+    const { favorites, writes, deps } = stock()
+    expect(await removeFavorite(deps, { title: 'Still Here', artist: 'Forma' })).toBe('confirmed')
+    expect(writes[0]?.headers).toMatchObject({ type: 'love/song', delete_source: '0' })
+    expect(writes[0]?.body).toBe('[[1,1]]')
+    expect(favorites.map((row) => row.name)).toEqual(['Orbit'])
+    expect(await removeFavorite(deps, { title: 'Nope', artist: 'Forma' })).toBe('changed')
   })
 
   it('reports uncertain when the write changes nothing, and not sent when the gateway refuses', async () => {

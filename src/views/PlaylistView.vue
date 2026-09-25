@@ -16,7 +16,7 @@ import UiTextButton from '../ui/UiTextButton.vue'
 import { selection } from '../stores/selection'
 import { playFrom } from './playAlbum'
 import CollectionGate from './CollectionGate.vue'
-import { onRowFavorite, trackRowProps } from './trackRows'
+import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
 
 const route = useRoute()
 const router = useRouter()
@@ -96,6 +96,7 @@ const items = computed(() =>
           )
       "
       @favorite="onRowFavorite"
+      @unfavorite="onRowUnfavorite"
     />
   </CollectionGate>
 </template>

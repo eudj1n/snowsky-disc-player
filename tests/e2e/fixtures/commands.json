@@ -94,6 +94,23 @@
       "required_headers": [],
       "body": "raw",
       "max_body_bytes": 1073741824
+    },
+    {
+      "name": "playlist_remove",
+      "method": "DELETE",
+      "path": "/song_category_tree/",
+      "kind": "mutation",
+      "class": "playlist",
+      "headers": {
+        "type": "custom|custom/song|love/song",
+        "src_list_id": "[0-9]{1,10}",
+        "delete_source": "0"
+      },
+      "required_headers": ["type", "delete_source"],
+      "body": "json",
+      "max_body_bytes": 16384,
+      "notes": "Custom lists, their entries and favorites entries; delete_source 0 only.",
+      "evidence": "fixture"
     }
   ],
   "denied": {

@@ -127,6 +127,22 @@ describe('gateway session', () => {
     await expect(session.read('0202', 'a202')).rejects.toBeInstanceOf(Disconnected)
   })
 
+  it('tells a refused credential from a later refusal', async () => {
+    const refused = await openSession()
+    const reasons: string[] = []
+    refused.session.onClose((reason) => reasons.push(reason))
+    refused.session.pair('0'.repeat(14))
+    refused.socket.serverClose(1008)
+    expect(reasons).toEqual(['credential'])
+
+    const accepted = await openSession({ '05010008': [encodeRecord('a501', '{}')] })
+    accepted.session.onClose((reason) => reasons.push(reason))
+    accepted.session.pair('t'.repeat(43))
+    await accepted.session.read('0501', 'a501')
+    accepted.socket.serverClose(1008)
+    expect(reasons).toEqual(['credential', 'not-admitted'])
+  })
+
   it('retires on a malformed record', async () => {
     const { session, socket } = await openSession()
     socket.emit('message', { data: 'a202FFFF' })
