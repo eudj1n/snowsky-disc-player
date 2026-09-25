@@ -4,7 +4,7 @@ import CoverCard from '../components/collection/CoverCard.vue'
 import CoverCardSkeleton from '../components/collection/CoverCardSkeleton.vue'
 import CoverGrid from '../components/collection/CoverGrid.vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
-import { ALBUM_SORTS, sortAlbums } from '../domain/album'
+import { ALBUM_SORTS, sortAlbums, albumScope } from '../domain/album'
 import { filterBy } from '../domain/search'
 import { locale, t } from '../i18n'
 import { albumSort } from '../stores/preferences'
@@ -12,7 +12,7 @@ import UiChips from '../ui/UiChips.vue'
 import { albumCover } from '../stores/enrichment'
 import { albums } from '../stores/library'
 import { ui } from '../stores/ui'
-import { albumLines, albumRoute, countLine } from './captions'
+import { albumLines, albumCardRoute, countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
 
 const searching = computed(() => ui.query.trim() !== '')
@@ -45,8 +45,8 @@ const sorts = computed(() => ALBUM_SORTS.map((value) => ({ value, text: t(`sort_
         v-for="album in items"
         :key="album.title"
         :title="album.title"
-        :to="albumRoute(album.title)"
-        :cover="albumCover(album.title)"
+        :to="albumCardRoute(album)"
+        :cover="albumCover(album, albumScope(album))"
         :lines="albumLines(album)"
         :open-label="t('open_item', { name: album.title })"
       />

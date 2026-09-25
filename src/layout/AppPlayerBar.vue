@@ -1,23 +1,22 @@
 <script setup lang="ts">
 /**
- * Reference bottom player: current track, transport and timeline, output
- * and volume. Transport works once the session is connected, compatible and
- * paired; other controls wait for their milestone and stay disabled.
+ * Reference bottom player: current track and favorite, transport, modes and
+ * timeline, output and volume, queue. Shown only while a track is observed.
  */
 import { computed } from 'vue'
 import NowPlayingSummary from '../components/player/NowPlayingSummary.vue'
 import PlayerTools from '../components/player/PlayerTools.vue'
 import PlayerTransport from '../components/player/PlayerTransport.vue'
-import type { TransportAction } from '../domain/playback'
 import { t } from '../i18n'
 import { connection } from '../stores/connection'
-import { pairing } from '../stores/pairing'
-import { playback, transport } from '../stores/playback'
 import { coverFor } from '../stores/enrichment'
-import { selection } from '../stores/selection'
-import { toast, togglePanel, ui } from '../stores/ui'
+import { observations } from '../stores/observations'
+import { playback } from '../stores/playback'
+import { togglePanel, ui } from '../stores/ui'
+import { usePlayerControls } from './usePlayerControls'
 
-const track = computed(() => playback.current.track)
+const player = usePlayerControls()
+const track = player.track
 const title = computed(() => track.value?.title ?? t('your_music_awaits'))
 const subtitle = computed(
   () => track.value?.artist ?? t(connection.connection === 'connected' ? 'choose_an_album' : 'connect_your_disc'),
@@ -31,30 +30,6 @@ const labels = computed(() => ({
   repeat: t('repeat_queue'),
   seek: t('seek_position'),
 }))
-const volume = computed(() => connection.volume)
-// Reference rule: transport needs a ready player, no request in flight and a
-// current track. Unpaired clicks explain pairing instead of doing nothing.
-const controlsDisabled = computed(
-  () =>
-    connection.connection !== 'connected' ||
-    connection.identity?.compatible !== true ||
-    playback.busy ||
-    selection.busy ||
-    !track.value,
-)
-
-async function onTransport(action: TransportAction): Promise<void> {
-  if (!pairing.paired) {
-    toast('pair_to_control')
-    return
-  }
-  if (playback.busy) {
-    toast('please_wait_for_the_current_request')
-    return
-  }
-  await transport(action)
-  if (playback.uncertain) toast('result_unconfirmed_the_command_was_not_retried', true)
-}
 </script>
 
 <template>
@@ -69,28 +44,41 @@ async function onTransport(action: TransportAction): Promise<void> {
       :subtitle="subtitle"
       :artwork-title="track?.title ?? null"
       :cover="track ? coverFor(track) : null"
-      :favorite-label="t('favorite_the_current_track')"
+      :favorite-label="player.favoriteLabel.value"
       :favorite="playback.current.favorite"
-      favorite-disabled
+      :favorite-disabled="player.favoriteDisabled.value"
       @open="(opener) => togglePanel('now', opener)"
+      @favorite="player.onFavorite"
     />
     <PlayerTransport
       :state="playback.current.state"
+      :position-ms="observations.positionMs"
       :duration-ms="track?.durationMs ?? null"
-      :controls-disabled="controlsDisabled"
-      mode-disabled
+      :identity="player.identity.value"
+      :controls-disabled="player.controlsDisabled.value"
+      :modes-disabled="player.modesDisabled.value"
+      :seek-disabled="player.seekDisabled.value"
+      :shuffle="player.shuffle.value"
+      :repeat="player.repeat.value"
       :labels="labels"
-      @transport="onTransport"
+      @transport="player.onTransport"
+      @mode="player.onMode"
+      @seek="player.onSeek"
     />
     <PlayerTools
       :output-label="t('on_disc')"
-      :volume="volume"
+      :volume="connection.volume"
+      :volume-disabled="player.volumeDisabled.value"
       :volume-label="t('disc_volume')"
-      :volume-title="volume === null ? t('volume_unknown') : t('volume_value', { value: volume })"
+      :volume-title="player.volumeTitle.value"
+      :mute-label="t('mute')"
+      :unmute-label="t('unmute')"
       :queue-label="t('open_queue')"
       :queue-expanded="ui.panel === 'queue'"
       :queue-disabled="connection.connection !== 'connected'"
       @queue="(opener) => togglePanel('queue', opener)"
+      @volume="player.onVolume"
+      @mute="player.onMute"
     />
   </section>
 </template>

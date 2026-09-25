@@ -37,9 +37,20 @@ there is no application server: the browser talks to the gateway directly.
   owner session. Connecting is needed for playback only.
 - The sidebar scrolls and drops its note on short windows so the device card
   never slides under the player.
-- No page footer; no table header rows; quiet row dividers; no entity
-  eyebrow on detail pages; the bottom player hides while nothing is
-  observed (owner's review).
+- No page footer; quiet row dividers; no entity eyebrow on detail pages;
+  the bottom player hides while nothing is observed (owner's review). Table
+  header rows are muted and appear only on Tracks and Favorites, where the
+  album column needs a name.
+- Upload confirmation: the gateway's own 201 with the same path and byte
+  count confirms a file; the reference read the folder back, which the
+  current proxy cannot do for paths with spaces.
+- Gain and DRE apply on press with readback; balance and filter keep Apply.
+  Folders can be dropped with their structure; the collection refreshes by
+  itself after an observed scan end (owner's proposals 3–5).
+- Mute from the volume icon (volume 0, earlier level remembered in the
+  browser); the stock has no mute command.
+- The current track is marked by a pulsing dot rather than an icon.
+- Album pages end with "More by" shelves of the same artist's albums.
 
 ## Invariants carried over
 

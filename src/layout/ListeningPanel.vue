@@ -9,29 +9,23 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import NowPlayingDetails from '../components/player/NowPlayingDetails.vue'
 import QueueRows from '../components/player/QueueRows.vue'
-import type { TransportAction } from '../domain/playback'
 import { t } from '../i18n'
 import { connection } from '../stores/connection'
-import { pairing } from '../stores/pairing'
-import { playback, transport } from '../stores/playback'
-import { loadQueue, queue } from '../stores/queue'
+import { selectInQueue } from '../stores/controls'
 import { coverFor } from '../stores/enrichment'
-import { selection } from '../stores/selection'
-import { closePanel, showPanelSection, toast, ui } from '../stores/ui'
+import { observations } from '../stores/observations'
+import { operation } from '../stores/operation'
+import { isPlaying, playback } from '../stores/playback'
+import { loadQueue, queue } from '../stores/queue'
+import { closePanel, showPanelSection, ui } from '../stores/ui'
 import UiIconButton from '../ui/UiIconButton.vue'
+import { usePlayerControls } from './usePlayerControls'
 
+const player = usePlayerControls()
 const close = ref<InstanceType<typeof UiIconButton> | null>(null)
 const items = computed(() => queue.items.map((row) => ({ title: row.name, artist: row.author })))
 const status = computed(() =>
   connection.connection === 'connected' ? t(`playback_${playback.current.state}`) : t('disconnected'),
-)
-const controlsDisabled = computed(
-  () =>
-    connection.connection !== 'connected' ||
-    connection.identity?.compatible !== true ||
-    playback.busy ||
-    selection.busy ||
-    !playback.current.track,
 )
 const labels = computed(() => ({
   title: t('your_music_awaits'),
@@ -41,27 +35,23 @@ const labels = computed(() => ({
   pause: t('pause'),
   next: t('next_track'),
   repeat: t('repeat_queue'),
-  favorite: t('favorite_the_current_track'),
+  favorite: t('favorite_track'),
   seek: t('seek_position'),
   volume: t('player_volume'),
+  volumeTitle: player.volumeTitle.value,
+  mute: t('mute'),
+  unmute: t('unmute'),
   output: t('audio_plays_on_your_disc'),
   format: t('format_from_filename'),
 }))
 const queueHint = computed(() => {
+  if (connection.connection !== 'connected') return t('connect_your_disc')
   if (queue.status === 'loading') return t('reading_the_queue')
   if (queue.status === 'failed') return t('queue_unavailable')
+  if (queue.status === 'ready' && !queue.items.length) return t('choose_an_album_to_get_started')
   if (queue.status === 'ready') return t('track_count', { count: queue.items.length })
   return ''
 })
-
-async function onTransport(action: TransportAction): Promise<void> {
-  if (!pairing.paired) {
-    toast('pair_to_control')
-    return
-  }
-  await transport(action)
-  if (playback.uncertain) toast('result_unconfirmed_the_command_was_not_retried', true)
-}
 
 function onKeydown(event: KeyboardEvent): void {
   if (event.key === 'Escape' && ui.panel && !document.querySelector('dialog[open]')) closePanel(true)
@@ -121,10 +111,24 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         :playback="playback.current"
         :cover="playback.current.track ? coverFor(playback.current.track) : null"
         :status="status"
-        :controls-disabled="controlsDisabled"
+        :position-ms="observations.positionMs"
+        :identity="player.identity.value"
+        :seek-feedback="player.seekFeedback.value"
+        :controls-disabled="player.controlsDisabled.value"
+        :modes-disabled="player.modesDisabled.value"
+        :seek-disabled="player.seekDisabled.value"
+        :favorite-disabled="player.favoriteDisabled.value"
+        :shuffle="player.shuffle.value"
+        :repeat="player.repeat.value"
         :volume="connection.volume"
+        :volume-disabled="player.volumeDisabled.value"
         :labels="labels"
-        @transport="onTransport"
+        @transport="player.onTransport"
+        @mode="player.onMode"
+        @seek="player.onSeek"
+        @favorite="player.onFavorite"
+        @volume="player.onVolume"
+        @mute="player.onMute"
         @navigate="onNavigate"
       />
     </div>
@@ -145,7 +149,14 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
       <p v-if="queue.status === 'ready'" class="mt-0 mb-14 text-10 leading-[1.6] text-muted">
         {{ t('queue_snapshot_note') }}
       </p>
-      <QueueRows :items="items" :current="queue.current" />
+      <QueueRows
+        :items="items"
+        :current="queue.current"
+        :playing="isPlaying"
+        :select-label="t('select_in_queue')"
+        :disabled="!player.ready.value || operation.busy || queue.status !== 'ready'"
+        @select="(index) => selectInQueue(queue.items, index)"
+      />
     </div>
   </aside>
 </template>

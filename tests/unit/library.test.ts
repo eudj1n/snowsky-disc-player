@@ -81,13 +81,35 @@ describe('albums', () => {
       track(5, null, 'C'),
     ])
     expect(albums).toEqual([
-      { title: 'Mezmerize', artists: ['SOAD'], trackCount: 2, addedAt: 2 },
-      { title: 'Hits', artists: ['A', 'B'], trackCount: 2, addedAt: 4 },
+      { title: 'Mezmerize', artists: ['SOAD'], trackArtists: ['SOAD'], trackCount: 2, addedAt: 2 },
+      { title: 'Hits', artists: ['A', 'B'], trackArtists: ['A', 'B'], trackCount: 2, addedAt: 4 },
     ])
   })
 
-  it('prefers the album artist credit when present', () => {
-    expect(groupAlbums([track(1, 'X', 'Guest', 1, 'Main')])[0]?.artists).toEqual(['Main'])
+  it('prefers the album artist credit when present, but scopes by the literal track artist', () => {
+    const [album] = groupAlbums([track(1, 'X', 'Guest', 1, 'Main')])
+    expect(album?.artists).toEqual(['Main'])
+    expect(album?.trackArtists).toEqual(['Guest'])
+  })
+
+  it('keeps releases that share a title apart through the artist scope', async () => {
+    const { albumScope, albumTracks, albumsBy } = await import('../../src/domain/album')
+    const tracks = [
+      track(1, 'Silhouette', 'A', 1),
+      track(2, 'Silhouette', 'B', 2),
+      track(3, 'Silhouette', 'A', 3),
+      track(4, 'Second', 'A', 9),
+      track(5, 'First', 'A', 5),
+      track(6, 'Other', 'B', 4),
+    ]
+    const albums = groupAlbums(tracks)
+    const byTitle = (title: string) => albums.filter((album) => album.title === title)
+    expect(byTitle('Silhouette').map(albumScope)).toEqual([null])
+    expect(byTitle('Second').map(albumScope)).toEqual(['A'])
+    expect(albumTracks(tracks, 'Silhouette', 'A').map((t) => t.id)).toEqual([1, 3])
+    expect(albumTracks(tracks, 'Silhouette', null).map((t) => t.id)).toEqual([1, 2, 3])
+    expect(albumsBy(albums, 'A', 'Silhouette').map((a) => a.title)).toEqual(['Second', 'First'])
+    expect(albumsBy(albums, 'B', 'Silhouette').map((a) => a.title)).toEqual(['Other'])
   })
 
   it('orders recent albums by the latest addition', () => {
@@ -100,9 +122,9 @@ describe('album sorting', () => {
   it('orders by recent addition, title or artist with the locale collation', async () => {
     const { sortAlbums } = await import('../../src/domain/album')
     const albums = [
-      { title: 'Ёлка', artists: ['Б'], trackCount: 1, addedAt: 2 },
-      { title: 'album 10', artists: ['а'], trackCount: 1, addedAt: 3 },
-      { title: 'Album 9', artists: ['В'], trackCount: 1, addedAt: 1 },
+      { title: 'Ёлка', artists: ['Б'], trackArtists: ['Б'], trackCount: 1, addedAt: 2 },
+      { title: 'album 10', artists: ['а'], trackArtists: ['а'], trackCount: 1, addedAt: 3 },
+      { title: 'Album 9', artists: ['В'], trackArtists: ['В'], trackCount: 1, addedAt: 1 },
     ]
     expect(sortAlbums(albums, 'recent', 'ru').map((a) => a.title)).toEqual(['album 10', 'Ёлка', 'Album 9'])
     // Russian collation puts Cyrillic first; numbers compare numerically, case-insensitively.

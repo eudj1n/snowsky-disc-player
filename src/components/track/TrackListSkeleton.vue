@@ -1,19 +1,26 @@
 <script setup lang="ts">
 /** Loading placeholder with the exact geometry of TrackList rows. */
 import UiSkeleton from '../../ui/UiSkeleton.vue'
-import { ROW_DIVIDER, TRACK_ROW, trackColumns } from './trackGrid'
+import TrackListHeader from './TrackListHeader.vue'
+import { ROW_DIVIDER, TRACK_ROW, trackColumns, type TrackColumnLabels } from './trackGrid'
 
-withDefaults(defineProps<{ rows: number; album?: boolean; duration?: boolean; actions?: boolean }>(), {
-  album: true,
-  duration: false,
-  actions: false,
-})
+withDefaults(
+  defineProps<{
+    rows: number
+    album?: boolean
+    duration?: boolean
+    actions?: boolean
+    header?: TrackColumnLabels | null
+  }>(),
+  { album: true, duration: false, actions: false, header: null },
+)
 // Varied bar widths read as text rather than a striped block.
 const WIDTHS = ['w-[62%]', 'w-[48%]', 'w-[71%]', 'w-[55%]', 'w-[66%]', 'w-[43%]'] as const
 </script>
 
 <template>
   <div aria-hidden="true">
+    <TrackListHeader v-if="header" :labels="header" :album="album" :duration="duration" :actions="actions" />
     <div
       v-for="row in rows"
       :key="row"

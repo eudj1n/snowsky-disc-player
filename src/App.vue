@@ -13,7 +13,9 @@ import AppSidebar from './layout/AppSidebar.vue'
 import AppToast from './layout/AppToast.vue'
 import AppTopbar from './layout/AppTopbar.vue'
 import ConnectionDialog from './layout/ConnectionDialog.vue'
+import ImportDialog from './layout/ImportDialog.vue'
 import ListeningPanel from './layout/ListeningPanel.vue'
+import SoundDialog from './layout/SoundDialog.vue'
 import TrackMenuDialog from './layout/TrackMenuDialog.vue'
 import './stores/appearance'
 import { probeGateway } from './stores/connection'
@@ -73,5 +75,7 @@ watchEffect(() => {
   <ConnectionDialog />
   <AppearanceDialog />
   <TrackMenuDialog />
+  <SoundDialog />
+  <ImportDialog />
   <AppToast />
 </template>

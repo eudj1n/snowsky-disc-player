@@ -11,18 +11,18 @@ import CoverRow from '../components/collection/CoverRow.vue'
 import SectionHeading from '../components/common/SectionHeading.vue'
 import HomeIntro from '../components/home/HomeIntro.vue'
 import TrackTiles from '../components/track/TrackTiles.vue'
-import { recentAlbums } from '../domain/album'
-import { recentlyAdded, type LibraryTrack } from '../domain/track'
+import { recentAlbums, albumScope } from '../domain/album'
+import { recentlyAdded, type LibraryTrack, type Track } from '../domain/track'
 import { t } from '../i18n'
 import { albumCover, coverFor } from '../stores/enrichment'
 import { albums, loadRecentlyPlayed, tracks } from '../stores/library'
-import { playback } from '../stores/playback'
+import { isPlaying, playback } from '../stores/playback'
 import { selection } from '../stores/selection'
 import { openTrackMenu, ui } from '../stores/ui'
 import { filterBy } from '../domain/search'
 import UiSkeleton from '../ui/UiSkeleton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumLines, albumRoute } from './captions'
+import { albumLines, albumCardRoute, albumRoute, artistRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { playFrom } from './playAlbum'
 
@@ -41,6 +41,8 @@ onMounted(async () => {
   }
 })
 const current = computed(() => playback.current.track?.path ?? null)
+const titleTo = (track: Track) => (track.album ? albumRoute(track.album, track.artist || null) : null)
+const artistTo = (track: Track) => (track.artist ? artistRoute(track.artist) : null)
 </script>
 
 <template>
@@ -68,6 +70,9 @@ const current = computed(() => playback.current.track?.path ?? null)
       :menu-label="t('track_actions')"
       :cover-of="coverFor"
       :current-path="current"
+      :playing="isPlaying"
+      :title-to="titleTo"
+      :artist-to="artistTo"
       :disabled="selection.busy"
       @play="(index) => newTracks[index] && playFrom({ kind: 'library', track: newTracks[index] })"
       @menu="
@@ -84,8 +89,8 @@ const current = computed(() => playback.current.track?.path ?? null)
         :key="album.title"
         role="listitem"
         :title="album.title"
-        :to="albumRoute(album.title)"
-        :cover="albumCover(album.title)"
+        :to="albumCardRoute(album)"
+        :cover="albumCover(album, albumScope(album))"
         :lines="albumLines(album)"
         :open-label="t('open_item', { name: album.title })"
       />
@@ -98,6 +103,9 @@ const current = computed(() => playback.current.track?.path ?? null)
         :menu-label="t('track_actions')"
         :cover-of="coverFor"
         :current-path="current"
+        :playing="isPlaying"
+        :title-to="titleTo"
+        :artist-to="artistTo"
         :disabled="selection.busy"
         @play="(index) => played[index] && playFrom({ kind: 'library', track: played[index] })"
         @menu="

@@ -4,7 +4,7 @@ import type { SelectionTarget } from '../gateway/selection'
 import type { Track } from '../domain/track'
 import type { MessageKey } from '../i18n'
 
-export type DialogName = 'connection' | 'appearance'
+export type DialogName = 'connection' | 'appearance' | 'sound' | 'import'
 export type PanelSection = 'now' | 'queue'
 
 /** The open track actions menu: the row's track, what Play selects, and

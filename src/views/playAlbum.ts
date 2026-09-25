@@ -21,4 +21,6 @@ export async function playFrom(target: SelectionTarget): Promise<void> {
   toast(key, error)
 }
 
-export const playAlbumAction = (album: string) => playFrom({ kind: 'album', album })
+/** A whole album: one artist's release when scoped, else the stock title group. */
+export const playAlbumAction = (album: string, artist: string | null = null) =>
+  playFrom(artist ? { kind: 'artistAlbum', artist, album } : { kind: 'album', album })

@@ -83,6 +83,17 @@
       "required_headers": [],
       "body": "none",
       "max_body_bytes": 0
+    },
+    {
+      "name": "upload_audio",
+      "method": "POST",
+      "path": "/audio/tmp/sdcard/([^/]+/)*[^/]+",
+      "kind": "mutation",
+      "class": "upload",
+      "headers": {},
+      "required_headers": [],
+      "body": "raw",
+      "max_body_bytes": 1073741824
     }
   ],
   "denied": {

@@ -1,35 +1,37 @@
 <script setup lang="ts">
-/** Right block of the player bar: output label, observed volume, queue. */
-import UiIcon from '../../ui/UiIcon.vue'
+/** Right block of the player bar: output label, volume, queue. */
 import UiIconButton from '../../ui/UiIconButton.vue'
+import VolumeControl from './VolumeControl.vue'
 
 defineProps<{
   outputLabel: string
   volume: number | null
+  volumeDisabled: boolean
   volumeLabel: string
   volumeTitle: string
+  muteLabel: string
+  unmuteLabel: string
   queueLabel: string
   queueExpanded: boolean
   queueDisabled: boolean
 }>()
-const emit = defineEmits<{ queue: [opener: HTMLElement] }>()
+const emit = defineEmits<{ queue: [opener: HTMLElement]; volume: [value: number]; mute: [] }>()
 </script>
 
 <template>
   <div class="flex items-center justify-end gap-10 text-muted compact:gap-7 rail:justify-center">
     <span class="mr-12 text-8 tracking-[1.2px] whitespace-nowrap compact:hidden">{{ outputLabel }}</span>
-    <span class="rail:hidden"><UiIcon name="volume" class="size-16" /></span>
-    <input
-      type="range"
-      min="0"
-      max="120"
-      :value="volume ?? 0"
-      disabled
-      :aria-label="volumeLabel"
+    <VolumeControl
+      class="w-120 compact:w-100 rail:hidden"
+      :volume="volume"
+      :disabled="volumeDisabled"
+      :label="volumeLabel"
       :title="volumeTitle"
-      class="h-3 w-73 cursor-pointer accent-progress-fill compact:w-55 rail:hidden"
+      :mute-label="muteLabel"
+      :unmute-label="unmuteLabel"
+      @change="(value) => emit('volume', value)"
+      @mute="emit('mute')"
     />
-    <output class="min-w-19 text-9 rail:hidden">{{ volume ?? '—' }}</output>
     <span class="mx-5 h-20 w-1 bg-line rail:hidden" />
     <UiIconButton
       icon="queue"

@@ -27,5 +27,16 @@ export function trackColumns(album: boolean, duration: boolean, actions = false)
   return COLUMNS[actions ? (`${base}+actions` as const) : base]
 }
 
+/** Column names of the muted header row. */
+export interface TrackColumnLabels {
+  title: string
+  album: string
+  duration: string
+}
+
+/** The muted column header row: same grid and gutters, smaller caps text. */
+export const TRACK_HEADER =
+  'grid items-center gap-13 px-12 pb-9 text-9 font-[650] tracking-[1.4px] text-muted uppercase phone:gap-9 phone:px-3'
+
 /** Quiet separators between rows (owner's request; the reference had none). */
 export const ROW_DIVIDER = 'border-t border-line/70 first:border-t-0'

@@ -14,7 +14,7 @@ defineProps<{
   favorite: boolean | null
   favoriteDisabled: boolean
 }>()
-const emit = defineEmits<{ open: [opener: HTMLElement] }>()
+const emit = defineEmits<{ open: [opener: HTMLElement]; favorite: [] }>()
 </script>
 
 <template>
@@ -41,6 +41,7 @@ const emit = defineEmits<{ open: [opener: HTMLElement] }>()
       :pressed="favorite ?? false"
       :disabled="favoriteDisabled"
       class="ml-6 rail:hidden"
+      @click="emit('favorite')"
     />
   </div>
 </template>

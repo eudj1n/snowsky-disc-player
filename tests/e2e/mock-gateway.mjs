@@ -10,7 +10,7 @@ import { createServer } from 'node:http'
 import { readFileSync, existsSync, statSync } from 'node:fs'
 import { extname, join, normalize } from 'node:path'
 import { WebSocketServer } from 'ws'
-import { FAVORITES, TRACKS, catalogPage, dataQuery } from './mock-collection.mjs'
+import { FAVORITES, PLAYLISTS, TRACKS, artistAlbum, catalogPage, dataQuery, indexUpload } from './mock-collection.mjs'
 
 const PORT = Number(process.env.MOCK_GATEWAY_PORT ?? 4870)
 const DIST = process.env.MOCK_GATEWAY_DIST ?? 'dist'
@@ -37,7 +37,20 @@ const player = {
   flag: 3,
   owner: null,
   seen: new Set(),
+  position: 42_000,
+  volume: 40,
+  mode: 0,
+  loved: new Set(),
+  sound: { gain: 0, balance: 0, filter: 1, dre: 1 },
+  uploads: [],
+  socket: null,
 }
+// Position ticks (a103) once per second while playing.
+setInterval(() => {
+  if (player.state !== 0 || !player.socket) return
+  player.position += 1000
+  player.socket.send(record('a103', player.position.toString(16).toUpperCase().padStart(8, '0')))
+}, 1000)
 
 function a202() {
   const track = player.list[player.index]
@@ -50,7 +63,12 @@ function a202() {
     pos_id: player.index + 1,
     song_duration_time: track.DURATION,
   }
-  return JSON.stringify({ state: player.state, playerflag: player.flag, love: false, song: JSON.stringify(song) })
+  return JSON.stringify({
+    state: player.state,
+    playerflag: player.flag,
+    love: player.loved.has(track.PATH),
+    song: JSON.stringify(song),
+  })
 }
 function record(tag, payload = '') {
   return tag + (8 + Buffer.byteLength(payload)).toString(16).toUpperCase().padStart(4, '0') + payload
@@ -104,6 +122,24 @@ const server = createServer((request, response) => {
     const reply = () => send(response, result.status, body, json ? 'application/json' : 'text/plain; charset=utf-8')
     return DELAY ? void setTimeout(reply, DELAY) : reply()
   }
+  if (url.pathname.startsWith('/api/stock/audio/tmp/sdcard/') && request.method === 'POST') {
+    const path = decodeURIComponent(url.pathname.slice('/api/stock/audio'.length))
+    if (request.headers['x-disc-token'] !== TOKEN) return send(response, 403, 'Token required\n')
+    const id = request.headers['x-disc-request']
+    if (!id || player.seen.has(id)) return send(response, 409, 'Request ID already used\n')
+    player.seen.add(id)
+    const chunks = []
+    request.on('data', (chunk) => chunks.push(chunk))
+    request.on('end', () => {
+      const bytes = Buffer.concat(chunks).length
+      if (TRACKS.some((track) => track.PATH === path) || player.uploads.some((upload) => upload.path === path)) {
+        return send(response, 409, 'File already exists; no overwrite\n')
+      }
+      player.uploads.push({ path, bytes })
+      send(response, 201, JSON.stringify({ path, bytes, indexed: false }), 'application/json')
+    })
+    return
+  }
   if (url.pathname === '/api/stock/image/cover/') {
     // Like the real gateway, the proxied body is labelled as JSON.
     const body = player.list[player.index] ? readFileSync(new URL('cover.png', FIXTURES)) : Buffer.alloc(0)
@@ -137,9 +173,11 @@ server.on('upgrade', (request, socket, head) => {
   }
   sockets.handleUpgrade(request, socket, head, (ws) => {
     player.owner = ws
+    player.socket = ws
     const session = { token: false, request: null }
     ws.on('close', () => {
       if (player.owner === ws) player.owner = null
+      if (player.socket === ws) player.socket = null
     })
     ws.on('message', (data) => {
       const text = data.toString()
@@ -153,9 +191,21 @@ server.on('upgrade', (request, socket, head) => {
       }
       const tag = text.slice(0, 4)
       if (tag === '0599') return ws.send(record('a599', '0306'))
-      if (tag === '0501') return ws.send(record('a501', JSON.stringify({ soc_version: 257, currentVolume: 40 })))
+      if (tag === '0501')
+        return ws.send(record('a501', JSON.stringify({ soc_version: 257, currentVolume: player.volume })))
+      if (tag === '0105') return ws.send(record('a102', player.mode.toString(16).padStart(4, '0')))
+      const hex4 = (value) => value.toString(16).toUpperCase().padStart(4, '0')
+      const SOUND_READS = { '064a': 'gain', '0712': 'balance', '0603': 'filter', '0813': 'dre' }
+      if (SOUND_READS[tag]) {
+        const name = SOUND_READS[tag]
+        const value = player.sound[name]
+        const wire = name === 'balance' ? (value > 0 ? 0x100 + value : -value) : name === 'filter' ? value + 9 : value
+        return ws.send(record('a' + tag.slice(1), hex4(wire)))
+      }
       if (tag === '0202') return ws.send(record('a202', a202()))
-      if (tag === '0201' || tag === '0101' || tag === '0100') {
+      if (
+        ['0201', '0101', '0100', '0102', '0103', '0104', '0502', '0622', '0649', '0713', '0653', '0812'].includes(tag)
+      ) {
         const id = session.request
         session.request = null
         if (!session.token || !id || player.seen.has(id)) return ws.close(1008)
@@ -166,19 +216,68 @@ server.on('upgrade', (request, socket, head) => {
           player.index = index
           player.flag = flag
           player.state = 0
+          player.position = 0
         }
         const album = (name) => TRACKS.filter((track) => track.ALBUM === name)
-        if (tag === '0101' && payload.startsWith('0003')) select(album(payload.slice(4)), 0, 3)
+        // The stock sscanf form: {"artist":"A", "album":"B"} (no escapes).
+        const scoped = (selector) => {
+          const match = /^\{"artist":"([^"\\]*)", "album":"([^"\\]*)"\}$/.exec(selector)
+          return match ? artistAlbum(match[1], match[2]) : []
+        }
+        const value = parseInt(payload.slice(0, 4), 16)
+        if (tag === '0102') {
+          player.mode = value
+          return ws.send(record('a102', payload.slice(0, 4)))
+        }
+        if (tag === '0103') {
+          player.position = Math.floor(parseInt(payload, 16) / 1000) * 1000
+          return
+        }
+        if (tag === '0104') {
+          const current = player.list[player.index]
+          if (current) {
+            if (value) player.loved.add(current.PATH)
+            else player.loved.delete(current.PATH)
+          }
+        } else if (tag === '0502') {
+          player.volume = value
+          return
+        } else if (tag === '0622') {
+          ws.send(record('a60a', '000F'))
+          setTimeout(() => ws.send(record('a622', hex4(TRACKS.length))), 300)
+          setTimeout(() => {
+            for (const upload of player.uploads.splice(0)) indexUpload(upload.path, upload.bytes)
+            ws.send(record('a622', hex4(TRACKS.length)))
+            ws.send(record('a60a', '0005'))
+          }, 900)
+          return
+        } else if (['0649', '0713', '0653', '0812'].includes(tag)) {
+          const name = { '0649': 'gain', '0713': 'balance', '0653': 'filter', '0812': 'dre' }[tag]
+          player.sound[name] =
+            name === 'balance' ? (value >> 8 ? value & 0xff : -(value & 0xff)) : name === 'filter' ? value - 9 : value
+          return
+        } else if (tag === '0101' && payload.startsWith('0003')) select(album(payload.slice(4)), 0, 3)
+        else if (tag === '0101' && payload.startsWith('0007')) select(scoped(payload.slice(4)), 0, 7)
+        else if (tag === '0101' && payload.startsWith('0005'))
+          select(PLAYLISTS[JSON.parse(payload.slice(4)).id]?.members ?? [], 0, 5)
         else if (tag === '0100') {
-          const index = parseInt(payload.slice(0, 4), 16)
+          const index = value
           const type = payload.slice(4, 8)
           if (type === '0003') select(album(payload.slice(8)), index, 3)
+          else if (type === '0007') select(scoped(payload.slice(8)), index, 7)
           else if (type === '0001') select(TRACKS, index, 1)
           else if (type === '0006') select(FAVORITES, index, 6)
+          else if (type === '0005') select(PLAYLISTS[JSON.parse(payload.slice(8)).id]?.members ?? [], index, 5)
+          else if (type === '0000') select(player.list, index, 0)
           else return ws.close(1008)
         } else if (payload === '0000') player.state = player.state === 0 ? 1 : 0
-        else if (payload === '0001') player.index = Math.min(player.index + 1, player.list.length - 1)
-        else if (payload === '0002') player.index = Math.max(player.index - 1, 0)
+        else if (payload === '0001') {
+          player.index = Math.min(player.index + 1, player.list.length - 1)
+          player.position = 0
+        } else if (payload === '0002') {
+          player.index = Math.max(player.index - 1, 0)
+          player.position = 0
+        }
         setTimeout(() => ws.send(record('a202', a202())), 50)
         return
       }

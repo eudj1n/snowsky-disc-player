@@ -10,9 +10,13 @@ import type { LibraryTrack } from '../domain/track'
 import { t } from '../i18n'
 import { coverFor } from '../stores/enrichment'
 import { library, loadPlaylistTracks } from '../stores/library'
-import { playback } from '../stores/playback'
+import { isPlaying, playback } from '../stores/playback'
 import { openTrackMenu, ui } from '../stores/ui'
+import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
+import { selection } from '../stores/selection'
+import { playFrom } from './playAlbum'
+import { trackArtistRoute, trackAlbumRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
 
 const route = useRoute()
@@ -50,17 +54,39 @@ const items = computed(() =>
           <span v-if="loading" class="inline-block h-10 w-90 animate-pulse rounded-4 bg-soft align-middle" />
           <template v-else>{{ t('track_count', { count: tracks?.length ?? 0 }) }}</template>
         </template>
+        <UiPillButton
+          icon="play"
+          :disabled="loading || !tracks?.length || !playlist || selection.busy"
+          @click="playlist && playFrom({ kind: 'playlist', name: playlist.name })"
+          >{{ t('listen_playlist') }}</UiPillButton
+        >
       </DetailHeading>
     </template>
     <template #skeleton>
       <TrackListSkeleton :rows="Math.max(1, Math.min(playlist?.trackCount ?? 6, 12))" actions />
     </template>
     <TrackList
+      :artist-to="trackArtistRoute"
+      :album-to="trackAlbumRoute"
       :tracks="items"
       :current-path="playback.current.track?.path ?? null"
+      :playing="isPlaying"
       :cover-of="coverFor"
+      :play-label="t('play_label')"
+      :disabled="selection.busy"
       :menu-label="t('track_actions')"
-      @menu="(index, anchor) => items[index] && openTrackMenu(items[index], null, anchor)"
+      @play="
+        (index) => playlist && items[index] && playFrom({ kind: 'playlist', name: playlist.name, track: items[index] })
+      "
+      @menu="
+        (index, anchor) =>
+          items[index] &&
+          openTrackMenu(
+            items[index],
+            playlist ? { kind: 'playlist', name: playlist.name, track: items[index] } : null,
+            anchor,
+          )
+      "
     />
   </CollectionGate>
 </template>

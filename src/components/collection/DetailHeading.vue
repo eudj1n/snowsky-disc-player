@@ -1,13 +1,16 @@
 <script setup lang="ts">
 /** Reference detail header: 220px sleeve, name, meta line, actions. The
- * entity type is left out: the breadcrumb already names the section. */
+ * entity type is left out: the breadcrumb already names the section. A quiet
+ * rule separates the header from the content below it. */
 import Artwork from '../artwork/Artwork.vue'
 
 withDefaults(defineProps<{ title: string; artist?: boolean; cover?: Blob | null }>(), { artist: false, cover: null })
 </script>
 
 <template>
-  <div class="mt-25 mb-30 flex items-end gap-30 rail:gap-22 phone:my-23 phone:block phone:text-center">
+  <div
+    class="mt-25 mb-26 flex items-end gap-30 border-b border-line pb-30 rail:gap-22 phone:mt-23 phone:mb-20 phone:block phone:pb-23 phone:text-center"
+  >
     <div
       class="aspect-square w-220 shrink-0 overflow-hidden shadow-[0_12px_40px_#25341515] rail:w-165 phone:mx-auto phone:mb-25 phone:w-200"
       :class="artist ? 'rounded-full' : 'rounded-12'"
@@ -20,8 +23,8 @@ withDefaults(defineProps<{ title: string; artist?: boolean; cover?: Blob | null 
       >
         {{ title }}
       </h1>
-      <p class="mt-0 mb-25 text-12 text-muted phone:mb-20 phone:text-11"><slot name="meta" /></p>
-      <div class="flex items-center gap-10 phone:justify-center"><slot /></div>
+      <p class="m-0 text-12 text-muted phone:text-11"><slot name="meta" /></p>
+      <div class="mt-25 flex items-center gap-10 empty:hidden phone:mt-20 phone:justify-center"><slot /></div>
     </div>
   </div>
 </template>

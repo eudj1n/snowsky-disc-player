@@ -15,9 +15,13 @@ const ALBUMS = [
   ['Patterns', 'Parallel Lines', 'Electronic', ['Patterns', 'Side by Side', 'In Between', 'A New Shape']],
   ['Лето внутри', 'Поля', 'Indie', ['Лето внутри', 'Вишнёвый сад', 'Там, где свет', 'По пути домой']],
   ['Daybreak', 'Sundial', 'Alternative', ['Daybreak', 'Wide Open', 'Good Things', 'Better Days']],
+  // Older additions: a second Mira Sol album that shares its title with
+  // Northline's (the stock groups albums by title), and a second Northline one.
+  ['Afterglow', 'Mira Sol', 'Jazz', ['Late Train', 'Afterglow (Reprise)'], 1_780_000_000],
+  ['Night Drive', 'Northline', 'Electronic', ['Night Drive', 'City Glow', 'Last Exit'], 1_780_100_000],
 ]
 
-export const TRACKS = ALBUMS.flatMap(([album, artist, genre, songs], a) =>
+export const TRACKS = ALBUMS.flatMap(([album, artist, genre, songs, addedBase = 1_790_000_000], a) =>
   songs.map((title, i) => ({
     ID: a * 10 + i + 1,
     PATH: `/tmp/sdcard/${artist} - ${album}/${String(i + 1).padStart(2, '0')} ${title}.flac`,
@@ -42,7 +46,7 @@ export const TRACKS = ALBUMS.flatMap(([album, artist, genre, songs], a) =>
     IS_M3U: 0,
     M3U_PATH: null,
     OFFSET: 0,
-    ADD_TIME: 1_790_000_000 + a * 1000 + i,
+    ADD_TIME: addedBase + a * 1000 + i,
   })),
 )
 
@@ -108,17 +112,32 @@ export function dataQuery(name, params, language) {
 
 /** Stock catalog sources: rows in stock order for a category. */
 export function catalogSource(headers) {
+  if (headers.type === 'custom/song') return PLAYLISTS[Number(headers.src_list_id)]?.members ?? []
   if (headers.type === 'all/song') return TRACKS
   if (headers.type === 'love/song') return FAVORITES
   if (headers.type === 'album/song' && headers.album !== undefined) {
     const album = decodeURIComponent(headers.album)
     return TRACKS.filter((track) => track.ALBUM === album)
   }
+  if (headers.type === 'artist/album/song' && headers.album !== undefined && headers.artist !== undefined) {
+    return artistAlbum(decodeURIComponent(headers.artist), decodeURIComponent(headers.album))
+  }
   return null
+}
+
+/** One artist's tracks of an album title (stock type 7 membership). */
+export function artistAlbum(artist, album) {
+  return TRACKS.filter((track) => track.ALBUM === album && track.ARTIST === artist)
 }
 
 /** One page of a stock category, or null when the category is not modelled. */
 export function catalogPage(headers, rowsOverride) {
+  if (headers.type === 'custom') {
+    const start = Number(headers['start-pos'] ?? 0)
+    const count = Number(headers['num-max'] ?? 200)
+    const lists = PLAYLISTS.map((list, pos) => ({ pos, name: list.LIST_NAME, count: list.members.length }))
+    return { rows: lists.slice(start, start + count), total: lists.length }
+  }
   const rows = rowsOverride ?? catalogSource(headers)
   if (!rows) return null
   const start = Number(headers['start-pos'] ?? 0)
@@ -127,4 +146,26 @@ export function catalogPage(headers, rowsOverride) {
     rows: rows.slice(start, start + count).map((track) => ({ name: track.TITLE, author: track.ARTIST })),
     total: rows.length,
   }
+}
+
+/** Adds a file published by an upload to the library, as a scan would. */
+export function indexUpload(path, size) {
+  const parts = path.replace('/tmp/sdcard/', '').split('/')
+  const name = parts.at(-1) ?? path
+  const album = parts.length > 1 ? parts.at(-2) : null
+  const id = Math.max(...TRACKS.map((track) => track.ID)) + 1
+  TRACKS.push({
+    ...TRACKS[0],
+    ID: id,
+    PATH: path,
+    NAME: name,
+    TITLE: name.replace(/\.[^.]+$/, ''),
+    ALBUM: album,
+    ARTIST: 'Imported',
+    ALBUM_ARTIST: 'Imported',
+    TRACK: 1,
+    DURATION: 0,
+    ADD_TIME: Math.floor(Date.now() / 1000),
+    SIZE: size,
+  })
 }

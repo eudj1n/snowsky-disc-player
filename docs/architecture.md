@@ -41,6 +41,16 @@ ID, and a fresh `0202` must show the expected source and track. Outcomes are
 retried. The queue is read the same way from `curlist/song` with a stable
 `mark-pos`.
 
+Sources: whole album or album track (type 3, the stock title group), one
+artist's release of an album title (type 7, `artist/album/song`, confirmed by
+playerflag 7 and the exact artist), library track (1), favorite (6) and
+playlist (5, its position resolved by unique name and rechecked). The stock
+groups albums by title only, so the UI keeps the literal track artist as the
+album scope in links (`#/album/<title>/<artist>`) and never infers an album
+artist; an unscoped title group with several artists offers them as filters.
+Type-7 names containing quotes or backslashes are refused before any read,
+because the stock parses that selector with `sscanf`.
+
 ## State and actions
 
 Stores are module-level `reactive` objects exposed read-only, with explicit
@@ -49,6 +59,15 @@ subscribe through `onSessionOpened` and reach it with `activeSession()`.
 Actions follow the reference Controller: one request at a time, mutations
 with a fresh request ID followed by a fresh read, uncertain outcomes surfaced
 and never retried, no automatic reconnect.
+
+`src/stores/operation.ts` holds the single operation lease: a second request
+while one runs is refused (`busy`), not queued. Each operation receives the
+session, the mutation pacer (2.1 s between mutations, counted from connect),
+a scan guard that throws once `a60a`/`a622` scan activity was observed, and an
+`attempted` marker set right before the one send. `src/stores/observations.ts`
+turns pushes into state: the `a103` position, the `a102` play mode and scan
+activity. Mute is an ordinary volume change to 0; the replaced level is a
+browser preference (`disc-player.volume-before-mute`).
 
 ## Build and serving constraints
 
@@ -70,8 +89,12 @@ and never retried, no automatic reconnect.
 ## Preferences and storage
 
 `localStorage` holds browser-only preferences: locale, appearance, the
-pairing token. Every access tolerates unavailable storage. A saved library
-snapshot for offline browsing will use IndexedDB (plan M6).
+pairing token, album sort, refresh-after-scan and the volume before mute.
+Every access tolerates unavailable storage. IndexedDB holds the collection
+snapshot keyed by the library signature and listening enrichment: durations
+and covers per track path, plus album covers per title and per title and
+artist (a title-only association is used for a scope only when the title has
+a single artist, and for a track only from the same folder).
 
 ## Testing seams
 

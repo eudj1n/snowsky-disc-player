@@ -7,16 +7,21 @@ import { filterBy } from '../domain/search'
 import { t } from '../i18n'
 import { coverFor } from '../stores/enrichment'
 import { tracks, library } from '../stores/library'
-import { playback } from '../stores/playback'
+import { isPlaying, playback } from '../stores/playback'
 import { selection } from '../stores/selection'
 import { openTrackMenu, ui } from '../stores/ui'
-import { countLine } from './captions'
+import { countLine, trackAlbumRoute, trackArtistRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { playFrom } from './playAlbum'
 
 const searching = computed(() => ui.query.trim() !== '')
 const items = computed(() => filterBy(tracks.value, ui.query, (track) => [track.title, track.artist, track.album]))
 const skeletonRows = computed(() => Math.max(1, Math.min(library.summary?.tracks ?? 10, 12)))
+const columns = computed(() => ({
+  title: t('column_title'),
+  album: t('column_album'),
+  duration: t('column_duration'),
+}))
 </script>
 
 <template>
@@ -29,11 +34,15 @@ const skeletonRows = computed(() => Math.max(1, Math.min(library.summary?.tracks
       />
     </template>
     <template #skeleton>
-      <TrackListSkeleton :rows="skeletonRows" actions />
+      <TrackListSkeleton :rows="skeletonRows" actions :header="columns" />
     </template>
     <TrackList
+      :artist-to="trackArtistRoute"
+      :album-to="trackAlbumRoute"
       :tracks="items"
+      :header="columns"
       :current-path="playback.current.track?.path ?? null"
+      :playing="isPlaying"
       :play-label="t('play_label')"
       :cover-of="coverFor"
       :disabled="selection.busy"

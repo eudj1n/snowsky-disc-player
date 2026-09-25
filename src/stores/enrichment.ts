@@ -19,32 +19,57 @@ interface EnrichmentModel {
   covers: Record<string, Blob>
   /** Album title → path of a member with a cover. */
   albumCovers: Record<string, string>
+  /** Album title scoped by a literal track artist → path of a member with a cover. */
+  scopedCovers: Record<string, string>
 }
 
-const state = reactive<EnrichmentModel>({ durations: {}, covers: {}, albumCovers: {} })
+const state = reactive<EnrichmentModel>({ durations: {}, covers: {}, albumCovers: {}, scopedCovers: {} })
 export const enrichment = readonly(state)
 
 const DURATIONS = 'enrichment:durations'
 const ALBUM_COVERS = 'enrichment:album-covers'
+const SCOPED_COVERS = 'enrichment:scoped-album-covers'
+const scopeKey = (title: string, artist: string) => JSON.stringify([title, artist])
 const coverKey = (path: string) => `cover:${path}`
 
 export async function loadEnrichment(): Promise<void> {
   state.durations = (await cacheGet<Record<string, number>>(DURATIONS)) ?? {}
   state.albumCovers = (await cacheGet<Record<string, string>>(ALBUM_COVERS)) ?? {}
-  for (const path of new Set(Object.values(state.albumCovers))) {
+  state.scopedCovers = (await cacheGet<Record<string, string>>(SCOPED_COVERS)) ?? {}
+  for (const path of new Set([...Object.values(state.albumCovers), ...Object.values(state.scopedCovers)])) {
     const blob = await cacheGet<Blob>(coverKey(path))
     if (blob) state.covers[path] = blob
   }
 }
 
-export function coverFor(track: Pick<Track, 'path' | 'album'>): Blob | null {
+const folderOf = (path: string) => path.slice(0, path.lastIndexOf('/') + 1)
+
+/**
+ * A track's own cover, else its release's: the same title and artist, or a
+ * title-only association from the same folder (never a homonymous album's).
+ */
+export function coverFor(track: Pick<Track, 'path' | 'album' | 'artist'>): Blob | null {
   if (track.path && state.covers[track.path]) return state.covers[track.path] ?? null
-  const member = track.album ? state.albumCovers[track.album] : undefined
+  if (!track.album) return null
+  const scoped = track.artist ? state.scopedCovers[scopeKey(track.album, track.artist)] : undefined
+  const legacy = state.albumCovers[track.album]
+  const member = scoped ?? (legacy && track.path && folderOf(legacy) === folderOf(track.path) ? legacy : undefined)
   return member ? (state.covers[member] ?? null) : null
 }
 
-export function albumCover(album: string): Blob | null {
-  const member = state.albumCovers[album]
+/**
+ * The cover of a title group, or of one artist's release in it. A title-only
+ * association (kept from earlier sessions) is used for a scope only when the
+ * title has a single track artist, so homonymous albums never share a cover.
+ */
+export function albumCover(
+  album: { title: string; trackArtists: readonly string[] },
+  artist: string | null = null,
+): Blob | null {
+  const member = artist
+    ? (state.scopedCovers[scopeKey(album.title, artist)] ??
+      (album.trackArtists.length <= 1 ? state.albumCovers[album.title] : undefined))
+    : state.albumCovers[album.title]
   return member ? (state.covers[member] ?? null) : null
 }
 
@@ -77,6 +102,11 @@ async function observeCover(session: GatewaySession, track: Track): Promise<void
     if (track.album && !state.albumCovers[track.album]) {
       state.albumCovers[track.album] = track.path
       await cacheSet(ALBUM_COVERS, { ...state.albumCovers })
+    }
+    const scoped = track.album && track.artist ? scopeKey(track.album, track.artist) : null
+    if (scoped && !state.scopedCovers[scoped]) {
+      state.scopedCovers[scoped] = track.path
+      await cacheSet(SCOPED_COVERS, { ...state.scopedCovers })
     }
   } catch {
     // No association without both reads; try again on the next observation.

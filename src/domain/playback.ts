@@ -4,7 +4,17 @@ import type { Track } from './track'
 export type PlaybackState = 'unknown' | 'loading' | 'playing' | 'paused'
 
 /** Reviewed stock playerflag values, in wire order. */
-export const PLAYBACK_SOURCES = ['queue', 'library', 'artist', 'album', 'folder', 'playlist', 'favorites'] as const
+export const PLAYBACK_SOURCES = [
+  'queue',
+  'library',
+  'artist',
+  'album',
+  'folder',
+  'playlist',
+  'favorites',
+  // 7: one artist's tracks of an album title (type-7 selector).
+  'artistAlbum',
+] as const
 export type PlaybackSource = (typeof PLAYBACK_SOURCES)[number]
 
 export interface Playback {

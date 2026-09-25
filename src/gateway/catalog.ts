@@ -11,6 +11,8 @@ export interface CatalogRow {
   name: string
   /** Artist credit for track rows. */
   author: string | null
+  /** Position field of group rows (custom playlists), when present. */
+  pos?: number
 }
 
 export interface CatalogPage {
@@ -20,7 +22,24 @@ export interface CatalogPage {
   mark: number | null
 }
 
-export type Category = 'all/song' | 'love/song' | 'curlist/song' | 'album' | 'album/song' | 'artist' | 'artist/song'
+export type Category =
+  | 'all/song'
+  | 'love/song'
+  | 'curlist/song'
+  | 'album'
+  | 'album/song'
+  | 'artist'
+  | 'artist/song'
+  | 'artist/album/song'
+  | 'custom'
+  | 'custom/song'
+
+export interface CatalogFilters {
+  album?: string
+  artist?: string
+  /** Playlist position for custom/song (src_list_id). */
+  listId?: number
+}
 
 const PAGE = 200
 
@@ -41,19 +60,25 @@ function row(value: unknown): CatalogRow {
     throw new SyntaxError('Catalog row must be an object')
   const record = value as Record<string, unknown>
   if (typeof record.name !== 'string') throw new SyntaxError('Catalog row needs a name')
-  return { name: record.name, author: typeof record.author === 'string' ? record.author : null }
+  const pos = typeof record.pos === 'number' && Number.isInteger(record.pos) ? record.pos : undefined
+  return {
+    name: record.name,
+    author: typeof record.author === 'string' ? record.author : null,
+    ...(pos === undefined ? {} : { pos }),
+  }
 }
 
 export async function catalogPage(
   http: GatewayHttp,
   category: Category,
-  filters: { album?: string; artist?: string },
+  filters: CatalogFilters,
   offset: number,
   limit: number,
 ): Promise<CatalogPage> {
   const headers: Record<string, string> = { type: category, 'start-pos': String(offset), 'num-max': String(limit) }
   if (filters.album !== undefined) headers.album = nameHeader(filters.album)
   if (filters.artist !== undefined) headers.artist = nameHeader(filters.artist)
+  if (filters.listId !== undefined) headers.src_list_id = String(filters.listId)
   const response = await http.stockRead('/song_category_tree/', headers)
   const body = await response.text()
   const items: unknown = body ? JSON.parse(body) : []
@@ -75,7 +100,7 @@ export async function catalogPage(
 export async function catalogRows(
   http: GatewayHttp,
   category: Category,
-  filters: { album?: string; artist?: string },
+  filters: CatalogFilters,
   maxRows = 2000,
 ): Promise<CatalogRow[]> {
   const rows: CatalogRow[] = []
@@ -95,7 +120,7 @@ export function sameRows(a: readonly CatalogRow[], b: readonly CatalogRow[]): bo
     a.length === b.length &&
     a.every((item, index) => {
       const other = b[index]
-      return other !== undefined && item.name === other.name && item.author === other.author
+      return other !== undefined && item.name === other.name && item.author === other.author && item.pos === other.pos
     })
   )
 }

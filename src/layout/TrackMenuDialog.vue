@@ -72,7 +72,15 @@ async function choose(id: string): Promise<void> {
   closeTrackMenu()
   if (!current) return
   if (id === 'play' && current.play) await playFrom(current.play)
-  if (id === 'album' && current.track.album) await router.push({ name: 'album', params: { name: current.track.album } })
+  if (id === 'album' && current.track.album) {
+    // Keep the opening scope; otherwise the track's own artist separates homonymous albums.
+    const scope = current.play?.kind === 'artistAlbum' ? current.play.artist : current.track.artist
+    await router.push(
+      scope
+        ? { name: 'album', params: { name: current.track.album, artist: scope } }
+        : { name: 'album', params: { name: current.track.album } },
+    )
+  }
   if (id === 'artist' && current.track.artist)
     await router.push({ name: 'artist', params: { name: current.track.artist } })
 }

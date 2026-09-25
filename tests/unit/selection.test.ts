@@ -3,7 +3,7 @@ import { catalogPage, nameHeader } from '../../src/gateway/catalog'
 import { GatewayHttp } from '../../src/gateway/http'
 import { encodeRecord } from '../../src/gateway/record'
 import { readQueue } from '../../src/gateway/queue'
-import { selectAlbum, selectSource } from '../../src/gateway/selection'
+import { selectAlbum, selectSource, artistAlbumSelector } from '../../src/gateway/selection'
 import { GatewaySession, type SocketLike } from '../../src/gateway/session'
 
 type Listener = (event: never) => void
@@ -137,6 +137,57 @@ describe('guarded album selection', () => {
     )
     expect(outcome).toBe('playing')
     expect(socket.sent.filter((data) => data.startsWith('0100'))).toEqual([encodeRecord('0100', `00010003${ALBUM}`)])
+  })
+
+  it("plays one artist's release of a shared title with the type-7 selector", async () => {
+    const { http: gateway, calls } = http(() => ({ rows: ROWS, total: 2 }))
+    const { socket, session } = await open((data) => (data === '02020008' ? [playing(ALBUM, 'Тихий океан', 7)] : []))
+    const outcome = await selectSource(
+      { session, http: gateway, timeoutMs: 4000, pauseMs: 1 },
+      { kind: 'artistAlbum', artist: 'Берег', album: ALBUM, track: { title: 'Тихий океан', artist: 'Берег' } },
+    )
+    expect(outcome).toBe('playing')
+    expect(calls[0]?.type).toBe('artist/album/song')
+    expect(calls[0]?.artist).toBe(nameHeader('Берег'))
+    expect(calls[0]?.album).toBe(nameHeader(ALBUM))
+    expect(socket.sent.filter((data) => data.startsWith('0100'))).toEqual([
+      encodeRecord('0100', `00010007{"artist":"Берег", "album":"${ALBUM}"}`),
+    ])
+  })
+
+  it('does not confirm a scoped release from the whole title group or another artist', async () => {
+    const { http: gateway } = http(() => ({ rows: ROWS, total: 2 }))
+    const { session } = await open((data) => (data === '02020008' ? [playing(ALBUM, 'Волны', 3)] : []))
+    let now = 0
+    const outcome = selectSource(
+      {
+        session,
+        http: gateway,
+        timeoutMs: 4000,
+        confirmMs: 100,
+        now: () => now,
+        sleep: () => ((now += 50), Promise.resolve()),
+      },
+      { kind: 'artistAlbum', artist: 'Берег', album: ALBUM },
+    )
+    await vi.runAllTimersAsync()
+    expect(await outcome).toBe('uncertain')
+  })
+
+  it('refuses type-7 names the stock sscanf cannot carry, before any read', async () => {
+    expect(artistAlbumSelector('A "B"', 'X')).toBeNull()
+    expect(artistAlbumSelector('A', 'back\\slash')).toBeNull()
+    expect(artistAlbumSelector('unknown_artist', 'X')).toBeNull()
+    expect(artistAlbumSelector('A', 'X')).toBe('{"artist":"A", "album":"X"}')
+    const { http: gateway, calls } = http(() => ({ rows: ROWS, total: 2 }))
+    const { socket, session } = await open(() => [])
+    const outcome = await selectSource(
+      { session, http: gateway, timeoutMs: 4000 },
+      { kind: 'artistAlbum', artist: 'A "B"', album: ALBUM },
+    )
+    expect(outcome).toBe('unavailable')
+    expect(calls).toHaveLength(0)
+    expect(socket.sent.some((data) => data.startsWith('0101'))).toBe(false)
   })
 
   it('refuses a track that is ambiguous or missing in the stock order', async () => {

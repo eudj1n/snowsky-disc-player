@@ -35,7 +35,8 @@ const routes: RouteRecordRaw[] = [
   { path: '/tracks', name: 'tracks', component: () => import('./views/TracksView.vue') },
   { path: '/favorites', name: 'favorites', component: () => import('./views/FavoritesView.vue') },
   { path: '/playlists', name: 'playlists', component: () => import('./views/PlaylistsView.vue') },
-  { path: '/album/:name', name: 'album', component: () => import('./views/AlbumView.vue') },
+  // The optional artist narrows a title group to one release (reference scope).
+  { path: '/album/:name/:artist?', name: 'album', component: () => import('./views/AlbumView.vue') },
   { path: '/artist/:name', name: 'artist', component: () => import('./views/ArtistView.vue') },
   { path: '/playlist/:id(\\d+)', name: 'playlist', component: () => import('./views/PlaylistView.vue') },
   { path: '/:pathMatch(.*)*', redirect: '/' },

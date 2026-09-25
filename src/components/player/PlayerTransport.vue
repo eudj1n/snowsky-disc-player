@@ -5,18 +5,27 @@
  */
 import { computed } from 'vue'
 import type { PlaybackState, TransportAction } from '../../domain/playback'
-import { timeLabel } from '../../domain/track'
 import UiIcon from '../../ui/UiIcon.vue'
 import UiIconButton from '../../ui/UiIconButton.vue'
+import SeekBar from './SeekBar.vue'
 
 const props = defineProps<{
   state: PlaybackState
+  positionMs: number | null
   durationMs: number | null
+  identity: string | null
   controlsDisabled: boolean
-  modeDisabled: boolean
+  modesDisabled: boolean
+  seekDisabled: boolean
+  shuffle: boolean
+  repeat: boolean
   labels: { shuffle: string; previous: string; play: string; pause: string; next: string; repeat: string; seek: string }
 }>()
-const emit = defineEmits<{ transport: [action: TransportAction] }>()
+const emit = defineEmits<{
+  transport: [action: TransportAction]
+  mode: [kind: 'shuffle' | 'repeat']
+  seek: [seconds: number, identity: string]
+}>()
 const playing = computed(() => props.state === 'playing')
 const small = 'size-25 p-3 [&>svg]:size-19'
 </script>
@@ -27,10 +36,11 @@ const small = 'size-25 p-3 [&>svg]:size-19'
       <UiIconButton
         icon="shuffle"
         :label="labels.shuffle"
-        :pressed="false"
-        disabled
+        :pressed="shuffle"
+        :disabled="modesDisabled"
         :class="small"
         class="phone:hidden"
+        @click="emit('mode', 'shuffle')"
       />
       <UiIconButton
         icon="previous"
@@ -62,18 +72,21 @@ const small = 'size-25 p-3 [&>svg]:size-19'
       <UiIconButton
         icon="repeat"
         :label="labels.repeat"
-        :pressed="false"
-        disabled
+        :pressed="repeat"
+        :disabled="modesDisabled"
         :class="small"
         class="phone:hidden"
+        @click="emit('mode', 'repeat')"
       />
     </div>
-    <div
-      class="flex items-center gap-10 text-8 text-muted tabular-nums phone:absolute phone:inset-x-0 phone:bottom-0 phone:gap-0"
-    >
-      <span class="whitespace-nowrap phone:hidden">—:—</span>
-      <input class="seek-slider" type="range" min="0" max="100" value="0" disabled :aria-label="labels.seek" />
-      <span class="whitespace-nowrap phone:hidden">{{ timeLabel(durationMs) }}</span>
-    </div>
+    <SeekBar
+      class="phone:absolute phone:inset-x-0 phone:bottom-0 phone:gap-0"
+      :position-ms="positionMs"
+      :duration-ms="durationMs"
+      :identity="identity"
+      :disabled="seekDisabled"
+      :label="labels.seek"
+      @seek="(seconds, id) => emit('seek', seconds, id)"
+    />
   </div>
 </template>

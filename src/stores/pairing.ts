@@ -31,6 +31,11 @@ export function saveToken(value: string): boolean {
   return true
 }
 
+/** The stored card token for HTTP mutations (uploads). */
+export function pairingToken(): string | null {
+  return normalizeToken(readPreference(KEY) ?? '')
+}
+
 export function forgetToken(): void {
   writePreference(KEY, null)
   state.stored = false

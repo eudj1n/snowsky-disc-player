@@ -2,24 +2,41 @@
 /**
  * Compact track grid for discovery sections: cover with a play overlay,
  * title, artist and the ⋯ actions, in three columns on desktop, two on
- * tablets and one on phones, separated by quiet dividers.
+ * tablets and one on phones, separated by quiet dividers. The title opens
+ * the track's album and the artist their page when the view supplies routes.
  */
+import type { RouteLocationRaw } from 'vue-router'
 import type { Track } from '../../domain/track'
 import UiIcon from '../../ui/UiIcon.vue'
+import UiNowPlaying from '../../ui/UiNowPlaying.vue'
 import Artwork from '../artwork/Artwork.vue'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     tracks: readonly Track[]
     playLabel: string
     menuLabel: string
     coverOf?: (track: Track) => Blob | null
     currentPath?: string | null
+    playing?: boolean
     disabled?: boolean
+    /** Route for the title (usually the album), or null to keep it plain. */
+    titleTo?: (track: Track) => RouteLocationRaw | null
+    /** Route for the artist line, or null to keep it plain. */
+    artistTo?: (track: Track) => RouteLocationRaw | null
   }>(),
-  { coverOf: () => null, currentPath: null, disabled: false },
+  {
+    coverOf: () => null,
+    currentPath: null,
+    playing: false,
+    disabled: false,
+    titleTo: () => null,
+    artistTo: () => null,
+  },
 )
 const emit = defineEmits<{ play: [index: number]; menu: [index: number, anchor: HTMLElement] }>()
+const isCurrent = (track: Track) => props.currentPath !== null && track.path === props.currentPath
+const LINK = 'hover:underline hover:underline-offset-3 focus-visible:underline'
 </script>
 
 <template>
@@ -30,6 +47,7 @@ const emit = defineEmits<{ play: [index: number]; menu: [index: number, anchor: 
       v-for="(track, index) in tracks"
       :key="`${track.path ?? ''}#${index}`"
       class="group/tile grid min-w-0 grid-cols-[44px_minmax(0,1fr)_27px] items-center gap-12 border-t border-line/70 py-8"
+      :aria-current="isCurrent(track) ? 'true' : undefined"
       @contextmenu.prevent="
         emit('menu', index, ($event.currentTarget as HTMLElement).querySelector('[data-track-menu]') as HTMLElement)
       "
@@ -44,17 +62,32 @@ const emit = defineEmits<{ play: [index: number]; menu: [index: number, anchor: 
         <Artwork :title="track.title" :cover="coverOf(track)" />
         <span
           class="absolute inset-0 grid place-items-center bg-[#0006] text-white opacity-0 transition-opacity duration-200 group-focus-within/tile:opacity-100 group-hover/tile:opacity-100"
-          :class="{ 'opacity-100': currentPath !== null && track.path === currentPath }"
+          :class="{ 'bg-[#0004] opacity-100': isCurrent(track) }"
         >
-          <UiIcon
-            :name="currentPath !== null && track.path === currentPath ? 'music' : 'play'"
-            class="size-16 fill-current"
-          />
+          <template v-if="isCurrent(track)">
+            <UiNowPlaying :playing="playing" class="group-hover/tile:hidden" />
+            <UiIcon name="play" class="hidden size-16 fill-current group-hover/tile:block" />
+          </template>
+          <UiIcon v-else name="play" class="size-16 fill-current" />
         </span>
       </button>
       <span class="min-w-0">
-        <strong class="block truncate text-12 font-[550]">{{ track.title }}</strong>
-        <small class="mt-3 block truncate text-11 text-muted">{{ track.artist || '—' }}</small>
+        <RouterLink
+          v-if="titleTo(track)"
+          :to="titleTo(track) ?? ''"
+          class="block w-fit max-w-full truncate text-12 font-[550]"
+          :class="LINK"
+          >{{ track.title }}</RouterLink
+        >
+        <strong v-else class="block truncate text-12 font-[550]">{{ track.title }}</strong>
+        <RouterLink
+          v-if="track.artist && artistTo(track)"
+          :to="artistTo(track) ?? ''"
+          class="mt-3 block w-fit max-w-full truncate text-11 text-muted hover:text-ink"
+          :class="LINK"
+          >{{ track.artist }}</RouterLink
+        >
+        <small v-else class="mt-3 block truncate text-11 text-muted">{{ track.artist || '—' }}</small>
       </span>
       <button
         type="button"

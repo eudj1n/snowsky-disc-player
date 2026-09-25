@@ -5,6 +5,10 @@ import ArtworkSleeve from '../../../src/components/artwork/ArtworkSleeve.vue'
 import CoverCard from '../../../src/components/collection/CoverCard.vue'
 import CoverCardSkeleton from '../../../src/components/collection/CoverCardSkeleton.vue'
 import PlayerTransport from '../../../src/components/player/PlayerTransport.vue'
+import SeekBar from '../../../src/components/player/SeekBar.vue'
+import VolumeControl from '../../../src/components/player/VolumeControl.vue'
+import TrackTiles from '../../../src/components/track/TrackTiles.vue'
+import UiNowPlaying from '../../../src/ui/UiNowPlaying.vue'
 import TrackList from '../../../src/components/track/TrackList.vue'
 import TrackListSkeleton from '../../../src/components/track/TrackListSkeleton.vue'
 import type { Track } from '../../../src/domain/track'
@@ -99,7 +103,9 @@ describe('skeletons', () => {
     })
     const skeletonRow = rows.findAll(':scope > div')[0]
     const contentRow = list.findAll('[role=row]')[0]
-    expect(skeletonRow?.classes()).toEqual(contentRow?.classes().filter((name) => !name.startsWith('hover:')))
+    expect(skeletonRow?.classes()).toEqual(
+      contentRow?.classes().filter((name) => !name.startsWith('hover:') && !name.startsWith('group/')),
+    )
     expect(rows.attributes('aria-hidden')).toBe('true')
     expect(
       mount(CoverCardSkeleton, { props: { artist: true, lines: 0 } })
@@ -110,20 +116,148 @@ describe('skeletons', () => {
 })
 
 describe('PlayerTransport', () => {
-  it('emits intents, shows pause while playing and stays inert when disabled', async () => {
-    const enabled = mount(PlayerTransport, {
-      props: { state: 'playing', durationMs: 200_000, controlsDisabled: false, modeDisabled: true, labels },
+  const base = {
+    positionMs: 42_000,
+    identity: 'id',
+    modesDisabled: false,
+    seekDisabled: false,
+    shuffle: false,
+    repeat: true,
+    labels,
+  }
+
+  it('emits transport and mode intents, shows pause while playing and the mode state', async () => {
+    const bar = mount(PlayerTransport, {
+      props: { ...base, state: 'playing', durationMs: 200_000, controlsDisabled: false },
     })
-    const toggle = enabled.get('[data-testid=toggle]')
+    const toggle = bar.get('[data-testid=toggle]')
     expect(toggle.attributes('aria-label')).toBe('Pause')
     await toggle.trigger('click')
-    await enabled.get('[aria-label=Next]').trigger('click')
-    expect(enabled.emitted('transport')).toEqual([['toggle'], ['next']])
-    expect(enabled.text()).toContain('3:20')
-    const disabled = mount(PlayerTransport, {
-      props: { state: 'paused', durationMs: null, controlsDisabled: true, modeDisabled: true, labels },
+    await bar.get('[aria-label=Next]').trigger('click')
+    await bar.get('[aria-label=Shuffle]').trigger('click')
+    expect(bar.emitted('transport')).toEqual([['toggle'], ['next']])
+    expect(bar.emitted('mode')).toEqual([['shuffle']])
+    expect(bar.get('[aria-label=Repeat]').attributes('aria-pressed')).toBe('true')
+    expect(bar.text()).toContain('0:42')
+    expect(bar.text()).toContain('3:20')
+  })
+
+  it('stays inert when disabled', () => {
+    const bar = mount(PlayerTransport, {
+      props: { ...base, state: 'paused', durationMs: null, controlsDisabled: true, modesDisabled: true },
     })
-    expect(disabled.get('[data-testid=toggle]').attributes('disabled')).toBeDefined()
-    expect(disabled.get('[data-testid=toggle]').attributes('aria-label')).toBe('Play')
+    expect(bar.get('[data-testid=toggle]').attributes('disabled')).toBeDefined()
+    expect(bar.get('[aria-label=Shuffle]').attributes('disabled')).toBeDefined()
+  })
+})
+
+describe('SeekBar', () => {
+  it('previews while dragging and sends one seek on release with the captured track', async () => {
+    const bar = mount(SeekBar, {
+      props: { positionMs: 10_000, durationMs: 200_000, identity: 'track-a', disabled: false, label: 'Seek' },
+    })
+    const slider = bar.get('input')
+    expect(slider.attributes('max')).toBe('199')
+    await slider.trigger('pointerdown')
+    ;(slider.element as HTMLInputElement).value = '120'
+    await slider.trigger('input')
+    expect(bar.text()).toContain('2:00')
+    expect(bar.emitted('seek')).toBeUndefined()
+    await bar.setProps({ positionMs: 11_000 })
+    expect((slider.element as HTMLInputElement).value).toBe('120')
+    await slider.trigger('change')
+    expect(bar.emitted('seek')).toEqual([[120, 'track-a']])
+  })
+
+  it('discards a press without movement', async () => {
+    const bar = mount(SeekBar, {
+      props: { positionMs: 10_000, durationMs: 200_000, identity: 'track-a', disabled: false, label: 'Seek' },
+    })
+    await bar.get('input').trigger('pointerdown')
+    await bar.get('input').trigger('pointerup')
+    await bar.get('input').trigger('change')
+    expect(bar.emitted('seek')).toBeUndefined()
+  })
+})
+
+const LINK_STUB = {
+  global: { stubs: { RouterLink: { props: ['to'], template: '<a :href="JSON.stringify(to)"><slot /></a>' } } },
+}
+
+describe('TrackTiles', () => {
+  it('links the title to the album and the artist to their page when routes are given', () => {
+    const tiles = mount(TrackTiles, {
+      props: {
+        tracks: [track('Волны', 'Тихий океан', null)],
+        playLabel: 'Play',
+        menuLabel: 'Track actions',
+        titleTo: (item: Track) => ({ name: 'album', params: { name: item.album, artist: item.artist } }),
+        artistTo: (item: Track) => ({ name: 'artist', params: { name: item.artist } }),
+      },
+      ...LINK_STUB,
+    })
+    const links = tiles.findAll('a')
+    expect(links.map((link) => link.text())).toEqual(['Волны', 'Берег'])
+    expect(JSON.parse(links[0]?.attributes('href') ?? '{}')).toEqual({
+      name: 'album',
+      params: { name: 'Тихий океан', artist: 'Берег' },
+    })
+  })
+
+  it('keeps plain text without routes and marks the current track with a resting or pulsing dot', async () => {
+    const tiles = mount(TrackTiles, {
+      props: {
+        tracks: [track('Волны', 'Тихий океан', null)],
+        playLabel: 'Play',
+        menuLabel: 'Track actions',
+        currentPath: '/tmp/sdcard/Волны.flac',
+        playing: false,
+      },
+      ...LINK_STUB,
+    })
+    expect(tiles.findAll('a')).toHaveLength(0)
+    expect(tiles.find('li').attributes('aria-current')).toBe('true')
+    expect(tiles.findComponent(UiNowPlaying).attributes('data-playing')).toBe('false')
+    await tiles.setProps({ playing: true })
+    expect(tiles.findComponent(UiNowPlaying).attributes('data-playing')).toBe('true')
+  })
+})
+
+describe('VolumeControl', () => {
+  const props = { disabled: false, label: 'Volume', title: 'Volume', muteLabel: 'Mute', unmuteLabel: 'Unmute' }
+
+  it('mutes from the icon and offers unmute at volume 0', async () => {
+    const control = mount(VolumeControl, { props: { ...props, volume: 40 } })
+    const button = control.get('button')
+    expect(button.attributes('aria-label')).toBe('Mute')
+    await button.trigger('click')
+    expect(control.emitted('mute')).toHaveLength(1)
+    await control.setProps({ volume: 0 })
+    expect(control.get('button').attributes('aria-label')).toBe('Unmute')
+    expect(control.get('button').attributes('aria-pressed')).toBe('true')
+  })
+
+  it('cannot toggle an unknown volume', () => {
+    const control = mount(VolumeControl, { props: { ...props, volume: null } })
+    expect(control.get('button').attributes('disabled')).toBeDefined()
+  })
+})
+
+describe('TrackList links and header', () => {
+  it('links artist and album when routes are given and aligns the title header with the cover', () => {
+    const list = mount(TrackList, {
+      props: {
+        tracks: [track('Волны', 'Тихий океан', 185_000)],
+        menuLabel: 'Track actions',
+        header: { title: 'Title', album: 'Album', duration: 'Duration' },
+        artistTo: (item: Track) => ({ name: 'artist', params: { name: item.artist } }),
+        albumTo: (item: Track) => ({ name: 'album', params: { name: item.album, artist: item.artist } }),
+      },
+      ...LINK_STUB,
+    })
+    expect(list.findAll('a').map((link) => link.text())).toEqual(['Берег', 'Тихий океан'])
+    const headers = list.findAll('[role=columnheader]')
+    expect(headers[1]?.text()).toBe('Title')
+    expect(headers[1]?.classes()).toContain('col-span-2')
   })
 })

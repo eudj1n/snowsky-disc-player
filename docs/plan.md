@@ -71,12 +71,15 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
       pairing token; otherwise the connection dialog explains (proposal 1).
 - [x] Keyboard: Space play/pause, Left/Right previous/next, "/" search;
       ignored while typing, on focused controls and with a dialog open (2).
-- [ ] Import: dropping whole folders keeps their structure (3).
-- [ ] Import: "refresh the collection after transfer" on by default: the scan
+- [x] Import: dropping whole folders keeps their structure (3). Evidence:
+      `src/lib/dropFiles.ts`, import rules in `tests/unit/operations.test.ts`.
+- [x] Import: "refresh the collection after transfer" on by default: the scan
       still runs once and is never restarted, and the collection reloads after
-      its observed end (4).
-- [ ] Sound: two-state settings (DRE, gain) apply on press with readback;
-      filter and balance keep an explicit Apply (5).
+      its observed end (4). Evidence: e2e "imports files, scans once and shows
+      them in New" (desktop and phone).
+- [x] Sound: two-state settings (DRE, gain) apply on press with readback;
+      filter and balance keep an explicit Apply (5). Evidence: e2e "sound
+      settings read on opening, apply at once or with Apply, and verify".
 - [x] Album sorting: recently added, title, artist, remembered in the
       browser, with the locale's collation (6).
 
@@ -86,6 +89,37 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
       ADD_TIME as a compact three-column grid with cover play overlays and ⋯
       actions, the latest albums as a snapping shelf, and the stock play history
       (`recently_played`) when it has entries; searchable like other views.
+
+## Owner requests (round 3)
+
+- [x] Import dialog: one-line title; the current step is outlined in green,
+      not coral; the top-bar Add music button is quiet (no border) with a
+      note-and-plus icon. The "Web preview" label is gone from the top bar.
+- [x] The volume icon mutes and unmutes. The stock has no mute command, so
+      mute sends volume 0 and remembers the replaced level in this browser;
+      unmute restores it (or a quiet 20 when nothing is remembered). Evidence:
+      `muteStep` unit tests, e2e "the volume icon mutes and restores".
+- [x] The current track is marked with a soft pulsing dot while playing and a
+      still dot while paused (track lists, New tiles, queue); reduced motion
+      keeps it still.
+- [x] New: track titles open the album and artists their page.
+- [x] Albums that share a title stay apart (reference fix, two route
+      parameters): album links carry the literal track artist
+      (`#/album/<title>/<artist>`); a scoped page lists and plays only that
+      artist's release through the stock type-7 selector (`0101
+0007{"artist":"A", "album":"B"}`, `artist/album/song`, playerflag 7);
+      an unscoped title group with several artists offers them as filters.
+      Covers are associated per title and artist, so homonymous albums never
+      share one. Evidence: unit tests in `library.test.ts` and
+      `selection.test.ts`, e2e "keeps albums that share a title apart" and
+      "plays one artist's release of a shared title".
+- [x] Album pages end with "More by <artist>" shelves of the artist's other
+      albums, newest first.
+- [x] A quiet rule separates album and artist headers from their content;
+      the artist page titles its grid "Albums".
+- [x] Tracks and Favorites have a muted column header (title from the cover
+      column, album, a clock for duration); in every track list the artist
+      and album open their pages.
 
 ## M1.5 — Caching, enrichment and artwork
 
@@ -114,8 +148,16 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
 
 ## M2 — Library browsing
 
-- [ ] Genre filters, sorting and virtualization for large libraries within the
-      gateway's row and byte bounds; offline snapshot of the collection (M6).
+- [ ] Genres (possible with the current build, no service change): the
+      library rows carry `GENRE`; stock serves `style`, `style/song`,
+      `style/album` and `style/album/song`; playback uses the reference
+      Controller's `genre_command` forms — whole genre `0101 000A<genre>`,
+      indexed `0100 <pos> 000A<genre>`, and genre album with the type-8
+      selector `0008{"style":"G", "album":"A"}` — with fresh `style/*`
+      membership and preflight. Genre view, filters on Albums and Tracks,
+      playback.
+- [ ] Sorting and virtualization for large libraries within the gateway's row
+      and byte bounds; offline snapshot of the collection (M6).
 
 ## M3 — Playback from the library
 
@@ -129,20 +171,28 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
 - [x] Listening panel: Now Playing and Queue, 380px reserved from 1200px,
       overlay below, full width on phones, independent scrolling, focus and
       Escape rules; queue from `curlist/song` read twice with a stable mark.
-- [ ] Playlist and genre playback, selecting a queue row.
-- [ ] Seek (preview while dragging, send once), volume, play modes and the
-      current-track favorite; playing/paused position timeline.
+- [x] Playlist playback (unique name resolved to its stock position, rechecked
+      before the send) and selecting a queue row. Evidence: e2e "selects a row
+      in the queue and plays a playlist". Genre playback moves to M2 genres.
+- [x] Seek (preview while dragging, send once; a paused seek waits for
+      resume), volume, play modes and the current-track favorite; position
+      timeline from `a103`. Evidence: `tests/unit/operations.test.ts`, e2e
+      "volume, modes and favorite" and "a paused seek waits".
 
 ## M4 — Collection changes
 
 - [ ] Create/rename playlists, add/remove members with fresh identity checks.
-- [ ] Import files and folders through the gateway upload, then an explicit
-      scan with observed progress; no overwrite, no automatic scan.
+- [x] Import files and folders through the gateway upload, then an explicit
+      scan with observed progress; no overwrite, no automatic scan. Deliberate
+      difference: the gateway's own 201 with the same path and byte count
+      confirms a file, because `/dir/` readback breaks on paths with spaces
+      (see the proxy request below).
 
 ## M5 — Sound
 
-- [ ] Gain, balance, DAC filter, DRE with explicit Apply and readback; PEQ
-      presets from the data level.
+- [x] Gain, balance, DAC filter, DRE with readback (gain and DRE apply on
+      press, balance and filter on Apply).
+- [ ] PEQ presets from the data level.
 
 ## M6 — Offline collection
 
@@ -167,6 +217,21 @@ image; card-only items (catalog or query additions) are marked as such.
       canvas instead of using `<img>`.
 - [ ] Decide whether the page CSP should allow `img-src 'self' blob:` for
       cached artwork, or whether the media endpoint makes that unnecessary.
+
+- [ ] **Re-encode stock paths in the proxy.** civetweb decodes the request
+      path and `stock_proxy` writes it verbatim into the upstream request line,
+      so `GET /dir/…/My Album/` (a space) breaks and a literal `%` is decoded
+      twice; stock expects percent-encoded paths. Uploads are unaffected (the
+      gateway writes decoded names). Blocks folder browsing and `/dir/` readback
+      for typical album folders.
+- [ ] **Scan guard in the gateway.** The gateway admits uploads and other
+      mutations while stock scans the card; today only the client refuses them
+      (it watches `a622`/`a60a` on its own session).
+- [ ] _(card-only)_ Declare `start-pos` / `num-max` on `transfer_browse` and
+      `playback_browse` in the command catalog; undeclared headers are not
+      forwarded, so folder listings cannot page.
+- [ ] _(card-only)_ Revisit the upload bound: the catalog allows 1 GiB per
+      file, the reference 2 GiB − 1; the UI uses the catalog value.
 
 ## Later
 

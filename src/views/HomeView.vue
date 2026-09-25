@@ -16,16 +16,16 @@ import HomeIntro from '../components/home/HomeIntro.vue'
 import ListeningNote from '../components/home/ListeningNote.vue'
 import TrackList from '../components/track/TrackList.vue'
 import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
-import { recentAlbums } from '../domain/album'
+import { recentAlbums, albumScope } from '../domain/album'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
 import { albumCover, coverFor } from '../stores/enrichment'
 import { albums, featuredAlbum, tracks } from '../stores/library'
 import { selection } from '../stores/selection'
-import { playback } from '../stores/playback'
+import { isPlaying, playback } from '../stores/playback'
 import { openTrackMenu, ui } from '../stores/ui'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumLines, albumRoute, countLine } from './captions'
+import { albumCardRoute, albumLines, countLine, trackAlbumRoute, trackArtistRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { playAlbumAction, playFrom } from './playAlbum'
 
@@ -62,8 +62,8 @@ const heroLines = computed<[string, string]>(() =>
         v-for="album in found"
         :key="album.title"
         :title="album.title"
-        :to="albumRoute(album.title)"
-        :cover="albumCover(album.title)"
+        :to="albumCardRoute(album)"
+        :cover="albumCover(album, albumScope(album))"
         :lines="albumLines(album)"
         :open-label="t('open_item', { name: album.title })"
       />
@@ -80,12 +80,12 @@ const heroLines = computed<[string, string]>(() =>
         :label="t('album_from_your_collection')"
         :eyebrow="t('your_personal_collection')"
         :title-lines="[t('your_collection'), t('your_rhythm')]"
-        :cover="featured ? albumCover(featured.title) : null"
+        :cover="featured ? albumCover(featured, albumScope(featured)) : null"
         :lines="heroLines"
         :action="t('play_album')"
         :action-disabled="!featured || selection.busy"
         :loading="loading"
-        @play="featured && playAlbumAction(featured.title)"
+        @play="featured && playAlbumAction(featured.title, albumScope(featured))"
       />
     </template>
     <template #skeleton>
@@ -106,8 +106,8 @@ const heroLines = computed<[string, string]>(() =>
         v-for="album in recent"
         :key="album.title"
         :title="album.title"
-        :to="albumRoute(album.title)"
-        :cover="albumCover(album.title)"
+        :to="albumCardRoute(album)"
+        :cover="albumCover(album, albumScope(album))"
         :lines="albumLines(album)"
         :open-label="t('open_item', { name: album.title })"
       />
@@ -119,8 +119,11 @@ const heroLines = computed<[string, string]>(() =>
           <UiTextButton icon="arrow" @click="router.push('/tracks')">{{ t('all_tracks') }}</UiTextButton>
         </SectionHeading>
         <TrackList
+          :artist-to="trackArtistRoute"
+          :album-to="trackAlbumRoute"
           :tracks="recentTracks"
           :current-path="playback.current.track?.path ?? null"
+          :playing="isPlaying"
           :play-label="t('play_label')"
           :cover-of="coverFor"
           :disabled="selection.busy"

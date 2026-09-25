@@ -1,21 +1,33 @@
 <script setup lang="ts">
 /**
  * Now Playing section of the listening panel (reference .listening-main):
- * large sleeve, status with format badge, title, artist and album links,
- * timeline, transport and volume. Mirrors the mini-player's disabled rules.
+ * large cover, status with format badge, title, artist and album links,
+ * timeline with seek feedback, transport, modes, favorite and volume. It
+ * mirrors the mini-player's disabled rules.
  */
-import type { Playback, PlaybackState, TransportAction } from '../../domain/playback'
-import { formatBadge, timeLabel } from '../../domain/track'
+import type { Playback, TransportAction } from '../../domain/playback'
+import { formatBadge } from '../../domain/track'
 import UiIcon from '../../ui/UiIcon.vue'
 import UiIconButton from '../../ui/UiIconButton.vue'
 import Artwork from '../artwork/Artwork.vue'
+import SeekBar from './SeekBar.vue'
+import VolumeControl from './VolumeControl.vue'
 
 defineProps<{
   playback: Playback
   cover: Blob | null
   status: string
+  positionMs: number | null
+  identity: string | null
+  seekFeedback: string | null
   controlsDisabled: boolean
+  modesDisabled: boolean
+  seekDisabled: boolean
+  favoriteDisabled: boolean
+  shuffle: boolean
+  repeat: boolean
   volume: number | null
+  volumeDisabled: boolean
   labels: {
     title: string
     shuffle: string
@@ -27,12 +39,22 @@ defineProps<{
     favorite: string
     seek: string
     volume: string
+    volumeTitle: string
+    mute: string
+    unmute: string
     output: string
     format: string
   }
 }>()
-const emit = defineEmits<{ transport: [action: TransportAction]; navigate: [] }>()
-const playing = (state: PlaybackState) => state === 'playing'
+const emit = defineEmits<{
+  transport: [action: TransportAction]
+  mode: [kind: 'shuffle' | 'repeat']
+  seek: [seconds: number, identity: string]
+  favorite: []
+  volume: [value: number]
+  mute: []
+  navigate: []
+}>()
 </script>
 
 <template>
@@ -63,16 +85,25 @@ const playing = (state: PlaybackState) => state === 'playing'
     >
     <RouterLink
       v-if="playback.track?.album"
-      :to="{ name: 'album', params: { name: playback.track.album } }"
+      :to="
+        playback.track.artist
+          ? { name: 'album', params: { name: playback.track.album, artist: playback.track.artist } }
+          : { name: 'album', params: { name: playback.track.album } }
+      "
       class="mt-4 mb-24 block text-12 [overflow-wrap:anywhere] text-muted hover:underline"
       @click="emit('navigate')"
       >{{ playback.track.album }}</RouterLink
     >
-    <div class="flex items-center gap-10 text-9 text-muted tabular-nums">
-      <span class="whitespace-nowrap">—:—</span>
-      <input class="seek-slider" type="range" min="0" max="100" value="0" disabled :aria-label="labels.seek" />
-      <span class="whitespace-nowrap">{{ timeLabel(playback.track?.durationMs ?? null) }}</span>
-    </div>
+    <SeekBar
+      class="text-9"
+      :position-ms="positionMs"
+      :duration-ms="playback.track?.durationMs ?? null"
+      :identity="identity"
+      :disabled="seekDisabled"
+      :label="labels.seek"
+      @seek="(seconds, id) => emit('seek', seconds, id)"
+    />
+    <p v-if="seekFeedback" role="status" class="mt-6 text-10 text-secondary">{{ seekFeedback }}</p>
     <div class="my-20 flex items-center justify-center gap-32">
       <UiIconButton
         icon="previous"
@@ -83,12 +114,12 @@ const playing = (state: PlaybackState) => state === 'playing'
       />
       <button
         type="button"
-        :aria-label="playing(playback.state) ? labels.pause : labels.play"
+        :aria-label="playback.state === 'playing' ? labels.pause : labels.play"
         :disabled="controlsDisabled"
         class="flex size-54 items-center justify-center rounded-full bg-[#30362b] text-white hover:enabled:scale-[1.05] dark:bg-[#d8e1cc] dark:text-[#1b2316]"
         @click="emit('transport', 'toggle')"
       >
-        <UiIcon :name="playing(playback.state) ? 'pause' : 'play'" class="size-21 fill-current stroke-[1.5]" />
+        <UiIcon :name="playback.state === 'playing' ? 'pause' : 'play'" class="size-21 fill-current stroke-[1.5]" />
       </button>
       <UiIconButton
         icon="next"
@@ -99,23 +130,39 @@ const playing = (state: PlaybackState) => state === 'playing'
       />
     </div>
     <div class="mt-10 mb-15 flex justify-center gap-45">
-      <UiIconButton icon="shuffle" :label="labels.shuffle" :pressed="false" disabled />
-      <UiIconButton icon="heart" :label="labels.favorite" :pressed="playback.favorite ?? false" disabled />
-      <UiIconButton icon="repeat" :label="labels.repeat" :pressed="false" disabled />
-    </div>
-    <div class="flex items-center gap-13 text-muted">
-      <UiIcon name="volume" class="size-16" />
-      <input
-        type="range"
-        min="0"
-        max="120"
-        :value="volume ?? 0"
-        disabled
-        :aria-label="labels.volume"
-        class="h-3 flex-1 accent-progress-fill"
+      <UiIconButton
+        icon="shuffle"
+        :label="labels.shuffle"
+        :pressed="shuffle"
+        :disabled="modesDisabled"
+        @click="emit('mode', 'shuffle')"
       />
-      <output class="min-w-19 text-10">{{ volume ?? '—' }}</output>
+      <UiIconButton
+        icon="heart"
+        :label="labels.favorite"
+        :pressed="playback.favorite ?? false"
+        :disabled="favoriteDisabled"
+        @click="emit('favorite')"
+      />
+      <UiIconButton
+        icon="repeat"
+        :label="labels.repeat"
+        :pressed="repeat"
+        :disabled="modesDisabled"
+        @click="emit('mode', 'repeat')"
+      />
     </div>
+    <VolumeControl
+      class="text-muted"
+      :volume="volume"
+      :disabled="volumeDisabled"
+      :label="labels.volume"
+      :title="labels.volumeTitle"
+      :mute-label="labels.mute"
+      :unmute-label="labels.unmute"
+      @change="(value) => emit('volume', value)"
+      @mute="emit('mute')"
+    />
     <p class="mt-20 text-10 text-muted">{{ labels.output }}</p>
   </div>
 </template>

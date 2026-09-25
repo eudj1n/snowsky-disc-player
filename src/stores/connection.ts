@@ -3,7 +3,7 @@
  * before connecting. Other stores reach the session only through
  * `activeSession()`; nothing connects without an explicit user action.
  */
-import { reactive, readonly } from 'vue'
+import { reactive, readonly, shallowRef } from 'vue'
 import type { ConnectionState, PlayerIdentity } from '../domain/player'
 import { GatewayHttp } from '../gateway/http'
 import {
@@ -28,7 +28,8 @@ export const http = new GatewayHttp()
 
 let session: GatewaySession | null = null
 let compatibility: Compatibility | null = null
-let catalog: CommandCatalog | null = null
+// Reactive, so values derived from the catalog (upload bound) follow its loading.
+const catalog = shallowRef<CommandCatalog | null>(null)
 const openedListeners = new Set<(session: GatewaySession) => void>()
 
 interface ConnectionModel {
@@ -56,7 +57,7 @@ export function activeSession(): GatewaySession | null {
 }
 
 export function commandCatalog(): CommandCatalog | null {
-  return catalog
+  return catalog.value
 }
 
 /** Stores that need the session (pairing, playback) register here. */
@@ -76,7 +77,7 @@ export async function probeGateway(): Promise<boolean> {
   }
   const [profile, commands] = await Promise.allSettled([loadCompatibility(), loadCommands()])
   if (profile.status === 'fulfilled') compatibility = profile.value
-  if (commands.status === 'fulfilled') catalog = commands.value
+  if (commands.status === 'fulfilled') catalog.value = commands.value
   return true
 }
 
@@ -109,12 +110,25 @@ export async function connect(): Promise<void> {
     if (!compatible) state.notice = 'incompatible'
     state.connection = 'connected'
     for (const listener of openedListeners) listener(session)
+    // The play mode is known only from a102: read it once, as the reference does at connect.
+    await session.read('0105', 'a102').catch(() => undefined)
   } catch (error) {
     session?.close()
     session = null
     state.connection = 'disconnected'
     state.notice ??=
       error instanceof Disconnected && error.reason === 'not-admitted' ? 'closed_not_admitted' : 'closed_network'
+  }
+}
+
+/** Re-reads 0501 (currentVolume) on the open session. */
+export async function refreshSettings(): Promise<void> {
+  const current = activeSession()
+  if (!current) return
+  try {
+    state.volume = currentVolume(await current.read('0501', 'a501'))
+  } catch {
+    state.volume = null
   }
 }
 

@@ -27,12 +27,21 @@ export interface CatalogRecord {
   max_bytes: number
 }
 
+export interface CatalogRoute {
+  name: string
+  method: string
+  path: string
+  kind: 'read' | 'mutation'
+  max_body_bytes: number
+}
+
 export interface CommandCatalog {
   api: number
   version: string
   profile_sha256: string
   catalog_sha256: string
   records: Record<string, CatalogRecord>
+  http?: CatalogRoute[]
 }
 
 const PARENT = '..'

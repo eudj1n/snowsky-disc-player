@@ -6,13 +6,15 @@ import CoverCard from '../components/collection/CoverCard.vue'
 import CoverCardSkeleton from '../components/collection/CoverCardSkeleton.vue'
 import CoverGrid from '../components/collection/CoverGrid.vue'
 import DetailHeading from '../components/collection/DetailHeading.vue'
+import { albumTracks } from '../domain/album'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
 import { albumCover } from '../stores/enrichment'
 import { albums, tracks } from '../stores/library'
 import { ui } from '../stores/ui'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumLines, albumRoute } from './captions'
+import { albumCardRoute, artistAlbumLines } from './captions'
+import SectionHeading from '../components/common/SectionHeading.vue'
 import CollectionGate from './CollectionGate.vue'
 
 const route = useRoute()
@@ -43,14 +45,15 @@ const items = computed(() => filterBy(own.value, ui.query, (album) => [album.tit
     <template #skeleton>
       <CoverGrid><CoverCardSkeleton v-for="n in 4" :key="n" /></CoverGrid>
     </template>
+    <SectionHeading :title="t('albums')" class="mt-0!" />
     <CoverGrid>
       <CoverCard
         v-for="album in items"
         :key="album.title"
         :title="album.title"
-        :to="albumRoute(album.title)"
-        :cover="albumCover(album.title)"
-        :lines="albumLines(album)"
+        :to="albumCardRoute(album, album.trackArtists.includes(name) ? name : null)"
+        :cover="albumCover(album, album.trackArtists.includes(name) ? name : null)"
+        :lines="artistAlbumLines(album, name, albumTracks(tracks, album.title, name).length)"
         :open-label="t('open_item', { name: album.title })"
       />
     </CoverGrid>

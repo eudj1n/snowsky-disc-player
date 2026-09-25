@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * Reference top bar: breadcrumb, search (focused by "/"), refresh, the
- * device button on phones, appearance and language. Add music and sound
- * settings join when their features land (plan M4, M5).
+ * Reference top bar: breadcrumb, search (focused by "/"), a quiet Add music
+ * button, refresh, the device button on phones, appearance, sound settings
+ * and language.
  */
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
@@ -10,6 +10,7 @@ import { chooseLocale, locale, t, type Locale, type MessageKey } from '../i18n'
 import { SECTIONS, sectionOf } from '../router'
 import { appearance } from '../stores/appearance'
 import { library, loadCollection } from '../stores/library'
+import { imports } from '../stores/imports'
 import { openDialog, setQuery, ui } from '../stores/ui'
 import UiIcon from '../ui/UiIcon.vue'
 import UiIconButton from '../ui/UiIconButton.vue'
@@ -24,6 +25,7 @@ const SEARCH: Record<string, MessageKey> = {
 }
 const placeholder = computed(() => t(SEARCH[String(route.name)] ?? 'search_tracks'))
 const appearanceTitle = computed(() => t('appearance_label') + t(`${appearance.value}_label`))
+const importActive = computed(() => imports.transferring || imports.scan.phase === 'scanning')
 const language = computed<Locale>({ get: () => locale.value, set: chooseLocale })
 </script>
 
@@ -51,6 +53,17 @@ const language = computed<Locale>({ get: () => locale.value, set: chooseLocale }
       />
       <kbd class="rounded-3 border border-line px-5 py-1 font-[inherit] text-10 phone:hidden">/</kbd>
     </label>
+    <button
+      type="button"
+      :aria-label="t('import_music')"
+      :title="t('import_music')"
+      class="flex items-center justify-center gap-7 rounded-24 px-12 py-8 text-11 whitespace-nowrap text-secondary transition-colors duration-150 hover:bg-hover hover:text-ink compact:p-8 listening:p-8"
+      @click="openDialog('import')"
+    >
+      <UiIcon name="add-music" class="size-18" />
+      <span class="compact:hidden listening:hidden">{{ t('import_music') }}</span>
+      <i v-if="importActive" aria-hidden="true" class="size-7 rounded-full bg-accent" />
+    </button>
     <UiIconButton
       icon="refresh"
       :label="t('refresh_collection')"
@@ -63,6 +76,7 @@ const language = computed<Locale>({ get: () => locale.value, set: chooseLocale }
       <UiIconButton icon="device" :label="t('disc_connection')" class="w-28" @click="openDialog('connection')" />
     </span>
     <UiIconButton icon="moon" :label="appearanceTitle" class="phone:w-28" @click="openDialog('appearance')" />
+    <UiIconButton icon="sliders" :label="t('sound_title')" class="phone:w-28" @click="openDialog('sound')" />
     <label>
       <span class="sr-only">{{ t('language') }}</span>
       <select
@@ -74,10 +88,5 @@ const language = computed<Locale>({ get: () => locale.value, set: chooseLocale }
         <option value="en">EN</option>
       </select>
     </label>
-    <span
-      class="flex items-center gap-7 text-8 tracking-[1.1px] whitespace-nowrap text-muted compact:hidden listening:hidden"
-    >
-      WEB <span class="size-3 rounded-full bg-current" /> PREVIEW
-    </span>
   </header>
 </template>

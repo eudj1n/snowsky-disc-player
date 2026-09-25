@@ -1,4 +1,4 @@
-/** The reference icon set (DISC Web app.js), one stroked path per 24×24 icon. */
+/** The reference icon set (DISC Web app.js) plus a few project additions, one stroked path per 24×24 icon. */
 export const ICON_PATHS = {
   moon: 'M20.8 13.3A9 9 0 0 1 10.7 3.2a9 9 0 1 0 10.1 10.1Z',
   home: 'M3 10 12 3l9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z',
@@ -19,6 +19,9 @@ export const ICON_PATHS = {
   shuffle: 'M3 6h3c5 0 7 12 12 12h3M17 14l4 4-4 4M3 18h3c2 0 4-3 6-6s4-6 6-6h3M17 2l4 4-4 4',
   repeat: 'm17 2 4 4-4 4M3 11V8a2 2 0 0 1 2-2h16M7 22l-4-4 4-4M21 13v3a2 2 0 0 1-2 2H3',
   volume: 'M11 4 6 8H2v8h4l5 4ZM15 8a6 6 0 0 1 0 8M18 4a11 11 0 0 1 0 16',
+  // Project additions in the same 24×24 stroke style.
+  muted: 'M11 4 6 8H2v8h4l5 4ZM16 9l6 6M22 9l-6 6',
+  'add-music': 'M9 17V5l10-2v7M9 17a3 3 0 1 1-3-3 3 3 0 0 1 3 3ZM18 14v7M14.5 17.5h7',
   close: 'M6 6l12 12M6 18 18 6',
   arrow: 'M5 12h14m-5-5 5 5-5 5',
   back: 'M19 12H5m5-5-5 5 5 5',
