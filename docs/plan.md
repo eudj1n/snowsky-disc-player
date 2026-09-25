@@ -261,6 +261,11 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
   dialog on the player. The previous release `a3e0203b38aceca7` stays on the
   card for rollback (`www/active.json`).
 
+- 2026-09-25: `9b8d2afdaeb8f018` (commit `2d75cb4`, partial a202 fix and
+  bottom-bar links) published on PLAY at the owner's request after
+  `npm run check` and the mock e2e suite; all 34 files matched by SHA-256
+  after the write. `dafd12f63bd12c73` stays on the card for rollback.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
