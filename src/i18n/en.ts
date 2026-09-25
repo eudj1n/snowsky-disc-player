@@ -81,6 +81,8 @@ export const en = {
   column_title: 'Title',
   column_album: 'Album',
   column_duration: 'Duration',
+  in_favorites: 'In favorites',
+  favorite_only_current: 'Only the playing track can be added to favorites',
   various_artists: 'Various artists',
   album_on_disc: 'Album on DISC',
   playlist_on_disc: 'Playlist on DISC',

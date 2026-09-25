@@ -8,16 +8,14 @@ import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
 import { filterBy } from '../domain/search'
 import type { LibraryTrack } from '../domain/track'
 import { t } from '../i18n'
-import { coverFor } from '../stores/enrichment'
 import { library, loadPlaylistTracks } from '../stores/library'
-import { isPlaying, playback } from '../stores/playback'
 import { openTrackMenu, ui } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { selection } from '../stores/selection'
 import { playFrom } from './playAlbum'
-import { trackArtistRoute, trackAlbumRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
+import { onRowFavorite, trackRowProps } from './trackRows'
 
 const route = useRoute()
 const router = useRouter()
@@ -66,15 +64,8 @@ const items = computed(() =>
       <TrackListSkeleton :rows="Math.max(1, Math.min(playlist?.trackCount ?? 6, 12))" actions />
     </template>
     <TrackList
-      :artist-to="trackArtistRoute"
-      :album-to="trackAlbumRoute"
+      v-bind="trackRowProps"
       :tracks="items"
-      :current-path="playback.current.track?.path ?? null"
-      :playing="isPlaying"
-      :cover-of="coverFor"
-      :play-label="t('play_label')"
-      :disabled="selection.busy"
-      :menu-label="t('track_actions')"
       @play="
         (index) => playlist && items[index] && playFrom({ kind: 'playlist', name: playlist.name, track: items[index] })
       "
@@ -87,6 +78,7 @@ const items = computed(() =>
             anchor,
           )
       "
+      @favorite="onRowFavorite"
     />
   </CollectionGate>
 </template>

@@ -19,14 +19,14 @@ import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
 import { recentAlbums, albumScope } from '../domain/album'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
-import { albumCover, coverFor } from '../stores/enrichment'
+import { albumCover } from '../stores/enrichment'
 import { albums, featuredAlbum, tracks } from '../stores/library'
 import { selection } from '../stores/selection'
-import { isPlaying, playback } from '../stores/playback'
 import { openTrackMenu, ui } from '../stores/ui'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumCardRoute, albumLines, countLine, trackAlbumRoute, trackArtistRoute } from './captions'
+import { albumCardRoute, albumLines, countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
+import { onRowFavorite, trackRowProps } from './trackRows'
 import { playAlbumAction, playFrom } from './playAlbum'
 
 const router = useRouter()
@@ -119,21 +119,15 @@ const heroLines = computed<[string, string]>(() =>
           <UiTextButton icon="arrow" @click="router.push('/tracks')">{{ t('all_tracks') }}</UiTextButton>
         </SectionHeading>
         <TrackList
-          :artist-to="trackArtistRoute"
-          :album-to="trackAlbumRoute"
+          v-bind="trackRowProps"
           :tracks="recentTracks"
-          :current-path="playback.current.track?.path ?? null"
-          :playing="isPlaying"
-          :play-label="t('play_label')"
-          :cover-of="coverFor"
-          :disabled="selection.busy"
-          :menu-label="t('track_actions')"
           @play="(index) => recentTracks[index] && playFrom({ kind: 'library', track: recentTracks[index] })"
           @menu="
             (index, anchor) =>
               recentTracks[index] &&
               openTrackMenu(recentTracks[index], { kind: 'library', track: recentTracks[index] }, anchor)
           "
+          @favorite="onRowFavorite"
         />
       </section>
       <section class="rail:hidden">

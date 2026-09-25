@@ -50,6 +50,9 @@ there is no application server: the browser talks to the gateway directly.
 - Mute from the volume icon (volume 0, earlier level remembered in the
   browser); the stock has no mute command.
 - The current track is marked by a pulsing dot rather than an icon.
+- Rows lead with a cover that becomes the play button on hover; album pages
+  lead with the track number. A favorite heart sits in the gutter left of the
+  row; only the current track's heart changes the favorite.
 - Album pages end with "More by" shelves of the same artist's albums.
 
 ## Invariants carried over

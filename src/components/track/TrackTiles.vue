@@ -66,9 +66,9 @@ const LINK = 'hover:underline hover:underline-offset-3 focus-visible:underline'
         >
           <template v-if="isCurrent(track)">
             <UiNowPlaying :playing="playing" class="group-hover/tile:hidden" />
-            <UiIcon name="play" class="hidden size-16 fill-current group-hover/tile:block" />
+            <UiIcon filled name="play" class="hidden size-16 group-hover/tile:block" />
           </template>
-          <UiIcon v-else name="play" class="size-16 fill-current" />
+          <UiIcon v-else filled name="play" class="size-16" />
         </span>
       </button>
       <span class="min-w-0">

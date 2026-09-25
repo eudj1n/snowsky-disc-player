@@ -18,15 +18,15 @@ import { albumTracks, albumsBy } from '../domain/album'
 import { filterBy } from '../domain/search'
 import type { SelectionTarget, TrackKey } from '../gateway/selection'
 import { t } from '../i18n'
-import { albumCover, coverFor } from '../stores/enrichment'
+import { albumCover } from '../stores/enrichment'
 import { albums, tracks as collection } from '../stores/library'
-import { isPlaying, playback } from '../stores/playback'
 import { selection } from '../stores/selection'
 import { openTrackMenu, ui } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumRoute, artistRoute, trackArtistRoute } from './captions'
+import { albumRoute, artistRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
+import { onRowFavorite, trackRowProps } from './trackRows'
 import { playAlbumAction, playFrom } from './playAlbum'
 
 const MORE_BY_ARTISTS = 3
@@ -110,20 +110,16 @@ const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums
       </nav>
     </template>
     <template #skeleton>
-      <TrackListSkeleton :rows="8" :album="false" actions />
+      <TrackListSkeleton :rows="8" lead="number" :album="false" actions />
     </template>
     <TrackList
-      :artist-to="trackArtistRoute"
+      v-bind="trackRowProps"
+      lead="number"
       :tracks="items"
       :show-album="false"
-      :current-path="playback.current.track?.path ?? null"
-      :playing="isPlaying"
-      :play-label="t('play_label')"
-      :cover-of="coverFor"
-      :disabled="selection.busy"
-      :menu-label="t('track_actions')"
       @menu="(index, anchor) => items[index] && openTrackMenu(items[index], target(items[index]), anchor)"
       @play="(index) => items[index] && playFrom(target(items[index]))"
+      @favorite="onRowFavorite"
     />
     <section
       v-for="shelf in searching ? [] : moreBy"

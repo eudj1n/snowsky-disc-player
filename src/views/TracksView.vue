@@ -5,13 +5,11 @@ import TrackList from '../components/track/TrackList.vue'
 import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
-import { coverFor } from '../stores/enrichment'
 import { tracks, library } from '../stores/library'
-import { isPlaying, playback } from '../stores/playback'
-import { selection } from '../stores/selection'
 import { openTrackMenu, ui } from '../stores/ui'
-import { countLine, trackAlbumRoute, trackArtistRoute } from './captions'
+import { countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
+import { onRowFavorite, trackRowProps } from './trackRows'
 import { playFrom } from './playAlbum'
 
 const searching = computed(() => ui.query.trim() !== '')
@@ -37,20 +35,14 @@ const columns = computed(() => ({
       <TrackListSkeleton :rows="skeletonRows" actions :header="columns" />
     </template>
     <TrackList
-      :artist-to="trackArtistRoute"
-      :album-to="trackAlbumRoute"
+      v-bind="trackRowProps"
       :tracks="items"
       :header="columns"
-      :current-path="playback.current.track?.path ?? null"
-      :playing="isPlaying"
-      :play-label="t('play_label')"
-      :cover-of="coverFor"
-      :disabled="selection.busy"
-      :menu-label="t('track_actions')"
       @menu="
         (index, anchor) => items[index] && openTrackMenu(items[index], { kind: 'library', track: items[index] }, anchor)
       "
       @play="(index) => items[index] && playFrom({ kind: 'library', track: items[index] })"
+      @favorite="onRowFavorite"
     />
   </CollectionGate>
 </template>

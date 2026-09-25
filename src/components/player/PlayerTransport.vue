@@ -59,7 +59,7 @@ const small = 'size-25 p-3 [&>svg]:size-19'
         class="flex size-34 items-center justify-center rounded-full bg-[#30362b] text-white hover:enabled:scale-[1.07] hover:enabled:bg-[#3b4335] dark:bg-[#d8e1cc] dark:text-[#1b2316] dark:hover:enabled:bg-[#e4ebd9] phone:size-31"
         @click="emit('transport', 'toggle')"
       >
-        <UiIcon :name="playing ? 'pause' : 'play'" class="size-15 fill-current stroke-[1.5]" />
+        <UiIcon filled :name="playing ? 'pause' : 'play'" class="size-15 stroke-[1.5]" />
       </button>
       <UiIconButton
         icon="next"

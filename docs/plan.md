@@ -120,6 +120,17 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
 - [x] Tracks and Favorites have a muted column header (title from the cover
       column, album, a clock for duration); in every track list the artist
       and album open their pages.
+- [x] Track rows lead with the cover, which turns into the play button on
+      hover or focus (as on the New tiles); album pages lead with the track
+      number (or the position when the tag is missing) instead of the shared
+      cover, the number turning into play on hover.
+- [x] A favorite heart in the gutter left of the row (owner's reference):
+      filled for favorites, an outline on hover otherwise. State comes from
+      the MY_LOVE snapshot corrected by live `a202` observations. Only the
+      current track's heart is a button (stock `0104` likes or unlikes the
+      playing track only); other rows explain that in a tooltip.
+- [x] Filled icons (play overlays, hearts, transport play) render filled; the
+      base `fill-none` used to override them.
 
 ## M1.5 — Caching, enrichment and artwork
 
@@ -230,6 +241,10 @@ image; card-only items (catalog or query additions) are marked as such.
 - [ ] _(card-only)_ Declare `start-pos` / `num-max` on `transfer_browse` and
       `playback_browse` in the command catalog; undeclared headers are not
       forwarded, so folder listings cannot page.
+- [ ] **Favorites for any track (research).** The stock remote protocol
+      likes or unlikes only the playing track (`0104`); the player's own
+      favorites screen may use another route. Find it on the emulator before
+      admitting anything; until then other rows show state only.
 - [ ] _(card-only)_ Revisit the upload bound: the catalog allows 1 GiB per
       file, the reference 2 GiB − 1; the UI uses the catalog value.
 

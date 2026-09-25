@@ -1,22 +1,37 @@
 <script setup lang="ts">
 /**
- * Reference track list: number (or play button), sleeve, title and artist,
- * album, duration and the track actions button. The album column can be
- * left out (album pages), and album and duration disappear when no row knows
- * them (stock rows often lack both). Rows are separated by quiet dividers.
+ * Track list. A row leads with its cover (Tracks, Favorites, playlists) or
+ * its track number (album pages, where the album shares one cover); hovering
+ * or focusing the row turns the lead into its play button, as on the New
+ * tiles. The current track shows a pulsing dot there. A favorite heart sits
+ * in the gutter left of the row (always shown for favorites, on hover
+ * otherwise; a button only for the current track, the one the stock can
+ * change). Then title and linked artist, the linked album, duration and the
+ * actions button. Album and duration
+ * columns disappear when no row knows them (stock rows often lack both).
  */
 import { computed } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
-import { formatDuration, type Track } from '../../domain/track'
+import { formatDuration, type LibraryTrack, type Track } from '../../domain/track'
 import UiIcon from '../../ui/UiIcon.vue'
 import UiNowPlaying from '../../ui/UiNowPlaying.vue'
 import Artwork from '../artwork/Artwork.vue'
 import TrackListHeader from './TrackListHeader.vue'
-import { ROW_DIVIDER, TRACK_ROW, trackColumns, type TrackColumnLabels } from './trackGrid'
+import { ROW_DIVIDER, TRACK_ROW, trackColumns, type TrackColumnLabels, type TrackLead } from './trackGrid'
+
+export interface FavoriteLabels {
+  /** Row state for assistive technology. */
+  favorite: string
+  add: string
+  remove: string
+  /** Why other rows cannot be changed from here. */
+  onlyCurrent: string
+}
 
 const props = withDefaults(
   defineProps<{
     tracks: readonly Track[]
+    lead?: TrackLead
     showAlbum?: boolean
     currentPath?: string | null
     /** The current track is playing (its marker pulses) rather than paused. */
@@ -34,8 +49,14 @@ const props = withDefaults(
     artistTo?: (track: Track) => RouteLocationRaw | null
     /** Route for a row's album, or null to keep it plain. */
     albumTo?: (track: Track) => RouteLocationRaw | null
+    /** Favorite state per row (null: unknown); the heart column needs labels too. */
+    favoriteOf?: (track: Track) => boolean | null
+    favoriteLabels?: FavoriteLabels | null
+    /** The current track's favorite cannot be changed right now. */
+    favoriteDisabled?: boolean
   }>(),
   {
+    lead: 'cover',
     showAlbum: true,
     currentPath: null,
     playing: false,
@@ -46,14 +67,26 @@ const props = withDefaults(
     header: null,
     artistTo: () => null,
     albumTo: () => null,
+    favoriteOf: () => null,
+    favoriteLabels: null,
+    favoriteDisabled: true,
   },
 )
-const emit = defineEmits<{ play: [index: number]; menu: [index: number, anchor: HTMLElement] }>()
+const emit = defineEmits<{ play: [index: number]; menu: [index: number, anchor: HTMLElement]; favorite: [] }>()
 const LINK = 'hover:text-ink hover:underline hover:underline-offset-3 focus-visible:text-ink focus-visible:underline'
+/** Shown on row hover or keyboard focus inside the row. */
+const REVEAL = 'opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100'
+/** The heart lives in the page gutter, left of the row (owner's reference). */
+const HEART =
+  'absolute top-1/2 -left-32 grid size-22 -translate-y-1/2 place-items-center rounded-full p-0 transition-opacity duration-150 compact:-left-27 listening:-left-30 phone:-left-18 phone:size-16'
 const isCurrent = (track: Track) => props.currentPath !== null && track.path === props.currentPath
 const album = computed(() => props.showAlbum && props.tracks.some((track) => track.album))
 const duration = computed(() => props.tracks.some((track) => formatDuration(track.durationMs)))
-const columns = computed(() => trackColumns(album.value, duration.value, props.menuLabel !== null))
+const columns = computed(() => trackColumns(props.lead, album.value, duration.value, props.menuLabel !== null))
+const numberOf = (track: Track, index: number) => {
+  const number = (track as Partial<LibraryTrack>).trackNumber
+  return typeof number === 'number' && number > 0 ? number : index + 1
+}
 
 function contextMenu(event: MouseEvent, index: number): void {
   if (props.menuLabel === null) return
@@ -67,7 +100,14 @@ function contextMenu(event: MouseEvent, index: number): void {
 
 <template>
   <div role="table">
-    <TrackListHeader v-if="header" :labels="header" :album="album" :duration="duration" :actions="menuLabel !== null" />
+    <TrackListHeader
+      v-if="header"
+      :labels="header"
+      :lead="lead"
+      :album="album"
+      :duration="duration"
+      :actions="menuLabel !== null"
+    />
     <div
       v-for="(track, index) in tracks"
       :key="`${track.path ?? ''}#${index}`"
@@ -77,27 +117,82 @@ function contextMenu(event: MouseEvent, index: number): void {
       :class="[TRACK_ROW, ROW_DIVIDER, columns, { 'bg-selected hover:bg-selected': isCurrent(track) }]"
       @contextmenu="contextMenu($event, index)"
     >
-      <span role="cell" class="flex justify-center text-10 text-muted">
+      <span role="cell" class="flex justify-center">
+        <template v-if="favoriteLabels && favoriteOf(track) !== null">
+          <button
+            v-if="isCurrent(track) && !favoriteDisabled"
+            type="button"
+            :aria-pressed="favoriteOf(track) === true"
+            :aria-label="favoriteOf(track) ? favoriteLabels.remove : favoriteLabels.add"
+            :title="favoriteOf(track) ? favoriteLabels.remove : favoriteLabels.add"
+            class="text-muted hover:text-ink aria-pressed:text-accent"
+            :class="[HEART, favoriteOf(track) ? '' : `${REVEAL} focus-visible:opacity-100`]"
+            @click="emit('favorite')"
+          >
+            <UiIcon name="heart" class="size-13 phone:size-11" :filled="favoriteOf(track) === true" />
+          </button>
+          <span v-else-if="favoriteOf(track)" class="text-accent" :class="HEART" :title="favoriteLabels.favorite">
+            <UiIcon filled name="heart" class="size-13 phone:size-11" /><span class="sr-only">{{
+              favoriteLabels.favorite
+            }}</span>
+          </span>
+          <span
+            v-else
+            aria-hidden="true"
+            class="text-muted/70"
+            :class="[HEART, REVEAL]"
+            :title="favoriteLabels.onlyCurrent"
+          >
+            <UiIcon name="heart" class="size-13 phone:size-11" />
+          </span>
+        </template>
+        <template v-if="lead === 'cover'">
+          <button
+            v-if="playLabel"
+            type="button"
+            :aria-label="`${playLabel} ${track.title}`"
+            :disabled="disabled"
+            class="relative size-40 overflow-hidden rounded-6 p-0 phone:size-34"
+            @click="emit('play', index)"
+          >
+            <Artwork :title="track.title" :cover="coverOf(track)" />
+            <span
+              class="absolute inset-0 grid place-items-center bg-[#0006] text-white transition-opacity duration-200"
+              :class="isCurrent(track) ? 'bg-[#0004] opacity-100' : REVEAL"
+            >
+              <template v-if="isCurrent(track)">
+                <UiNowPlaying :playing="playing" class="group-hover/row:hidden" />
+                <UiIcon filled name="play" class="hidden size-14 group-hover/row:block" />
+              </template>
+              <UiIcon v-else filled name="play" class="size-14" />
+            </span>
+          </button>
+          <span v-else class="size-40 overflow-hidden rounded-6 phone:size-34"
+            ><Artwork :title="track.title" :cover="coverOf(track)"
+          /></span>
+        </template>
         <button
-          v-if="playLabel"
+          v-else-if="playLabel"
           type="button"
           :aria-label="`${playLabel} ${track.title}`"
           :disabled="disabled"
-          class="grid size-24 place-items-center p-0 text-secondary hover:enabled:text-ink"
+          class="grid h-24 w-full place-items-center p-0 text-10 text-muted tabular-nums hover:enabled:text-ink"
           @click="emit('play', index)"
         >
-          <template v-if="isCurrent(track)">
-            <UiNowPlaying :playing="playing" class="text-progress-fill group-hover/row:hidden" />
-            <UiIcon name="play" class="hidden size-15 group-hover/row:block" />
-          </template>
-          <UiIcon v-else name="play" class="size-15" />
+          <UiNowPlaying
+            v-if="isCurrent(track)"
+            :playing="playing"
+            class="text-progress-fill group-focus-within/row:hidden group-hover/row:hidden"
+          />
+          <span v-else class="group-focus-within/row:hidden group-hover/row:hidden">{{ numberOf(track, index) }}</span>
+          <UiIcon
+            filled
+            name="play"
+            class="hidden size-13 text-secondary group-focus-within/row:block group-hover/row:block"
+          />
         </button>
-        <UiNowPlaying v-else-if="isCurrent(track)" :playing="playing" class="text-progress-fill" />
-        <template v-else>{{ index + 1 }}</template>
+        <span v-else class="text-10 text-muted tabular-nums">{{ numberOf(track, index) }}</span>
       </span>
-      <span role="cell" class="size-38 overflow-hidden rounded-6 phone:size-34"
-        ><Artwork :title="track.title" :cover="coverOf(track)"
-      /></span>
       <div role="cell" class="min-w-0">
         <strong class="block truncate font-[550]">{{ track.title }}</strong>
         <RouterLink

@@ -119,7 +119,7 @@ const emit = defineEmits<{
         class="flex size-54 items-center justify-center rounded-full bg-[#30362b] text-white hover:enabled:scale-[1.05] dark:bg-[#d8e1cc] dark:text-[#1b2316]"
         @click="emit('transport', 'toggle')"
       >
-        <UiIcon :name="playback.state === 'playing' ? 'pause' : 'play'" class="size-21 fill-current stroke-[1.5]" />
+        <UiIcon filled :name="playback.state === 'playing' ? 'pause' : 'play'" class="size-21 stroke-[1.5]" />
       </button>
       <UiIconButton
         icon="next"

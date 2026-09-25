@@ -81,6 +81,8 @@ export const ru: Messages = {
   column_title: 'Название',
   column_album: 'Альбом',
   column_duration: 'Длительность',
+  in_favorites: 'В любимом',
+  favorite_only_current: 'Добавить в любимое можно только играющий трек',
   various_artists: 'Разные исполнители',
   album_on_disc: 'Альбом на DISC',
   playlist_on_disc: 'Плейлист на DISC',

@@ -63,9 +63,9 @@ describe('CoverCard', () => {
 describe('TrackList', () => {
   it('drops album and duration columns that no row knows, or the album when asked', () => {
     const list = mount(TrackList, { props: { tracks: [track('Волны', null, null)] } })
-    expect(list.findAll('[role=cell]')).toHaveLength(3)
+    expect(list.findAll('[role=cell]')).toHaveLength(2)
     const full = mount(TrackList, { props: { tracks: [track('Волны', 'Тихий океан', 185_000)] } })
-    expect(full.findAll('[role=cell]')).toHaveLength(5)
+    expect(full.findAll('[role=cell]')).toHaveLength(4)
     expect(full.text()).toContain('3:05')
     const albumPage = mount(TrackList, {
       props: { tracks: [track('Волны', 'Тихий океан', 185_000)], showAlbum: false },
@@ -257,7 +257,38 @@ describe('TrackList links and header', () => {
     })
     expect(list.findAll('a').map((link) => link.text())).toEqual(['Берег', 'Тихий океан'])
     const headers = list.findAll('[role=columnheader]')
-    expect(headers[1]?.text()).toBe('Title')
-    expect(headers[1]?.classes()).toContain('col-span-2')
+    expect(headers[0]?.text()).toBe('Title')
+    expect(headers[0]?.classes()).toContain('col-span-2')
+  })
+
+  it('leads album rows with the track number, or the position when it is unknown', () => {
+    const numbered = { ...track('Волны', 'Тихий океан', null), trackNumber: 7 }
+    const list = mount(TrackList, {
+      props: { tracks: [numbered, track('Берег', 'Тихий океан', null)], lead: 'number', playLabel: 'Play' },
+    })
+    const leads = list.findAll('button[aria-label^="Play"]').map((button) => button.text())
+    expect(leads).toEqual(['7', '2'])
+  })
+
+  it('shows a favorite heart in the gutter; only the current track can change it', async () => {
+    const labels = { favorite: 'In favorites', add: 'Add', remove: 'Remove', onlyCurrent: 'Only the playing track' }
+    const a = track('Волны', 'Тихий океан', null)
+    const b = track('Берег', 'Тихий океан', null)
+    const list = mount(TrackList, {
+      props: {
+        tracks: [a, b],
+        favoriteLabels: labels,
+        favoriteOf: (item: Track) => item.title === 'Волны',
+        currentPath: b.path,
+        favoriteDisabled: false,
+      },
+    })
+    expect(list.findAll('[role=row]')[0]?.text()).toContain('In favorites')
+    const toggle = list.get('button[aria-label="Add"]')
+    expect(toggle.attributes('aria-pressed')).toBe('false')
+    await toggle.trigger('click')
+    expect(list.emitted('favorite')).toHaveLength(1)
+    await list.setProps({ favoriteDisabled: true })
+    expect(list.find('button[aria-label="Add"]').exists()).toBe(false)
   })
 })
