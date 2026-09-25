@@ -6,6 +6,7 @@ import CoverGrid from '../components/collection/CoverGrid.vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
+import { albumCover } from '../stores/enrichment'
 import { albums } from '../stores/library'
 import { ui } from '../stores/ui'
 import { albumLines, albumRoute, countLine } from './captions'
@@ -33,6 +34,7 @@ const items = computed(() => filterBy(albums.value, ui.query, (album) => [album.
         :key="album.title"
         :title="album.title"
         :to="albumRoute(album.title)"
+        :cover="albumCover(album.title)"
         :lines="albumLines(album)"
         :open-label="t('open_item', { name: album.title })"
       />

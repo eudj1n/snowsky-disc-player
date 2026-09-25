@@ -33,7 +33,14 @@ describe('library mapping', () => {
       rows_returned: 1,
       truncated: false,
     }
-    expect(librarySummary(result)).toEqual({ tracks: 779, favorites: 1, playlists: 3, queue: 1 })
+    expect(librarySummary(result)).toEqual({
+      tracks: 779,
+      favorites: 1,
+      playlists: 3,
+      queue: 1,
+      lastAdded: 0,
+      lastId: 785,
+    })
     expect(librarySummary({ ...result, rows: [], rows_returned: 0 })).toBeNull()
   })
 })

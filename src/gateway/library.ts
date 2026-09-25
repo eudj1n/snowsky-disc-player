@@ -16,6 +16,8 @@ export function librarySummary(result: DataResult): LibrarySummary | null {
     favorites: count(row.favorites),
     playlists: count(row.playlists),
     queue: count(row.queue),
+    lastAdded: count(row.last_added),
+    lastId: count(row.last_id),
   }
 }
 

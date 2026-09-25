@@ -5,6 +5,7 @@
  * art the right side stays the base color under the gradient.
  */
 import UiIcon from '../../ui/UiIcon.vue'
+import CoverCanvas from '../artwork/CoverCanvas.vue'
 
 defineProps<{
   label: string
@@ -16,6 +17,8 @@ defineProps<{
   actionTitle?: string
   /** The featured line is still loading: keep its space as a skeleton. */
   loading?: boolean
+  /** Observed cover of the featured album, shown on the right as in the reference. */
+  cover?: Blob | null
 }>()
 const emit = defineEmits<{ play: [] }>()
 </script>
@@ -25,6 +28,11 @@ const emit = defineEmits<{ play: [] }>()
     :aria-label="label"
     class="relative isolate flex min-h-280 items-center overflow-hidden rounded-15 bg-[#252e2b] text-white after:absolute after:inset-0 after:z-[-1] after:bg-[linear-gradient(90deg,#202b27_0%,#263129_37%,transparent_70%)] wide:min-h-340 compact:min-h-260 phone:min-h-273 phone:rounded-12 phone:after:bg-[linear-gradient(90deg,#202b27ee,#263129b0_50%,transparent)]"
   >
+    <CoverCanvas
+      v-if="cover"
+      :blob="cover"
+      class="absolute top-0 right-0 z-[-2] !h-full !w-[65%] opacity-82 phone:!w-full phone:opacity-60"
+    />
     <div
       class="max-w-[61%] px-36 py-30 wide:pl-44 compact:p-28 rail:max-w-[75%] phone:max-w-[87%] phone:px-23 phone:py-26"
     >

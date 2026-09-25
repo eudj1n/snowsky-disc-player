@@ -104,6 +104,11 @@ const server = createServer((request, response) => {
     const reply = () => send(response, result.status, body, json ? 'application/json' : 'text/plain; charset=utf-8')
     return DELAY ? void setTimeout(reply, DELAY) : reply()
   }
+  if (url.pathname === '/api/stock/image/cover/') {
+    // Like the real gateway, the proxied body is labelled as JSON.
+    const body = player.list[player.index] ? readFileSync(new URL('cover.png', FIXTURES)) : Buffer.alloc(0)
+    return send(response, 200, body, 'application/json; charset=utf-8')
+  }
   if (url.pathname === '/api/stock/song_category_tree/') {
     if (request.headers.type === 'curlist/song') {
       const page = catalogPage(request.headers, player.list)

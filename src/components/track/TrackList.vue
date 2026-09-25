@@ -8,7 +8,7 @@
 import { computed } from 'vue'
 import { formatDuration, type Track } from '../../domain/track'
 import UiIcon from '../../ui/UiIcon.vue'
-import ArtworkSleeve from '../artwork/ArtworkSleeve.vue'
+import Artwork from '../artwork/Artwork.vue'
 import { ROW_DIVIDER, TRACK_ROW, trackColumns } from './trackGrid'
 
 const props = withDefaults(
@@ -21,8 +21,10 @@ const props = withDefaults(
     /** Rows get a ⋯ button (and a context menu) that emit `menu`. */
     menuLabel?: string | null
     disabled?: boolean
+    /** Observed cover for a row, when known. */
+    coverOf?: (track: Track) => Blob | null
   }>(),
-  { showAlbum: true, currentPath: null, playLabel: null, menuLabel: null, disabled: false },
+  { showAlbum: true, currentPath: null, playLabel: null, menuLabel: null, disabled: false, coverOf: () => null },
 )
 const emit = defineEmits<{ play: [index: number]; menu: [index: number, anchor: HTMLElement] }>()
 const isCurrent = (track: Track) => props.currentPath !== null && track.path === props.currentPath
@@ -64,7 +66,7 @@ function contextMenu(event: MouseEvent, index: number): void {
         <template v-else>{{ index + 1 }}</template>
       </span>
       <span role="cell" class="size-38 overflow-hidden rounded-6 phone:size-34"
-        ><ArtworkSleeve :title="track.title"
+        ><Artwork :title="track.title" :cover="coverOf(track)"
       /></span>
       <div role="cell" class="min-w-0">
         <strong class="block truncate font-[550]">{{ track.title }}</strong>

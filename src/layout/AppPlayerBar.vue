@@ -13,6 +13,7 @@ import { t } from '../i18n'
 import { connection } from '../stores/connection'
 import { pairing } from '../stores/pairing'
 import { playback, transport } from '../stores/playback'
+import { coverFor } from '../stores/enrichment'
 import { selection } from '../stores/selection'
 import { toast, togglePanel, ui } from '../stores/ui'
 
@@ -67,6 +68,7 @@ async function onTransport(action: TransportAction): Promise<void> {
       :title="title"
       :subtitle="subtitle"
       :artwork-title="track?.title ?? null"
+      :cover="track ? coverFor(track) : null"
       :favorite-label="t('favorite_the_current_track')"
       :favorite="playback.current.favorite"
       favorite-disabled

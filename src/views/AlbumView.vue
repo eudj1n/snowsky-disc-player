@@ -7,7 +7,8 @@ import TrackList from '../components/track/TrackList.vue'
 import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
-import { albums, library } from '../stores/library'
+import { albumCover, coverFor } from '../stores/enrichment'
+import { albums, tracks as collection } from '../stores/library'
 import { playback } from '../stores/playback'
 import { selection } from '../stores/selection'
 import { openTrackMenu, ui } from '../stores/ui'
@@ -20,7 +21,7 @@ const route = useRoute()
 const router = useRouter()
 const name = computed(() => String(route.params.name ?? ''))
 const album = computed(() => albums.value.find((item) => item.title === name.value) ?? null)
-const tracks = computed(() => library.tracks.filter((track) => track.album === name.value))
+const tracks = computed(() => collection.value.filter((track) => track.album === name.value))
 const searching = computed(() => ui.query.trim() !== '')
 const items = computed(() => filterBy(tracks.value, ui.query, (track) => [track.title, track.artist, track.album]))
 </script>
@@ -29,7 +30,7 @@ const items = computed(() => filterBy(tracks.value, ui.query, (track) => [track.
   <CollectionGate :count="items.length" :searching="searching" empty-key="search_empty_tracks">
     <template #heading="{ loading }">
       <UiTextButton class="text-12" @click="router.push('/albums')">← {{ t('back_to_collection') }}</UiTextButton>
-      <DetailHeading :title="name">
+      <DetailHeading :title="name" :cover="albumCover(name)">
         <template #meta>
           <template v-if="loading"
             ><span class="inline-block h-10 w-140 animate-pulse rounded-4 bg-soft align-middle"
@@ -61,6 +62,7 @@ const items = computed(() => filterBy(tracks.value, ui.query, (track) => [track.
       :show-album="false"
       :current-path="playback.current.track?.path ?? null"
       :play-label="t('play_label')"
+      :cover-of="coverFor"
       :disabled="selection.busy"
       :menu-label="t('track_actions')"
       @menu="

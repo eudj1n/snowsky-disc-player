@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /** Reference detail header: 220px sleeve, name, meta line, actions. The
  * entity type is left out: the breadcrumb already names the section. */
-import ArtworkSleeve from '../artwork/ArtworkSleeve.vue'
+import Artwork from '../artwork/Artwork.vue'
 
-withDefaults(defineProps<{ title: string; artist?: boolean }>(), { artist: false })
+withDefaults(defineProps<{ title: string; artist?: boolean; cover?: Blob | null }>(), { artist: false, cover: null })
 </script>
 
 <template>
@@ -12,7 +12,7 @@ withDefaults(defineProps<{ title: string; artist?: boolean }>(), { artist: false
       class="aspect-square w-220 shrink-0 overflow-hidden shadow-[0_12px_40px_#25341515] rail:w-165 phone:mx-auto phone:mb-25 phone:w-200"
       :class="artist ? 'rounded-full' : 'rounded-12'"
     >
-      <ArtworkSleeve :title="title" :artist="artist" />
+      <Artwork :title="title" :artist="artist" :cover="cover" />
     </div>
     <div class="min-w-0">
       <h1

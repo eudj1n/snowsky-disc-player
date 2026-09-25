@@ -72,7 +72,19 @@
       "max_bytes": 528
     }
   },
-  "http": [],
+  "http": [
+    {
+      "name": "current_cover",
+      "method": "GET",
+      "path": "/image/cover/",
+      "kind": "read",
+      "class": "artwork",
+      "headers": {},
+      "required_headers": [],
+      "body": "none",
+      "max_body_bytes": 0
+    }
+  ],
   "denied": {
     "records": {},
     "http": []

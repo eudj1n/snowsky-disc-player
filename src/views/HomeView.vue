@@ -19,7 +19,8 @@ import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
 import { recentAlbums } from '../domain/album'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
-import { albums, featuredAlbum, library } from '../stores/library'
+import { albumCover, coverFor } from '../stores/enrichment'
+import { albums, featuredAlbum, tracks } from '../stores/library'
 import { selection } from '../stores/selection'
 import { playback } from '../stores/playback'
 import { openTrackMenu, ui } from '../stores/ui'
@@ -32,7 +33,7 @@ const router = useRouter()
 const searching = computed(() => ui.query.trim() !== '')
 const recent = computed(() => recentAlbums(albums.value, 4))
 const featured = featuredAlbum
-const recentTracks = computed(() => [...library.tracks].sort((a, b) => (b.addedAt ?? 0) - (a.addedAt ?? 0)).slice(0, 3))
+const recentTracks = computed(() => [...tracks.value].sort((a, b) => (b.addedAt ?? 0) - (a.addedAt ?? 0)).slice(0, 3))
 const found = computed(() => filterBy(albums.value, ui.query, (album) => [album.title, ...album.artists]))
 const heroLines = computed<[string, string]>(() =>
   featured.value
@@ -62,6 +63,7 @@ const heroLines = computed<[string, string]>(() =>
         :key="album.title"
         :title="album.title"
         :to="albumRoute(album.title)"
+        :cover="albumCover(album.title)"
         :lines="albumLines(album)"
         :open-label="t('open_item', { name: album.title })"
       />
@@ -78,6 +80,7 @@ const heroLines = computed<[string, string]>(() =>
         :label="t('album_from_your_collection')"
         :eyebrow="t('your_personal_collection')"
         :title-lines="[t('your_collection'), t('your_rhythm')]"
+        :cover="featured ? albumCover(featured.title) : null"
         :lines="heroLines"
         :action="t('play_album')"
         :action-disabled="!featured || selection.busy"
@@ -104,6 +107,7 @@ const heroLines = computed<[string, string]>(() =>
         :key="album.title"
         :title="album.title"
         :to="albumRoute(album.title)"
+        :cover="albumCover(album.title)"
         :lines="albumLines(album)"
         :open-label="t('open_item', { name: album.title })"
       />
@@ -118,6 +122,7 @@ const heroLines = computed<[string, string]>(() =>
           :tracks="recentTracks"
           :current-path="playback.current.track?.path ?? null"
           :play-label="t('play_label')"
+          :cover-of="coverFor"
           :disabled="selection.busy"
           :menu-label="t('track_actions')"
           @play="(index) => recentTracks[index] && playFrom({ kind: 'library', track: recentTracks[index] })"

@@ -57,7 +57,7 @@ const language = computed<Locale>({ get: () => locale.value, set: chooseLocale }
       :disabled="library.status === 'loading'"
       class="phone:w-28 data-[busy=true]:[&>svg]:animate-sync-rotate"
       :data-busy="library.status === 'loading'"
-      @click="loadCollection"
+      @click="loadCollection(true)"
     />
     <span class="hidden phone:contents">
       <UiIconButton icon="device" :label="t('disc_connection')" class="w-28" @click="openDialog('connection')" />

@@ -8,6 +8,7 @@ import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
 import { filterBy } from '../domain/search'
 import type { LibraryTrack } from '../domain/track'
 import { t } from '../i18n'
+import { coverFor } from '../stores/enrichment'
 import { library, loadPlaylistTracks } from '../stores/library'
 import { playback } from '../stores/playback'
 import { openTrackMenu, ui } from '../stores/ui'
@@ -57,6 +58,7 @@ const items = computed(() =>
     <TrackList
       :tracks="items"
       :current-path="playback.current.track?.path ?? null"
+      :cover-of="coverFor"
       :menu-label="t('track_actions')"
       @menu="(index, anchor) => items[index] && openTrackMenu(items[index], null, anchor)"
     />

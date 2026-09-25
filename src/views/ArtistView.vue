@@ -8,7 +8,8 @@ import CoverGrid from '../components/collection/CoverGrid.vue'
 import DetailHeading from '../components/collection/DetailHeading.vue'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
-import { albums, library } from '../stores/library'
+import { albumCover } from '../stores/enrichment'
+import { albums, tracks } from '../stores/library'
 import { ui } from '../stores/ui'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { albumLines, albumRoute } from './captions'
@@ -19,7 +20,7 @@ const router = useRouter()
 const name = computed(() => String(route.params.name ?? ''))
 const own = computed(() =>
   albums.value.filter((album) =>
-    library.tracks.some(
+    tracks.value.some(
       (track) => track.album === album.title && (track.artist === name.value || track.albumArtist === name.value),
     ),
   ),
@@ -48,6 +49,7 @@ const items = computed(() => filterBy(own.value, ui.query, (album) => [album.tit
         :key="album.title"
         :title="album.title"
         :to="albumRoute(album.title)"
+        :cover="albumCover(album.title)"
         :lines="albumLines(album)"
         :open-label="t('open_item', { name: album.title })"
       />

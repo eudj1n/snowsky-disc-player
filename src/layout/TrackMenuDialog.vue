@@ -7,7 +7,8 @@
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import ArtworkSleeve from '../components/artwork/ArtworkSleeve.vue'
+import Artwork from '../components/artwork/Artwork.vue'
+import { coverFor } from '../stores/enrichment'
 import { t } from '../i18n'
 import { selection } from '../stores/selection'
 import { closeTrackMenu, ui } from '../stores/ui'
@@ -99,7 +100,9 @@ onBeforeUnmount(() => cleanup())
   >
     <template v-if="menu">
       <div class="mb-8 flex items-center gap-12 px-3">
-        <span class="size-44 shrink-0 overflow-hidden rounded-8"><ArtworkSleeve :title="menu.track.title" /></span>
+        <span class="size-44 shrink-0 overflow-hidden rounded-8"
+          ><Artwork :title="menu.track.title" :cover="coverFor(menu.track)"
+        /></span>
         <span class="min-w-0 flex-1">
           <strong class="block truncate text-13 font-semibold">{{ menu.track.title }}</strong>
           <small class="mt-3 block truncate text-11 text-muted">{{ menu.track.artist || '—' }}</small>

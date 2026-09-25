@@ -15,6 +15,7 @@ import { connection } from '../stores/connection'
 import { pairing } from '../stores/pairing'
 import { playback, transport } from '../stores/playback'
 import { loadQueue, queue } from '../stores/queue'
+import { coverFor } from '../stores/enrichment'
 import { selection } from '../stores/selection'
 import { closePanel, showPanelSection, toast, ui } from '../stores/ui'
 import UiIconButton from '../ui/UiIconButton.vue'
@@ -118,6 +119,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
     >
       <NowPlayingDetails
         :playback="playback.current"
+        :cover="playback.current.track ? coverFor(playback.current.track) : null"
         :status="status"
         :controls-disabled="controlsDisabled"
         :volume="connection.volume"

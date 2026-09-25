@@ -5,7 +5,7 @@
  * album's artist opens the artist page).
  */
 import type { RouteLocationRaw } from 'vue-router'
-import ArtworkSleeve from '../artwork/ArtworkSleeve.vue'
+import Artwork from '../artwork/Artwork.vue'
 
 export interface CardLine {
   text: string
@@ -13,11 +13,15 @@ export interface CardLine {
 }
 
 withDefaults(
-  defineProps<{ title: string; to: RouteLocationRaw; lines?: CardLine[]; artist?: boolean; openLabel: string }>(),
-  {
-    lines: () => [],
-    artist: false,
-  },
+  defineProps<{
+    title: string
+    to: RouteLocationRaw
+    lines?: CardLine[]
+    artist?: boolean
+    cover?: Blob | null
+    openLabel: string
+  }>(),
+  { lines: () => [], artist: false, cover: null },
 )
 </script>
 
@@ -29,7 +33,7 @@ withDefaults(
       class="group relative block aspect-square w-full overflow-hidden bg-soft p-0 text-left after:absolute after:bottom-10 after:grid after:size-32 after:place-items-center after:rounded-full after:border after:border-[#ffffff30] after:bg-[#ffffff24] after:text-18 after:text-white after:opacity-0 after:backdrop-blur-[12px] after:transition-opacity after:duration-200 after:content-['↗'] hover:after:opacity-100 focus-visible:after:opacity-100"
       :class="artist ? 'rounded-full after:right-[calc(50%-16px)] after:bottom-14' : 'rounded-11 after:right-10'"
     >
-      <ArtworkSleeve :title="title" :artist="artist" />
+      <Artwork :title="title" :artist="artist" :cover="cover" />
     </RouterLink>
     <h3 class="mt-12 mb-5 truncate text-12 font-semibold wide:text-14 phone:text-12">
       <RouterLink :to="to" tabindex="-1" class="hover:underline hover:underline-offset-3">{{ title }}</RouterLink>

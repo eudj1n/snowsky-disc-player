@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Left block of the player bar: cover, title and artist, favorite. */
-import ArtworkSleeve from '../artwork/ArtworkSleeve.vue'
+import Artwork from '../artwork/Artwork.vue'
 import UiIconButton from '../../ui/UiIconButton.vue'
 
 defineProps<{
@@ -9,6 +9,7 @@ defineProps<{
   title: string
   subtitle: string
   artworkTitle: string | null
+  cover: Blob | null
   favoriteLabel: string
   favorite: boolean | null
   favoriteDisabled: boolean
@@ -27,7 +28,7 @@ const emit = defineEmits<{ open: [opener: HTMLElement] }>()
       @click="emit('open', $event.currentTarget as HTMLElement)"
     >
       <span class="block size-56 overflow-hidden rounded-8 bg-soft phone:size-44 phone:rounded-7">
-        <ArtworkSleeve :title="artworkTitle" />
+        <Artwork :title="artworkTitle" :cover="cover" />
       </span>
     </button>
     <div class="min-w-0">

@@ -65,6 +65,31 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
 - [x] Owner's design decision: primary pill buttons use the player's ink
       green instead of the coral accent; coral stays for small indicators.
 
+## M1.5 — Caching, enrichment and artwork
+
+- [x] Collection snapshot in IndexedDB keyed by the library signature
+      (counts, latest ADD_TIME, highest ID from `library_summary`): an unchanged
+      library opens without paging the player; the refresh button forces a
+      re-read. No sync dialog: unlike the reference's two-equal-reads HTTP sync,
+      the data level reads the stock database directly, so a snapshot is cheap
+      and validated automatically (owner's question 12).
+- [x] Listening enrichment (reference Library): durations from `a202` and the
+      stock current cover, associated with a track only when the same track is
+      observed before and after the image read, kept in IndexedDB and shown in
+      lists, cards, the hero and the player. Covers are fetched as bytes,
+      checked as JPEG/PNG and drawn on a canvas, because the gateway labels
+      proxied bodies as JSON and the page CSP allows no blob: images.
+- Finding on the owner's player: of 779 tracks only 83 have DURATION, and no
+  sample rate, bit depth, channels or year are filled; the stock databases
+  hold no artwork at all (verified on the stock schema), and stock serves
+  only the current track's cover (`/usr/data/fiio/cover.jpg`). Eight library
+  rows point at `.part` files on the card.
+- [ ] Service media endpoint (snowsky-disc-service, next image): read FLAC
+      STREAMINFO (duration, sample rate, bit depth) and embedded PICTURE blocks
+      or folder `cover.jpg`/`folder.jpg` from the card, bounded and read-only,
+      so every album and track gets artwork and duration without playing it;
+      forward proper image types. The UI then prefers it over enrichment.
+
 ## M2 — Library browsing
 
 - [ ] Genre filters, sorting and virtualization for large libraries within the

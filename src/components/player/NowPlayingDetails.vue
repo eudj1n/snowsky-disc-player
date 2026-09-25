@@ -8,10 +8,11 @@ import type { Playback, PlaybackState, TransportAction } from '../../domain/play
 import { formatBadge, timeLabel } from '../../domain/track'
 import UiIcon from '../../ui/UiIcon.vue'
 import UiIconButton from '../../ui/UiIconButton.vue'
-import ArtworkSleeve from '../artwork/ArtworkSleeve.vue'
+import Artwork from '../artwork/Artwork.vue'
 
 defineProps<{
   playback: Playback
+  cover: Blob | null
   status: string
   controlsDisabled: boolean
   volume: number | null
@@ -39,7 +40,7 @@ const playing = (state: PlaybackState) => state === 'playing'
     <div
       class="mx-auto mb-24 aspect-square w-[min(100%,28dvh)] overflow-hidden rounded-14 shadow-[0_12px_28px_#07100820] phone:mb-22 phone:w-[min(100%,30dvh)]"
     >
-      <ArtworkSleeve :title="playback.track?.title ?? null" />
+      <Artwork :title="playback.track?.title ?? null" :cover="cover" />
     </div>
     <p class="flex items-center justify-between gap-10 text-11 text-muted">
       <span>{{ status }}</span>

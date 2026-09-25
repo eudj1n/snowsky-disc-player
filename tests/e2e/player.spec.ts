@@ -116,6 +116,8 @@ test('plays a track from an album page and shows it in Now Playing and Queue', a
   await page.getByRole('button', { name: 'Play Window Seat' }).click()
   await expect(page.getByRole('status').filter({ hasText: 'Done. Verified on DISC.' })).toBeVisible({ timeout: 15_000 })
   await expect(page.getByTestId('track-title')).toHaveText('Window Seat')
+  // The stock current cover is fetched as bytes and drawn on a canvas (no blob: under the CSP).
+  await expect(page.getByRole('region', { name: 'Player' }).locator('canvas')).toBeVisible()
   await page.getByRole('button', { name: 'Open Now Playing panel' }).click()
   const panel = page.getByRole('complementary', { name: 'Player view' })
   await expect(panel.getByRole('heading', { name: 'Window Seat' })).toBeVisible()

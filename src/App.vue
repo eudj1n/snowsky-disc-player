@@ -17,6 +17,7 @@ import ListeningPanel from './layout/ListeningPanel.vue'
 import TrackMenuDialog from './layout/TrackMenuDialog.vue'
 import './stores/appearance'
 import { probeGateway } from './stores/connection'
+import { loadEnrichment } from './stores/enrichment'
 import { loadCollection, loadLibraryFacts } from './stores/library'
 import { playerVisible } from './stores/playback'
 import { setQuery, ui } from './stores/ui'
@@ -44,6 +45,7 @@ function skipToContent(event: MouseEvent): void {
 
 onMounted(async () => {
   document.addEventListener('keydown', focusSearch)
+  void loadEnrichment()
   if (await probeGateway()) {
     await loadLibraryFacts()
     await loadCollection()
