@@ -236,6 +236,16 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
 - [ ] Snapshot of the library in IndexedDB for browsing while disconnected,
       with staleness shown; current-track artwork kept per snapshot.
 
+## Releases on the owner's player
+
+- 2026-09-25: `dafd12f63bd12c73` (commit `5f01df8`, genres and polish)
+  published on PLAY at the owner's request after `npm run check` and the mock
+  e2e suite; the publisher verified every file and the SHA-256 of all 34
+  files matched after the write. Not yet verified on the emulator: run the
+  browser tests against the guest and check playback, genres and the sound
+  dialog on the player. The previous release `a3e0203b38aceca7` stays on the
+  card for rollback (`www/active.json`).
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
