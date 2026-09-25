@@ -266,6 +266,11 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
   `npm run check` and the mock e2e suite; all 34 files matched by SHA-256
   after the write. `dafd12f63bd12c73` stays on the card for rollback.
 
+- [ ] Remove old releases from PLAY when the card is next mounted (owner
+      agreed, deferred): `1be0ebd8ca57606d`, `a3e0203b38aceca7`,
+      `d378675b63677b13`, `da59199d06dcb558`, `fe0753a8ec469745`. Keep the
+      active release and the previous one for rollback.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
