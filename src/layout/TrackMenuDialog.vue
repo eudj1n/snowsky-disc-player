@@ -11,7 +11,7 @@ import Artwork from '../components/artwork/Artwork.vue'
 import { coverFor } from '../stores/enrichment'
 import { t } from '../i18n'
 import { selection } from '../stores/selection'
-import { closeTrackMenu, ui } from '../stores/ui'
+import { closeTrackMenu, openPlaylistDialog, ui } from '../stores/ui'
 import { backdropDismissal, trackOpen } from '../ui/dialogs'
 import UiIcon from '../ui/UiIcon.vue'
 import type { IconName } from '../ui/icons'
@@ -23,8 +23,13 @@ const dialog = ref<HTMLDialogElement | null>(null)
 const menu = computed(() => ui.trackMenu)
 const items = computed<{ id: string; icon: IconName; label: string; enabled: boolean }[]>(() => [
   { id: 'play', icon: 'play', label: t('play_label'), enabled: menu.value?.play != null && !selection.busy },
+  { id: 'add', icon: 'playlist', label: t('add_to_playlist'), enabled: Boolean(menu.value?.track.title) },
   { id: 'album', icon: 'album', label: t('go_to_album'), enabled: Boolean(menu.value?.track.album) },
   { id: 'artist', icon: 'artist', label: t('go_to_artist'), enabled: Boolean(menu.value?.track.artist) },
+  // Only rows opened from a playlist page can leave it.
+  ...(menu.value?.playlist
+    ? [{ id: 'remove', icon: 'close' as const, label: t('remove_from_playlist'), enabled: true }]
+    : []),
 ])
 let cleanup = (): void => undefined
 
@@ -72,6 +77,9 @@ async function choose(id: string): Promise<void> {
   closeTrackMenu()
   if (!current) return
   if (id === 'play' && current.play) await playFrom(current.play)
+  if (id === 'add') openPlaylistDialog({ mode: 'add', tracks: [{ ...current.track }], title: current.track.title })
+  if (id === 'remove' && current.playlist)
+    openPlaylistDialog({ mode: 'remove', playlist: current.playlist, track: { ...current.track } })
   if (id === 'album' && current.track.album) {
     // Keep the opening scope; otherwise the track's own artist separates homonymous albums.
     const scope = current.play?.kind === 'artistAlbum' ? current.play.artist : current.track.artist

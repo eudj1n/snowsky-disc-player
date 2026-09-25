@@ -153,7 +153,7 @@ export function catalogPage(headers, rowsOverride) {
   if (headers.type === 'custom') {
     const start = Number(headers['start-pos'] ?? 0)
     const count = Number(headers['num-max'] ?? 200)
-    const lists = PLAYLISTS.map((list, pos) => ({ pos, name: list.LIST_NAME, count: list.members.length }))
+    const lists = PLAYLISTS.map((list, pos) => ({ pos, name: list.LIST_NAME, author: '', count: list.members.length }))
     return { rows: lists.slice(start, start + count), total: lists.length }
   }
   const rows = rowsOverride ?? catalogSource(headers)
@@ -164,6 +164,60 @@ export function catalogPage(headers, rowsOverride) {
     rows: rows.slice(start, start + count).map((track) => ({ name: track.TITLE, author: track.ARTIST })),
     total: rows.length,
   }
+}
+
+const decode = (value) => decodeURIComponent(String(value ?? ''))
+
+/** Rows of a reviewed add source, as stock lists them. */
+function addSource(headers) {
+  if (headers.type === 'all/song') return TRACKS
+  if (headers.type === 'album/song' && headers.album !== undefined) {
+    const album = decode(headers.album)
+    return TRACKS.filter((track) => track.ALBUM === album)
+  }
+  return null
+}
+
+/**
+ * Stock playlist mutations (custom_list_cmd, add_custom_list, DELETE on
+ * song_category_tree): positions are list order; deleting a list moves later
+ * ones up. Returns reply headers, or null when the request is not admitted.
+ */
+export function editPlaylists(path, headers, body) {
+  if (path === '/api/stock/custom_list_cmd/') {
+    const name = decode(headers.list_name)
+    if (!name) return null
+    if (headers.type === 'create') {
+      const id = Math.max(0, ...PLAYLISTS.map((list) => list.ID)) + 1
+      PLAYLISTS.push({ ID: id, LIST_ID: id, LIST_NAME: name, M3U_PATH: null, members: [] })
+      return { type: 'create' }
+    }
+    const list = PLAYLISTS[Number(headers.list_id)]
+    if (headers.type !== 'update' || !list) return {}
+    list.LIST_NAME = name
+    return { type: 'update' }
+  }
+  if (path === '/api/stock/add_custom_list/') {
+    const source = addSource(headers)
+    const list = PLAYLISTS[Number(headers.dst_list_id)]
+    if (!source || !Array.isArray(body)) return null
+    if (list) for (const [first, last] of body) list.members.push(...source.slice(first, last + 1))
+    return { type: 'add' }
+  }
+  if (headers.delete_source !== '0' || !Array.isArray(body)) return null
+  if (headers.type === 'custom') {
+    const [[first, last]] = body
+    if (first === last && PLAYLISTS[first]) PLAYLISTS.splice(first, 1)
+    return {}
+  }
+  if (headers.type === 'custom/song') {
+    const list = PLAYLISTS[Number(headers.src_list_id)]
+    if (!list) return {}
+    const drop = new Set(body.flatMap(([first, last]) => Array.from({ length: last - first + 1 }, (_, i) => first + i)))
+    list.members = list.members.filter((_, index) => !drop.has(index))
+    return {}
+  }
+  return null
 }
 
 /** Adds a file published by an upload to the library, as a scan would. */

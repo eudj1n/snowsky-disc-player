@@ -13,6 +13,8 @@ export interface CatalogRow {
   author: string | null
   /** Position field of group rows (custom playlists), when present. */
   pos?: number
+  /** Member count of group rows (custom playlists), when present. */
+  count?: number
 }
 
 export interface CatalogPage {
@@ -68,10 +70,12 @@ function row(value: unknown): CatalogRow {
   const record = value as Record<string, unknown>
   if (typeof record.name !== 'string') throw new SyntaxError('Catalog row needs a name')
   const pos = typeof record.pos === 'number' && Number.isInteger(record.pos) ? record.pos : undefined
+  const count = typeof record.count === 'number' && Number.isInteger(record.count) ? record.count : undefined
   return {
     name: record.name,
     author: typeof record.author === 'string' ? record.author : null,
     ...(pos === undefined ? {} : { pos }),
+    ...(count === undefined ? {} : { count }),
   }
 }
 
@@ -128,7 +132,13 @@ export function sameRows(a: readonly CatalogRow[], b: readonly CatalogRow[]): bo
     a.length === b.length &&
     a.every((item, index) => {
       const other = b[index]
-      return other !== undefined && item.name === other.name && item.author === other.author && item.pos === other.pos
+      return (
+        other !== undefined &&
+        item.name === other.name &&
+        item.author === other.author &&
+        item.pos === other.pos &&
+        item.count === other.count
+      )
     })
   )
 }

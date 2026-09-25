@@ -300,8 +300,9 @@
   &::-webkit-slider-runnable-track {
     height: 3px;
     border-radius: 5px;
+    /* Vertical sliders (EQ bands) set --seek-direction: to top. */
     background: linear-gradient(
-      to right,
+      var(--seek-direction, to right),
       var(--progress-fill) var(--seek-fill, 0%),
       var(--progress-bg) var(--seek-fill, 0%)
     );

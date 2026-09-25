@@ -11,6 +11,8 @@ import { t } from '../i18n'
 import { connection } from '../stores/connection'
 import { operation } from '../stores/operation'
 import { applySound, markSoundDraft, readSoundSettings, sound } from '../stores/sound'
+import { applyBands, applyPreset, eq, readEqSettings } from '../stores/eq'
+import EqualizerPanel from '../components/sound/EqualizerPanel.vue'
 import { closeDialog, ui } from '../stores/ui'
 import UiChips from '../ui/UiChips.vue'
 import UiDialog from '../ui/UiDialog.vue'
@@ -39,9 +41,12 @@ watch(
     }
   },
 )
-watch(open, (value) => {
-  if (value && ready.value) void readSoundSettings()
+watch(open, async (value) => {
+  if (!value || !ready.value) return
+  await readSoundSettings()
+  await readEqSettings()
 })
+const eqLocked = computed(() => !ready.value || operation.busy || eq.pending)
 
 const notice = computed(() => (!ready.value ? t('sound_connect') : sound.feedback ? t(sound.feedback) : ''))
 const applyDisabled = (name: SoundName, draft: number) => locked.value || sound.values?.[name] === draft
@@ -145,6 +150,15 @@ const applyDisabled = (name: SoundName, draft: number) => locked.value || sound.
           :class="{ 'pointer-events-none opacity-45': locked }"
         />
       </div>
+      <EqualizerPanel
+        :state="eq.current"
+        :locked="eqLocked"
+        @preset="applyPreset"
+        @apply="(bands, master) => applyBands(bands, master)"
+      />
+      <p v-if="eq.feedback" role="status" class="m-0 pb-12 text-11 text-secondary" data-testid="eq-feedback">
+        {{ t(eq.feedback) }}
+      </p>
     </div>
   </UiDialog>
 </template>

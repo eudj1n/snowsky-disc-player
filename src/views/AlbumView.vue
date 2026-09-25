@@ -21,7 +21,7 @@ import { t } from '../i18n'
 import { albumCover } from '../stores/enrichment'
 import { albums, tracks as collection } from '../stores/library'
 import { selection } from '../stores/selection'
-import { openTrackMenu, ui } from '../stores/ui'
+import { openPlaylistDialog, openTrackMenu, ui } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { albumRoute, artistRoute, genreRoute } from './captions'
@@ -96,6 +96,13 @@ const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums
         <UiPillButton icon="play" :disabled="loading || !tracks.length || selection.busy" @click="playFrom(target())">{{
           t('play_album')
         }}</UiPillButton>
+        <UiPillButton
+          icon="playlist"
+          variant="secondary"
+          :disabled="loading || !tracks.length"
+          @click="openPlaylistDialog({ mode: 'add', tracks: tracks.map((track) => ({ ...track })), title: name })"
+          >{{ t('add_to_playlist') }}</UiPillButton
+        >
       </DetailHeading>
       <nav
         v-if="!loading && choices.length"

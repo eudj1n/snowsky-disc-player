@@ -238,7 +238,20 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
 
 ## M4 — Collection changes
 
-- [ ] Create/rename playlists, add/remove members with fresh identity checks.
+- [x] Create/rename playlists, add/remove members with fresh identity checks
+      (reference `playlist_operations.edit`): lists read twice and addressed by
+      the position of the one row with the exact name, members and the
+      `all/song` source read twice, a final recheck before one write with the
+      token and a fresh request ID, confirmation by the name set or member
+      multiset read back; HTTP 200 alone is only "sent". Tracks are added from
+      `all/song` by their unique title and artist (several become ordered
+      ranges, so whole albums in any scope work); an existing member is
+      refused. Delete playlist follows the same pattern but is not in the
+      reference session: emulator acceptance pending, and it is refused while a
+      playlist plays. Entry points: track menu (add; remove on playlist pages),
+      New playlist, Rename and Delete on playlist pages, Add to playlist on
+      album pages. Evidence: `tests/unit/playlists.test.ts`, e2e "creates,
+      fills, trims, renames and deletes a playlist".
 - [x] Import files and folders through the gateway upload, then an explicit
       scan with observed progress; no overwrite, no automatic scan. Deliberate
       difference: the gateway's own 201 with the same path and byte count
@@ -249,7 +262,15 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
 
 - [x] Gain, balance, DAC filter, DRE with readback (gain and DRE apply on
       press, balance and filter on Apply).
-- [ ] PEQ presets from the data level.
+- [x] Equalizer (reference fiio_settings.py and the peq/settings checks):
+      preset (`0690`/`0639`, stock presets and Custom 1–10, BYPASS 240, 7 and
+      254 never sent), ten PEQ bands (`0678` JSON with gain and Q as Python
+      float strings, `a628` binary read) and the master level (`0630`/`0629`,
+      signed tenths of dB); bands and master change only in a user preset,
+      each change checks the displayed value fresh, sends once and polls the
+      read. The data-level `peq_presets` is not needed: current values always
+      come from the player. Evidence: `tests/unit/eq.test.ts`, e2e "selects a
+      custom EQ preset and keeps an edited band".
 
 ## M6 — Offline collection
 
@@ -314,6 +335,13 @@ image; card-only items (catalog or query additions) are marked as such.
 - [ ] _(card-only)_ Declare `start-pos` / `num-max` on `transfer_browse` and
       `playback_browse` in the command catalog; undeclared headers are not
       forwarded, so folder listings cannot page.
+- [ ] _(card-only)_ Admit `love/song` in `playlist_remove` so a favorite can
+      be removed from any row (`DELETE` with `delete_source: 0` and `[[p,p]]`
+      in fresh `love/song` order; emulator-verified in the reference, not yet
+      captured on a physical player). Adding a favorite to a non-playing
+      track has no known route.
+- [ ] _(card-only)_ Correct the `peq_presets` note in the query catalog: user
+      slots are `STYLE_PRESET` 11..20; rows 160..169 hold `(null)`.
 - [ ] **Favorites for any track (research).** The stock remote protocol
       likes or unlikes only the playing track (`0104`); the player's own
       favorites screen may use another route. Find it on the emulator before

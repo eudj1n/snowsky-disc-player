@@ -14,6 +14,7 @@ import AppToast from './layout/AppToast.vue'
 import AppTopbar from './layout/AppTopbar.vue'
 import ConnectionDialog from './layout/ConnectionDialog.vue'
 import ImportDialog from './layout/ImportDialog.vue'
+import PlaylistDialog from './layout/PlaylistDialog.vue'
 import ListeningPanel from './layout/ListeningPanel.vue'
 import SoundDialog from './layout/SoundDialog.vue'
 import TrackMenuDialog from './layout/TrackMenuDialog.vue'
@@ -89,5 +90,6 @@ watchEffect(() => {
   <TrackMenuDialog />
   <SoundDialog />
   <ImportDialog />
+  <PlaylistDialog />
   <AppToast />
 </template>

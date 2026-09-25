@@ -141,6 +141,9 @@ test('opens track actions and navigates from cards and menus', async ({ page }) 
   await page.getByRole('button', { name: 'Track actions: Window Seat' }).click()
   const menu = page.getByRole('dialog', { name: 'Track actions' })
   await expect(menu.getByRole('menuitem', { name: 'Go to album' })).toBeVisible()
+  await expect(menu.getByRole('menuitem', { name: 'Add to playlist' })).toBeVisible()
+  // Play, Add to playlist, Go to album, Go to artist.
+  await page.keyboard.press('ArrowDown')
   await page.keyboard.press('ArrowDown')
   await page.keyboard.press('ArrowDown')
   await expect(menu.getByRole('menuitem', { name: 'Go to artist' })).toBeFocused()
@@ -332,6 +335,77 @@ test.describe('player controls on the mock', () => {
       const bar = page.getByRole('region', { name: 'Player' })
       await expect(bar.getByRole('link', { name: 'Genre: Jazz' })).toBeVisible()
     }
+    await disconnect(page)
+  })
+
+  test('creates, fills, trims, renames and deletes a playlist', async ({ page }, info) => {
+    await english(page)
+    await connectAndPair(page)
+    const verified = page.getByRole('status').filter({ hasText: 'Done. Verified on DISC.' })
+    const name = `E2E ${info.project.name} ${String(Date.now() % 100_000)}`
+    const dialog = page.getByRole('dialog')
+    await page.goto('/#/playlists')
+    await page.getByRole('button', { name: 'New playlist' }).click()
+    await dialog.getByLabel('Playlist name').fill(name)
+    await dialog.getByRole('button', { name: 'Create' }).click()
+    await expect(verified).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByRole('heading', { name, exact: true })).toBeVisible()
+
+    await page.goto('/#/album/Inner%20Space/Forma')
+    await page.getByRole('button', { name: 'Add to playlist' }).click()
+    await dialog.getByRole('combobox').selectOption(name)
+    await dialog.getByRole('button', { name: 'Add to playlist' }).click()
+    await expect(dialog).toBeHidden({ timeout: 20_000 })
+
+    await page.goto('/#/playlists')
+    await page.getByRole('heading', { name, exact: true }).getByRole('link').click()
+    await expect(page.getByRole('row')).toHaveCount(4)
+    await page.getByRole('button', { name: 'Track actions: Orbit' }).click()
+    await page.getByRole('menuitem', { name: 'Remove from playlist' }).click()
+    await dialog.getByRole('button', { name: 'Remove' }).click()
+    await expect(dialog).toBeHidden({ timeout: 20_000 })
+    await expect(page.getByRole('row')).toHaveCount(3)
+
+    await page.getByRole('button', { name: 'Rename' }).click()
+    await dialog.getByLabel('Playlist name').fill(`${name} R`)
+    await dialog.getByRole('button', { name: 'Save' }).click()
+    await expect(page.getByRole('heading', { level: 1, name: `${name} R` })).toBeVisible({ timeout: 20_000 })
+
+    await page.getByRole('button', { name: 'Delete', exact: true }).click()
+    await dialog.getByRole('button', { name: 'Delete', exact: true }).click()
+    await expect(page).toHaveURL(/#\/playlists$/, { timeout: 20_000 })
+    await expect(page.getByRole('heading', { name: `${name} R`, exact: true })).toHaveCount(0)
+    await disconnect(page)
+  })
+
+  test('selects a custom EQ preset and keeps an edited band on the player', async ({ page }, info) => {
+    await english(page)
+    await connectAndPair(page)
+    const open = async () => {
+      await page.getByRole('button', { name: 'Sound settings' }).filter({ visible: true }).first().click()
+      await expect(page.getByRole('dialog').getByTestId('sound-feedback')).toHaveText(
+        'Current values received from DISC.',
+      )
+    }
+    await open()
+    const dialog = page.getByRole('dialog')
+    const panel = dialog.getByRole('region', { name: 'Equalizer' })
+    const preset = panel.getByRole('combobox', { name: 'Preset' })
+    await expect(preset).toBeEnabled()
+    const target = (await preset.inputValue()) === '161' ? '162' : '161'
+    await preset.selectOption(target)
+    await expect(dialog.getByTestId('eq-feedback')).toHaveText('The player confirmed the new value.', {
+      timeout: 15_000,
+    })
+    const gain = info.project.name === 'phone' ? '4' : '3'
+    await panel.getByRole('slider', { name: '1k Hz gain' }).fill(gain)
+    await panel.getByRole('button', { name: 'Apply' }).click()
+    await expect(panel.getByRole('button', { name: 'Apply' })).toBeDisabled({ timeout: 15_000 })
+    await expect(dialog.getByTestId('eq-feedback')).toHaveText('The player confirmed the new value.')
+    await page.keyboard.press('Escape')
+    await open()
+    await expect(panel.getByRole('slider', { name: '1k Hz gain' })).toHaveValue(gain)
+    await page.keyboard.press('Escape')
     await disconnect(page)
   })
 

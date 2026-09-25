@@ -12,9 +12,19 @@ export type PanelSection = 'now' | 'queue'
 export interface TrackMenu {
   track: Track
   play: SelectionTarget | null
+  /** The playlist the row belongs to, when opened from a playlist page. */
+  playlist: string | null
   x: number
   y: number
 }
+
+/** The playlist dialog: create, rename, delete, add tracks or remove one. */
+export type PlaylistDialog =
+  | { mode: 'create' }
+  | { mode: 'rename'; playlist: string }
+  | { mode: 'delete'; playlist: string }
+  | { mode: 'add'; tracks: Track[]; title: string }
+  | { mode: 'remove'; playlist: string; track: Track }
 
 interface Toast {
   key: MessageKey
@@ -28,6 +38,7 @@ const state = reactive({
   panel: null as PanelSection | null,
   toast: null as Toast | null,
   trackMenu: null as TrackMenu | null,
+  playlistDialog: null as PlaylistDialog | null,
 })
 export const ui = readonly(state)
 
@@ -79,11 +90,17 @@ export function closePanel(restoreFocus: boolean): void {
   panelOpener = null
 }
 
-export function openTrackMenu(track: Track, play: SelectionTarget | null, anchor: HTMLElement): void {
+export function openTrackMenu(
+  track: Track,
+  play: SelectionTarget | null,
+  anchor: HTMLElement,
+  playlist: string | null = null,
+): void {
   const rect = anchor.getBoundingClientRect()
   state.trackMenu = {
     track,
     play,
+    playlist,
     x: Math.max(12, Math.min(innerWidth - 332, rect.right - 320)),
     y: Math.max(12, Math.min(innerHeight - 370, rect.bottom + 6)),
   }
@@ -91,4 +108,12 @@ export function openTrackMenu(track: Track, play: SelectionTarget | null, anchor
 
 export function closeTrackMenu(): void {
   state.trackMenu = null
+}
+
+export function openPlaylistDialog(dialog: PlaylistDialog): void {
+  state.playlistDialog = dialog
+}
+
+export function closePlaylistDialog(): void {
+  state.playlistDialog = null
 }

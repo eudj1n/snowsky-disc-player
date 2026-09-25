@@ -9,7 +9,8 @@ import { filterBy } from '../domain/search'
 import type { LibraryTrack } from '../domain/track'
 import { t } from '../i18n'
 import { library, loadPlaylistTracks } from '../stores/library'
-import { openTrackMenu, ui } from '../stores/ui'
+import { openPlaylistDialog, openTrackMenu, ui } from '../stores/ui'
+import { playlistEdits } from '../stores/playlistEdits'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { selection } from '../stores/selection'
@@ -23,11 +24,13 @@ const id = computed(() => Number(route.params.id))
 const playlist = computed(() => library.playlists.find((item) => item.id === id.value) ?? null)
 const tracks = ref<LibraryTrack[] | null>(null)
 let request = 0
+// Reload after the list changed (an edit here or elsewhere).
 watch(
-  id,
-  async (value) => {
+  () => [id.value, playlistEdits.revision] as const,
+  async ([value], previous) => {
     const current = ++request
-    tracks.value = null
+    // A new playlist shows its skeleton; a reload after an edit keeps the rows.
+    if (previous?.[0] !== value) tracks.value = null
     try {
       const rows = await loadPlaylistTracks(value)
       if (current === request) tracks.value = rows
@@ -58,6 +61,17 @@ const items = computed(() =>
           @click="playlist && playFrom({ kind: 'playlist', name: playlist.name })"
           >{{ t('listen_playlist') }}</UiPillButton
         >
+        <UiPillButton
+          variant="secondary"
+          :disabled="loading || !playlist"
+          @click="playlist && openPlaylistDialog({ mode: 'rename', playlist: playlist.name })"
+          >{{ t('rename') }}</UiPillButton
+        >
+        <UiTextButton
+          :disabled="loading || !playlist"
+          @click="playlist && openPlaylistDialog({ mode: 'delete', playlist: playlist.name })"
+          >{{ t('delete') }}</UiTextButton
+        >
       </DetailHeading>
     </template>
     <template #skeleton>
@@ -76,6 +90,7 @@ const items = computed(() =>
             items[index],
             playlist ? { kind: 'playlist', name: playlist.name, track: items[index] } : null,
             anchor,
+            playlist?.name ?? null,
           )
       "
       @favorite="onRowFavorite"

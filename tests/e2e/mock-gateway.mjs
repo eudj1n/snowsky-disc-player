@@ -17,6 +17,7 @@ import {
   artistAlbum,
   catalogPage,
   dataQuery,
+  editPlaylists,
   genre,
   indexUpload,
 } from './mock-collection.mjs'
@@ -51,9 +52,32 @@ const player = {
   mode: 0,
   loved: new Set(),
   sound: { gain: 0, balance: 0, filter: 1, dre: 1 },
+  // Equalizer: network preset, and profiles of the user presets 160..169.
+  eq: { preset: 255, profiles: new Map(), last: 160 },
   uploads: [],
   socket: null,
 }
+/** The profile the player reads from: the selected user preset, else the last used one. */
+function eqProfile() {
+  const slot = player.eq.preset >= 160 && player.eq.preset <= 169 ? player.eq.preset : player.eq.last
+  if (!player.eq.profiles.has(slot)) {
+    const frequencies = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
+    player.eq.profiles.set(slot, { master: 0, bands: frequencies.map((frequency) => ({ frequency, gain: 0, q: 0.7 })) })
+  }
+  return player.eq.profiles.get(slot)
+}
+
+/** a628: "0000", first and last position, then 7 bytes per band. */
+function peqReply(bands) {
+  const hex = (value, width) => (value & (16 ** width - 1)).toString(16).toUpperCase().padStart(width, '0')
+  const body = bands
+    .map(
+      (band) => hex(Math.round(band.gain * 10), 4) + hex(band.frequency, 4) + hex(Math.round(band.q * 100), 4) + '00',
+    )
+    .join('')
+  return '0000' + '00' + hex(bands.length - 1, 2) + body
+}
+
 // Position ticks (a103) once per second while playing.
 setInterval(() => {
   if (player.state !== 0 || !player.socket) return
@@ -154,6 +178,26 @@ const server = createServer((request, response) => {
     const body = player.list[player.index] ? readFileSync(new URL('cover.png', FIXTURES)) : Buffer.alloc(0)
     return send(response, 200, body, 'application/json; charset=utf-8')
   }
+  // Playlist mutations: token, fresh request ID, then the stock change and an empty 200.
+  const playlistRoute =
+    (url.pathname === '/api/stock/custom_list_cmd/' && request.method === 'POST') ||
+    (url.pathname === '/api/stock/add_custom_list/' && request.method === 'POST') ||
+    (url.pathname === '/api/stock/song_category_tree/' && request.method === 'DELETE')
+  if (playlistRoute) {
+    if (request.headers['x-disc-token'] !== TOKEN) return send(response, 403, 'Token required\n')
+    const id = request.headers['x-disc-request']
+    if (!id || player.seen.has(id)) return send(response, 409, 'Request ID already used\n')
+    player.seen.add(id)
+    const chunks = []
+    request.on('data', (chunk) => chunks.push(chunk))
+    request.on('end', () => {
+      const text = Buffer.concat(chunks).toString()
+      const result = editPlaylists(url.pathname, request.headers, text ? JSON.parse(text) : null)
+      if (result === null) return send(response, 403, 'Stock request not admitted by the catalog\n')
+      send(response, 200, '', 'text/plain', result)
+    })
+    return
+  }
   if (url.pathname === '/api/stock/song_category_tree/') {
     if (request.headers.type === 'curlist/song') {
       const page = catalogPage(request.headers, player.list)
@@ -212,8 +256,27 @@ server.on('upgrade', (request, socket, head) => {
         return ws.send(record('a' + tag.slice(1), hex4(wire)))
       }
       if (tag === '0202') return ws.send(record('a202', a202()))
+      if (tag === '0639') return ws.send(record('a639', hex4(player.eq.preset)))
+      if (tag === '0629') return ws.send(record('a629', hex4(Math.round(eqProfile().master * 10) & 0xffff)))
+      if (tag === '0628') return ws.send(record('a628', peqReply(eqProfile().bands)))
       if (
-        ['0201', '0101', '0100', '0102', '0103', '0104', '0502', '0622', '0649', '0713', '0653', '0812'].includes(tag)
+        [
+          '0201',
+          '0101',
+          '0100',
+          '0102',
+          '0103',
+          '0104',
+          '0502',
+          '0622',
+          '0649',
+          '0713',
+          '0653',
+          '0812',
+          '0690',
+          '0630',
+          '0678',
+        ].includes(tag)
       ) {
         const id = session.request
         session.request = null
@@ -240,6 +303,28 @@ server.on('upgrade', (request, socket, head) => {
           return match ? genre(match[1], match[2] === '' ? null : match[2]) : []
         }
         const value = parseInt(payload.slice(0, 4), 16)
+        if (tag === '0690') {
+          if (![255, 0, 1, 2, 3, 4, 5, 6, 8, 9, 10].includes(value) && !(value >= 160 && value <= 169)) return
+          player.eq.preset = value
+          if (value >= 160) player.eq.last = value
+          eqProfile()
+          return ws.send(record('a639', hex4(value)))
+        }
+        if (tag === '0630' || tag === '0678') {
+          if (!(player.eq.preset >= 160 && player.eq.preset <= 169)) return
+          const profile = eqProfile()
+          if (tag === '0630') profile.master = (value < 0x8000 ? value : value - 0x10000) / 10
+          else {
+            for (const band of JSON.parse(payload.slice(4))) {
+              profile.bands[band.position] = {
+                frequency: band.frequency,
+                gain: Number(band.gain),
+                q: Number(band.qValue),
+              }
+            }
+          }
+          return
+        }
         if (tag === '0102') {
           player.mode = value
           return ws.send(record('a102', payload.slice(0, 4)))
