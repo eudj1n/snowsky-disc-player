@@ -1,10 +1,9 @@
 /** Playback actions shared by views: whole albums and single tracks. */
 import type { SelectionTarget } from '../gateway/selection'
 import type { MessageKey } from '../i18n'
-import { connection } from '../stores/connection'
-import { pairing } from '../stores/pairing'
 import { play } from '../stores/selection'
-import { openDialog, toast } from '../stores/ui'
+import { toast } from '../stores/ui'
+import { ensureControl } from './ensureControl'
 
 const MESSAGES: Record<string, [MessageKey, boolean]> = {
   playing: ['done_verified_on_disc', false],
@@ -16,10 +15,7 @@ const MESSAGES: Record<string, [MessageKey, boolean]> = {
 }
 
 export async function playFrom(target: SelectionTarget): Promise<void> {
-  if (connection.connection !== 'connected' || !pairing.paired) {
-    openDialog('connection')
-    return
-  }
+  if (!(await ensureControl())) return
   const [key, error] = MESSAGES[await play(target)] ??
     MESSAGES.uncertain ?? ['result_unconfirmed_the_command_was_not_retried', true]
   toast(key, error)

@@ -7,7 +7,7 @@ defineProps<{ eyebrow: string; title: string; meta: string | null }>()
 </script>
 
 <template>
-  <div class="mt-5 mb-28 flex items-center justify-between">
+  <div class="mt-5 mb-28 flex flex-wrap items-end justify-between gap-x-20 gap-y-14">
     <div>
       <span class="text-9 font-[650] tracking-[1.8px] text-muted uppercase phone:text-8">{{ eyebrow }}</span>
       <h1 class="mt-10 mb-7 text-32 font-bold tracking-[-1px] phone:text-29">{{ title }}</h1>

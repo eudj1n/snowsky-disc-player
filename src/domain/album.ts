@@ -37,3 +37,17 @@ export function groupAlbums(tracks: readonly LibraryTrack[]): Album[] {
 export function recentAlbums(albums: readonly Album[], count: number): Album[] {
   return [...albums].sort((a, b) => (b.addedAt ?? 0) - (a.addedAt ?? 0)).slice(0, count)
 }
+
+export type AlbumSort = 'recent' | 'title' | 'artist'
+export const ALBUM_SORTS: readonly AlbumSort[] = ['recent', 'title', 'artist']
+
+/** Owner's proposal 6: recently added, by title or by artist; stable ties. */
+export function sortAlbums(albums: readonly Album[], sort: AlbumSort, locale: string): Album[] {
+  const collator = new Intl.Collator(locale, { sensitivity: 'base', numeric: true })
+  const artist = (album: Album) => album.artists[0] ?? ''
+  return [...albums].sort((a, b) => {
+    if (sort === 'recent') return (b.addedAt ?? 0) - (a.addedAt ?? 0)
+    if (sort === 'artist') return collator.compare(artist(a), artist(b)) || collator.compare(a.title, b.title)
+    return collator.compare(a.title, b.title)
+  })
+}

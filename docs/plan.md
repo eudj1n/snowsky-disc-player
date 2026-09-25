@@ -65,6 +65,21 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
 - [x] Owner's design decision: primary pill buttons use the player's ink
       green instead of the coral accent; coral stays for small indicators.
 
+## Owner proposals accepted (round 1)
+
+- [x] Connect on the first playback action when this browser holds the
+      pairing token; otherwise the connection dialog explains (proposal 1).
+- [x] Keyboard: Space play/pause, Left/Right previous/next, "/" search;
+      ignored while typing, on focused controls and with a dialog open (2).
+- [ ] Import: dropping whole folders keeps their structure (3).
+- [ ] Import: "refresh the collection after transfer" on by default: the scan
+      still runs once and is never restarted, and the collection reloads after
+      its observed end (4).
+- [ ] Sound: two-state settings (DRE, gain) apply on press with readback;
+      filter and balance keep an explicit Apply (5).
+- [x] Album sorting: recently added, title, artist, remembered in the
+      browser, with the locale's collation (6).
+
 ## M1.5 — Caching, enrichment and artwork
 
 - [x] Collection snapshot in IndexedDB keyed by the library signature
@@ -126,6 +141,25 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
 
 - [ ] Snapshot of the library in IndexedDB for browsing while disconnected,
       with staleness shown; current-track artwork kept per snapshot.
+
+## Requests for the next service build
+
+Capabilities the current engineering image (snowsky-disc-service
+`combined-005`, catalog `a3e0203b38aceca7`) cannot give the player, found
+while porting. Each needs a service change, emulator acceptance and a new
+image; card-only items (catalog or query additions) are marked as such.
+
+- [ ] **Media metadata endpoint.** Read-only, bounded reads from the card:
+      FLAC STREAMINFO (duration, sample rate, bit depth, channels), embedded
+      PICTURE blocks, folder `cover.jpg`/`folder.jpg`, served per path or per
+      album with proper image types and cache headers. Stock fills DURATION
+      only after playback (83 of 779 tracks on the owner's player) and keeps no
+      artwork. Unblocks covers and durations for the whole collection.
+- [ ] **Forward stock Content-Type for image routes.** `/api/stock/image/cover/`
+      is labelled `application/json` today, so the UI decodes bytes onto a
+      canvas instead of using `<img>`.
+- [ ] Decide whether the page CSP should allow `img-src 'self' blob:` for
+      cached artwork, or whether the media endpoint makes that unnecessary.
 
 ## Later
 

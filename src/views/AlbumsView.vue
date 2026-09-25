@@ -4,8 +4,11 @@ import CoverCard from '../components/collection/CoverCard.vue'
 import CoverCardSkeleton from '../components/collection/CoverCardSkeleton.vue'
 import CoverGrid from '../components/collection/CoverGrid.vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
+import { ALBUM_SORTS, sortAlbums } from '../domain/album'
 import { filterBy } from '../domain/search'
-import { t } from '../i18n'
+import { locale, t } from '../i18n'
+import { albumSort } from '../stores/preferences'
+import UiChips from '../ui/UiChips.vue'
 import { albumCover } from '../stores/enrichment'
 import { albums } from '../stores/library'
 import { ui } from '../stores/ui'
@@ -13,7 +16,14 @@ import { albumLines, albumRoute, countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
 
 const searching = computed(() => ui.query.trim() !== '')
-const items = computed(() => filterBy(albums.value, ui.query, (album) => [album.title, ...album.artists]))
+const items = computed(() =>
+  sortAlbums(
+    filterBy(albums.value, ui.query, (album) => [album.title, ...album.artists]),
+    albumSort.value,
+    locale.value,
+  ),
+)
+const sorts = computed(() => ALBUM_SORTS.map((value) => ({ value, text: t(`sort_${value}`) })))
 </script>
 
 <template>
@@ -23,7 +33,9 @@ const items = computed(() => filterBy(albums.value, ui.query, (album) => [album.
         :eyebrow="t('my_collection')"
         :title="t('albums')"
         :meta="loading ? null : countLine(searching, items.length)"
-      />
+      >
+        <UiChips v-model="albumSort" :label="t('sort_by')" :options="sorts" class="self-end" />
+      </ViewHeading>
     </template>
     <template #skeleton>
       <CoverGrid><CoverCardSkeleton v-for="n in 8" :key="n" /></CoverGrid>

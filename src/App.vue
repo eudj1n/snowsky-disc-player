@@ -21,6 +21,7 @@ import { loadEnrichment } from './stores/enrichment'
 import { loadCollection, loadLibraryFacts } from './stores/library'
 import { playerVisible } from './stores/playback'
 import { setQuery, ui } from './stores/ui'
+import { handleShortcut } from './views/shortcuts'
 
 const route = useRoute()
 // A real navigation clears the search (reference hashchange handler).
@@ -29,29 +30,20 @@ watch(
   () => setQuery(''),
 )
 
-function focusSearch(event: KeyboardEvent): void {
-  const target = event.target as HTMLElement | null
-  if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return
-  if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
-  if (document.querySelector('dialog[open]')) return
-  event.preventDefault()
-  document.getElementById('search')?.focus()
-}
-
 function skipToContent(event: MouseEvent): void {
   event.preventDefault()
   document.getElementById('main')?.focus()
 }
 
 onMounted(async () => {
-  document.addEventListener('keydown', focusSearch)
+  document.addEventListener('keydown', handleShortcut)
   void loadEnrichment()
   if (await probeGateway()) {
     await loadLibraryFacts()
     await loadCollection()
   }
 })
-onBeforeUnmount(() => document.removeEventListener('keydown', focusSearch))
+onBeforeUnmount(() => document.removeEventListener('keydown', handleShortcut))
 // The player's height drives the layout through --player (styles/main.css).
 watchEffect(() => {
   document.documentElement.dataset.player = playerVisible.value ? 'shown' : 'hidden'

@@ -95,3 +95,19 @@ describe('albums', () => {
     expect(recentAlbums(albums, 1).map((a) => a.title)).toEqual(['New'])
   })
 })
+
+describe('album sorting', () => {
+  it('orders by recent addition, title or artist with the locale collation', async () => {
+    const { sortAlbums } = await import('../../src/domain/album')
+    const albums = [
+      { title: 'Ёлка', artists: ['Б'], trackCount: 1, addedAt: 2 },
+      { title: 'album 10', artists: ['а'], trackCount: 1, addedAt: 3 },
+      { title: 'Album 9', artists: ['В'], trackCount: 1, addedAt: 1 },
+    ]
+    expect(sortAlbums(albums, 'recent', 'ru').map((a) => a.title)).toEqual(['album 10', 'Ёлка', 'Album 9'])
+    // Russian collation puts Cyrillic first; numbers compare numerically, case-insensitively.
+    expect(sortAlbums(albums, 'title', 'ru').map((a) => a.title)).toEqual(['Ёлка', 'Album 9', 'album 10'])
+    expect(sortAlbums(albums, 'title', 'en').map((a) => a.title)).toEqual(['Album 9', 'album 10', 'Ёлка'])
+    expect(sortAlbums(albums, 'artist', 'ru').map((a) => a.artists[0])).toEqual(['а', 'Б', 'В'])
+  })
+})
