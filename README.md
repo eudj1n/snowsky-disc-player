@@ -1,0 +1,53 @@
+# SNOWSKY DISC player
+
+A music player web application for the FiiO SNOWSKY DISC. It lives on the
+player's own memory card and is served by the DISC service running inside the
+player, so any browser on your home network becomes a remote for your music:
+browse the library, see what is playing and control playback. Music keeps
+playing on the DISC; nothing streams to the browser.
+
+> Status: early development. The first release connects to the player, shows
+> firmware identity, the library size and the current track, and controls
+> playback after pairing. The full collection interface of the reference
+> DISC Web is being ported next (see the [plan](docs/plan.md)).
+
+## Requirements
+
+- A SNOWSKY DISC with firmware V2.57 and the DISC service engineering image
+  installed ([snowsky-disc-service](https://github.com/eudj1n/snowsky-disc-service)).
+- The engineering LAN marker and a pairing token on the PLAY memory card, as
+  described by the service.
+- A current desktop or mobile browser on the same network as the player.
+
+## Install on the memory card
+
+Releases are published to the card with the service's publisher; nothing is
+flashed. The [release guide](docs/release.md) has the exact steps: build,
+prepare a release for the player's firmware, copy it to the card, eject.
+
+## Use
+
+1. Open `http://<player-ip>:7870/` in a browser on the same network.
+2. Press **Connect**. Only one client can control the player at a time; if the
+   FiiO app or another page is connected, disconnect it first.
+3. To control playback, open **Pairing** and paste the token from the
+   `DISC_WEB_TOKEN` file on the memory card. It is stored in this browser only.
+
+The interface starts in the player's own language when it is Russian or
+English and remembers your choice of language and appearance.
+
+## Privacy and safety
+
+The page talks only to the player that served it. There is no account, no
+cloud and no analytics. The player never receives a command that its reviewed
+command list does not allow, and a command whose result is unknown is never
+repeated automatically.
+
+## For developers
+
+Start with [AGENTS.md](AGENTS.md), the [architecture](docs/architecture.md)
+and the [development guide](docs/development.md).
+
+## License
+
+[MIT](LICENSE)

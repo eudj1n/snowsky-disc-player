@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "api": 1,
+  "version": "2.57",
+  "profile_sha256": "9c24f384013ebd611f5527079196d8a8923453019efe354c137552774b847151",
+  "catalog_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "records": {
+    "0599": {
+      "name": "identity_handshake",
+      "kind": "read",
+      "class": "identity",
+      "payload": "0000",
+      "reply": "a599",
+      "silent_ok": false,
+      "timeout_ms": 4000,
+      "pacing_ms": 0,
+      "max_bytes": 12
+    },
+    "0501": {
+      "name": "settings",
+      "kind": "read",
+      "class": "settings",
+      "payload": "",
+      "reply": "a501",
+      "silent_ok": false,
+      "timeout_ms": 4000,
+      "pacing_ms": 0,
+      "max_bytes": 8
+    },
+    "0202": {
+      "name": "now_playing",
+      "kind": "read",
+      "class": "state",
+      "payload": "",
+      "reply": "a202",
+      "silent_ok": true,
+      "timeout_ms": 4000,
+      "pacing_ms": 0,
+      "max_bytes": 12
+    },
+    "0201": {
+      "name": "control",
+      "kind": "mutation",
+      "class": "control",
+      "payload": "000[0-2]",
+      "reply": "a202",
+      "silent_ok": false,
+      "timeout_ms": 4000,
+      "pacing_ms": 500,
+      "max_bytes": 528
+    }
+  },
+  "http": [],
+  "denied": { "records": {}, "http": [] }
+}

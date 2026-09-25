@@ -1,0 +1,33 @@
+/** A track as every view shows it. Sources (playback observation, library
+ * rows, queue, playlists) map their wire shapes into this one object. */
+export interface Track {
+  title: string
+  artist: string | null
+  album: string | null
+  /** Zero-based position in the current queue, when the source knows it. */
+  queuePosition: number | null
+  /** Absolute path on the player, e.g. /tmp/sdcard/Album/01.flac. */
+  path: string | null
+  durationMs: number | null
+}
+
+/** "Artist · Album" with unknown parts left out. */
+export function trackCredits(track: Pick<Track, 'artist' | 'album'>): string {
+  return [track.artist, track.album].filter((part): part is string => Boolean(part)).join(' · ')
+}
+
+/** m:ss or h:mm:ss; null when the duration is unknown (never guessed). */
+export function formatDuration(ms: number | null): string | null {
+  if (ms === null || !Number.isFinite(ms) || ms < 0) return null
+  const total = Math.floor(ms / 1000)
+  const hours = Math.floor(total / 3600)
+  const minutes = Math.floor((total % 3600) / 60)
+  const seconds = String(total % 60).padStart(2, '0')
+  return hours ? `${hours}:${String(minutes).padStart(2, '0')}:${seconds}` : `${minutes}:${seconds}`
+}
+
+/** File extension as a format badge (FLAC, WAV…), only from an observed path. */
+export function formatBadge(path: string | null): string | null {
+  const match = path ? /\.([A-Za-z0-9]{2,5})$/.exec(path) : null
+  return match?.[1] ? match[1].toUpperCase() : null
+}

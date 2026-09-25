@@ -1,0 +1,63 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens after the reference DISC Web: warm paper surfaces, quiet
+ * green neutrals, coral primary actions, system fonts (the gateway CSP allows
+ * 'self' only, so no web fonts from a CDN). Components use these through
+ * Tailwind utilities (bg-paper, text-muted, border-line…); dark values
+ * override the same variables.
+ */
+@theme {
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --color-paper: #f8f7f4;
+  --color-surface: #ffffff;
+  --color-ink: #1d2623;
+  --color-muted: #5e6b66;
+  --color-line: #e3e1da;
+  --color-forest: #1f3a33;
+  --color-coral: #e8745c;
+  --color-coral-ink: #ffffff;
+  --color-ok: #3f8f6b;
+  --color-warn: #b5562f;
+  --radius-card: 14px;
+  --shadow-card: 0 1px 2px rgb(29 38 35 / 6%), 0 8px 24px rgb(29 38 35 / 6%);
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      color-scheme: dark;
+      --color-paper: #121614;
+      --color-surface: #1a201d;
+      --color-ink: #eef1ee;
+      --color-muted: #9aa8a2;
+      --color-line: #2a322e;
+      --color-forest: #a8d5c2;
+      --color-coral: #f08a73;
+      --color-coral-ink: #1a0f0b;
+      --color-ok: #6cc59b;
+      --color-warn: #f0a07f;
+      --shadow-card: none;
+    }
+  }
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+    --color-paper: #121614;
+    --color-surface: #1a201d;
+    --color-ink: #eef1ee;
+    --color-muted: #9aa8a2;
+    --color-line: #2a322e;
+    --color-forest: #a8d5c2;
+    --color-coral: #f08a73;
+    --color-coral-ink: #1a0f0b;
+    --color-ok: #6cc59b;
+    --color-warn: #f0a07f;
+    --shadow-card: none;
+  }
+  body {
+    @apply bg-paper font-sans text-ink antialiased;
+  }
+}
