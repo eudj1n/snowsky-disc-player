@@ -96,3 +96,50 @@ describe('release and settings', () => {
     expect(socVersion('{}')).toBeNull()
   })
 })
+
+describe('gateway busy answers', () => {
+  it('retries a data read after 503 and gives up after two more tries', async () => {
+    let calls = 0
+    const http = new GatewayHttp(
+      () => {
+        calls++
+        return Promise.resolve(
+          calls < 3
+            ? new Response('busy', { status: 503 })
+            : new Response(JSON.stringify({ query: 'q', columns: [], rows: [], rows_returned: 0, truncated: false })),
+        )
+      },
+      () => Promise.resolve(),
+    )
+    await expect(http.data('tracks')).resolves.toMatchObject({ rows_returned: 0 })
+    expect(calls).toBe(3)
+    const always = new GatewayHttp(
+      () => Promise.resolve(new Response('busy', { status: 503 })),
+      () => Promise.resolve(),
+    )
+    await expect(always.data('tracks')).rejects.toThrow('HTTP 503')
+  })
+
+  it('sends stock requests one at a time and never retries a mutation', async () => {
+    let active = 0
+    let peak = 0
+    let mutations = 0
+    const http = new GatewayHttp(async (_input, init) => {
+      if (init?.method === 'POST') mutations++
+      active++
+      peak = Math.max(peak, active)
+      await new Promise((done) => setTimeout(done, 5))
+      active--
+      return new Response(init?.method === 'POST' ? 'busy' : '[]', {
+        status: init?.method === 'POST' ? 503 : 200,
+        headers: { 'total-num': '0' },
+      })
+    })
+    const reads = Promise.all([http.stockRead('/a/'), http.stockRead('/b/')])
+    const write = http.stockMutation('/c/', { method: 'POST', token: 't'.repeat(43) })
+    await reads
+    expect((await write).response.status).toBe(503)
+    expect(peak).toBe(1)
+    expect(mutations).toBe(1)
+  })
+})

@@ -28,8 +28,11 @@ implementation ports DISC Web's interface and experience
       one owner, token, request-ID replay); `npm run dev:mock` for visual work
       without a player; `dev:emulator` and `.env.local` for the emulator and a
       real player.
-- [ ] Emulator acceptance of the M0 build: publish on the disposable card,
-      Playwright against the emulator gateway with the guest token.
+- [x] Emulator acceptance: publish on the disposable card, Playwright
+      against the emulator gateway with the guest token. Done on 2026-09-25
+      with the full scenario (see round 6); release `3a7fe4bf6ebc3256` on the
+      guest, 6 acceptance and 4 shared browser tests passed against V2.57
+      stock.
 
 ## M1 — DISC Web shell and experience
 
@@ -171,6 +174,33 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
       track (album, artist), its genre tag, its folder or the single playlist
       that holds it (checked while there are at most 30 playlists), and stays
       generic otherwise.
+
+## Emulator acceptance findings (round 6)
+
+`tests/e2e/acceptance.spec.ts` on the V2.57 guest with generated tagged media
+(`tests/e2e/emulator/media.sh`) passed after these fixes:
+
+- [x] Playlist pages read members by `CUSTOM_PLAYLIST_INDEX.LIST_ID`: the
+      `playlist_tracks` query filters on it (the `playlists` count does too),
+      and the page passed the index row `ID`, so on the player it showed the
+      wrong list or nothing. The query catalog allowed `id >= 1` while the
+      first list has `LIST_ID` 0: fixed card-only in snowsky-disc-service
+      (`d2f7806`), shipped with the next bundle.
+- [x] The data level answers 503 while stock scans (database busy) and stock
+      routes answer 503 when the single stock HTTP reservation is taken. The
+      page now sends stock requests one at a time and repeats reads twice
+      after a 503; mutations are never repeated.
+- [x] Confirmed on stock: artist-scoped album (type 7), whole artist, whole
+      genre (type 8, including the stock's own "Unknown genre" group), a track
+      in a genre (000A), a genre album (type 8), tag-ordered album pages,
+      partial a202 after a switch, paused and playing seek, volume with mute,
+      modes, favorite, queue row, playlist create/add/play/remove/rename and
+      delete (not in the reference session, now accepted on the emulator),
+      gain, EQ preset, band and flatten, upload with one scan.
+- Stock data: untagged fields are stored as "Unknown album", "Unknown
+  Artist" and "Unknown genre" and the stock catalogs group them under the
+  same names; TITLE may be null (the file name is shown). Physical player
+  confirmation of the new operations is still open.
 
 ## M1.5 — Caching, enrichment and artwork
 

@@ -69,6 +69,33 @@ the page as if it came from the card. Nothing is written to the card.
   E2E_BASE_URL=http://127.0.0.1:17870 E2E_TOKEN=<card token> npx playwright test
   ```
 
+### Emulator acceptance against real stock
+
+`tests/e2e/acceptance.spec.ts` drives every guarded feature against the
+stock of the disposable V2.57 guest: scan, same-titled albums and tag order,
+scoped, genre and artist playback, transport, seek, volume and mute, modes,
+favorite, queue, playlist editing, sound and EQ (restored afterwards), and an
+upload with a scan. It changes device state, so it runs only with
+`E2E_ACCEPTANCE=emulator` and never against a player. Steps, with the
+emulator from snowsky-disc-service booted and USB power emulated:
+
+```sh
+C=$(python3 -c "import json;print(json.load(open('../snowsky-disc-service/work/emulator.json'))['id'])")-emu
+tests/e2e/emulator/media.sh $C                      # tagged tones on the guest card
+npm run build && DISC_SERVICE_DIR=../snowsky-disc-service npm run release
+docker cp work/release-<timestamp>/www $C:/work/player-release
+docker exec $C python3 /platform/scripts/webroot_bundle.py publish \
+  --prepared /work/player-release --card /tmp/sdcard --confirm-card-write
+E2E_ACCEPTANCE=emulator E2E_BASE_URL=http://127.0.0.1:17870 \
+  E2E_TOKEN="$(docker exec $C cat /tmp/sdcard/DISC_WEB_TOKEN)" \
+  npx playwright test --project=desktop
+tests/e2e/emulator/media.sh $C remove               # then rescan:
+docker exec $C python3 -B /platform/tests/integration/prepare_guest.py
+```
+
+The last step leaves the CI album paused, as the service fixture expects;
+delete any playlist a failed run left behind before rescanning.
+
 ## CI
 
 `.github/workflows/ci.yml` runs `format:check`, `lint`, `typecheck`, `test`,

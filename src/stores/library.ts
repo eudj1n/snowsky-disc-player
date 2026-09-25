@@ -167,7 +167,11 @@ export async function loadRecentlyPlayed(limit = 12): Promise<LibraryTrack[]> {
   return enriched(libraryTracks(await http.data('recently_played', { limit })))
 }
 
-/** Tracks of one custom playlist, in stock list order. */
-export async function loadPlaylistTracks(id: number): Promise<LibraryTrack[]> {
-  return enriched(await pages('playlist_tracks', { id }))
+/**
+ * Tracks of one custom playlist (data level, ID order). The query addresses
+ * the list by CUSTOM_PLAYLIST_INDEX.LIST_ID, not its row ID: the first list
+ * has LIST_ID 0 (found on the emulator).
+ */
+export async function loadPlaylistTracks(listId: number): Promise<LibraryTrack[]> {
+  return enriched(await pages('playlist_tracks', { id: listId }))
 }

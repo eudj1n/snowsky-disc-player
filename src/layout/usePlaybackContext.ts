@@ -33,7 +33,9 @@ function createContext() {
         let paths = members.get(list.id)
         if (!paths) {
           try {
-            paths = new Set((await loadPlaylistTracks(list.id)).flatMap((track) => (track.path ? [track.path] : [])))
+            paths = new Set(
+              (await loadPlaylistTracks(list.listId)).flatMap((track) => (track.path ? [track.path] : [])),
+            )
           } catch {
             return
           }

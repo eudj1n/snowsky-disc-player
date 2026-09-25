@@ -108,7 +108,8 @@ export function dataQuery(name, params, language) {
     return { status: 200, body: table(rows, [...COLUMNS, 'PLAY_COUNT', 'LAST_PLAY_TIME']) }
   }
   if (name === 'playlist_tracks') {
-    const list = PLAYLISTS.find((item) => item.ID === Number(params.get('id')))
+    // Like stock: the query addresses CUSTOM_PLAYLIST_INDEX.LIST_ID, not the row ID.
+    const list = PLAYLISTS.find((item) => item.LIST_ID === Number(params.get('id')))
     return list ? tracks(list.members) : { status: 200, body: table([], COLUMNS) }
   }
   return { status: 404, body: 'Unknown query\n' }
@@ -189,7 +190,8 @@ export function editPlaylists(path, headers, body) {
     if (!name) return null
     if (headers.type === 'create') {
       const id = Math.max(0, ...PLAYLISTS.map((list) => list.ID)) + 1
-      PLAYLISTS.push({ ID: id, LIST_ID: id, LIST_NAME: name, M3U_PATH: null, members: [] })
+      const listId = Math.max(-1, ...PLAYLISTS.map((list) => list.LIST_ID)) + 1
+      PLAYLISTS.push({ ID: id, LIST_ID: listId, LIST_NAME: name, M3U_PATH: null, members: [] })
       return { type: 'create' }
     }
     const list = PLAYLISTS[Number(headers.list_id)]

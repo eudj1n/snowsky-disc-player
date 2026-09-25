@@ -24,15 +24,17 @@ const id = computed(() => Number(route.params.id))
 const playlist = computed(() => library.playlists.find((item) => item.id === id.value) ?? null)
 const tracks = ref<LibraryTrack[] | null>(null)
 let request = 0
-// Reload after the list changed (an edit here or elsewhere).
+// Reload after the list changed (an edit here or elsewhere). Members are
+// addressed by the list's LIST_ID, known once the collection lists it.
 watch(
-  () => [id.value, playlistEdits.revision] as const,
-  async ([value], previous) => {
+  () => [id.value, playlist.value?.listId ?? null, playlistEdits.revision] as const,
+  async ([value, listId], previous) => {
     const current = ++request
     // A new playlist shows its skeleton; a reload after an edit keeps the rows.
     if (previous?.[0] !== value) tracks.value = null
+    if (listId === null) return
     try {
-      const rows = await loadPlaylistTracks(value)
+      const rows = await loadPlaylistTracks(listId)
       if (current === request) tracks.value = rows
     } catch {
       if (current === request) tracks.value = []
