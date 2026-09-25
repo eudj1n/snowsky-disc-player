@@ -38,25 +38,47 @@ describe('ArtworkSleeve', () => {
 })
 
 describe('CoverCard', () => {
-  it('opens through a labelled cover button and renders metadata as text', async () => {
+  it('opens from the cover and the title, links the artist and renders metadata as text', () => {
     const card = mount(CoverCard, {
-      props: { title: '<b>x</b>', lines: ['Берег', '4 трека'], openLabel: 'Открыть <b>x</b>' },
+      props: {
+        title: '<b>x</b>',
+        to: '/album/x',
+        lines: [{ text: 'Берег', to: '/artist/Берег' }, { text: '4 трека' }],
+        openLabel: 'Открыть <b>x</b>',
+      },
+      global: { stubs: { RouterLink: { props: ['to'], template: '<a :href="String(to)"><slot /></a>' } } },
     })
-    await card.get('button').trigger('click')
-    expect(card.emitted('open')).toHaveLength(1)
-    expect(card.get('button').attributes('aria-label')).toBe('Открыть <b>x</b>')
+    const links = card.findAll('a')
+    expect(links.map((link) => link.attributes('href'))).toEqual(['/album/x', '/album/x', '/artist/Берег'])
+    expect(links[0]?.attributes('aria-label')).toBe('Открыть <b>x</b>')
     expect(card.find('b').exists()).toBe(false)
     expect(card.text()).toContain('4 трека')
   })
 })
 
 describe('TrackList', () => {
-  it('drops album and duration columns that no row knows', () => {
+  it('drops album and duration columns that no row knows, or the album when asked', () => {
     const list = mount(TrackList, { props: { tracks: [track('Волны', null, null)] } })
     expect(list.findAll('[role=cell]')).toHaveLength(3)
     const full = mount(TrackList, { props: { tracks: [track('Волны', 'Тихий океан', 185_000)] } })
     expect(full.findAll('[role=cell]')).toHaveLength(5)
     expect(full.text()).toContain('3:05')
+    const albumPage = mount(TrackList, {
+      props: { tracks: [track('Волны', 'Тихий океан', 185_000)], showAlbum: false },
+    })
+    expect(albumPage.text()).not.toContain('Тихий океан')
+  })
+
+  it('offers track actions from the ⋯ button and the context menu', async () => {
+    const list = mount(TrackList, {
+      props: { tracks: [track('Волны', 'Тихий океан', null)], menuLabel: 'Track actions' },
+    })
+    const button = list.get('[data-track-menu]')
+    expect(button.attributes('aria-haspopup')).toBe('menu')
+    expect(button.attributes('aria-label')).toBe('Track actions: Волны')
+    await button.trigger('click')
+    await list.get('[role=row]').trigger('contextmenu')
+    expect(list.emitted('menu')?.map(([index]) => index)).toEqual([0, 0])
   })
 
   it('marks the current row by path', () => {
@@ -71,12 +93,12 @@ describe('TrackList', () => {
 
 describe('skeletons', () => {
   it('mirror the geometry of the content they replace', () => {
-    const rows = mount(TrackListSkeleton, { props: { rows: 3, header: true, album: true, duration: true } })
+    const rows = mount(TrackListSkeleton, { props: { rows: 3, album: true, duration: true, actions: true } })
     const list = mount(TrackList, {
-      props: { tracks: [track('Волны', 'Тихий океан', 185_000)], header: { title: 'T', album: 'A' } },
+      props: { tracks: [track('Волны', 'Тихий океан', 185_000)], menuLabel: 'Track actions' },
     })
-    const skeletonRow = rows.findAll(':scope > div')[1]
-    const contentRow = list.findAll('[role=row]')[1]
+    const skeletonRow = rows.findAll(':scope > div')[0]
+    const contentRow = list.findAll('[role=row]')[0]
     expect(skeletonRow?.classes()).toEqual(contentRow?.classes().filter((name) => !name.startsWith('hover:')))
     expect(rows.attributes('aria-hidden')).toBe('true')
     expect(

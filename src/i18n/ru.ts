@@ -69,6 +69,8 @@ export const ru: Messages = {
   title: 'НАЗВАНИЕ',
   album_label: 'АЛЬБОМ',
   play_label: 'Включить',
+  go_to_album: 'Перейти к альбому',
+  go_to_artist: 'Перейти к исполнителю',
   track_actions: 'Действия с треком',
   your_music_your_space: 'ВАША МУЗЫКА. ВАШЕ ПРОСТРАНСТВО.',
   welcome_back: 'Рады видеть вас.',

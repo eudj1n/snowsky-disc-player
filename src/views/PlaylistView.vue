@@ -10,7 +10,7 @@ import type { LibraryTrack } from '../domain/track'
 import { t } from '../i18n'
 import { library, loadPlaylistTracks } from '../stores/library'
 import { playback } from '../stores/playback'
-import { ui } from '../stores/ui'
+import { openTrackMenu, ui } from '../stores/ui'
 import UiTextButton from '../ui/UiTextButton.vue'
 import CollectionGate from './CollectionGate.vue'
 
@@ -44,7 +44,7 @@ const items = computed(() =>
   <CollectionGate :count="items.length" :searching="searching" empty-key="search_empty_tracks" :ready="tracks !== null">
     <template #heading="{ loading }">
       <UiTextButton class="text-12" @click="router.push('/playlists')">← {{ t('back_to_collection') }}</UiTextButton>
-      <DetailHeading :eyebrow="t('playlist')" :title="playlist?.name ?? ''">
+      <DetailHeading :title="playlist?.name ?? ''">
         <template #meta>
           <span v-if="loading" class="inline-block h-10 w-90 animate-pulse rounded-4 bg-soft align-middle" />
           <template v-else>{{ t('track_count', { count: tracks?.length ?? 0 }) }}</template>
@@ -52,12 +52,13 @@ const items = computed(() =>
       </DetailHeading>
     </template>
     <template #skeleton>
-      <TrackListSkeleton :rows="Math.max(1, Math.min(playlist?.trackCount ?? 6, 12))" header />
+      <TrackListSkeleton :rows="Math.max(1, Math.min(playlist?.trackCount ?? 6, 12))" actions />
     </template>
     <TrackList
       :tracks="items"
-      :header="{ title: t('title'), album: t('album_label') }"
       :current-path="playback.current.track?.path ?? null"
+      :menu-label="t('track_actions')"
+      @menu="(index, anchor) => items[index] && openTrackMenu(items[index], null, anchor)"
     />
   </CollectionGate>
 </template>

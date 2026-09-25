@@ -20,6 +20,10 @@ interface PlaybackModel {
 const state = reactive<PlaybackModel>({ current: UNKNOWN_PLAYBACK, busy: false, uncertain: false })
 export const playback = readonly(state)
 
+/** The bottom player shows only while a track is observed (owner's decision):
+ * playing, paused or loading. Nothing observed means nothing to control. */
+export const playerVisible = computed(() => state.current.track !== null || state.current.state === 'loading')
+
 export const canControl = computed(
   () =>
     connection.connection === 'connected' && connection.identity?.compatible === true && pairing.paired && !state.busy,

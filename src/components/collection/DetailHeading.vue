@@ -1,8 +1,9 @@
 <script setup lang="ts">
-/** Reference detail header: 220px sleeve, entity type, name, meta line, actions. */
+/** Reference detail header: 220px sleeve, name, meta line, actions. The
+ * entity type is left out: the breadcrumb already names the section. */
 import ArtworkSleeve from '../artwork/ArtworkSleeve.vue'
 
-withDefaults(defineProps<{ eyebrow: string; title: string; artist?: boolean }>(), { artist: false })
+withDefaults(defineProps<{ title: string; artist?: boolean }>(), { artist: false })
 </script>
 
 <template>
@@ -14,9 +15,8 @@ withDefaults(defineProps<{ eyebrow: string; title: string; artist?: boolean }>()
       <ArtworkSleeve :title="title" :artist="artist" />
     </div>
     <div class="min-w-0">
-      <span class="text-9 font-[650] tracking-[1.8px] text-muted uppercase phone:text-8">{{ eyebrow }}</span>
       <h1
-        class="my-14 text-42 leading-[1.08] font-bold tracking-[-1.5px] [overflow-wrap:anywhere] rail:text-34 phone:text-32"
+        class="mt-0 mb-14 text-42 leading-[1.08] font-bold tracking-[-1.5px] [overflow-wrap:anywhere] rail:text-34 phone:text-32"
       >
         {{ title }}
       </h1>

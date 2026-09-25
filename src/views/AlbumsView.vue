@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import CoverCard from '../components/collection/CoverCard.vue'
 import CoverCardSkeleton from '../components/collection/CoverCardSkeleton.vue'
 import CoverGrid from '../components/collection/CoverGrid.vue'
@@ -9,10 +8,9 @@ import { filterBy } from '../domain/search'
 import { t } from '../i18n'
 import { albums } from '../stores/library'
 import { ui } from '../stores/ui'
-import { albumLines, countLine } from './captions'
+import { albumLines, albumRoute, countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
 
-const router = useRouter()
 const searching = computed(() => ui.query.trim() !== '')
 const items = computed(() => filterBy(albums.value, ui.query, (album) => [album.title, ...album.artists]))
 </script>
@@ -34,9 +32,9 @@ const items = computed(() => filterBy(albums.value, ui.query, (album) => [album.
         v-for="album in items"
         :key="album.title"
         :title="album.title"
+        :to="albumRoute(album.title)"
         :lines="albumLines(album)"
         :open-label="t('open_item', { name: album.title })"
-        @open="router.push({ name: 'album', params: { name: album.title } })"
       />
     </CoverGrid>
   </CollectionGate>

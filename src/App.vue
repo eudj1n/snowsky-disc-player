@@ -1,9 +1,10 @@
 <script setup lang="ts">
 /**
  * Application shell after the reference layout: skip link, fixed sidebar,
- * scrolling workspace (top bar, view, footer), fixed player, dialogs, toast.
+ * scrolling workspace (top bar, view), fixed player (only while a track is
+ * observed), listening panel, dialogs, toast.
  */
-import { onBeforeUnmount, onMounted, watch } from 'vue'
+import { onBeforeUnmount, onMounted, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import { t } from './i18n'
 import AppearanceDialog from './layout/AppearanceDialog.vue'
@@ -13,9 +14,11 @@ import AppToast from './layout/AppToast.vue'
 import AppTopbar from './layout/AppTopbar.vue'
 import ConnectionDialog from './layout/ConnectionDialog.vue'
 import ListeningPanel from './layout/ListeningPanel.vue'
+import TrackMenuDialog from './layout/TrackMenuDialog.vue'
 import './stores/appearance'
 import { probeGateway } from './stores/connection'
 import { loadCollection, loadLibraryFacts } from './stores/library'
+import { playerVisible } from './stores/playback'
 import { setQuery, ui } from './stores/ui'
 
 const route = useRoute()
@@ -47,6 +50,10 @@ onMounted(async () => {
   }
 })
 onBeforeUnmount(() => document.removeEventListener('keydown', focusSearch))
+// The player's height drives the layout through --player (styles/main.css).
+watchEffect(() => {
+  document.documentElement.dataset.player = playerVisible.value ? 'shown' : 'hidden'
+})
 </script>
 
 <template>
@@ -62,20 +69,15 @@ onBeforeUnmount(() => document.removeEventListener('keydown', focusSearch))
     <main
       id="main"
       tabindex="-1"
-      class="mx-auto max-w-1680 px-44 pt-34 pb-15 outline-none wide:px-60 wide:pt-40 wide:pb-20 compact:px-26 compact:pt-28 phone:px-18 phone:pt-23 phone:pb-10 listening:px-30"
+      class="mx-auto max-w-1680 px-44 pt-34 pb-44 outline-none wide:px-60 wide:pt-40 wide:pb-48 compact:px-26 compact:pt-28 phone:px-18 phone:pt-23 phone:pb-28 listening:px-30"
     >
       <RouterView />
     </main>
-    <footer
-      class="flex justify-between gap-10 px-44 pt-35 pb-24 text-9 text-muted compact:px-26 compact:pt-30 phone:px-18 phone:pt-28 phone:pb-22 phone:text-8"
-    >
-      <span>{{ t('collected_by_you_played_your_way') }}</span>
-      <span class="text-7 tracking-[1.6px] phone:text-6 phone:tracking-[1px]">DISC PLAYER · PREVIEW</span>
-    </footer>
   </div>
-  <AppPlayerBar />
+  <AppPlayerBar v-if="playerVisible" />
   <ListeningPanel />
   <ConnectionDialog />
   <AppearanceDialog />
+  <TrackMenuDialog />
   <AppToast />
 </template>

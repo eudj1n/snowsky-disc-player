@@ -10,7 +10,7 @@ import { t } from '../i18n'
 import { albums, library } from '../stores/library'
 import { playback } from '../stores/playback'
 import { selection } from '../stores/selection'
-import { ui } from '../stores/ui'
+import { openTrackMenu, ui } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import CollectionGate from './CollectionGate.vue'
@@ -29,7 +29,7 @@ const items = computed(() => filterBy(tracks.value, ui.query, (track) => [track.
   <CollectionGate :count="items.length" :searching="searching" empty-key="search_empty_tracks">
     <template #heading="{ loading }">
       <UiTextButton class="text-12" @click="router.push('/albums')">← {{ t('back_to_collection') }}</UiTextButton>
-      <DetailHeading :eyebrow="t('album')" :title="name">
+      <DetailHeading :title="name">
         <template #meta>
           <template v-if="loading"
             ><span class="inline-block h-10 w-140 animate-pulse rounded-4 bg-soft align-middle"
@@ -54,14 +54,19 @@ const items = computed(() => filterBy(tracks.value, ui.query, (track) => [track.
       </DetailHeading>
     </template>
     <template #skeleton>
-      <TrackListSkeleton :rows="8" header />
+      <TrackListSkeleton :rows="8" :album="false" actions />
     </template>
     <TrackList
       :tracks="items"
-      :header="{ title: t('title'), album: t('album_label') }"
+      :show-album="false"
       :current-path="playback.current.track?.path ?? null"
       :play-label="t('play_label')"
       :disabled="selection.busy"
+      :menu-label="t('track_actions')"
+      @menu="
+        (index, anchor) =>
+          items[index] && openTrackMenu(items[index], { kind: 'album', album: name, track: items[index] }, anchor)
+      "
       @play="(index) => items[index] && playFrom({ kind: 'album', album: name, track: items[index] })"
     />
   </CollectionGate>

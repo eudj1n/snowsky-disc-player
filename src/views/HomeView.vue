@@ -22,9 +22,9 @@ import { t } from '../i18n'
 import { albums, featuredAlbum, library } from '../stores/library'
 import { selection } from '../stores/selection'
 import { playback } from '../stores/playback'
-import { ui } from '../stores/ui'
+import { openTrackMenu, ui } from '../stores/ui'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumLines, countLine } from './captions'
+import { albumLines, albumRoute, countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { playAlbumAction, playFrom } from './playAlbum'
 
@@ -42,7 +42,6 @@ const heroLines = computed<[string, string]>(() =>
       ]
     : [t('your_favorite_records_all_in_one_place'), t('let_music_into_your_day')],
 )
-const openAlbum = (title: string) => router.push({ name: 'album', params: { name: title } })
 </script>
 
 <template>
@@ -62,9 +61,9 @@ const openAlbum = (title: string) => router.push({ name: 'album', params: { name
         v-for="album in found"
         :key="album.title"
         :title="album.title"
+        :to="albumRoute(album.title)"
         :lines="albumLines(album)"
         :open-label="t('open_item', { name: album.title })"
-        @open="openAlbum(album.title)"
       />
     </CoverGrid>
   </CollectionGate>
@@ -92,7 +91,7 @@ const openAlbum = (title: string) => router.push({ name: 'album', params: { name
       <div class="grid grid-cols-[1.6fr_1fr] gap-32 compact:grid-cols-[1.4fr_1fr] compact:gap-20 rail:grid-cols-1">
         <section>
           <SectionHeading :title="t('from_your_collection')" />
-          <TrackListSkeleton :rows="3" />
+          <TrackListSkeleton :rows="3" actions />
         </section>
       </div>
     </template>
@@ -104,9 +103,9 @@ const openAlbum = (title: string) => router.push({ name: 'album', params: { name
         v-for="album in recent"
         :key="album.title"
         :title="album.title"
+        :to="albumRoute(album.title)"
         :lines="albumLines(album)"
         :open-label="t('open_item', { name: album.title })"
-        @open="openAlbum(album.title)"
       />
     </CoverGrid>
     <p v-else class="text-11 leading-[1.6] text-muted">{{ t('no_albums_in_your_library_yet') }}</p>
@@ -120,7 +119,13 @@ const openAlbum = (title: string) => router.push({ name: 'album', params: { name
           :current-path="playback.current.track?.path ?? null"
           :play-label="t('play_label')"
           :disabled="selection.busy"
+          :menu-label="t('track_actions')"
           @play="(index) => recentTracks[index] && playFrom({ kind: 'library', track: recentTracks[index] })"
+          @menu="
+            (index, anchor) =>
+              recentTracks[index] &&
+              openTrackMenu(recentTracks[index], { kind: 'library', track: recentTracks[index] }, anchor)
+          "
         />
       </section>
       <section class="rail:hidden">

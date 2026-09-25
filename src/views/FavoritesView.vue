@@ -8,7 +8,7 @@ import { t } from '../i18n'
 import { library } from '../stores/library'
 import { playback } from '../stores/playback'
 import { selection } from '../stores/selection'
-import { ui } from '../stores/ui'
+import { openTrackMenu, ui } from '../stores/ui'
 import { countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { playFrom } from './playAlbum'
@@ -28,14 +28,18 @@ const skeletonRows = computed(() => Math.max(1, Math.min(library.summary?.favori
       />
     </template>
     <template #skeleton>
-      <TrackListSkeleton :rows="skeletonRows" header />
+      <TrackListSkeleton :rows="skeletonRows" actions />
     </template>
     <TrackList
       :tracks="items"
-      :header="{ title: t('title'), album: t('album_label') }"
       :current-path="playback.current.track?.path ?? null"
       :play-label="t('play_label')"
       :disabled="selection.busy"
+      :menu-label="t('track_actions')"
+      @menu="
+        (index, anchor) =>
+          items[index] && openTrackMenu(items[index], { kind: 'favorites', track: items[index] }, anchor)
+      "
       @play="(index) => items[index] && playFrom({ kind: 'favorites', track: items[index] })"
     />
   </CollectionGate>

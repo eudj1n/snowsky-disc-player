@@ -12,7 +12,7 @@ defineProps<{ items: readonly QueueItem[]; current: number | null }>()
     <li
       v-for="(item, index) in items"
       :key="index"
-      class="grid min-h-54 grid-cols-[24px_36px_minmax(0,1fr)] items-center gap-12 rounded-8 px-8 py-8 text-11"
+      class="grid min-h-54 grid-cols-[24px_36px_minmax(0,1fr)] items-center gap-12 rounded-8 border-t border-line/70 px-8 py-8 text-11 first:border-t-0"
       :class="index === current ? 'bg-selected' : 'hover:bg-soft'"
       :aria-current="index === current ? 'true' : undefined"
     >

@@ -187,6 +187,16 @@
     --player: 136px;
   }
 }
+/* Without an observed track the player bar is hidden (App.vue); phones keep
+ * the 58px bottom navigation. */
+:root[data-player='hidden'] {
+  --player: 0px;
+}
+@media (max-width: 540px) {
+  :root[data-player='hidden'] {
+    --player: 58px;
+  }
+}
 
 @layer base {
   html {

@@ -1,9 +1,20 @@
 /** Presentation state shared across the shell: search query, dialogs, toast. */
 import { reactive, readonly } from 'vue'
+import type { SelectionTarget } from '../gateway/selection'
+import type { Track } from '../domain/track'
 import type { MessageKey } from '../i18n'
 
 export type DialogName = 'connection' | 'appearance'
 export type PanelSection = 'now' | 'queue'
+
+/** The open track actions menu: the row's track, what Play selects, and
+ * where to anchor (reference openTrackMenu: right-aligned below the ⋯). */
+export interface TrackMenu {
+  track: Track
+  play: SelectionTarget | null
+  x: number
+  y: number
+}
 
 interface Toast {
   key: MessageKey
@@ -16,6 +27,7 @@ const state = reactive({
   dialog: null as DialogName | null,
   panel: null as PanelSection | null,
   toast: null as Toast | null,
+  trackMenu: null as TrackMenu | null,
 })
 export const ui = readonly(state)
 
@@ -65,4 +77,18 @@ export function closePanel(restoreFocus: boolean): void {
   state.panel = null
   if (restoreFocus) panelOpener?.focus({ preventScroll: true })
   panelOpener = null
+}
+
+export function openTrackMenu(track: Track, play: SelectionTarget | null, anchor: HTMLElement): void {
+  const rect = anchor.getBoundingClientRect()
+  state.trackMenu = {
+    track,
+    play,
+    x: Math.max(12, Math.min(innerWidth - 332, rect.right - 320)),
+    y: Math.max(12, Math.min(innerHeight - 370, rect.bottom + 6)),
+  }
+}
+
+export function closeTrackMenu(): void {
+  state.trackMenu = null
 }

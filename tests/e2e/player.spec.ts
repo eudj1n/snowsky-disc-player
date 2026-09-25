@@ -128,6 +128,23 @@ test('plays a track from an album page and shows it in Now Playing and Queue', a
   expect(errors).toEqual([])
 })
 
+test('opens track actions and navigates from cards and menus', async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  await page.goto('/#/albums')
+  await page.getByRole('heading', { name: 'Blue Hours' }).getByRole('link').click()
+  await expect(page).toHaveURL(/#\/album\/Blue%20Hours$/)
+  await page.getByRole('button', { name: 'Track actions: Window Seat' }).click()
+  const menu = page.getByRole('dialog', { name: 'Track actions' })
+  await expect(menu.getByRole('menuitem', { name: 'Go to album' })).toBeVisible()
+  await page.keyboard.press('ArrowDown')
+  await page.keyboard.press('ArrowDown')
+  await expect(menu.getByRole('menuitem', { name: 'Go to artist' })).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(page).toHaveURL(/#\/artist\/Mira%20Sol$/)
+  await expect(page.getByRole('heading', { level: 1, name: 'Mira Sol' })).toBeVisible()
+})
+
 test('keeps the reference layout on a phone without horizontal scrolling', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 })
   await english(page)

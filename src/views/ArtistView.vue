@@ -11,7 +11,7 @@ import { t } from '../i18n'
 import { albums, library } from '../stores/library'
 import { ui } from '../stores/ui'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumLines } from './captions'
+import { albumLines, albumRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
 
 const route = useRoute()
@@ -32,7 +32,7 @@ const items = computed(() => filterBy(own.value, ui.query, (album) => [album.tit
   <CollectionGate :count="items.length" :searching="searching" empty-key="search_empty_albums">
     <template #heading="{ loading }">
       <UiTextButton class="text-12" @click="router.push('/artists')">← {{ t('back_to_collection') }}</UiTextButton>
-      <DetailHeading :eyebrow="t('artist')" :title="name" artist>
+      <DetailHeading :title="name" artist>
         <template #meta>
           <span v-if="loading" class="inline-block h-10 w-90 animate-pulse rounded-4 bg-soft align-middle" />
           <template v-else>{{ t('album_count', { count: own.length }) }}</template>
@@ -47,9 +47,9 @@ const items = computed(() => filterBy(own.value, ui.query, (album) => [album.tit
         v-for="album in items"
         :key="album.title"
         :title="album.title"
+        :to="albumRoute(album.title)"
         :lines="albumLines(album)"
         :open-label="t('open_item', { name: album.title })"
-        @open="router.push({ name: 'album', params: { name: album.title } })"
       />
     </CoverGrid>
   </CollectionGate>

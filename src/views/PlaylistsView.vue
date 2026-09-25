@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import CoverCard from '../components/collection/CoverCard.vue'
 import CoverCardSkeleton from '../components/collection/CoverCardSkeleton.vue'
 import CoverGrid from '../components/collection/CoverGrid.vue'
@@ -9,10 +8,9 @@ import { filterBy } from '../domain/search'
 import { t } from '../i18n'
 import { library } from '../stores/library'
 import { ui } from '../stores/ui'
-import { countLine, playlistLines } from './captions'
+import { countLine, playlistLines, playlistRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
 
-const router = useRouter()
 const searching = computed(() => ui.query.trim() !== '')
 const items = computed(() => filterBy(library.playlists, ui.query, (playlist) => [playlist.name]))
 const skeletonCards = computed(() => Math.max(1, Math.min(library.summary?.playlists ?? 4, 8)))
@@ -35,9 +33,9 @@ const skeletonCards = computed(() => Math.max(1, Math.min(library.summary?.playl
         v-for="playlist in items"
         :key="playlist.id"
         :title="playlist.name"
+        :to="playlistRoute(playlist.id)"
         :lines="playlistLines(playlist)"
         :open-label="t('open_item', { name: playlist.name })"
-        @open="router.push({ name: 'playlist', params: { id: playlist.id } })"
       />
     </CoverGrid>
   </CollectionGate>

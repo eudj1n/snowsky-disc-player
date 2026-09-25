@@ -69,6 +69,8 @@ export const en = {
   title: 'TITLE',
   album_label: 'ALBUM',
   play_label: 'Play',
+  go_to_album: 'Go to album',
+  go_to_artist: 'Go to artist',
   track_actions: 'Track actions',
   your_music_your_space: 'YOUR MUSIC. YOUR SPACE.',
   welcome_back: 'Welcome back.',

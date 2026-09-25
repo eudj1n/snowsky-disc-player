@@ -1,12 +1,12 @@
 <script setup lang="ts">
 /** Loading placeholder with the exact geometry of TrackList rows. */
 import UiSkeleton from '../../ui/UiSkeleton.vue'
-import { TRACK_ROW, trackColumns } from './trackGrid'
+import { ROW_DIVIDER, TRACK_ROW, trackColumns } from './trackGrid'
 
-withDefaults(defineProps<{ rows: number; header?: boolean; album?: boolean; duration?: boolean }>(), {
-  header: false,
+withDefaults(defineProps<{ rows: number; album?: boolean; duration?: boolean; actions?: boolean }>(), {
   album: true,
   duration: false,
+  actions: false,
 })
 // Varied bar widths read as text rather than a striped block.
 const WIDTHS = ['w-[62%]', 'w-[48%]', 'w-[71%]', 'w-[55%]', 'w-[66%]', 'w-[43%]'] as const
@@ -15,17 +15,11 @@ const WIDTHS = ['w-[62%]', 'w-[48%]', 'w-[71%]', 'w-[55%]', 'w-[66%]', 'w-[43%]'
 <template>
   <div aria-hidden="true">
     <div
-      v-if="header"
-      class="mb-5 min-h-30 rounded-none border-b border-line"
-      :class="[TRACK_ROW, trackColumns(album, duration)]"
+      v-for="row in rows"
+      :key="row"
+      class="min-h-59"
+      :class="[TRACK_ROW, ROW_DIVIDER, trackColumns(album, duration, actions)]"
     >
-      <UiSkeleton class="mx-auto h-8 w-8" />
-      <span />
-      <UiSkeleton class="h-8 w-48" />
-      <UiSkeleton v-if="album" class="h-8 w-40 phone:hidden" />
-      <UiSkeleton v-if="duration" class="ml-auto h-8 w-14" />
-    </div>
-    <div v-for="row in rows" :key="row" class="min-h-59" :class="[TRACK_ROW, trackColumns(album, duration)]">
       <UiSkeleton class="mx-auto h-9 w-10" />
       <UiSkeleton class="size-38 rounded-6 phone:size-34" />
       <div class="min-w-0">
@@ -42,6 +36,7 @@ const WIDTHS = ['w-[62%]', 'w-[48%]', 'w-[71%]', 'w-[55%]', 'w-[66%]', 'w-[43%]'
       <div v-if="duration" class="flex h-[1lh] items-center justify-end text-10">
         <UiSkeleton class="h-[0.75em] w-28" />
       </div>
+      <span v-if="actions" class="flex justify-end pr-10"><UiSkeleton class="size-4 rounded-full" /></span>
     </div>
   </div>
 </template>

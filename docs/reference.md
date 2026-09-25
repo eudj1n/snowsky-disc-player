@@ -37,6 +37,9 @@ there is no application server: the browser talks to the gateway directly.
   owner session. Connecting is needed for playback only.
 - The sidebar scrolls and drops its note on short windows so the device card
   never slides under the player.
+- No page footer; no table header rows; quiet row dividers; no entity
+  eyebrow on detail pages; the bottom player hides while nothing is
+  observed (owner's review).
 
 ## Invariants carried over
 
