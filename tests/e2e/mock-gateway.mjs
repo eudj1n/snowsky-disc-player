@@ -366,6 +366,11 @@ server.on('upgrade', (request, socket, head) => {
           if (current) {
             if (value) player.loved.add(current.PATH)
             else player.loved.delete(current.PATH)
+            // Stock keeps one favorites list: the data level sees the change too.
+            const at = FAVORITES.findIndex((track) => track.PATH === current.PATH)
+            const track = TRACKS.find((item) => item.PATH === current.PATH)
+            if (value && at < 0 && track) FAVORITES.push(track)
+            if (!value && at >= 0) FAVORITES.splice(at, 1)
           }
         } else if (tag === '0502') {
           player.volume = value

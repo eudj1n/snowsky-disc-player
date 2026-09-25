@@ -148,6 +148,16 @@ export async function loadCollection(force = false): Promise<void> {
   }
 }
 
+/** Re-reads only the favorites, after a like or unlike of the playing track. */
+export async function refreshFavorites(): Promise<void> {
+  if (state.source !== 'player') return
+  try {
+    state.favorites = await pages('favorites')
+  } catch {
+    // The next collection load catches up: the favorites count is part of its signature.
+  }
+}
+
 /**
  * The last saved snapshot, whatever its signature, for browsing while the
  * player is unreachable (plan M6). Playback and changes stay disabled; the

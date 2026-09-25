@@ -338,8 +338,11 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
 
 Built on snowsky-disc-service `1074215` (media, current lyrics, image types,
 path re-encoding, scan guard) and `d5968bb` (SN pairing, `.local` hosts, 204
-for absent covers and lyrics). Mock and unit tests pass; emulator acceptance
-of the new parts is the next step.
+for absent covers and lyrics). Emulator acceptance on the V2.57 guest with
+that service and release `d01d837e…` and its successor passed in full (14
+desktop tests: the six earlier stock scenarios, card covers, file durations,
+sidecar and embedded lyrics, favorite removal from a row, all-zero SN
+pairing under the card marker, upload with a scan).
 
 - [x] Covers from the card for every album (embedded picture or folder
       cover), durations from the file where stock has none, fetched two at a
@@ -352,6 +355,8 @@ of the new parts is the next step.
 - [x] Upload: names already on the card are skipped without stopping the
       batch, any file not yet sent can be removed from the list, and an unsent
       or unconfirmed file is sent again only on request (never overwritten).
+- [x] A like or unlike of the playing track re-reads the favorites, so the
+      Favorites view shows it at once (found by the acceptance run).
 - [x] Pairing with the player's serial number where the card enables it
       (`snPairing`); a credential the gateway refuses at once is forgotten, so
       reconnecting does not spend its attempt limit.

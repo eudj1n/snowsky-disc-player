@@ -288,6 +288,20 @@ test.describe('player controls on the mock', () => {
     await disconnect(page)
   })
 
+  test('a track liked in the player appears in Favorites at once', async ({ page }) => {
+    await english(page)
+    await connectAndPair(page)
+    const title = ((await page.getByTestId('track-title').textContent()) ?? '').trim()
+    const panel = await openPanel(page, 'Open Now Playing panel')
+    const heart = panel.getByRole('button', { name: 'Favorite track' })
+    if ((await heart.getAttribute('aria-pressed')) === 'true') await flips(page, heart)
+    await flips(page, heart)
+    await page.keyboard.press('Escape')
+    await page.goto('/#/favorites')
+    await expect(page.getByRole('row').filter({ hasText: title })).not.toHaveCount(0)
+    await disconnect(page)
+  })
+
   test('the volume icon mutes and restores the earlier level', async ({ page }) => {
     await english(page)
     await connectAndPair(page)

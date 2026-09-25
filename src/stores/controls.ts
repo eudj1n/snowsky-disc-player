@@ -23,6 +23,7 @@ import { timeLabel } from '../domain/track'
 import type { MessageKey } from '../i18n'
 import { readPreference, writePreference } from '../lib/storage'
 import { connection, http } from './connection'
+import { refreshFavorites } from './library'
 import { observations } from './observations'
 import { run } from './operation'
 import { pairing } from './pairing'
@@ -142,6 +143,8 @@ export async function toggleFavorite(): Promise<void> {
   })
   report(result)
   await refreshPlayback()
+  // The Favorites view and row hearts read the list, not the playing record.
+  await refreshFavorites()
 }
 
 const SEEK_FEEDBACK: Record<SeekOutcome, MessageKey> = {

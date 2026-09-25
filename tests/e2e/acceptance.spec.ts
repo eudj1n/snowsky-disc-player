@@ -3,16 +3,20 @@
  *
  *   tests/e2e/emulator/media.sh <container>
  *   E2E_ACCEPTANCE=emulator E2E_BASE_URL=http://127.0.0.1:17870 \
- *     E2E_TOKEN=<guest card token> npx playwright test --project=desktop
+ *     E2E_TOKEN=<guest card token> E2E_CONTAINER=<container> \
+ *     npx playwright test --project=desktop
  *   tests/e2e/emulator/media.sh <container> remove
  *
  * It changes playlists, sound and EQ and uploads a file, so it refuses to run
  * without E2E_ACCEPTANCE=emulator: never point it at a real player.
  */
+import { execFileSync } from 'node:child_process'
 import { expect, test, type Locator, type Page } from '@playwright/test'
-import { connectAndPair, disconnect, english, external, TOKEN, watchErrors } from './helpers'
+import { connectAndPair, disconnect, english, external, openConnection, TOKEN, watchErrors } from './helpers'
 
 const enabled = external && Boolean(TOKEN) && process.env.E2E_ACCEPTANCE === 'emulator'
+/** The emulator container, for card markers; tests that need it skip without it. */
+const CONTAINER = process.env.E2E_CONTAINER ?? ''
 test.describe.configure({ mode: 'serial' })
 // Playwright needs the fixtures pattern even when no fixture is used.
 // eslint-disable-next-line no-empty-pattern
@@ -244,6 +248,84 @@ test('reads and changes sound settings and the equalizer on stock, then restores
   await expect(eqFeedback).toHaveText('The player confirmed the new value.', { timeout: 30_000 })
   await page.keyboard.press('Escape')
   await disconnect(page)
+})
+
+test('shows card covers, file durations and both kinds of lyrics on stock', async ({ page }) => {
+  const errors = watchErrors(page)
+  await english(page)
+  await page.goto('/#/albums')
+  // The grid shows one Harbor card for both artists; its cover is Lumen's folder cover.png.
+  const harbor = page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Harbor' }) })
+  await expect(harbor.locator('canvas')).toHaveCount(1, { timeout: 60_000 })
+  // Kestrel's Harbor has only a picture embedded in Crossing.
+  await page.goto('/#/album/Harbor/Kestrel')
+  await expect(page.locator('main canvas').first()).toBeVisible({ timeout: 60_000 })
+  // Stock keeps DURATION 0 until a track has played; the files say 0:25.
+  await expect(page.getByRole('row')).toHaveCount(2)
+  for (const row of await page.getByRole('row').all()) await expect(row).toContainText(/0:2\d/, { timeout: 60_000 })
+
+  await connectAndPair(page)
+  await page.goto('/#/album/Night%20Lines/Lumen')
+  await verified(page, () => page.getByRole('button', { name: 'Play Signal' }).click())
+  const title = page.getByTestId('track-title')
+  await expect(title).toHaveText('Signal', { timeout: 30_000 })
+  await page.getByRole('button', { name: 'Lyrics' }).filter({ visible: true }).first().click()
+  const lyrics = page.getByTestId('lyrics')
+  await expect(lyrics.getByRole('button', { name: 'Signal, first line' })).toBeVisible({ timeout: 30_000 })
+  await expect(lyrics).toContainText('From the .lrc file beside the track')
+  await expect(lyrics.locator('[aria-current=true]')).toHaveCount(1, { timeout: 30_000 })
+  await page.getByRole('button', { name: 'Next track' }).first().click()
+  await expect(title).toHaveText('Streetlight', { timeout: 30_000 })
+  await expect(lyrics).toContainText('Streetlight, embedded line', { timeout: 30_000 })
+  await expect(lyrics).toContainText("From the track's tags")
+  await page.keyboard.press('Escape')
+  await disconnect(page)
+  expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])
+})
+
+test('removes a favorite that is not playing from its row on stock', async ({ page }) => {
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/album/Night%20Lines/Lumen')
+  await verified(page, () => page.getByRole('button', { name: 'Play Signal' }).click())
+  await expect(page.getByTestId('track-title')).toHaveText('Signal', { timeout: 30_000 })
+  await page.getByRole('button', { name: 'Open Now Playing panel' }).click()
+  const favorite = page
+    .getByRole('complementary', { name: 'Player view' })
+    .getByRole('button', { name: 'Favorite track' })
+  if ((await favorite.getAttribute('aria-pressed')) !== 'true') await flip(favorite)
+  await page.keyboard.press('Escape')
+  // Only rows that are not playing offer removal.
+  await page.getByRole('button', { name: 'Next track' }).first().click()
+  await expect(page.getByTestId('track-title')).toHaveText('Streetlight', { timeout: 30_000 })
+  await page.goto('/#/favorites')
+  await page.getByRole('button', { name: 'Remove from favorites: Signal' }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByRole('button', { name: 'Remove', exact: true }).click()
+  await expect(dialog).toBeHidden({ timeout: 45_000 })
+  await expect(page.getByRole('row').filter({ hasText: 'Signal' })).toHaveCount(0, { timeout: 30_000 })
+  await disconnect(page)
+})
+
+test("pairs with the emulator's all-zero serial number under the card marker", async ({ page }) => {
+  test.skip(!CONTAINER, 'Needs E2E_CONTAINER to place the card marker')
+  const marker = '/tmp/sdcard/DISC_WEB_SN_PAIRING'
+  execFileSync('docker', ['exec', CONTAINER, 'sh', '-c', `printf 'DISC_WEB_SN_PAIRING\\n' > ${marker}`])
+  try {
+    await english(page)
+    await openConnection(page)
+    const dialog = page.getByRole('dialog')
+    await dialog.getByLabel('Serial number or token').fill('0000 0000 0000 00')
+    await dialog.getByRole('button', { name: 'Pair' }).click()
+    await dialog.getByRole('button', { name: 'Connect', exact: true }).click()
+    await expect(dialog.getByTestId('connection-state')).toContainText('Connected')
+    await page.keyboard.press('Escape')
+    await page.goto('/#/album/Night%20Lines/Lumen')
+    await verified(page, () => page.getByRole('button', { name: 'Play Signal' }).click())
+    await disconnect(page)
+  } finally {
+    execFileSync('docker', ['exec', CONTAINER, 'rm', '-f', marker])
+  }
 })
 
 test('uploads a file, scans once and shows it in New on stock', async ({ page }) => {

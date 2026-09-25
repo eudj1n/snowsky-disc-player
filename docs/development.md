@@ -74,8 +74,10 @@ the page as if it came from the card. Nothing is written to the card.
 `tests/e2e/acceptance.spec.ts` drives every guarded feature against the
 stock of the disposable V2.57 guest: scan, same-titled albums and tag order,
 scoped, genre and artist playback, transport, seek, volume and mute, modes,
-favorite, queue, playlist editing, sound and EQ (restored afterwards), and an
-upload with a scan. It changes device state, so it runs only with
+favorite, queue, playlist editing, sound and EQ (restored afterwards), card
+covers, file durations, sidecar and embedded lyrics, favorite removal from a
+row, pairing with the emulator's all-zero SN (`E2E_CONTAINER` places and
+removes the card marker), and an upload with a scan. It changes device state, so it runs only with
 `E2E_ACCEPTANCE=emulator` and never against a player. Steps, with the
 emulator from snowsky-disc-service booted and USB power emulated:
 
@@ -86,7 +88,7 @@ npm run build && DISC_SERVICE_DIR=../snowsky-disc-service npm run release
 docker cp work/release-<timestamp>/www $C:/work/player-release
 docker exec $C python3 /platform/scripts/webroot_bundle.py publish \
   --prepared /work/player-release --card /tmp/sdcard --confirm-card-write
-E2E_ACCEPTANCE=emulator E2E_BASE_URL=http://127.0.0.1:17870 \
+E2E_ACCEPTANCE=emulator E2E_BASE_URL=http://127.0.0.1:17870 E2E_CONTAINER=$C \
   E2E_TOKEN="$(docker exec $C cat /tmp/sdcard/DISC_WEB_TOKEN)" \
   npx playwright test --project=desktop
 tests/e2e/emulator/media.sh $C remove               # then rescan:
