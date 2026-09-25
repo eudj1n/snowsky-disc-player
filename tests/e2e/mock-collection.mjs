@@ -91,6 +91,14 @@ export function dataQuery(name, params, language) {
     const rows = PLAYLISTS.map((list) => ({ ...list, tracks: list.members.length }))
     return { status: 200, body: table(rows, ['ID', 'LIST_ID', 'LIST_NAME', 'M3U_PATH', 'tracks']) }
   }
+  if (name === 'recently_played') {
+    const rows = [TRACKS[9], TRACKS[2], TRACKS[21]].map((track, i) => ({
+      ...track,
+      PLAY_COUNT: 3 - i,
+      LAST_PLAY_TIME: 1_790_100_000 - i * 60,
+    }))
+    return { status: 200, body: table(rows, [...COLUMNS, 'PLAY_COUNT', 'LAST_PLAY_TIME']) }
+  }
   if (name === 'playlist_tracks') {
     const list = PLAYLISTS.find((item) => item.ID === Number(params.get('id')))
     return list ? tracks(list.members) : { status: 200, body: table([], COLUMNS) }

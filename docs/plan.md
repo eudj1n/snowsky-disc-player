@@ -80,6 +80,13 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
 - [x] Album sorting: recently added, title, artist, remembered in the
       browser, with the locale's collation (6).
 
+## Owner requests (round 2)
+
+- [x] "New" section (owner's sketch, without banners): the latest tracks by
+      ADD_TIME as a compact three-column grid with cover play overlays and ⋯
+      actions, the latest albums as a snapping shelf, and the stock play history
+      (`recently_played`) when it has entries; searchable like other views.
+
 ## M1.5 — Caching, enrichment and artwork
 
 - [x] Collection snapshot in IndexedDB keyed by the library signature

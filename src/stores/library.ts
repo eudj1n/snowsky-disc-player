@@ -130,6 +130,11 @@ export async function loadCollection(force = false): Promise<void> {
   }
 }
 
+/** Stock play history (RECORD_SONG), newest first. */
+export async function loadRecentlyPlayed(limit = 12): Promise<LibraryTrack[]> {
+  return enriched(libraryTracks(await http.data('recently_played', { limit })))
+}
+
 /** Tracks of one custom playlist, in stock list order. */
 export async function loadPlaylistTracks(id: number): Promise<LibraryTrack[]> {
   return enriched(await pages('playlist_tracks', { id }))

@@ -9,6 +9,7 @@ import type { IconName } from './ui/icons'
 
 export const SECTIONS = [
   { name: 'home', path: '/', icon: 'home', title: 'home' },
+  { name: 'new', path: '/new', icon: 'clock', title: 'new_section' },
   { name: 'albums', path: '/albums', icon: 'album', title: 'albums' },
   { name: 'artists', path: '/artists', icon: 'artist', title: 'artists' },
   { name: 'tracks', path: '/tracks', icon: 'music', title: 'tracks' },
@@ -28,6 +29,7 @@ export function sectionOf(name: unknown): SectionName {
 
 const routes: RouteRecordRaw[] = [
   { path: '/', name: 'home', component: () => import('./views/HomeView.vue') },
+  { path: '/new', name: 'new', component: () => import('./views/NewView.vue') },
   { path: '/albums', name: 'albums', component: () => import('./views/AlbumsView.vue') },
   { path: '/artists', name: 'artists', component: () => import('./views/ArtistsView.vue') },
   { path: '/tracks', name: 'tracks', component: () => import('./views/TracksView.vue') },

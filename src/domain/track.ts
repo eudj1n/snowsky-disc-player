@@ -24,6 +24,11 @@ export interface LibraryTrack extends Track {
   addedAt: number | null
 }
 
+/** Most recently added first (ADD_TIME); ties keep library order. */
+export function recentlyAdded<T extends { addedAt: number | null }>(tracks: readonly T[], count: number): T[] {
+  return [...tracks].sort((a, b) => (b.addedAt ?? 0) - (a.addedAt ?? 0)).slice(0, count)
+}
+
 /** "Artist · Album" with unknown parts left out. */
 export function trackCredits(track: Pick<Track, 'artist' | 'album'>): string {
   return [track.artist, track.album].filter((part): part is string => Boolean(part)).join(' · ')
