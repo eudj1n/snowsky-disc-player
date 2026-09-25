@@ -19,6 +19,7 @@ import { isPlaying, playback } from '../stores/playback'
 import { loadQueue, queue } from '../stores/queue'
 import { closePanel, showPanelSection, ui } from '../stores/ui'
 import UiIconButton from '../ui/UiIconButton.vue'
+import { usePlaybackContext } from './usePlaybackContext'
 import { usePlayerControls } from './usePlayerControls'
 
 const player = usePlayerControls()
@@ -27,6 +28,7 @@ const items = computed(() => queue.items.map((row) => ({ title: row.name, artist
 const status = computed(() =>
   connection.connection === 'connected' ? t(`playback_${playback.current.state}`) : t('disconnected'),
 )
+const context = usePlaybackContext()
 const labels = computed(() => ({
   title: t('your_music_awaits'),
   shuffle: t('shuffle'),
@@ -43,6 +45,7 @@ const labels = computed(() => ({
   unmute: t('unmute'),
   output: t('audio_plays_on_your_disc'),
   format: t('format_from_filename'),
+  playingFrom: t('playing_from'),
 }))
 const queueHint = computed(() => {
   if (connection.connection !== 'connected') return t('connect_your_disc')
@@ -123,6 +126,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         :volume="connection.volume"
         :volume-disabled="player.volumeDisabled.value"
         :labels="labels"
+        :context="context"
         @transport="player.onTransport"
         @mode="player.onMode"
         @seek="player.onSeek"

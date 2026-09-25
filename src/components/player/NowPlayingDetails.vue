@@ -5,6 +5,7 @@
  * timeline with seek feedback, transport, modes, favorite and volume. It
  * mirrors the mini-player's disabled rules.
  */
+import type { RouteLocationRaw } from 'vue-router'
 import type { Playback, TransportAction } from '../../domain/playback'
 import { formatBadge } from '../../domain/track'
 import UiIcon from '../../ui/UiIcon.vue'
@@ -44,7 +45,10 @@ defineProps<{
     unmute: string
     output: string
     format: string
+    playingFrom: string
   }
+  /** Where playback comes from, when known. */
+  context?: { text: string; to: RouteLocationRaw | null } | null
 }>()
 const emit = defineEmits<{
   transport: [action: TransportAction]
@@ -102,6 +106,18 @@ const emit = defineEmits<{
       @click="emit('navigate')"
       >{{ playback.track.album }}</RouterLink
     >
+    <p v-if="context" class="-mt-14 mb-22 flex min-w-0 items-center gap-6 text-10 text-muted">
+      <UiIcon name="queue" class="size-12 shrink-0" />
+      <span class="shrink-0">{{ labels.playingFrom }} ·</span>
+      <RouterLink
+        v-if="context.to"
+        :to="context.to"
+        class="truncate text-secondary hover:text-ink hover:underline hover:underline-offset-3"
+        @click="emit('navigate')"
+        >{{ context.text }}</RouterLink
+      >
+      <span v-else class="truncate">{{ context.text }}</span>
+    </p>
     <SeekBar
       class="text-9"
       :position-ms="positionMs"

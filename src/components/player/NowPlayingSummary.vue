@@ -18,8 +18,10 @@ withDefaults(
     favoriteDisabled: boolean
     titleTo?: RouteLocationRaw | null
     subtitleTo?: RouteLocationRaw | null
+    /** Where playback comes from; shown after the artist on wide screens. */
+    context?: { text: string; to: RouteLocationRaw | null } | null
   }>(),
-  { titleTo: null, subtitleTo: null },
+  { titleTo: null, subtitleTo: null, context: null },
 )
 const emit = defineEmits<{ open: [opener: HTMLElement]; favorite: [] }>()
 </script>
@@ -57,13 +59,25 @@ const emit = defineEmits<{ open: [opener: HTMLElement]; favorite: [] }>()
       <strong v-else class="block truncate text-11 font-[650] phone:text-10" data-testid="track-title">{{
         title
       }}</strong>
-      <RouterLink
-        v-if="subtitleTo"
-        :to="subtitleTo"
-        class="mt-6 block w-fit max-w-full truncate text-10 text-muted hover:text-ink hover:underline hover:underline-offset-3 focus-visible:text-ink focus-visible:underline phone:text-9"
-        >{{ subtitle }}</RouterLink
-      >
-      <span v-else class="mt-6 block truncate text-10 text-muted phone:text-9">{{ subtitle }}</span>
+      <span class="mt-6 flex min-w-0 items-baseline gap-5 text-10 text-muted phone:text-9">
+        <RouterLink
+          v-if="subtitleTo"
+          :to="subtitleTo"
+          class="min-w-0 truncate hover:text-ink hover:underline hover:underline-offset-3 focus-visible:text-ink focus-visible:underline"
+          >{{ subtitle }}</RouterLink
+        >
+        <span v-else class="min-w-0 truncate">{{ subtitle }}</span>
+        <template v-if="context">
+          <span aria-hidden="true" class="compact:hidden">·</span>
+          <RouterLink
+            v-if="context.to"
+            :to="context.to"
+            class="min-w-0 truncate hover:text-ink hover:underline hover:underline-offset-3 compact:hidden"
+            >{{ context.text }}</RouterLink
+          >
+          <span v-else class="min-w-0 truncate compact:hidden">{{ context.text }}</span>
+        </template>
+      </span>
     </div>
     <UiIconButton
       icon="heart"

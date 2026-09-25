@@ -14,6 +14,7 @@ import { observations } from '../stores/observations'
 import { playback } from '../stores/playback'
 import { togglePanel, ui } from '../stores/ui'
 import { albumRoute, artistRoute } from '../views/captions'
+import { usePlaybackContext } from './usePlaybackContext'
 import { usePlayerControls } from './usePlayerControls'
 
 const player = usePlayerControls()
@@ -28,6 +29,7 @@ const titleTo = computed(() => {
   if (current?.album) return albumRoute(current.album, current.artist)
   return current?.artist ? artistRoute(current.artist) : null
 })
+const context = usePlaybackContext()
 const artistTo = computed(() => (track.value?.artist ? artistRoute(track.value.artist) : null))
 const labels = computed(() => ({
   shuffle: t('shuffle'),
@@ -57,6 +59,7 @@ const labels = computed(() => ({
       :favorite-disabled="player.favoriteDisabled.value"
       :title-to="titleTo"
       :subtitle-to="artistTo"
+      :context="context"
       @open="(opener) => togglePanel('now', opener)"
       @favorite="player.onFavorite"
     />

@@ -30,6 +30,8 @@ type Status = 'idle' | 'loading' | 'ready' | 'failed'
 
 interface Snapshot {
   signature: string
+  /** When the snapshot was read from the player (ms); absent in older caches. */
+  savedAt?: number
   tracks: LibraryTrack[]
   favorites: LibraryTrack[]
   playlists: Playlist[]
@@ -43,6 +45,10 @@ interface LibraryModel {
   status: Status
   /** More tracks exist than MAX_TRACKS. */
   truncated: boolean
+  /** Where the shown collection comes from: the player, or a saved copy while it is unreachable. */
+  source: 'player' | 'saved' | null
+  /** When the shown collection was read from the player (ms), when known. */
+  savedAt: number | null
 }
 
 const state = reactive<LibraryModel>({
@@ -52,6 +58,8 @@ const state = reactive<LibraryModel>({
   playlists: [],
   status: 'idle',
   truncated: false,
+  source: null,
+  savedAt: null,
 })
 export const library = readonly(state)
 
@@ -68,6 +76,10 @@ export const favorites = computed(() => enriched(state.favorites))
 export const albums = computed(() => groupAlbums(state.tracks))
 export const artists = computed(() => groupArtists(state.tracks))
 export const genres = computed(() => groupGenres(state.tracks))
+/** Library rows by path, for the context of what is playing. */
+export const trackByPath = computed(
+  () => new Map(state.tracks.flatMap((track) => (track.path ? [[track.path, track] as const] : []))),
+)
 
 /** One album chosen at random per page load for the Home hero. */
 const seed = Math.random()
@@ -93,7 +105,9 @@ export async function loadLibraryFacts(): Promise<void> {
   if (summary.status === 'fulfilled') state.summary = librarySummary(summary.value)
 }
 
-function apply(snapshot: Omit<Snapshot, 'signature'>): void {
+function apply(snapshot: Omit<Snapshot, 'signature'>, source: 'player' | 'saved' = 'player'): void {
+  state.source = source
+  state.savedAt = snapshot.savedAt ?? null
   state.tracks = snapshot.tracks
   state.favorites = snapshot.favorites
   state.playlists = snapshot.playlists
@@ -124,12 +138,28 @@ export async function loadCollection(force = false): Promise<void> {
       pages('favorites'),
       http.data('playlists'),
     ])
-    const snapshot = { tracks: trackRows, favorites: favoriteRows, playlists: playlistRows(lists) }
+    const snapshot = { savedAt: Date.now(), tracks: trackRows, favorites: favoriteRows, playlists: playlistRows(lists) }
     apply(snapshot)
     if (signature) await cacheSet(SNAPSHOT, { signature, ...snapshot })
   } catch {
     state.status = state.tracks.length ? 'ready' : 'failed'
   }
+}
+
+/**
+ * The last saved snapshot, whatever its signature, for browsing while the
+ * player is unreachable (plan M6). Playback and changes stay disabled; the
+ * shown copy is labelled with its date.
+ */
+export async function loadSavedCollection(): Promise<boolean> {
+  if (state.tracks.length) {
+    state.source = 'saved'
+    return true
+  }
+  const cached = await cacheGet<Snapshot>(SNAPSHOT).catch(() => undefined)
+  if (!cached?.tracks.length) return false
+  apply(cached, 'saved')
+  return true
 }
 
 /** Stock play history (RECORD_SONG), newest first. */

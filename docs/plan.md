@@ -166,6 +166,11 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
       partial record after transport; the keyboard e2e fails on the old logic.
 - [x] The bottom player's title opens the album in its artist scope (the
       artist without an album) and the artist line opens the artist.
+- [x] "Playing from" in the bar (wide screens) and the listening panel. The
+      stock reports only the source kind (playerflag); the name comes from the
+      track (album, artist), its genre tag, its folder or the single playlist
+      that holds it (checked while there are at most 30 playlists), and stays
+      generic otherwise.
 
 ## M1.5 — Caching, enrichment and artwork
 
@@ -248,8 +253,15 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
 
 ## M6 — Offline collection
 
-- [ ] Snapshot of the library in IndexedDB for browsing while disconnected,
-      with staleness shown; current-track artwork kept per snapshot.
+- [x] Snapshot of the library in IndexedDB for browsing while disconnected,
+      with staleness shown; current-track artwork kept per snapshot. When the
+      player is unreachable (at load, or after the session drops and a health
+      recheck fails) the last snapshot stays browsable under a dated notice
+      with "Try again"; playback and changes stay off. The page itself is
+      served by the player, and plain HTTP on the LAN allows no service worker,
+      so this covers a player that leaves while the page is open, the mock
+      and future hosted clients rather than opening the app offline.
+      Evidence: e2e "browses the saved copy while the player is unreachable".
 
 ## Releases on the owner's player
 

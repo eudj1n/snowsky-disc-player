@@ -196,6 +196,22 @@ test('browses genres, narrows mixed albums and filters tracks by genre', async (
   await expect(page.getByRole('row')).toHaveCount(4)
 })
 
+test('browses the saved copy while the player is unreachable and recovers', async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  await page.goto('/#/albums')
+  await expect(page.getByRole('heading', { name: 'Blue Hours' })).toBeVisible()
+  await page.route('**/api/**', (route) => route.abort())
+  await page.reload()
+  const notice = page.getByRole('status').filter({ hasText: 'The DISC is unreachable' })
+  await expect(notice).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Blue Hours' })).toBeVisible()
+  await page.unroute('**/api/**')
+  await notice.getByRole('button', { name: 'Try again' }).click()
+  await expect(notice).toBeHidden()
+  await expect(page.getByRole('heading', { name: 'Blue Hours' })).toBeVisible()
+})
+
 test('connects on the first Play when paired, then follows keyboard shortcuts', async ({ page }) => {
   test.skip(!TOKEN || external, 'Needs the mock collection and token')
   const errors = watchErrors(page)
@@ -312,6 +328,10 @@ test.describe('player controls on the mock', () => {
       timeout: 15_000,
     })
     await expect(page.getByTestId('track-title')).toHaveText('Blue Hours')
+    if (info.project.name !== 'phone') {
+      const bar = page.getByRole('region', { name: 'Player' })
+      await expect(bar.getByRole('link', { name: 'Genre: Jazz' })).toBeVisible()
+    }
     await disconnect(page)
   })
 

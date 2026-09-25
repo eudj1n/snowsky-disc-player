@@ -5,13 +5,14 @@
  * collection loads, the view's heading renders with its own skeleton in
  * place of the data, so nothing moves when the rows arrive.
  */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import ConnectCard from '../components/connection/ConnectCard.vue'
+import OfflineNotice from '../components/connection/OfflineNotice.vue'
 import EmptyState from '../components/common/EmptyState.vue'
 import HomeIntro from '../components/home/HomeIntro.vue'
-import { t, type MessageKey } from '../i18n'
-import { connection } from '../stores/connection'
-import { library, loadCollection } from '../stores/library'
+import { locale, t, type MessageKey } from '../i18n'
+import { connection, probeGateway } from '../stores/connection'
+import { library, loadCollection, loadLibraryFacts } from '../stores/library'
 import { openDialog } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
 
@@ -21,9 +22,31 @@ const props = withDefaults(
     ready: true,
   },
 )
+const retrying = ref(false)
+const savedText = computed(() =>
+  library.savedAt === null
+    ? t('offline_copy_undated')
+    : t('offline_copy', {
+        date: new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short' }).format(
+          library.savedAt,
+        ),
+      }),
+)
+/** Try the player again; a reachable player replaces the saved copy. */
+async function retry(): Promise<void> {
+  retrying.value = true
+  try {
+    if (await probeGateway()) {
+      await loadLibraryFacts()
+      await loadCollection()
+    }
+  } finally {
+    retrying.value = false
+  }
+}
 const loading = computed(
   () =>
-    connection.gateway === null ||
+    (connection.gateway === null && library.source !== 'saved') ||
     library.status === 'idle' ||
     (library.status === 'loading' && !library.tracks.length) ||
     !props.ready,
@@ -31,7 +54,7 @@ const loading = computed(
 </script>
 
 <template>
-  <template v-if="connection.gateway === false">
+  <template v-if="connection.gateway === false && library.source !== 'saved'">
     <HomeIntro :eyebrow="t('your_music_your_space')" :title="t('welcome_back')" />
     <EmptyState icon="device" :title="t('it_starts_with_your_disc')" :text="t('connect_your_player_to_explore')">
       <ConnectCard :action="t('connect_your_player')" @open="openDialog('connection')" />
@@ -51,6 +74,13 @@ const loading = computed(
     <slot name="skeleton" />
   </div>
   <template v-else>
+    <OfflineNotice
+      v-if="library.source === 'saved'"
+      :text="savedText"
+      :retry-label="t('offline_retry')"
+      :busy="retrying"
+      @retry="retry"
+    />
     <slot name="heading" :loading="false" />
     <EmptyState v-if="!count && searching" icon="search" :title="t('no_matches_yet')" :text="t(emptyKey)" />
     <EmptyState

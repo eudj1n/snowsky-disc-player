@@ -18,14 +18,22 @@ import ListeningPanel from './layout/ListeningPanel.vue'
 import SoundDialog from './layout/SoundDialog.vue'
 import TrackMenuDialog from './layout/TrackMenuDialog.vue'
 import './stores/appearance'
-import { probeGateway } from './stores/connection'
+import { connection, probeGateway } from './stores/connection'
 import { loadEnrichment } from './stores/enrichment'
-import { loadCollection, loadLibraryFacts } from './stores/library'
+import { loadCollection, loadLibraryFacts, loadSavedCollection } from './stores/library'
 import { playerVisible } from './stores/playback'
 import { setQuery, ui } from './stores/ui'
 import { handleShortcut } from './views/shortcuts'
 
 const route = useRoute()
+// A player that becomes unreachable keeps the shown collection as a saved copy.
+watch(
+  () => connection.gateway,
+  (reachable) => {
+    if (reachable === false) void loadSavedCollection()
+  },
+)
+
 // A real navigation clears the search (reference hashchange handler); a
 // filter in the query string (genre) keeps it.
 watch(
@@ -44,6 +52,9 @@ onMounted(async () => {
   if (await probeGateway()) {
     await loadLibraryFacts()
     await loadCollection()
+  } else {
+    // The player is unreachable: browse the saved copy, labelled with its date.
+    await loadSavedCollection()
   }
 })
 onBeforeUnmount(() => document.removeEventListener('keydown', handleShortcut))

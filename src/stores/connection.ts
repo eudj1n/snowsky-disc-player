@@ -98,10 +98,14 @@ export async function connect(): Promise<void> {
     }
     const opened = await GatewaySession.open(socketUrl())
     session = opened.session
+    // Reduce a202 records from the start, so every later listener reads the merged state.
+    trackPlayback(session)
     session.onClose((reason) => {
       session = null
       state.connection = 'disconnected'
       if (reason !== 'client') state.notice = CLOSE_NOTICES[reason] ?? 'closed_network'
+      // A lost network may mean the player left: recheck, so the saved copy is labelled.
+      if (reason === 'network') void probeGateway()
     })
     const settings = await session.read('0501', 'a501')
     const firmware = socVersion(settings)
@@ -110,8 +114,6 @@ export async function connect(): Promise<void> {
     state.identity = { handshake: opened.identity, firmware, compatible }
     if (!compatible) state.notice = 'incompatible'
     state.connection = 'connected'
-    // Reduce a202 records first, so every later listener reads the merged state.
-    trackPlayback(session)
     for (const listener of openedListeners) listener(session)
     // The play mode is known only from a102: read it once, as the reference does at connect.
     await session.read('0105', 'a102').catch(() => undefined)
