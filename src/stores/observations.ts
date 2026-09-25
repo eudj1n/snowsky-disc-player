@@ -5,7 +5,7 @@
  * activity from a622 and a60a (000F start, 0005 end).
  */
 import { reactive, readonly } from 'vue'
-import { parsePlayback } from '../gateway/playback'
+import { currentPlayback } from '../gateway/playback'
 import { onSessionOpened } from './connection'
 
 interface ObservationModel {
@@ -56,11 +56,11 @@ onSessionOpened((session) => {
       }
     } else if (tag === 'a202') {
       try {
-        const playback = parsePlayback(payload)
+        const playback = currentPlayback(session)
         const next = playback.track
           ? JSON.stringify([playback.source, playback.track.title, playback.track.path, playback.track.queuePosition])
           : ''
-        if (playback.track === null && /"state"\s*:\s*2/.test(payload)) state.positionMs = null
+        if (playback.state === 'loading') state.positionMs = null
         if (next && next !== identity) {
           identity = next
           state.positionMs = null

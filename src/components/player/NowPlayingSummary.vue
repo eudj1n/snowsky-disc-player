@@ -1,19 +1,26 @@
 <script setup lang="ts">
-/** Left block of the player bar: cover, title and artist, favorite. */
+/** Left block of the player bar: cover, title and artist, favorite. The title
+ * opens the track's album and the artist their page when routes are given. */
+import type { RouteLocationRaw } from 'vue-router'
 import Artwork from '../artwork/Artwork.vue'
 import UiIconButton from '../../ui/UiIconButton.vue'
 
-defineProps<{
-  openLabel: string
-  expanded: boolean
-  title: string
-  subtitle: string
-  artworkTitle: string | null
-  cover: Blob | null
-  favoriteLabel: string
-  favorite: boolean | null
-  favoriteDisabled: boolean
-}>()
+withDefaults(
+  defineProps<{
+    openLabel: string
+    expanded: boolean
+    title: string
+    subtitle: string
+    artworkTitle: string | null
+    cover: Blob | null
+    favoriteLabel: string
+    favorite: boolean | null
+    favoriteDisabled: boolean
+    titleTo?: RouteLocationRaw | null
+    subtitleTo?: RouteLocationRaw | null
+  }>(),
+  { titleTo: null, subtitleTo: null },
+)
 const emit = defineEmits<{ open: [opener: HTMLElement]; favorite: [] }>()
 </script>
 
@@ -40,8 +47,23 @@ const emit = defineEmits<{ open: [opener: HTMLElement]; favorite: [] }>()
       </span>
     </button>
     <div class="min-w-0">
-      <strong class="block truncate text-11 font-[650] phone:text-10" data-testid="track-title">{{ title }}</strong>
-      <span class="mt-6 block truncate text-10 text-muted phone:text-9">{{ subtitle }}</span>
+      <RouterLink
+        v-if="titleTo"
+        :to="titleTo"
+        class="block w-fit max-w-full truncate text-11 font-[650] hover:underline hover:underline-offset-3 focus-visible:underline phone:text-10"
+        data-testid="track-title"
+        >{{ title }}</RouterLink
+      >
+      <strong v-else class="block truncate text-11 font-[650] phone:text-10" data-testid="track-title">{{
+        title
+      }}</strong>
+      <RouterLink
+        v-if="subtitleTo"
+        :to="subtitleTo"
+        class="mt-6 block w-fit max-w-full truncate text-10 text-muted hover:text-ink hover:underline hover:underline-offset-3 focus-visible:text-ink focus-visible:underline phone:text-9"
+        >{{ subtitle }}</RouterLink
+      >
+      <span v-else class="mt-6 block truncate text-10 text-muted phone:text-9">{{ subtitle }}</span>
     </div>
     <UiIconButton
       icon="heart"

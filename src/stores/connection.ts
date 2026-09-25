@@ -14,6 +14,7 @@ import {
   type Compatibility,
 } from '../gateway/release'
 import { Disconnected, GatewaySession, type CloseReason } from '../gateway/session'
+import { trackPlayback } from '../gateway/playback'
 import { currentVolume, socVersion } from '../gateway/settings'
 
 export type ConnectionNotice =
@@ -109,6 +110,8 @@ export async function connect(): Promise<void> {
     state.identity = { handshake: opened.identity, firmware, compatible }
     if (!compatible) state.notice = 'incompatible'
     state.connection = 'connected'
+    // Reduce a202 records first, so every later listener reads the merged state.
+    trackPlayback(session)
     for (const listener of openedListeners) listener(session)
     // The play mode is known only from a102: read it once, as the reference does at connect.
     await session.read('0105', 'a102').catch(() => undefined)

@@ -19,7 +19,7 @@
 import { catalogPage, catalogRows, sameRows, type CatalogFilters, type CatalogRow, type Category } from './catalog'
 import type { GatewayHttp } from './http'
 import type { PlaybackSource } from '../domain/playback'
-import { parsePlayback } from './playback'
+import { mergePlayback, playbackOf, readPlaybackWire, type PlaybackWire } from './playback'
 import { NoObservation, type GatewaySession } from './session'
 
 export type SelectionOutcome = 'playing' | 'uncertain' | 'changed' | 'ambiguous' | 'unavailable'
@@ -263,9 +263,13 @@ export async function selectSource(deps: SelectionDeps, target: SelectionTarget)
   const wanted = position === null ? null : rows[position]
   const deadline = now() + (deps.confirmMs ?? 8000)
   let albumChecked: boolean | null = null
+  // Reduced from scratch after the send (reference verify_playing), so a
+  // partial record never pairs the new state with the previous song.
+  let seen: PlaybackWire = {}
   while (now() < deadline && session.open) {
     try {
-      const observed = parsePlayback(await session.read('0202', 'a202'))
+      seen = mergePlayback(seen, await readPlaybackWire(session))
+      const observed = playbackOf(seen)
       const track = observed.track
       const member =
         track !== null &&

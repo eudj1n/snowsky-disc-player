@@ -152,6 +152,21 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
       one name of the scope's fresh album list starts with it (reference
       `album_matches`).
 
+## Owner findings on the player (round 5)
+
+- [x] The bottom player vanished after a track switch while the page stayed
+      connected. The stock follows a switch or pause with a partial a202 that
+      carries only `{"state":0}` (plus an unsolicited `aa05`); each record was
+      parsed on its own, so the partial one erased the track. a202 records
+      are now reduced per session as in the reference `merge_snapshot`: a
+      different song replaces the state, state 2 clears it, an empty record
+      changes nothing and partial records update their own fields. Selection
+      confirmation reduces from scratch after the send, so a partial record
+      never pairs a new state with the previous song. The mock now sends the
+      partial record after transport; the keyboard e2e fails on the old logic.
+- [x] The bottom player's title opens the album in its artist scope (the
+      artist without an album) and the artist line opens the artist.
+
 ## M1.5 — Caching, enrichment and artwork
 
 - [x] Collection snapshot in IndexedDB keyed by the library signature

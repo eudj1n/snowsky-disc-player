@@ -297,6 +297,12 @@ server.on('upgrade', (request, socket, head) => {
           player.position = 0
         }
         setTimeout(() => ws.send(record('a202', a202())), 50)
+        // Like the stock after a track switch or pause: a partial a202 with the
+        // state only, plus the unsolicited aa05 notification.
+        if (tag === '0201') {
+          setTimeout(() => ws.send(record('aa05', '0001')), 120)
+          setTimeout(() => ws.send(record('a202', JSON.stringify({ state: player.state }))), 180)
+        }
         return
       }
       ws.close(1008)

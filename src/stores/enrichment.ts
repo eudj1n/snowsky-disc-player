@@ -8,7 +8,7 @@
 import { reactive, readonly } from 'vue'
 import type { Track } from '../domain/track'
 import { currentCover } from '../gateway/artwork'
-import { parsePlayback } from '../gateway/playback'
+import { currentPlayback, readPlayback } from '../gateway/playback'
 import type { GatewaySession } from '../gateway/session'
 import { cacheGet, cacheSet } from '../lib/idb'
 import { http, onSessionOpened } from './connection'
@@ -92,10 +92,10 @@ async function observeCover(session: GatewaySession, track: Track): Promise<void
   reading = track.path
   attempted.add(track.path)
   try {
-    const before = parsePlayback(await session.read('0202', 'a202')).track
+    const before = (await readPlayback(session)).track
     if (!same(before, track)) return
     const cover = await currentCover(http)
-    const after = parsePlayback(await session.read('0202', 'a202')).track
+    const after = (await readPlayback(session)).track
     if (!cover || !same(after, track) || !track.path) return
     state.covers[track.path] = cover
     await cacheSet(coverKey(track.path), cover)
@@ -119,12 +119,7 @@ onSessionOpened((session) => {
   attempted.clear()
   session.onRecord((record) => {
     if (record.tag !== 'a202') return
-    let track: Track | null
-    try {
-      track = parsePlayback(record.payload).track
-    } catch {
-      return
-    }
+    const track: Track | null = currentPlayback(session).track
     if (!track) return
     rememberDuration(track)
     void observeCover(session, track)

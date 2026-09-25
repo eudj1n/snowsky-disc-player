@@ -1,7 +1,7 @@
 /** The latest playback observation, from 0202 reads and a202 pushes. */
 import { computed, reactive, readonly } from 'vue'
 import { UNKNOWN_PLAYBACK, type Playback } from '../domain/playback'
-import { parsePlayback } from '../gateway/playback'
+import { currentPlayback, readPlayback } from '../gateway/playback'
 import { NoObservation, type GatewaySession } from '../gateway/session'
 import { activeSession, onSessionOpened } from './connection'
 
@@ -20,13 +20,10 @@ export const playerVisible = computed(() => state.current.track !== null || stat
 export const isPlaying = computed(() => state.current.state === 'playing')
 
 function observe(session: GatewaySession): void {
+  // Records are reduced per session (partial a202 such as {"state":0} update
+  // the previous state); an invalid record leaves the last valid state.
   session.onRecord((record) => {
-    if (record.tag !== 'a202') return
-    try {
-      state.current = parsePlayback(record.payload)
-    } catch {
-      state.current = UNKNOWN_PLAYBACK
-    }
+    if (record.tag === 'a202') state.current = currentPlayback(session)
   })
   session.onClose(() => (state.current = UNKNOWN_PLAYBACK))
   void refreshPlayback()
@@ -38,7 +35,7 @@ export async function refreshPlayback(): Promise<void> {
   const session = activeSession()
   if (!session) return
   try {
-    state.current = parsePlayback(await session.read('0202', 'a202'))
+    state.current = await readPlayback(session)
   } catch (error) {
     if (error instanceof NoObservation) state.current = UNKNOWN_PLAYBACK
   }

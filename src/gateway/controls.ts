@@ -14,7 +14,7 @@
  */
 import type { Playback, TransportAction } from '../domain/playback'
 import type { Track } from '../domain/track'
-import { parsePlayback } from './playback'
+import { readPlayback } from './playback'
 import { NoObservation, type GatewaySession } from './session'
 import { currentVolume } from './settings'
 
@@ -45,7 +45,7 @@ const clock = (deps: ControlDeps) => ({
 export async function observe(session: GatewaySession): Promise<Playback & { track: Track }> {
   let playback: Playback
   try {
-    playback = parsePlayback(await session.read('0202', 'a202'))
+    playback = await readPlayback(session)
   } catch (error) {
     if (error instanceof NoObservation) throw new UnknownPlayback('No current playback')
     throw error

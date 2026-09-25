@@ -6,7 +6,7 @@
 import type { Playback } from '../domain/playback'
 import { catalogPage, catalogRows, sameRows, type CatalogRow } from './catalog'
 import type { GatewayHttp } from './http'
-import { parsePlayback } from './playback'
+import { readPlayback } from './playback'
 import { NoObservation, type GatewaySession } from './session'
 
 export interface QueueObservation {
@@ -43,7 +43,7 @@ async function snapshot(session: GatewaySession, http: GatewayHttp): Promise<Sna
   const queue = await readQueue(http)
   let playback: Playback | null = null
   try {
-    playback = parsePlayback(await session.read('0202', 'a202'))
+    playback = await readPlayback(session)
   } catch (error) {
     if (!(error instanceof NoObservation)) throw error
   }

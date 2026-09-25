@@ -13,6 +13,7 @@ import { coverFor } from '../stores/enrichment'
 import { observations } from '../stores/observations'
 import { playback } from '../stores/playback'
 import { togglePanel, ui } from '../stores/ui'
+import { albumRoute, artistRoute } from '../views/captions'
 import { usePlayerControls } from './usePlayerControls'
 
 const player = usePlayerControls()
@@ -21,6 +22,13 @@ const title = computed(() => track.value?.title ?? t('your_music_awaits'))
 const subtitle = computed(
   () => track.value?.artist ?? t(connection.connection === 'connected' ? 'choose_an_album' : 'connect_your_disc'),
 )
+/** The title opens the album in its artist scope (the artist without an album). */
+const titleTo = computed(() => {
+  const current = track.value
+  if (current?.album) return albumRoute(current.album, current.artist)
+  return current?.artist ? artistRoute(current.artist) : null
+})
+const artistTo = computed(() => (track.value?.artist ? artistRoute(track.value.artist) : null))
 const labels = computed(() => ({
   shuffle: t('shuffle'),
   previous: t('previous_track'),
@@ -47,6 +55,8 @@ const labels = computed(() => ({
       :favorite-label="player.favoriteLabel.value"
       :favorite="playback.current.favorite"
       :favorite-disabled="player.favoriteDisabled.value"
+      :title-to="titleTo"
+      :subtitle-to="artistTo"
       @open="(opener) => togglePanel('now', opener)"
       @favorite="player.onFavorite"
     />

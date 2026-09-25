@@ -214,6 +214,10 @@ test('connects on the first Play when paired, then follows keyboard shortcuts', 
   await expect(page.getByTestId('toggle')).toHaveAttribute('aria-label', 'Play')
   await page.keyboard.press('ArrowRight')
   await expect(page.getByTestId('track-title')).toHaveText('Inner Space')
+  // The stock follows a switch with a partial {"state":0}; the player stays.
+  await page.waitForTimeout(600)
+  await expect(page.getByTestId('track-title')).toHaveText('Inner Space')
+  await expect(page.getByTestId('toggle')).toBeEnabled()
   await disconnect(page)
   expect(errors).toEqual([])
 })
