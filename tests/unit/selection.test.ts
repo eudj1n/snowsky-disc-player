@@ -1,0 +1,182 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { catalogPage, nameHeader } from '../../src/gateway/catalog'
+import { GatewayHttp } from '../../src/gateway/http'
+import { encodeRecord } from '../../src/gateway/record'
+import { readQueue } from '../../src/gateway/queue'
+import { selectAlbum, selectSource } from '../../src/gateway/selection'
+import { GatewaySession, type SocketLike } from '../../src/gateway/session'
+
+type Listener = (event: never) => void
+class Socket implements SocketLike {
+  readyState = 0
+  sent: string[] = []
+  private listeners = new Map<string, Listener[]>()
+  constructor(private reply: (data: string) => string[]) {}
+  addEventListener(type: string, listener: Listener): void {
+    this.listeners.set(type, [...(this.listeners.get(type) ?? []), listener])
+  }
+  emit(type: string, event: unknown = {}): void {
+    for (const listener of this.listeners.get(type) ?? []) (listener as (e: unknown) => void)(event)
+  }
+  send(data: string): void {
+    this.sent.push(data)
+    for (const reply of this.reply(data)) queueMicrotask(() => this.emit('message', { data: reply }))
+  }
+  close(code = 1000): void {
+    this.readyState = 3
+    this.emit('close', { code })
+  }
+}
+
+const ALBUM = 'Тихий океан'
+const ROWS = [
+  { name: 'Волны', author: 'Берег' },
+  { name: 'Тихий океан', author: 'Берег' },
+]
+
+function http(pages: () => { rows: typeof ROWS; total: number }) {
+  const calls: Record<string, string>[] = []
+  const impl = (input: RequestInfo | URL, init?: RequestInit) => {
+    const headers = init?.headers as Record<string, string>
+    calls.push(headers)
+    const { rows, total } = pages()
+    const start = Number(headers['start-pos'])
+    const body = JSON.stringify(rows.slice(start, start + Number(headers['num-max'])))
+    expect(input instanceof Request ? input.url : input.toString()).toBe('/api/stock/song_category_tree/')
+    return Promise.resolve(new Response(body, { headers: { 'total-num': String(total) } }))
+  }
+  return { http: new GatewayHttp(impl), calls }
+}
+
+function playing(album: string, title: string, flag = 3) {
+  const song = { song_name: title, song_artist_name: 'Берег', song_album_name: album, pos_id: 1 }
+  return encodeRecord('a202', JSON.stringify({ state: 0, playerflag: flag, song: JSON.stringify(song) }))
+}
+
+async function open(onRecord: (data: string) => string[]) {
+  const socket = new Socket((data) => (data === '0599000C0000' ? [encodeRecord('a599', '0306')] : onRecord(data)))
+  const { session } = await GatewaySession.open('ws://x', () => {
+    queueMicrotask(() => {
+      socket.readyState = 1
+      socket.emit('open')
+    })
+    return socket
+  })
+  session.pair('t'.repeat(43))
+  return { socket, session }
+}
+
+beforeEach(() => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] }))
+afterEach(() => vi.useRealTimers())
+
+describe('stock catalog pages', () => {
+  it('encodes named headers for the firmware buffer', () => {
+    expect(nameHeader('Тихий океан')).toBe('%D0%A2%D0%B8%D1%85%D0%B8%D0%B9%20%D0%BE%D0%BA%D0%B5%D0%B0%D0%BD')
+    expect(() => nameHeader(' padded')).toThrow(RangeError)
+    expect(() => nameHeader('Я'.repeat(43))).toThrow(RangeError)
+  })
+
+  it('refuses an empty 200 without total-num', async () => {
+    const empty = new GatewayHttp(() => Promise.resolve(new Response('')))
+    await expect(catalogPage(empty, 'album/song', { album: ALBUM }, 0, 1)).rejects.toThrow(SyntaxError)
+  })
+})
+
+describe('guarded album selection', () => {
+  it('reads membership twice, preflights, sends once and confirms with a fresh read', async () => {
+    const { http: gateway, calls } = http(() => ({ rows: ROWS, total: 2 }))
+    const { socket, session } = await open((data) => (data === '02020008' ? [playing(ALBUM, 'Волны')] : []))
+    const outcome = await selectAlbum({ session, http: gateway, timeoutMs: 4000, pauseMs: 1 }, ALBUM)
+    expect(outcome).toBe('playing')
+    expect(calls.map((c) => [c['start-pos'], c['num-max']])).toEqual([
+      ['0', '200'],
+      ['0', '200'],
+      ['0', '1'],
+    ])
+    const selections = socket.sent.filter((data) => data.startsWith('0101'))
+    expect(selections).toEqual([encodeRecord('0101', `0003${ALBUM}`)])
+    expect(socket.sent[socket.sent.indexOf(selections[0] ?? '') - 1]).toMatch(/^request:/)
+  })
+
+  it('does not send when the membership changes between reads', async () => {
+    let read = 0
+    const { http: gateway } = http(() =>
+      ++read === 2 ? { rows: ROWS.slice(0, 1), total: 1 } : { rows: ROWS, total: 2 },
+    )
+    const { socket, session } = await open(() => [])
+    expect(await selectAlbum({ session, http: gateway, timeoutMs: 4000 }, ALBUM)).toBe('changed')
+    expect(socket.sent.some((data) => data.startsWith('0101'))).toBe(false)
+  })
+
+  it('reports uncertain, without retrying, when playback never confirms the album', async () => {
+    const { http: gateway } = http(() => ({ rows: ROWS, total: 2 }))
+    const { socket, session } = await open((data) => (data === '02020008' ? [playing('Другой', 'Волны')] : []))
+    let now = 0
+    const outcome = selectAlbum(
+      {
+        session,
+        http: gateway,
+        timeoutMs: 4000,
+        confirmMs: 100,
+        now: () => now,
+        sleep: () => ((now += 50), Promise.resolve()),
+      },
+      ALBUM,
+    )
+    await vi.runAllTimersAsync()
+    expect(await outcome).toBe('uncertain')
+    expect(socket.sent.filter((data) => data.startsWith('0101'))).toHaveLength(1)
+  })
+
+  it('selects one album track by its unique stock position (0100 with 0003)', async () => {
+    const { http: gateway } = http(() => ({ rows: ROWS, total: 2 }))
+    const { socket, session } = await open((data) => (data === '02020008' ? [playing(ALBUM, 'Тихий океан')] : []))
+    const outcome = await selectSource(
+      { session, http: gateway, timeoutMs: 4000, pauseMs: 1 },
+      { kind: 'album', album: ALBUM, track: { title: 'Тихий океан', artist: 'Берег' } },
+    )
+    expect(outcome).toBe('playing')
+    expect(socket.sent.filter((data) => data.startsWith('0100'))).toEqual([encodeRecord('0100', `00010003${ALBUM}`)])
+  })
+
+  it('refuses a track that is ambiguous or missing in the stock order', async () => {
+    const twice = [...ROWS, { name: 'Волны', author: 'Берег' }]
+    const { http: gateway } = http(() => ({ rows: twice, total: 3 }))
+    const { socket, session } = await open(() => [])
+    const deps = { session, http: gateway, timeoutMs: 4000 }
+    expect(await selectSource(deps, { kind: 'library', track: { title: 'Волны', artist: 'Берег' } })).toBe('ambiguous')
+    expect(await selectSource(deps, { kind: 'library', track: { title: 'Нет', artist: 'Берег' } })).toBe('changed')
+    expect(socket.sent.some((data) => data.startsWith('0100'))).toBe(false)
+  })
+
+  it('never sends without pairing', async () => {
+    const { http: gateway } = http(() => ({ rows: ROWS, total: 2 }))
+    const socket = new Socket((data) => (data === '0599000C0000' ? [encodeRecord('a599', '0306')] : []))
+    const { session } = await GatewaySession.open('ws://x', () => {
+      queueMicrotask(() => {
+        socket.readyState = 1
+        socket.emit('open')
+      })
+      return socket
+    })
+    expect(await selectAlbum({ session, http: gateway, timeoutMs: 4000 }, ALBUM)).toBe('unavailable')
+    expect(socket.sent.some((data) => data.startsWith('0101'))).toBe(false)
+  })
+})
+
+describe('queue observation', () => {
+  it('needs two equal reads with a stable mark', async () => {
+    const queueFetch = (rows: typeof ROWS, mark: () => number) =>
+      new GatewayHttp((_input: RequestInfo | URL, init?: RequestInit) => {
+        const headers = init?.headers as Record<string, string>
+        const start = Number(headers['start-pos'])
+        const body = JSON.stringify(rows.slice(start, start + Number(headers['num-max'])))
+        return Promise.resolve(
+          new Response(body, { headers: { 'total-num': String(rows.length), 'mark-pos': String(mark()) } }),
+        )
+      })
+    expect(await readQueue(queueFetch(ROWS, () => 1))).toEqual({ items: ROWS, current: 1 })
+    let calls = 0
+    await expect(readQueue(queueFetch(ROWS, () => (++calls > 2 ? 0 : 1)))).rejects.toThrow('changed')
+  })
+})

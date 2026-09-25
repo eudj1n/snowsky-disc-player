@@ -25,9 +25,11 @@ dev server proxies `/api` (including the WebSocket) and the active release's
 files to a gateway and rewrites `Host`/`Origin` to it, so the gateway admits
 the page as if it came from the card. Nothing is written to the card.
 
-- **Mock** — `npm run dev:mock`. A fictional player with a scripted
-  playback state; use it for layout and components. The pairing token is
-  `mock-token-0123456789-abcdefghijklmnop`.
+- **Mock** — `npm run dev:mock`. A fictional collection (names from the
+  reference demo) and a scripted player that follows album, track and
+  favorite selections and serves the queue; data reads are delayed by 700 ms
+  (`MOCK_GATEWAY_DELAY`) so loading skeletons are visible. The pairing
+  token is `mock-token-0123456789-abcdefghijklmnop`.
 - **Emulator** — `npm run dev:emulator` while the emulator from
   snowsky-disc-service is running (`python3 scripts/emulator.py up` there).
   Real stock behavior, disposable media. Its card token is in the guest at

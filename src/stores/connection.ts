@@ -14,7 +14,7 @@ import {
   type Compatibility,
 } from '../gateway/release'
 import { Disconnected, GatewaySession, type CloseReason } from '../gateway/session'
-import { socVersion } from '../gateway/settings'
+import { currentVolume, socVersion } from '../gateway/settings'
 
 export type ConnectionNotice =
   'gateway_unreachable' | 'control_busy' | 'incompatible' | 'closed_not_admitted' | 'closed_network' | 'closed_stock'
@@ -36,10 +36,18 @@ interface ConnectionModel {
   gateway: boolean | null
   connection: ConnectionState
   identity: PlayerIdentity | null
+  /** currentVolume from the last 0501 read (0..120); null when unknown. */
+  volume: number | null
   notice: ConnectionNotice | null
 }
 
-const state = reactive<ConnectionModel>({ gateway: null, connection: 'disconnected', identity: null, notice: null })
+const state = reactive<ConnectionModel>({
+  gateway: null,
+  connection: 'disconnected',
+  identity: null,
+  volume: null,
+  notice: null,
+})
 
 export const connection = readonly(state)
 
@@ -93,7 +101,9 @@ export async function connect(): Promise<void> {
       state.connection = 'disconnected'
       if (reason !== 'client') state.notice = CLOSE_NOTICES[reason] ?? 'closed_network'
     })
-    const firmware = socVersion(await session.read('0501', 'a501'))
+    const settings = await session.read('0501', 'a501')
+    const firmware = socVersion(settings)
+    state.volume = currentVolume(settings)
     const compatible = compatibility ? isCompatible(compatibility, opened.identity, firmware) : false
     state.identity = { handshake: opened.identity, firmware, compatible }
     if (!compatible) state.notice = 'incompatible'
@@ -112,4 +122,5 @@ export function disconnect(): void {
   session?.close()
   session = null
   state.connection = 'disconnected'
+  state.volume = null
 }

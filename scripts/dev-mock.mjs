@@ -7,7 +7,7 @@ const port = process.env.MOCK_GATEWAY_PORT ?? '4870'
 const children = [
   spawn(process.execPath, ['tests/e2e/mock-gateway.mjs'], {
     stdio: 'inherit',
-    env: { ...process.env, MOCK_GATEWAY_PORT: port },
+    env: { MOCK_GATEWAY_DELAY: '700', ...process.env, MOCK_GATEWAY_PORT: port },
   }),
   spawn('npx', ['vite', ...process.argv.slice(2)], {
     stdio: 'inherit',

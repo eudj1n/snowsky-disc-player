@@ -1,0 +1,63 @@
+<script setup lang="ts">
+/** Custom playlist detail: its tracks in stock list order (data level). */
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import DetailHeading from '../components/collection/DetailHeading.vue'
+import TrackList from '../components/track/TrackList.vue'
+import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
+import { filterBy } from '../domain/search'
+import type { LibraryTrack } from '../domain/track'
+import { t } from '../i18n'
+import { library, loadPlaylistTracks } from '../stores/library'
+import { playback } from '../stores/playback'
+import { ui } from '../stores/ui'
+import UiTextButton from '../ui/UiTextButton.vue'
+import CollectionGate from './CollectionGate.vue'
+
+const route = useRoute()
+const router = useRouter()
+const id = computed(() => Number(route.params.id))
+const playlist = computed(() => library.playlists.find((item) => item.id === id.value) ?? null)
+const tracks = ref<LibraryTrack[] | null>(null)
+let request = 0
+watch(
+  id,
+  async (value) => {
+    const current = ++request
+    tracks.value = null
+    try {
+      const rows = await loadPlaylistTracks(value)
+      if (current === request) tracks.value = rows
+    } catch {
+      if (current === request) tracks.value = []
+    }
+  },
+  { immediate: true },
+)
+const searching = computed(() => ui.query.trim() !== '')
+const items = computed(() =>
+  filterBy(tracks.value ?? [], ui.query, (track) => [track.title, track.artist, track.album]),
+)
+</script>
+
+<template>
+  <CollectionGate :count="items.length" :searching="searching" empty-key="search_empty_tracks" :ready="tracks !== null">
+    <template #heading="{ loading }">
+      <UiTextButton class="text-12" @click="router.push('/playlists')">← {{ t('back_to_collection') }}</UiTextButton>
+      <DetailHeading :eyebrow="t('playlist')" :title="playlist?.name ?? ''">
+        <template #meta>
+          <span v-if="loading" class="inline-block h-10 w-90 animate-pulse rounded-4 bg-soft align-middle" />
+          <template v-else>{{ t('track_count', { count: tracks?.length ?? 0 }) }}</template>
+        </template>
+      </DetailHeading>
+    </template>
+    <template #skeleton>
+      <TrackListSkeleton :rows="Math.max(1, Math.min(playlist?.trackCount ?? 6, 12))" header />
+    </template>
+    <TrackList
+      :tracks="items"
+      :header="{ title: t('title'), album: t('album_label') }"
+      :current-path="playback.current.track?.path ?? null"
+    />
+  </CollectionGate>
+</template>

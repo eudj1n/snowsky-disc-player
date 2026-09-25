@@ -14,57 +14,124 @@ function watchErrors(page: Page): string[] {
   return errors
 }
 
+async function english(page: Page): Promise<void> {
+  await page.goto('/')
+  await page.getByRole('combobox', { name: /Interface language|Язык интерфейса/ }).selectOption('en')
+}
+
+async function openConnection(page: Page): Promise<void> {
+  // Desktop: the sidebar device card; phones: the top-bar device button.
+  await page.getByRole('button', { name: 'DISC connection' }).filter({ visible: true }).first().click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+}
+
+async function connectAndPair(page: Page): Promise<void> {
+  await openConnection(page)
+  const dialog = page.getByRole('dialog')
+  if (TOKEN && (await dialog.getByLabel('Pairing token').count())) {
+    await dialog.getByLabel('Pairing token').fill(TOKEN)
+    await dialog.getByRole('button', { name: 'Pair' }).click()
+  }
+  await dialog.getByRole('button', { name: 'Connect', exact: true }).click()
+  await expect(dialog.getByTestId('connection-state')).toContainText('Connected')
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog')).toBeHidden()
+}
+
+async function disconnect(page: Page): Promise<void> {
+  await openConnection(page)
+  await page.getByRole('dialog').getByRole('button', { name: 'Disconnect' }).click()
+  await expect(page.getByRole('dialog').getByTestId('connection-state')).toContainText('Disconnected')
+  await page.keyboard.press('Escape')
+}
+
 test.describe.configure({ mode: 'serial' })
 
-test('loads from / under the gateway CSP and adopts the player language', async ({ page, request }) => {
+test('loads from / under the gateway CSP, adopts the player language and shows the collection', async ({
+  page,
+  request,
+}) => {
   const errors = watchErrors(page)
   const settings = (await (await request.get('/api/data/system_settings')).json()) as { rows: number[][] }
-  const index = settings.rows[0]?.[0] ?? -1
-  const expected = LANGUAGES[index] === 'ru' ? 'ru' : 'en'
+  const expected = LANGUAGES[settings.rows[0]?.[0] ?? -1] === 'ru' ? 'ru' : 'en'
   await page.goto('/')
   await expect(page.locator('html')).toHaveAttribute('lang', expected)
-  await expect(page.getByTestId('library')).toBeVisible()
+  await page.goto('/#/tracks')
+  await expect(page.getByRole('table').getByRole('row').nth(1)).toBeVisible()
   expect(errors).toEqual([])
 })
 
-test('connects as the single owner, reads identity and state, then disconnects', async ({ page }) => {
+test('connects as the single owner and reads identity, then disconnects', async ({ page }) => {
   const errors = watchErrors(page)
-  await page.goto('/')
-  await page.getByRole('combobox', { name: /Language|Язык/ }).selectOption('en')
-  await page.getByRole('button', { name: 'Connect' }).click()
-  await expect(page.getByTestId('connection-state')).toHaveText('Connected')
-  await expect(page.getByTestId('identity')).toHaveText('0306')
-  await expect(page.getByTestId('firmware')).toHaveText('257')
-  await expect(page.getByTestId('toggle')).toBeDisabled()
-  await page.getByRole('button', { name: 'Disconnect' }).click()
-  await expect(page.getByTestId('connection-state')).toHaveText('Disconnected')
+  await english(page)
+  await openConnection(page)
+  const dialog = page.getByRole('dialog')
+  await dialog.getByRole('button', { name: 'Connect', exact: true }).click()
+  await expect(dialog.getByTestId('connection-state')).toContainText('Connected')
+  await expect(dialog.getByTestId('connection-state')).toContainText('0306')
+  await expect(dialog.getByTestId('connection-state')).toContainText('257')
+  await dialog.getByRole('button', { name: 'Disconnect' }).click()
+  await expect(dialog.getByTestId('connection-state')).toContainText('Disconnected')
   expect(errors).toEqual([])
 })
 
-test('pairs with the card token and toggles playback with a fresh read', async ({ page }) => {
+test('pairs with the card token and toggles playback there and back', async ({ page }) => {
   test.skip(!TOKEN, 'E2E_TOKEN is required against a real gateway')
   const errors = watchErrors(page)
-  await page.goto('/')
-  await page.getByRole('combobox', { name: /Language|Язык/ }).selectOption('en')
-  await page.getByPlaceholder('Pairing token').fill(TOKEN ?? '')
-  await page.getByRole('button', { name: 'Pair' }).click()
-  await expect(page.getByTestId('paired')).toBeVisible()
-  await page.getByRole('button', { name: 'Connect' }).click()
-  await expect(page.getByTestId('connection-state')).toHaveText('Connected')
-  const state = page.getByTestId('playback-state')
-  await expect(state).toHaveText(/Playing|Paused/)
-  const before = await state.textContent()
-  await page.getByTestId('toggle').click()
-  await expect(state).not.toHaveText(before ?? '')
-  await page.getByTestId('toggle').click()
-  await expect(state).toHaveText(before ?? '')
-  await page.getByRole('button', { name: 'Disconnect' }).click()
+  await english(page)
+  await connectAndPair(page)
+  const toggle = page.getByTestId('toggle')
+  await expect(toggle).toBeEnabled()
+  const before = await toggle.getAttribute('aria-label')
+  await toggle.click()
+  await expect(toggle).not.toHaveAttribute('aria-label', before ?? '')
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-label', before ?? '')
+  await disconnect(page)
   expect(errors).toEqual([])
 })
 
-test('fits a narrow viewport without horizontal scrolling', async ({ page }) => {
+test('plays the featured album from Home with a verified result', async ({ page }) => {
+  test.skip(!TOKEN, 'E2E_TOKEN is required against a real gateway')
+  const errors = watchErrors(page)
+  await english(page)
+  const play = page.getByRole('button', { name: 'Play album' })
+  test.skip((await play.isDisabled()) && external, 'The collection has no album to feature')
+  await connectAndPair(page)
+  const featured = await page.getByRole('region', { name: 'Album from your collection' }).locator('p').textContent()
+  await play.click()
+  await expect(page.getByRole('status').filter({ hasText: 'Done. Verified on DISC.' })).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByTestId('toggle')).toHaveAttribute('aria-label', 'Pause')
+  expect(featured).toBeTruthy()
+  await disconnect(page)
+  expect(errors).toEqual([])
+})
+
+test('plays a track from an album page and shows it in Now Playing and Queue', async ({ page }) => {
+  test.skip(!TOKEN || external, 'Needs the mock collection and token')
+  const errors = watchErrors(page)
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/album/Blue%20Hours')
+  await page.getByRole('button', { name: 'Play Window Seat' }).click()
+  await expect(page.getByRole('status').filter({ hasText: 'Done. Verified on DISC.' })).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByTestId('track-title')).toHaveText('Window Seat')
+  await page.getByRole('button', { name: 'Open Now Playing panel' }).click()
+  const panel = page.getByRole('complementary', { name: 'Player view' })
+  await expect(panel.getByRole('heading', { name: 'Window Seat' })).toBeVisible()
+  await panel.getByRole('button', { name: 'Queue', exact: true }).click()
+  await expect(panel.locator('[aria-current=true]')).toContainText('Window Seat')
+  await page.keyboard.press('Escape')
+  await expect(panel).toBeHidden()
+  await expect(page.getByRole('button', { name: 'Open Now Playing panel' })).toBeFocused()
+  await disconnect(page)
+  expect(errors).toEqual([])
+})
+
+test('keeps the reference layout on a phone without horizontal scrolling', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 })
-  await page.goto('/')
+  await english(page)
+  await expect(page.getByRole('navigation').getByRole('link', { name: 'Albums' })).toBeVisible()
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   )

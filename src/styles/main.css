@@ -1,63 +1,294 @@
 @import 'tailwindcss';
 
 /*
- * Design tokens after the reference DISC Web: warm paper surfaces, quiet
- * green neutrals, coral primary actions, system fonts (the gateway CSP allows
- * 'self' only, so no web fonts from a CDN). Components use these through
- * Tailwind utilities (bg-paper, text-muted, border-line…); dark values
- * override the same variables.
+ * Design system ported from the reference DISC Web stylesheet
+ * (snowsky-disc-qemu experiments/disc_web/frontend/style.css), expressed as
+ * Tailwind tokens and variants. The reference authors every size in px on a
+ * 14px root, so the spacing unit is 1px (p-13 = 13px) and the type and radius
+ * scales are the reference's own values (text-11, rounded-11).
  */
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+/* Reference breakpoints, registered widest first so narrower rules win. */
+@custom-variant wide (@media (min-width: 1500px));
+@custom-variant compact (@media (max-width: 1100px));
+@custom-variant rail (@media (max-width: 800px));
+@custom-variant sheet (@media (max-width: 700px));
+@custom-variant narrow (@media (max-width: 600px));
+@custom-variant phone (@media (max-width: 540px));
+/* Short desktop windows: the sidebar drops its note so the device card stays above the player. */
+@custom-variant short (@media (max-height: 760px) and (min-width: 541px));
+/* The listening panel reserves space from 1200px (plan M3). */
+@custom-variant listening {
+  @media (min-width: 1200px) {
+    &:where(.listening-open, .listening-open *) {
+      @slot;
+    }
+  }
+}
+
 @theme {
-  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --color-paper: #f8f7f4;
-  --color-surface: #ffffff;
-  --color-ink: #1d2623;
-  --color-muted: #5e6b66;
-  --color-line: #e3e1da;
-  --color-forest: #1f3a33;
-  --color-coral: #e8745c;
-  --color-coral-ink: #ffffff;
-  --color-ok: #3f8f6b;
-  --color-warn: #b5562f;
-  --radius-card: 14px;
-  --shadow-card: 0 1px 2px rgb(29 38 35 / 6%), 0 8px 24px rgb(29 38 35 / 6%);
+  --spacing: 1px;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sleeve: Georgia, 'Times New Roman', serif;
+
+  --text-6: 6px;
+  --text-7: 7px;
+  --text-8: 8px;
+  --text-9: 9px;
+  --text-10: 10px;
+  --text-11: 11px;
+  --text-12: 12px;
+  --text-13: 13px;
+  --text-14: 14px;
+  --text-15: 15px;
+  --text-17: 17px;
+  --text-18: 18px;
+  --text-19: 19px;
+  --text-21: 21px;
+  --text-22: 22px;
+  --text-24: 24px;
+  --text-25: 25px;
+  --text-26: 26px;
+  --text-27: 27px;
+  --text-28: 28px;
+  --text-29: 29px;
+  --text-30: 30px;
+  --text-32: 32px;
+  --text-34: 34px;
+  --text-35: 35px;
+  --text-36: 36px;
+  --text-38: 38px;
+  --text-39: 39px;
+  --text-42: 42px;
+  --text-43: 43px;
+  --text-55: 55px;
+
+  --radius-3: 3px;
+  --radius-4: 4px;
+  --radius-5: 5px;
+  --radius-6: 6px;
+  --radius-7: 7px;
+  --radius-8: 8px;
+  --radius-9: 9px;
+  --radius-10: 10px;
+  --radius-11: 11px;
+  --radius-12: 12px;
+  --radius-14: 14px;
+  --radius-15: 15px;
+  --radius-18: 18px;
+  --radius-20: 20px;
+  --radius-22: 22px;
+  --radius-24: 24px;
+
+  --animate-sync-rotate: sync-rotate 3s linear infinite;
+  --animate-listening-enter: listening-enter 0.2s ease-out;
+  @keyframes sync-rotate {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes listening-enter {
+    from {
+      opacity: 0;
+      transform: translateX(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+}
+
+/* Theme colors resolve at use site, so the dark overrides below apply. */
+@theme inline {
+  --color-paper: var(--paper);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-soft: var(--soft);
+  --color-hover: var(--hover);
+  --color-selected: var(--selected);
+  --color-secondary: var(--secondary);
+  --color-banner: var(--banner);
+  --color-banner-ink: var(--banner-ink);
+  --color-progress-bg: var(--progress-bg);
+  --color-progress-fill: var(--progress-fill);
+  --color-player-bg: var(--player-bg);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+}
+
+:root {
+  font-size: 14px;
+  --paper: #faf9f6;
+  --line: #e8e7e0;
+  --ink: #242521;
+  --surface: #f2f1ec;
+  --raised: #f9f9f4;
+  --soft: #efeee9;
+  --hover: #e9e9e1;
+  --selected: #e5e7dc;
+  --secondary: #626d57;
+  --banner: #f0f1e9;
+  --banner-ink: #707b60;
+  --progress-bg: #e0e5d6;
+  --progress-fill: #6b7959;
+  --player-bg: #fbfcf8ee;
+  --muted: #82847b;
+  --accent: #f35c3f;
+  --accent-ink: #21140f;
+  /* Layout: sidebar width and bottom player height per breakpoint. */
+  --sidebar: 224px;
+  --player: 100px;
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --paper: #151815;
+  --ink: #e7e9e0;
+  --line: #30372f;
+  --muted: #a0aa96;
+  --accent: #ff795a;
+  --surface: #101410;
+  --raised: #1d231c;
+  --soft: #22291f;
+  --hover: #2b3428;
+  --selected: #303d29;
+  --secondary: #bdc9b1;
+  --banner: #1c251a;
+  --banner-ink: #a4b692;
+  --progress-bg: #394331;
+  --progress-fill: #b2c891;
+  --player-bg: #191f18f5;
+}
+
+@media (min-width: 1500px) {
+  :root {
+    --sidebar: 250px;
+  }
+}
+@media (max-width: 1100px) {
+  :root {
+    --sidebar: 190px;
+  }
+}
+@media (max-width: 800px) {
+  :root {
+    --sidebar: 74px;
+  }
+}
+@media (max-width: 540px) {
+  :root {
+    --sidebar: 0px;
+    --player: 136px;
+  }
 }
 
 @layer base {
-  :root {
-    color-scheme: light;
+  html {
+    scrollbar-gutter: stable;
+    @apply bg-paper font-sans text-ink;
   }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme='light']) {
-      color-scheme: dark;
-      --color-paper: #121614;
-      --color-surface: #1a201d;
-      --color-ink: #eef1ee;
-      --color-muted: #9aa8a2;
-      --color-line: #2a322e;
-      --color-forest: #a8d5c2;
-      --color-coral: #f08a73;
-      --color-coral-ink: #1a0f0b;
-      --color-ok: #6cc59b;
-      --color-warn: #f0a07f;
-      --shadow-card: none;
+  /* Scroll lock while a modal dialog is open (src/ui/dialogs.ts). */
+  html.modal-open {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  .modal-open body {
+    position: fixed;
+    top: var(--dialog-scroll-y);
+    inset-inline: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  button,
+  a,
+  input {
+    -webkit-tap-highlight-color: transparent;
+    outline-offset: 5px;
+  }
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+  button:disabled {
+    opacity: 0.35;
+  }
+  :is(button, a):focus-visible {
+    outline: 2px solid var(--accent);
+  }
+  :is(button:not(:disabled), a) {
+    transition:
+      background 0.18s,
+      color 0.18s,
+      transform 0.18s;
+  }
+}
+
+/* Native range pseudo-elements have no utilities; the fill follows --seek-fill. */
+@utility seek-slider {
+  appearance: none;
+  width: 100%;
+  height: 18px;
+  margin: 0;
+  padding: 6px 0;
+  cursor: pointer;
+  background: transparent;
+  accent-color: var(--progress-fill);
+  &::-webkit-slider-runnable-track {
+    height: 3px;
+    border-radius: 5px;
+    background: linear-gradient(
+      to right,
+      var(--progress-fill) var(--seek-fill, 0%),
+      var(--progress-bg) var(--seek-fill, 0%)
+    );
+  }
+  &::-webkit-slider-thumb {
+    appearance: none;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--progress-fill);
+    margin-top: -4px;
+  }
+  &::-moz-range-track {
+    height: 3px;
+    background: var(--progress-bg);
+  }
+  &::-moz-range-progress {
+    background: var(--progress-fill);
+  }
+  &::-moz-range-thumb {
+    border: 0;
+    width: 11px;
+    height: 11px;
+    background: var(--progress-fill);
+  }
+  &:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+  @media (max-width: 700px) {
+    height: 12px;
+    padding: 4px 0;
+    &::-webkit-slider-thumb {
+      width: 9px;
+      height: 9px;
+      margin-top: -3px;
     }
   }
-  :root[data-theme='dark'] {
-    color-scheme: dark;
-    --color-paper: #121614;
-    --color-surface: #1a201d;
-    --color-ink: #eef1ee;
-    --color-muted: #9aa8a2;
-    --color-line: #2a322e;
-    --color-forest: #a8d5c2;
-    --color-coral: #f08a73;
-    --color-coral-ink: #1a0f0b;
-    --color-ok: #6cc59b;
-    --color-warn: #f0a07f;
-    --shadow-card: none;
-  }
-  body {
-    @apply bg-paper font-sans text-ink antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
   }
 }

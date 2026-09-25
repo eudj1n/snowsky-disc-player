@@ -11,6 +11,19 @@ export interface Track {
   durationMs: number | null
 }
 
+/** A track row from the stock library database (data level). */
+export interface LibraryTrack extends Track {
+  /** Stock SONG.ID: a database identity, not a stock list position. */
+  id: number
+  fileName: string
+  albumArtist: string | null
+  genre: string | null
+  discNumber: number | null
+  trackNumber: number | null
+  /** ADD_TIME in seconds since the epoch. */
+  addedAt: number | null
+}
+
 /** "Artist · Album" with unknown parts left out. */
 export function trackCredits(track: Pick<Track, 'artist' | 'album'>): string {
   return [track.artist, track.album].filter((part): part is string => Boolean(part)).join(' · ')
@@ -24,6 +37,11 @@ export function formatDuration(ms: number | null): string | null {
   const minutes = Math.floor((total % 3600) / 60)
   const seconds = String(total % 60).padStart(2, '0')
   return hours ? `${hours}:${String(minutes).padStart(2, '0')}:${seconds}` : `${minutes}:${seconds}`
+}
+
+/** m:ss for player times; unknown is shown as —:— like the reference. */
+export function timeLabel(ms: number | null): string {
+  return formatDuration(ms) ?? '—:—'
 }
 
 /** File extension as a format badge (FLAC, WAV…), only from an observed path. */

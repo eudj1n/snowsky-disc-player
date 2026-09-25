@@ -27,6 +27,17 @@ there is no application server: the browser talks to the gateway directly.
 | Library enrichment (current-track artwork/duration)                                                               | Current cover through `/api/stock/image/cover/`, stored per snapshot in IndexedDB (plan M6)                                                               |
 | Demo mode (`backend/demo.py`, `art/cover-*.svg`)                                                                  | The mock gateway for development and tests; a user-facing demo is a later decision                                                                        |
 
+## Deliberate differences
+
+- Primary pill buttons use the player's ink green, not the coral accent
+  (owner's decision); coral remains for indicators.
+- Loading skeletons shaped like each page replace the reference's loading
+  text.
+- The collection is browsable without connecting: the data level needs no
+  owner session. Connecting is needed for playback only.
+- The sidebar scrolls and drops its note on short windows so the device card
+  never slides under the player.
+
 ## Invariants carried over
 
 - One owner, explicit connect/disconnect, no automatic reconnect.

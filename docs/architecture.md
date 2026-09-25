@@ -30,6 +30,17 @@ by the same components in every view, whatever its source: a playback
 observation, a data-level row or a stock catalog page. Sources map into the
 domain in `src/gateway`, never in components.
 
+## Playback selection
+
+Selections follow the reference Controller exactly: a source's stock
+membership is read twice from catalog pages (`src/gateway/catalog.ts`),
+the target is resolved in stock order (data-level IDs are never positions),
+the target row is re-read just before one `0101`/`0100` with a fresh request
+ID, and a fresh `0202` must show the expected source and track. Outcomes are
+`playing`, `changed`, `ambiguous`, `unavailable` or `uncertain`; none is
+retried. The queue is read the same way from `curlist/song` with a stable
+`mark-pos`.
+
 ## State and actions
 
 Stores are module-level `reactive` objects exposed read-only, with explicit

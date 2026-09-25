@@ -48,8 +48,33 @@
       "timeout_ms": 4000,
       "pacing_ms": 500,
       "max_bytes": 528
+    },
+    "0101": {
+      "name": "play_all",
+      "kind": "mutation",
+      "class": "selection",
+      "payload": "[0-9A-Fa-f]{4}.*",
+      "reply": "a202",
+      "silent_ok": false,
+      "timeout_ms": 4000,
+      "pacing_ms": 500,
+      "max_bytes": 528
+    },
+    "0100": {
+      "name": "select_position",
+      "kind": "mutation",
+      "class": "selection",
+      "payload": "[0-9A-Fa-f]{4}[0-9A-Fa-f]{4}.*",
+      "reply": "a202",
+      "silent_ok": false,
+      "timeout_ms": 4000,
+      "pacing_ms": 500,
+      "max_bytes": 528
     }
   },
   "http": [],
-  "denied": { "records": {}, "http": [] }
+  "denied": {
+    "records": {},
+    "http": []
+  }
 }

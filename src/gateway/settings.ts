@@ -17,3 +17,11 @@ export function socVersion(payload: string): number | null {
   const soc = (value as Record<string, unknown>).soc_version
   return typeof soc === 'number' && Number.isInteger(soc) ? soc : null
 }
+
+/** currentVolume from the 0501 settings reply (0..120), as the reference Controller validates it. */
+export function currentVolume(payload: string): number | null {
+  const value: unknown = JSON.parse(payload)
+  if (!value || typeof value !== 'object') return null
+  const volume = (value as Record<string, unknown>).currentVolume
+  return typeof volume === 'number' && Number.isInteger(volume) && volume >= 0 && volume <= 120 ? volume : null
+}

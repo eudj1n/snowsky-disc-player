@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import PairingForm from '../../../src/components/pairing/PairingForm.vue'
+import PairingForm from '../../../src/components/connection/PairingForm.vue'
 import { chooseLocale } from '../../../src/i18n'
 
 describe('PairingForm', () => {

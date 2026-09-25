@@ -1,9 +1,10 @@
 <script setup lang="ts">
-/** Round icon-only button; the label is required for assistive technology. */
-import UiIcon, { type IconName } from './UiIcon.vue'
+/** Round 34px icon button (reference .icon-button). Pressed state turns accent. */
+import UiIcon from './UiIcon.vue'
+import type { IconName } from './icons'
 
-withDefaults(defineProps<{ icon: IconName; label: string; primary?: boolean; disabled?: boolean }>(), {
-  primary: false,
+withDefaults(defineProps<{ icon: IconName; label: string; pressed?: boolean | undefined; disabled?: boolean }>(), {
+  pressed: undefined,
   disabled: false,
 })
 </script>
@@ -11,16 +12,12 @@ withDefaults(defineProps<{ icon: IconName; label: string; primary?: boolean; dis
 <template>
   <button
     type="button"
-    :disabled="disabled"
     :aria-label="label"
     :title="label"
-    class="inline-flex items-center justify-center rounded-full border transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-coral disabled:cursor-not-allowed disabled:opacity-45"
-    :class="
-      primary
-        ? 'size-14 border-coral bg-coral text-coral-ink hover:enabled:brightness-105'
-        : 'size-11 border-line text-ink hover:enabled:border-muted'
-    "
+    :aria-pressed="pressed"
+    :disabled="disabled"
+    class="inline-flex size-34 shrink-0 items-center justify-center rounded-full p-6 text-secondary hover:enabled:bg-hover hover:enabled:text-ink aria-pressed:text-accent aria-pressed:[&>svg]:stroke-2"
   >
-    <UiIcon :name="icon" :class="primary ? 'size-6' : 'size-5'" />
+    <UiIcon :name="icon" />
   </button>
 </template>
