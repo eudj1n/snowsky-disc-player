@@ -341,6 +341,12 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
       keeps the active release and the previous one.
 - [x] `DISC_WEB_SN_PAIRING` placed on PLAY at the owner's request (exact
       20-byte content read back); the card was flushed and ejected.
+- 2026-09-26: `c4784ac08ccbe799` (commit `df8508d`, round 9, with the
+  service catalog `ef56626` that admits media names only on uploads)
+  published on PLAY after the full mock suite; all 35 files matched by
+  SHA-256 after the write. `6391eee7bbc8b7ac` stays for rollback;
+  `9b8d2afdaeb8f018` removed (active plus previous kept).
+
 - [ ] Owner's browser acceptance on the player: covers, durations, lyrics,
       favorite removal, playlists by `LIST_ID`, albums and discs, pairing by
       the serial number.
