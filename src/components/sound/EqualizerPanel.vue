@@ -94,7 +94,7 @@ function choose(event: Event): void {
     </div>
 
     <template v-if="state">
-      <p class="mt-10 mb-0 text-10 text-muted">
+      <p class="mt-10 mb-0 text-11 text-muted">
         {{ isUserPreset(state.preset) ? t('eq_slot_init') : t('eq_select_user') }}
       </p>
       <div
@@ -102,7 +102,7 @@ function choose(event: Event): void {
         :class="{ 'opacity-60': !editable }"
       >
         <div v-for="band in bands" :key="band.position" class="flex flex-col items-center gap-6">
-          <output class="text-9 text-muted tabular-nums">{{ signed(band.gain) }}</output>
+          <output class="text-10 text-muted tabular-nums">{{ signed(band.gain) }}</output>
           <input
             v-model.number="band.gain"
             type="range"
@@ -114,7 +114,7 @@ function choose(event: Event): void {
             class="seek-slider h-110 w-18 [--seek-direction:to_top] [direction:rtl] [writing-mode:vertical-lr]"
             :style="{ '--seek-fill': `${((band.gain + 12) / 24) * 100}%` }"
           />
-          <span class="text-9 text-secondary tabular-nums">{{ label(band.frequency) }}</span>
+          <span class="text-10 text-secondary tabular-nums">{{ label(band.frequency) }}</span>
         </div>
       </div>
 
@@ -138,7 +138,7 @@ function choose(event: Event): void {
         <summary class="cursor-pointer text-secondary">{{ t('eq_fine') }}</summary>
         <div class="mt-10 grid grid-cols-[auto_1fr_1fr] items-center gap-x-12 gap-y-6">
           <template v-for="band in bands" :key="band.position">
-            <span class="text-10 text-muted">{{ t('eq_band', { n: band.position + 1 }) }}</span>
+            <span class="text-11 text-muted">{{ t('eq_band', { n: band.position + 1 }) }}</span>
             <label class="flex items-center gap-6">
               <span class="sr-only">{{ t('eq_frequency') }}</span>
               <input

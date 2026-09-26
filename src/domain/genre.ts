@@ -1,4 +1,5 @@
 import type { Album } from './album'
+import { creditArtists } from './artist'
 import type { LibraryTrack } from './track'
 
 /**
@@ -53,16 +54,22 @@ export function genreAlbums(albums: readonly Album[], genre: Genre): Album[] {
 
 export interface GenreArtist {
   name: string
-  /** Tracks of this artist in the genre. */
+  /** Tracks of this artist in the genre, joint credits included. */
   trackCount: number
+  /** Stock knows this name as an artist of its own (not only inside a joint credit), so it can play it. */
+  literal: boolean
 }
 
 /** Literal track artists of a genre, the most represented first, ties by first appearance. */
 export function genreArtists(tracks: readonly LibraryTrack[], genre: string): GenreArtist[] {
   const counts = new Map<string, number>()
+  const literal = new Set<string>()
   for (const track of tracks) {
     if (track.genre !== genre || !track.artist) continue
-    counts.set(track.artist, (counts.get(track.artist) ?? 0) + 1)
+    literal.add(track.artist)
+    for (const name of creditArtists(track.artist)) counts.set(name, (counts.get(name) ?? 0) + 1)
   }
-  return [...counts].map(([name, trackCount]) => ({ name, trackCount })).sort((a, b) => b.trackCount - a.trackCount)
+  return [...counts]
+    .map(([name, trackCount]) => ({ name, trackCount, literal: literal.has(name) }))
+    .sort((a, b) => b.trackCount - a.trackCount)
 }

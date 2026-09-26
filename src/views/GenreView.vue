@@ -179,7 +179,7 @@ function playAlbum(item: Album): void {
           :to="artistRoute(artist.name)"
           :lines="[{ text: t('track_count', { count: artist.trackCount }) }]"
           :open-label="t('open_item', { name: artist.name })"
-          :play-label="t('play_item', { name: artist.name })"
+          :play-label="artist.literal ? t('play_item', { name: artist.name }) : null"
           :play-disabled="selection.busy"
           @play="playFrom({ kind: 'artist', artist: artist.name })"
         />

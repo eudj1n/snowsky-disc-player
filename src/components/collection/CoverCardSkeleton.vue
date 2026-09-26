@@ -18,7 +18,7 @@ withDefaults(defineProps<{ artist?: boolean; lines?: number }>(), { artist: fals
     <div
       v-for="line in lines"
       :key="line"
-      class="flex h-[1.6em] items-center text-10 wide:text-12 phone:text-10"
+      class="flex h-[1.6em] items-center text-11 wide:text-12 phone:text-11"
       :class="{ 'justify-center': artist }"
     >
       <UiSkeleton class="h-[0.75em]" :class="line === 1 ? 'w-[52%]' : 'w-[34%]'" />

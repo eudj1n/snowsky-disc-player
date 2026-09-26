@@ -56,7 +56,7 @@ const small = 'size-25 p-3 [&>svg]:size-19'
         :aria-label="playing ? labels.pause : labels.play"
         :title="playing ? labels.pause : labels.play"
         :disabled="controlsDisabled"
-        class="flex size-34 items-center justify-center rounded-full bg-[#30362b] text-white hover:enabled:scale-[1.07] hover:enabled:bg-[#3b4335] dark:bg-[#d8e1cc] dark:text-[#1b2316] dark:hover:enabled:bg-[#e4ebd9] phone:size-31"
+        class="flex size-34 items-center justify-center rounded-full bg-strong text-strong-ink hover:enabled:scale-[1.07] hover:enabled:bg-strong-hover phone:size-31"
         @click="emit('transport', 'toggle')"
       >
         <UiIcon filled :name="playing ? 'pause' : 'play'" class="size-15 stroke-[1.5]" />

@@ -20,6 +20,6 @@ import UiDialog from '../ui/UiDialog.vue'
       :labels="{ light: t('light'), dark: t('dark'), system: t('system') }"
       @choose="chooseAppearance"
     />
-    <p class="mt-23 text-10 leading-[1.7] text-muted">{{ t('saved_in_this_browser') }}</p>
+    <p class="mt-23 text-11 leading-[1.7] text-muted">{{ t('saved_in_this_browser') }}</p>
   </UiDialog>
 </template>

@@ -106,7 +106,7 @@ const applyDisabled = (name: SoundName, draft: number) => locked.value || sound.
           />
           <output class="w-32 text-right text-12 tabular-nums">{{ balanceLabel(balance) }}</output>
         </div>
-        <div class="mt-4 flex justify-between pr-44 text-9 text-muted">
+        <div class="mt-4 flex justify-between pr-44 text-10 text-muted">
           <span>L20</span><span>0</span><span>R20</span>
         </div>
       </div>

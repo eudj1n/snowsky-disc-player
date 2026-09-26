@@ -81,7 +81,7 @@ const emit = defineEmits<{
       <span
         v-if="formatBadge(playback.track?.path ?? null)"
         :title="labels.format"
-        class="rounded-5 border border-line px-7 py-4 text-10 tracking-[1px]"
+        class="rounded-5 border border-line px-7 py-4 text-11 tracking-[1px]"
         >{{ formatBadge(playback.track?.path ?? null) }}</span
       >
     </p>
@@ -106,7 +106,7 @@ const emit = defineEmits<{
       @click="emit('navigate')"
       >{{ playback.track.album }}</RouterLink
     >
-    <p v-if="context" class="-mt-14 mb-22 flex min-w-0 items-center gap-6 text-10 text-muted">
+    <p v-if="context" class="-mt-14 mb-22 flex min-w-0 items-center gap-6 text-11 text-muted">
       <UiIcon name="queue" class="size-12 shrink-0" />
       <span class="shrink-0">{{ labels.playingFrom }} ·</span>
       <RouterLink
@@ -119,7 +119,7 @@ const emit = defineEmits<{
       <span v-else class="truncate">{{ context.text }}</span>
     </p>
     <SeekBar
-      class="text-9"
+      class="text-10"
       :position-ms="positionMs"
       :duration-ms="playback.track?.durationMs ?? null"
       :identity="identity"
@@ -127,7 +127,7 @@ const emit = defineEmits<{
       :label="labels.seek"
       @seek="(seconds, id) => emit('seek', seconds, id)"
     />
-    <p v-if="seekFeedback" role="status" class="mt-6 text-10 text-secondary">{{ seekFeedback }}</p>
+    <p v-if="seekFeedback" role="status" class="mt-6 text-11 text-secondary">{{ seekFeedback }}</p>
     <div class="my-20 flex items-center justify-center gap-32">
       <UiIconButton
         icon="previous"
@@ -140,7 +140,7 @@ const emit = defineEmits<{
         type="button"
         :aria-label="playback.state === 'playing' ? labels.pause : labels.play"
         :disabled="controlsDisabled"
-        class="flex size-54 items-center justify-center rounded-full bg-[#30362b] text-white hover:enabled:scale-[1.05] dark:bg-[#d8e1cc] dark:text-[#1b2316]"
+        class="flex size-54 items-center justify-center rounded-full bg-strong text-strong-ink hover:enabled:scale-[1.05]"
         @click="emit('transport', 'toggle')"
       >
         <UiIcon filled :name="playback.state === 'playing' ? 'pause' : 'play'" class="size-21 stroke-[1.5]" />
@@ -187,6 +187,6 @@ const emit = defineEmits<{
       @change="(value) => emit('volume', value)"
       @mute="emit('mute')"
     />
-    <p class="mt-20 text-10 text-muted">{{ labels.output }}</p>
+    <p class="mt-20 text-11 text-muted">{{ labels.output }}</p>
   </div>
 </template>

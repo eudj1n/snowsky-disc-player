@@ -27,7 +27,7 @@ const emit = defineEmits<{ select: [index: number] }>()
       :class="index === current ? 'bg-selected' : 'hover:bg-soft'"
       :aria-current="index === current ? 'true' : undefined"
     >
-      <span class="flex justify-center text-10 text-muted">
+      <span class="flex justify-center text-11 text-muted">
         <UiNowPlaying v-if="index === current" :playing="playing" class="text-progress-fill" />
         <button
           v-else
@@ -43,7 +43,7 @@ const emit = defineEmits<{ select: [index: number] }>()
       <span class="size-36 overflow-hidden rounded-6"><ArtworkSleeve :title="item.title" /></span>
       <span class="min-w-0">
         <strong class="block truncate font-[550]">{{ item.title }}</strong>
-        <small class="mt-4 block truncate text-10 text-muted">{{ item.artist || '—' }}</small>
+        <small class="mt-4 block truncate text-11 text-muted">{{ item.artist || '—' }}</small>
       </span>
     </li>
   </ol>

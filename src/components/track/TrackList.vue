@@ -142,7 +142,7 @@ function contextMenu(event: MouseEvent, index: number): void {
     />
     <template v-for="(track, index) in tracks" :key="`${track.path ?? ''}#${index}`">
       <div v-if="discHeadings.has(index)" role="row" class="pt-18 pb-6">
-        <span role="rowheader" class="text-9 font-[650] tracking-[1.8px] text-muted uppercase">{{
+        <span role="rowheader" class="text-10 font-[650] tracking-[1.8px] text-muted uppercase">{{
           discHeadings.get(index)
         }}</span>
       </div>
@@ -231,7 +231,7 @@ function contextMenu(event: MouseEvent, index: number): void {
             type="button"
             :aria-label="`${playLabel} ${track.title}`"
             :disabled="disabled"
-            class="grid h-24 w-full place-items-center p-0 text-10 text-muted tabular-nums hover:enabled:text-ink"
+            class="grid h-24 w-full place-items-center p-0 text-11 text-muted tabular-nums hover:enabled:text-ink"
             @click="emit('play', index)"
           >
             <UiNowPlaying
@@ -248,20 +248,20 @@ function contextMenu(event: MouseEvent, index: number): void {
               class="hidden size-13 text-secondary group-focus-within/row:block group-hover/row:block"
             />
           </button>
-          <span v-else class="text-10 text-muted tabular-nums">{{ numberOf(track, index) }}</span>
+          <span v-else class="text-11 text-muted tabular-nums">{{ numberOf(track, index) }}</span>
         </span>
         <div role="cell" class="min-w-0">
           <strong class="block truncate font-[550]">{{ track.title }}</strong>
           <template v-if="soloArtist" />
           <span
             v-else-if="track.artist && artistTo(track.artist)"
-            class="mt-5 block max-w-full truncate text-10 text-muted"
+            class="mt-5 block max-w-full truncate text-11 text-muted"
           >
             <ArtistCredit :credit="track.artist" :to="artistTo" :link-class="LINK" />
           </span>
-          <small v-else class="mt-5 block truncate text-10 text-muted">{{ track.artist || '—' }}</small>
+          <small v-else class="mt-5 block truncate text-11 text-muted">{{ track.artist || '—' }}</small>
         </div>
-        <span v-if="album" role="cell" class="min-w-0 truncate text-10 text-muted phone:hidden">
+        <span v-if="album" role="cell" class="min-w-0 truncate text-11 text-muted phone:hidden">
           <RouterLink
             v-if="track.album && albumTo(track)"
             :to="albumTo(track) ?? ''"
@@ -271,7 +271,7 @@ function contextMenu(event: MouseEvent, index: number): void {
           >
           <template v-else>{{ track.album || '—' }}</template>
         </span>
-        <span v-if="duration" role="cell" class="text-right text-10 text-muted tabular-nums">{{
+        <span v-if="duration" role="cell" class="text-right text-11 text-muted tabular-nums">{{
           formatDuration(track.durationMs) ?? '—:—'
         }}</span>
         <span v-if="menuLabel !== null" role="cell" class="flex justify-end">

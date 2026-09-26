@@ -58,8 +58,8 @@ describe('artists and playlists', () => {
       track(5, null, 'Z'),
     ])
     expect(artists).toEqual([
-      { name: 'A', albumCount: 2, trackCount: 3 },
-      { name: 'B', albumCount: 0, trackCount: 1 },
+      { name: 'A', albumCount: 2, trackCount: 3, literal: true },
+      { name: 'B', albumCount: 0, trackCount: 1, literal: true },
     ])
   })
 

@@ -55,7 +55,7 @@ function discard(): void {
 </script>
 
 <template>
-  <div class="flex items-center gap-10 text-8 text-muted tabular-nums">
+  <div class="flex items-center gap-10 text-9 text-muted tabular-nums">
     <span v-if="!compact" class="whitespace-nowrap">{{ shown }}</span>
     <input
       class="seek-slider"

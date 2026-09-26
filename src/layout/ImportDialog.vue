@@ -129,7 +129,7 @@ function openNew(): void {
     </p>
 
     <section class="border-t border-line pt-16">
-      <span class="text-9 font-[650] tracking-[1.8px] text-muted">{{ t('import_step_transfer') }}</span>
+      <span class="text-10 font-[650] tracking-[1.8px] text-muted">{{ t('import_step_transfer') }}</span>
       <div
         class="rounded-16 mt-10 grid place-items-center gap-8 border border-dashed px-16 py-22 text-center transition-colors duration-150"
         :class="dragging ? 'border-secondary bg-banner' : 'border-line bg-raised'"
@@ -165,7 +165,7 @@ function openNew(): void {
           @change="choose(folderInput, true)"
         />
       </div>
-      <p class="mt-8 mb-0 text-10 text-muted">
+      <p class="mt-8 mb-0 text-11 text-muted">
         {{ t('import_no_overwrite')
         }}<template v-if="imports.skipped"> · {{ t('import_skipped', { count: imports.skipped }) }}</template>
       </p>
@@ -179,12 +179,12 @@ function openNew(): void {
             <UiIcon :name="item.phase === 'done' ? 'music' : 'upload'" class="size-15 shrink-0 text-secondary" />
             <span class="min-w-0 flex-1">
               <strong class="block truncate font-[550]" :title="item.path">{{ splitPath(item.path).name }}</strong>
-              <small class="block truncate text-10 text-muted"
+              <small class="block truncate text-11 text-muted"
                 >{{ splitPath(item.path).folder || '/' }} · {{ sizeLabel(item.size) }}</small
               >
             </span>
             <span
-              class="shrink-0 text-right text-10"
+              class="shrink-0 text-right text-11"
               :class="
                 item.phase === 'done'
                   ? 'text-secondary'
@@ -212,15 +212,15 @@ function openNew(): void {
               <UiIcon name="close" />
             </button>
           </div>
-          <p v-if="item.phase === 'exists'" class="mt-4 mb-0 pl-25 text-10 text-muted">
+          <p v-if="item.phase === 'exists'" class="mt-4 mb-0 pl-25 text-11 text-muted">
             {{ t(PHASE[item.phase]) }}
           </p>
           <p
             v-if="['uncertain', 'not-sent'].includes(item.phase)"
-            class="mt-4 mb-0 flex flex-wrap items-center gap-x-10 pl-25 text-10 text-accent"
+            class="mt-4 mb-0 flex flex-wrap items-center gap-x-10 pl-25 text-11 text-accent"
           >
             {{ t(PHASE[item.phase]) }}
-            <UiTextButton class="text-10" :disabled="imports.transferring" @click="retryItem(item.id)">{{
+            <UiTextButton class="text-11" :disabled="imports.transferring" @click="retryItem(item.id)">{{
               t('import_retry')
             }}</UiTextButton>
           </p>
@@ -230,7 +230,7 @@ function openNew(): void {
         </li>
       </ul>
       <div class="mt-12 flex flex-wrap items-center justify-between gap-10">
-        <small class="text-10 text-muted"
+        <small class="text-11 text-muted"
           >{{ counts.total ? t('import_batch_count', counts) : ''
           }}<template v-if="counts.present"> · {{ t('import_batch_present', counts) }}</template></small
         >
@@ -246,7 +246,7 @@ function openNew(): void {
     </section>
 
     <section class="mt-18 border-t border-line pt-16">
-      <span class="text-9 font-[650] tracking-[1.8px] text-muted">{{ t('import_step_scan') }}</span>
+      <span class="text-10 font-[650] tracking-[1.8px] text-muted">{{ t('import_step_scan') }}</span>
       <h3 class="mt-8 mb-4 text-15 font-semibold">{{ t('import_scan_title') }}</h3>
       <p class="m-0 text-11 leading-[1.6] text-muted">{{ t('import_scan_description') }}</p>
       <div class="mt-12 flex flex-wrap items-center justify-between gap-10">
@@ -270,7 +270,7 @@ function openNew(): void {
     </section>
 
     <section class="mt-18 border-t border-line pt-16">
-      <span class="text-9 font-[650] tracking-[1.8px] text-muted">{{ t('import_step_sync') }}</span>
+      <span class="text-10 font-[650] tracking-[1.8px] text-muted">{{ t('import_step_sync') }}</span>
       <h3 class="mt-8 mb-4 text-15 font-semibold">{{ t('import_sync_title') }}</h3>
       <label class="mt-6 flex items-center gap-8 text-11 text-muted">
         <input

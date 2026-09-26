@@ -222,9 +222,14 @@ describe('genres', () => {
       ['Soul', 1, ['A']],
     ])
     expect(genreArtists(rows, 'Jazz')).toEqual([
-      { name: 'Y', trackCount: 2 },
-      { name: 'X', trackCount: 1 },
-      { name: 'Z', trackCount: 1 },
+      { name: 'Y', trackCount: 2, literal: true },
+      { name: 'X', trackCount: 1, literal: true },
+      { name: 'Z', trackCount: 1, literal: true },
+    ])
+    const joint = [tagged(1, 'A', 'X; W', 'Jazz'), tagged(2, 'B', 'X', 'Jazz')]
+    expect(genreArtists(joint, 'Jazz')).toEqual([
+      { name: 'X', trackCount: 2, literal: true },
+      { name: 'W', trackCount: 1, literal: false },
     ])
     const jazz = genres[0]
     expect(jazz && genreAlbums(groupAlbums(rows), jazz).map((album) => album.title)).toEqual(['B', 'C', 'A'])
@@ -280,8 +285,8 @@ describe('joint artist credits', () => {
     expect(credits('Alphabet', 'Alpha')).toBe(false)
     const artists = groupArtists([track(1, 'X', 'Alpha'), track(2, 'Y', 'Alpha; Beta')])
     expect(artists).toEqual([
-      { name: 'Alpha', albumCount: 2, trackCount: 2 },
-      { name: 'Beta', albumCount: 1, trackCount: 1 },
+      { name: 'Alpha', albumCount: 2, trackCount: 2, literal: true },
+      { name: 'Beta', albumCount: 1, trackCount: 1, literal: false },
     ])
   })
 })

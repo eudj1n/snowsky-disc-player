@@ -109,7 +109,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
     class="fixed top-0 right-0 bottom-(--player) z-25 flex w-380 animate-listening-enter flex-col border-l border-line bg-raised text-left shadow-[-15px_0_65px_#26301418] phone:w-full phone:border-l-0"
   >
     <div class="flex items-center justify-between px-24 pt-22 pb-12 phone:px-24 phone:pt-16 phone:pb-10">
-      <span class="text-9 font-[650] tracking-[1.8px] text-muted uppercase">SNOWSKY DISC</span>
+      <span class="text-10 font-[650] tracking-[1.8px] text-muted uppercase">SNOWSKY DISC</span>
       <UiIconButton ref="close" icon="close" :label="t('minimize_player')" @click="closePanel(true)" />
     </div>
     <div class="mx-24 mb-20 flex shrink-0 gap-4 rounded-24 border border-line p-4 phone:mb-16" role="group">
@@ -156,7 +156,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
     </div>
     <template v-else-if="ui.panel === 'lyrics'">
       <div class="shrink-0 px-24 pb-10">
-        <span class="text-9 font-[650] tracking-[1.8px] text-muted uppercase">{{ t('lyrics_tab') }}</span>
+        <span class="text-10 font-[650] tracking-[1.8px] text-muted uppercase">{{ t('lyrics_tab') }}</span>
         <h2 class="mt-6 mb-0 truncate text-24 font-bold tracking-[-0.8px]">
           {{ playback.current.track?.title ?? t('lyrics_tab') }}
         </h2>
@@ -175,7 +175,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
     <div v-else class="min-h-0 flex-1 [scrollbar-width:thin] overflow-auto overscroll-contain px-24 pb-28">
       <div class="flex items-end justify-between">
         <div>
-          <span class="text-9 font-[650] tracking-[1.8px] text-muted uppercase">{{ t('your_selection') }}</span>
+          <span class="text-10 font-[650] tracking-[1.8px] text-muted uppercase">{{ t('your_selection') }}</span>
           <h2 class="mt-6 mb-4 text-24 font-bold tracking-[-0.8px]">{{ t('queue') }}</h2>
         </div>
         <UiIconButton
@@ -186,7 +186,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         />
       </div>
       <p class="mt-4 mb-4 text-11 text-muted" role="status">{{ queueHint }}</p>
-      <p v-if="queue.status === 'ready'" class="mt-0 mb-14 text-10 leading-[1.6] text-muted">
+      <p v-if="queue.status === 'ready'" class="mt-0 mb-14 text-11 leading-[1.6] text-muted">
         {{ t('queue_snapshot_note') }}
       </p>
       <QueueRows

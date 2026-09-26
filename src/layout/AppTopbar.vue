@@ -34,7 +34,7 @@ const language = computed<Locale>({ get: () => locale.value, set: chooseLocale }
   <header
     class="flex h-86 items-center gap-22 border-b border-line px-44 wide:h-94 compact:gap-15 compact:px-26 rail:gap-10 phone:h-65 phone:gap-5 phone:px-12 listening:gap-12 listening:px-24"
   >
-    <div class="text-10 font-semibold tracking-[1px] whitespace-nowrap phone:hidden listening:hidden">
+    <div class="text-11 font-semibold tracking-[1px] whitespace-nowrap phone:hidden listening:hidden">
       SNOWSKY <span class="mx-14 text-[#c3c4b9]">/</span>
       <strong class="font-medium tracking-normal text-[#85877c]">{{ t(section.title) }}</strong>
     </div>
@@ -49,10 +49,10 @@ const language = computed<Locale>({ get: () => locale.value, set: chooseLocale }
         :placeholder="placeholder"
         :aria-label="placeholder"
         :value="ui.query"
-        class="w-full min-w-0 border-0 bg-transparent text-11 text-ink outline-none phone:text-10"
+        class="w-full min-w-0 border-0 bg-transparent text-11 text-ink outline-none phone:text-11"
         @input="setQuery(($event.target as HTMLInputElement).value)"
       />
-      <kbd class="rounded-3 border border-line px-5 py-1 font-[inherit] text-10 phone:hidden">/</kbd>
+      <kbd class="rounded-3 border border-line px-5 py-1 font-[inherit] text-11 phone:hidden">/</kbd>
     </label>
     <button
       type="button"
@@ -83,7 +83,7 @@ const language = computed<Locale>({ get: () => locale.value, set: chooseLocale }
       <select
         v-model="language"
         :aria-label="t('language')"
-        class="rounded-7 border border-line bg-soft px-5 py-7 text-10 text-secondary phone:px-3 phone:py-6 phone:text-9"
+        class="rounded-7 border border-line bg-soft px-5 py-7 text-11 text-secondary phone:px-3 phone:py-6 phone:text-10"
       >
         <option value="ru">RU</option>
         <option value="en">EN</option>

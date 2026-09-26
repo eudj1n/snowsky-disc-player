@@ -22,7 +22,9 @@ watchEffect(() => {
   if (typeof document === 'undefined') return
   const dark = appearance.value === 'dark' || (appearance.value === 'system' && systemDark.value)
   document.documentElement.dataset.theme = dark ? 'dark' : 'light'
-  document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#151815' : '#faf9f6')
+  // The browser chrome follows the page background of the active palette.
+  const paper = getComputedStyle(document.documentElement).getPropertyValue('--paper').trim()
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', paper || (dark ? '#151815' : '#faf9f6'))
 })
 
 export function chooseAppearance(value: Appearance): void {

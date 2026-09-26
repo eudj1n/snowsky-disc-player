@@ -192,7 +192,7 @@ test('loads covers and missing durations from the card media', async ({ page }) 
   await expect(page.getByRole('row').first()).toContainText(/\d:\d\d/, { timeout: 15_000 })
 })
 
-test('lists same-titled albums apart, separates discs, shows years and joint credits', async ({ page }) => {
+test('lists same-titled albums apart, separates discs, shows years and joint credits', async ({ page }, info) => {
   test.skip(external, 'Needs the mock collection')
   await english(page)
   await page.goto('/#/albums')
@@ -218,6 +218,16 @@ test('lists same-titled albums apart, separates discs, shows years and joint cre
     page.getByRole('region', { name: 'Appears on' }).getByRole('heading', { name: 'Two Rooms' }),
   ).toBeVisible()
   await expect(page.getByRole('region', { name: 'Albums' }).getByRole('heading', { name: 'Blue Hours' })).toBeVisible()
+
+  // Genre artists split joint credits; a name known only from them has nothing of its own to play.
+  await page.goto('/#/genre/Alternative')
+  await expect(page.getByRole('heading', { name: 'Mira Sol', exact: true })).toBeVisible()
+  await expect(page.getByText('Kite Lines; Mira Sol')).toHaveCount(0)
+  // Cover play buttons exist only where the pointer can hover (not on phones).
+  if (info.project.name === 'desktop') {
+    await expect(page.getByRole('button', { name: 'Play Mira Sol' })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Play Kite Lines' })).toHaveCount(1)
+  }
 })
 
 test('pairs with the player serial number when the card allows it', async ({ page }) => {

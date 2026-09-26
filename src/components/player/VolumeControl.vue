@@ -54,6 +54,6 @@ watch(
       @input="shown = Number(($event.target as HTMLInputElement).value)"
       @change="emit('change', Number(($event.target as HTMLInputElement).value))"
     />
-    <output class="min-w-19 text-9">{{ shown ?? '—' }}</output>
+    <output class="min-w-19 text-10">{{ shown ?? '—' }}</output>
   </div>
 </template>

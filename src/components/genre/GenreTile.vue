@@ -21,7 +21,7 @@ defineProps<{ name: string; caption: string; to: RouteLocationRaw }>()
     />
     <span class="absolute inset-x-14 bottom-12 text-white">
       <strong class="block truncate text-17 font-bold tracking-[-0.3px] phone:text-14">{{ name }}</strong>
-      <small class="mt-3 block truncate text-10 text-white/80">{{ caption }}</small>
+      <small class="mt-3 block truncate text-11 text-white/80">{{ caption }}</small>
     </span>
   </RouterLink>
 </template>

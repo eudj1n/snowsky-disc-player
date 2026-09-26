@@ -37,7 +37,7 @@ const items = computed(() => filterBy(artists.value, ui.query, (artist) => [arti
         :to="artistRoute(artist.name)"
         artist
         :open-label="t('open_item', { name: artist.name })"
-        :play-label="t('play_item', { name: artist.name })"
+        :play-label="artist.literal ? t('play_item', { name: artist.name }) : null"
         :play-disabled="selection.busy"
         @play="playFrom({ kind: 'artist', artist: artist.name })"
       />

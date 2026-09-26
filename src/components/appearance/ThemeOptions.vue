@@ -6,8 +6,8 @@ defineProps<{ value: Appearance; labels: Record<Appearance, string> }>()
 const emit = defineEmits<{ choose: [value: Appearance] }>()
 const OPTIONS: { value: Appearance; swatch: string }[] = [
   { value: 'light', swatch: 'bg-[linear-gradient(90deg,#e6e9df_20%,#faf9f6_20%)]' },
-  { value: 'dark', swatch: 'bg-[linear-gradient(90deg,#101410_20%,#22291f_20%)]' },
-  { value: 'system', swatch: 'bg-[linear-gradient(115deg,#faf9f6_50%,#22291f_50%)]' },
+  { value: 'dark', swatch: 'bg-[linear-gradient(90deg,var(--preview-dark-a)_20%,var(--preview-dark-b)_20%)]' },
+  { value: 'system', swatch: 'bg-[linear-gradient(115deg,#faf9f6_50%,var(--preview-dark-b)_50%)]' },
 ]
 </script>
 
@@ -18,7 +18,7 @@ const OPTIONS: { value: Appearance; swatch: string }[] = [
       :key="option.value"
       type="button"
       :aria-pressed="value === option.value"
-      class="rounded-12 border border-line p-9 text-11 text-muted aria-pressed:border-accent aria-pressed:bg-soft aria-pressed:text-ink dark:aria-pressed:bg-[#303d29]"
+      class="rounded-12 border border-line p-9 text-11 text-muted aria-pressed:border-accent aria-pressed:bg-soft aria-pressed:text-ink dark:aria-pressed:bg-selected"
       @click="emit('choose', option.value)"
     >
       <span

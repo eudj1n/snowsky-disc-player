@@ -34,7 +34,7 @@ const status = computed(() => {
     <div class="my-22 flex items-center gap-22 narrow:gap-16">
       <span
         aria-hidden="true"
-        class="relative size-76 shrink-0 rounded-full border border-[#bec9ac] bg-[repeating-radial-gradient(circle,#d3dac8_0_2px,#e5eadf_3px_6px)] shadow-[0_10px_25px_#55673820] after:absolute after:top-1/2 after:left-1/2 after:size-26 after:-translate-1/2 after:rounded-full after:border-5 after:border-[#afbf99] after:bg-paper dark:border-[#536645] dark:bg-[repeating-radial-gradient(circle,#35412c_0_2px,#4b5b3e_3px_6px)] dark:after:border-[#647c50]"
+        class="relative size-76 shrink-0 rounded-full border border-[var(--art-edge)] bg-[repeating-radial-gradient(circle,var(--art-a)_0_2px,var(--art-b)_3px_6px)] shadow-[0_10px_25px_#55673820] after:absolute after:top-1/2 after:left-1/2 after:size-26 after:-translate-1/2 after:rounded-full after:border-5 after:border-[var(--art-edge-2)] after:bg-paper"
       />
       <div>
         <h2 class="narrow:text-23 mt-0 mb-8 text-27 font-bold tracking-[-1px]">{{ t('connection_title') }}</h2>
@@ -59,6 +59,6 @@ const status = computed(() => {
       </UiPillButton>
     </div>
     <PairingForm :stored="pairing.stored" :serial="connection.snPairing" @save="saveToken" @forget="forgetToken" />
-    <p class="mt-23 text-10 leading-[1.7] text-muted">{{ t('one_control_connection') }}</p>
+    <p class="mt-23 text-11 leading-[1.7] text-muted">{{ t('one_control_connection') }}</p>
   </UiDialog>
 </template>

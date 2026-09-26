@@ -56,7 +56,7 @@ const emit = defineEmits<{ play: [] }>()
     <h3 class="mt-12 mb-5 truncate text-12 font-semibold wide:text-14 phone:text-12">
       <RouterLink :to="to" tabindex="-1" class="hover:underline hover:underline-offset-3">{{ title }}</RouterLink>
     </h3>
-    <p v-if="lines.length" class="m-0 text-10 text-muted wide:text-12 phone:text-10">
+    <p v-if="lines.length" class="m-0 text-11 text-muted wide:text-12 phone:text-11">
       <span v-for="line in lines" :key="line.text" class="block truncate leading-[1.6]">
         <RouterLink v-if="line.to" :to="line.to" class="hover:text-ink hover:underline hover:underline-offset-3">{{
           line.text

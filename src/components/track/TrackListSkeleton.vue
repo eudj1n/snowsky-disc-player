@@ -47,14 +47,14 @@ const WIDTHS = ['w-[62%]', 'w-[48%]', 'w-[71%]', 'w-[55%]', 'w-[66%]', 'w-[43%]'
         <div class="flex h-[1lh] items-center text-11">
           <UiSkeleton class="h-[0.8em]" :class="WIDTHS[row % WIDTHS.length]" />
         </div>
-        <div v-if="lines === 2" class="mt-5 flex h-[1lh] items-center text-10">
+        <div v-if="lines === 2" class="mt-5 flex h-[1lh] items-center text-11">
           <UiSkeleton class="h-[0.75em]" :class="WIDTHS[(row + 3) % WIDTHS.length]" />
         </div>
       </div>
-      <div v-if="album" class="flex h-[1lh] items-center text-10 phone:hidden">
+      <div v-if="album" class="flex h-[1lh] items-center text-11 phone:hidden">
         <UiSkeleton class="h-[0.75em]" :class="WIDTHS[(row + 1) % WIDTHS.length]" />
       </div>
-      <div v-if="duration" class="flex h-[1lh] items-center justify-end text-10">
+      <div v-if="duration" class="flex h-[1lh] items-center justify-end text-11">
         <UiSkeleton class="h-[0.75em] w-28" />
       </div>
       <span v-if="actions" class="flex justify-end pr-10"><UiSkeleton class="size-4 rounded-full" /></span>

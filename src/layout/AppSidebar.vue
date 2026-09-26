@@ -39,7 +39,7 @@ const label = () =>
       <template v-for="section in SECTIONS" :key="section.name">
         <p
           v-if="section.name === 'albums'"
-          class="mx-14 mt-30 mb-13 text-9 font-bold tracking-[1.6px] text-muted rail:hidden phone:hidden"
+          class="mx-14 mt-30 mb-13 text-10 font-bold tracking-[1.6px] text-muted rail:hidden phone:hidden"
         >
           {{ t('my_collection') }}
         </p>
@@ -47,7 +47,7 @@ const label = () =>
           :to="section.path"
           :aria-current="sectionOf(route.name) === section.name ? 'page' : undefined"
           :class="{ 'phone:hidden': 'phone' in section }"
-          class="group my-3 flex w-full items-center gap-12 rounded-9 px-14 py-13 text-left font-[550] text-muted hover:bg-hover hover:text-ink aria-[current=page]:bg-selected aria-[current=page]:text-ink rail:mb-10 rail:justify-center rail:gap-0 rail:p-14 rail:text-[0px] phone:m-0 phone:w-auto phone:flex-1 phone:flex-col phone:gap-4 phone:rounded-none phone:px-4 phone:py-8 phone:text-7 phone:font-medium phone:aria-[current=page]:bg-transparent phone:aria-[current=page]:text-secondary"
+          class="group my-3 flex w-full items-center gap-12 rounded-9 px-14 py-13 text-left font-[550] text-muted hover:bg-hover hover:text-ink aria-[current=page]:bg-selected aria-[current=page]:text-ink rail:mb-10 rail:justify-center rail:gap-0 rail:p-14 rail:text-[0px] phone:m-0 phone:w-auto phone:flex-1 phone:flex-col phone:gap-4 phone:rounded-none phone:px-4 phone:py-8 phone:text-8 phone:font-medium phone:aria-[current=page]:bg-transparent phone:aria-[current=page]:text-secondary"
         >
           <UiIcon :name="section.icon" class="group-aria-[current=page]:text-secondary phone:size-19" />
           <span>{{ t(section.title) }}</span>
@@ -55,7 +55,7 @@ const label = () =>
       </template>
     </nav>
     <div
-      class="mt-auto flex items-center gap-12 px-14 pt-24 pb-26 text-11 leading-[1.6] text-muted compact:px-10 compact:py-20 compact:text-10 rail:hidden short:hidden"
+      class="mt-auto flex items-center gap-12 px-14 pt-24 pb-26 text-11 leading-[1.6] text-muted compact:px-10 compact:py-20 compact:text-11 rail:hidden short:hidden"
     >
       <span
         aria-hidden="true"
@@ -71,16 +71,14 @@ const label = () =>
     >
       <UiIcon name="device" class="size-27" />
       <span class="rail:hidden">
-        <strong class="block text-10 tracking-[0.5px] compact:text-9">SNOWSKY DISC</strong>
-        <small class="mt-5 block text-10 text-muted">{{ label() }}</small>
+        <strong class="block text-11 tracking-[0.5px] compact:text-10">SNOWSKY DISC</strong>
+        <small class="mt-5 block text-11 text-muted">{{ label() }}</small>
       </span>
       <span
         aria-hidden="true"
         class="ml-auto size-6 shrink-0 rounded-full rail:hidden"
         :class="
-          connection.connection === 'connected'
-            ? 'bg-[#82a773] shadow-[0_0_0_3px_#e8eedf] dark:shadow-[0_0_0_3px_#2f3e27]'
-            : 'bg-[#a7a89e]'
+          connection.connection === 'connected' ? 'bg-[#82a773] shadow-[0_0_0_3px_var(--online-ring)]' : 'bg-[#a7a89e]'
         "
       />
     </button>

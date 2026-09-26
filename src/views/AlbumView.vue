@@ -32,7 +32,7 @@ import { playAlbumCard, playFrom } from './playAlbum'
 
 const MORE_BY_ARTISTS = 3
 const CHIP =
-  'rounded-20 border border-line px-15 py-8 text-10 text-muted hover:text-ink aria-[current=page]:border-secondary aria-[current=page]:bg-secondary aria-[current=page]:text-white dark:aria-[current=page]:border-[#bfcea9] dark:aria-[current=page]:bg-[#bfcea9] dark:aria-[current=page]:text-[#192214]'
+  'rounded-20 border border-line px-15 py-8 text-11 text-muted hover:text-ink aria-[current=page]:border-chip-on aria-[current=page]:bg-chip-on aria-[current=page]:text-chip-on-ink'
 
 const route = useRoute()
 const router = useRouter()

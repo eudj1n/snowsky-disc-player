@@ -27,7 +27,7 @@ const emit = defineEmits<{
 
 <template>
   <div class="flex items-center justify-end gap-10 text-muted compact:gap-7 rail:justify-center">
-    <span class="mr-12 text-8 tracking-[1.2px] whitespace-nowrap compact:hidden">{{ outputLabel }}</span>
+    <span class="mr-12 text-9 tracking-[1.2px] whitespace-nowrap compact:hidden">{{ outputLabel }}</span>
     <VolumeControl
       class="w-120 compact:w-100 rail:hidden"
       :volume="volume"

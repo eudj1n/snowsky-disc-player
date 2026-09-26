@@ -4,6 +4,8 @@ export interface Artist {
   name: string
   albumCount: number
   trackCount: number
+  /** Stock knows this name as an artist of its own (not only inside a joint credit), so it can play it. */
+  literal: boolean
 }
 
 /**
@@ -26,8 +28,10 @@ export const credits = (credit: string | null, name: string) => credit !== null 
 /** Artists by their track credits (joint credits count for each artist), in first-seen order. */
 export function groupArtists(tracks: readonly LibraryTrack[]): Artist[] {
   const artists = new Map<string, { name: string; albums: Set<string>; trackCount: number }>()
+  const literal = new Set<string>()
   for (const track of tracks) {
     if (!track.artist) continue
+    literal.add(track.artist)
     for (const name of creditArtists(track.artist)) {
       let artist = artists.get(name)
       if (!artist) {
@@ -38,5 +42,10 @@ export function groupArtists(tracks: readonly LibraryTrack[]): Artist[] {
       if (track.album) artist.albums.add(track.album)
     }
   }
-  return [...artists.values()].map(({ name, albums, trackCount }) => ({ name, albumCount: albums.size, trackCount }))
+  return [...artists.values()].map(({ name, albums, trackCount }) => ({
+    name,
+    albumCount: albums.size,
+    trackCount,
+    literal: literal.has(name),
+  }))
 }

@@ -58,6 +58,6 @@ watch(active, async (index) => {
     <div v-else class="text-14 leading-[1.7] whitespace-pre-line text-secondary">
       <p v-for="(line, index) in lyrics.lines" :key="index" class="m-0 min-h-[1lh]">{{ line.text }}</p>
     </div>
-    <p v-if="lyrics && source" class="mt-20 mb-0 text-10 text-muted">{{ source }}</p>
+    <p v-if="lyrics && source" class="mt-20 mb-0 text-11 text-muted">{{ source }}</p>
   </div>
 </template>

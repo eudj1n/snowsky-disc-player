@@ -134,7 +134,7 @@ async function submit(): Promise<void> {
       </p>
 
       <label v-if="needsName" class="mb-16 block">
-        <span class="mb-6 block text-10 text-muted">{{ t('playlist_name') }}</span>
+        <span class="mb-6 block text-11 text-muted">{{ t('playlist_name') }}</span>
         <input
           ref="field"
           v-model="name"
@@ -148,7 +148,7 @@ async function submit(): Promise<void> {
 
       <template v-if="dialog.mode === 'add'">
         <label v-if="names.length" class="mb-16 block">
-          <span class="mb-6 block text-10 text-muted">{{ t('playlist_choose') }}</span>
+          <span class="mb-6 block text-11 text-muted">{{ t('playlist_choose') }}</span>
           <select
             v-model="choice"
             class="w-full rounded-10 border border-line bg-paper px-12 py-10 text-13 text-ink focus-visible:border-secondary"
@@ -164,7 +164,7 @@ async function submit(): Promise<void> {
         </p>
       </template>
 
-      <p v-if="dialog.mode !== 'unfavorite'" class="mt-0 mb-18 text-10 leading-[1.6] text-muted">
+      <p v-if="dialog.mode !== 'unfavorite'" class="mt-0 mb-18 text-11 leading-[1.6] text-muted">
         {{ t('playlist_no_files') }}
       </p>
       <p v-if="feedback" role="status" class="mt-0 mb-14 text-11 text-accent" data-testid="playlist-feedback">

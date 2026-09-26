@@ -18,7 +18,7 @@ withDefaults(
     class="inline-flex items-center justify-center gap-9 rounded-24 px-22 py-12 text-12 font-semibold [&>svg]:size-15"
     :class="
       variant === 'primary'
-        ? 'bg-[#30362b] text-white hover:enabled:-translate-y-1 hover:enabled:bg-[#3b4335] dark:bg-[#d8e1cc] dark:text-[#1b2316] dark:hover:enabled:bg-[#e4ebd9]'
+        ? 'bg-strong text-strong-ink hover:enabled:-translate-y-1 hover:enabled:bg-strong-hover'
         : 'bg-soft text-secondary'
     "
   >
