@@ -329,10 +329,21 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
   `npm run check` and the mock e2e suite; all 34 files matched by SHA-256
   after the write. `dafd12f63bd12c73` stays on the card for rollback.
 
-- [ ] Remove old releases from PLAY when the card is next mounted (owner
-      agreed, deferred): `1be0ebd8ca57606d`, `a3e0203b38aceca7`,
-      `d378675b63677b13`, `da59199d06dcb558`, `fe0753a8ec469745`. Keep the
-      active release and the previous one for rollback.
+- 2026-09-26: `6391eee7bbc8b7ac` (commit `12a1a0e`, the combined-006
+  client with rounds 7 and 8) published on PLAY at the owner's request after
+  the combined-006 image was installed, the full mock suite and the emulator
+  acceptance (14 desktop tests); all 35 files matched by SHA-256 after the
+  write. `9b8d2afdaeb8f018` stays for rollback.
+
+- [x] Old releases removed from PLAY at the owner's request (2026-09-26):
+      `1be0ebd8ca57606d`, `a3e0203b38aceca7`, `d378675b63677b13`,
+      `da59199d06dcb558`, `dafd12f63bd12c73`, `fe0753a8ec469745`. The card
+      keeps the active release and the previous one.
+- [x] `DISC_WEB_SN_PAIRING` placed on PLAY at the owner's request (exact
+      20-byte content read back); the card was flushed and ejected.
+- [ ] Owner's browser acceptance on the player: covers, durations, lyrics,
+      favorite removal, playlists by `LIST_ID`, albums and discs, pairing by
+      the serial number.
 
 ## Combined-006 client (round 7)
 
