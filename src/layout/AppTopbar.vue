@@ -34,7 +34,7 @@ const language = computed<Locale>({ get: () => locale.value, set: chooseLocale }
   <header
     class="flex h-86 items-center gap-22 border-b border-line px-44 wide:h-94 compact:gap-15 compact:px-26 rail:gap-10 phone:h-65 phone:gap-5 phone:px-12 listening:gap-12 listening:px-24"
   >
-    <div class="text-11 font-semibold tracking-[1px] whitespace-nowrap max-[900px]:hidden listening:hidden">
+    <div class="text-11 font-semibold tracking-[1px] whitespace-nowrap max-[900px]:hidden">
       SNOWSKY <span class="mx-14 text-[#c3c4b9]">/</span>
       <strong class="font-medium tracking-normal text-[#85877c]">{{ t(section.title) }}</strong>
     </div>

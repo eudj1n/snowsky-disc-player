@@ -64,7 +64,7 @@ const emit = defineEmits<{
 <template>
   <div>
     <div
-      class="mx-auto mb-24 aspect-square w-[min(100%,28dvh)] overflow-hidden rounded-14 shadow-[0_12px_28px_#07100820] phone:mb-22 phone:w-[min(100%,30dvh)]"
+      class="mx-auto mb-24 aspect-square w-full overflow-hidden rounded-14 shadow-[0_12px_28px_#07100820] phone:mb-22 phone:w-[min(100%,30dvh)]"
     >
       <Transition
         mode="out-in"
