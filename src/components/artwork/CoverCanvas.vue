@@ -89,7 +89,7 @@ onBeforeUnmount(() => {
   <canvas
     ref="canvas"
     aria-hidden="true"
-    class="block size-full transition-[opacity,transform] duration-400 ease-out"
+    class="block size-full will-change-transform [transition:opacity_400ms_ease-out,scale_800ms_cubic-bezier(.22,.61,.36,1)] motion-reduce:transition-none"
     :class="drawn ? 'opacity-100' : 'opacity-0'"
   />
 </template>

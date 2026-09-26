@@ -94,7 +94,7 @@ const LINK = 'hover:text-ink hover:underline hover:underline-offset-3 focus-visi
 const REVEAL = 'opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100'
 /** The heart lives in the page gutter, left of the row (owner's reference). */
 const HEART =
-  'absolute top-1/2 -left-32 grid size-22 -translate-y-1/2 place-items-center rounded-full p-0 transition-[opacity,transform,color] duration-150 compact:-left-27 listening:-left-30 phone:left-3 phone:size-18'
+  'absolute top-1/2 -left-32 grid size-22 -translate-y-1/2 place-items-center rounded-full p-0 transition-[opacity,transform,translate,scale,rotate,color] duration-150 compact:-left-27 listening:-left-30 phone:left-3 phone:size-18'
 const isCurrent = (track: Track) => props.currentPath !== null && track.path === props.currentPath
 const album = computed(() => props.showAlbum && props.tracks.some((track) => track.album))
 const duration = computed(() => props.tracks.some((track) => formatDuration(track.durationMs)))

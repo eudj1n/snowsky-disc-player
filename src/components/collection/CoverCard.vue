@@ -46,7 +46,7 @@ const emit = defineEmits<{ play: [] }>()
         :aria-label="playLabel"
         :title="playLabel"
         :disabled="playDisabled"
-        class="absolute grid size-36 translate-y-4 place-items-center rounded-full border border-[#ffffff40] bg-[#ffffff2e] p-0 text-white opacity-0 shadow-[0_6px_18px_#0003] backdrop-blur-[12px] transition-[opacity,transform,background-color] duration-200 group-focus-within/card:translate-y-0 group-focus-within/card:opacity-100 group-hover/card:translate-y-0 group-hover/card:opacity-100 hover:enabled:scale-[1.06] hover:enabled:bg-[#ffffff45] disabled:cursor-default motion-reduce:translate-y-0 motion-reduce:transition-none [@media(hover:none)]:hidden"
+        class="absolute grid size-36 translate-y-4 place-items-center rounded-full border border-[#ffffff40] bg-[#ffffff2e] p-0 text-white opacity-0 shadow-[0_6px_18px_#0003] backdrop-blur-[12px] transition-[opacity,transform,translate,scale,rotate,background-color] duration-200 group-focus-within/card:translate-y-0 group-focus-within/card:opacity-100 group-hover/card:translate-y-0 group-hover/card:opacity-100 hover:enabled:scale-[1.06] hover:enabled:bg-[#ffffff45] disabled:cursor-default motion-reduce:translate-y-0 motion-reduce:transition-none [@media(hover:none)]:hidden"
         :class="artist ? 'right-[calc(50%-18px)] bottom-14' : 'right-10 bottom-10'"
         @click="emit('play')"
       >

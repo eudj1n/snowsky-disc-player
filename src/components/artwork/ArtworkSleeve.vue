@@ -24,7 +24,7 @@ const PALETTES = [
 <template>
   <div
     aria-hidden="true"
-    class="@container relative isolate size-full overflow-hidden bg-[radial-gradient(ellipse_at_8%_0%,var(--glow),transparent_65%),linear-gradient(145deg,var(--mid),var(--deep)_85%)] text-[#fff8e9] transition-[transform,filter] duration-[650ms] ease-[cubic-bezier(.2,.7,.2,1)] group-hover:scale-[1.045] group-hover:saturate-[1.12] group-focus-visible:scale-[1.045] group-focus-visible:saturate-[1.12] after:pointer-events-none after:absolute after:inset-0 after:z-3 after:bg-[repeating-linear-gradient(0deg,#fff1_0px,transparent_1px,transparent_4px)] after:opacity-22 after:shadow-[inset_0_0_0_1px_#fff2] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+    class="@container relative isolate size-full overflow-hidden bg-[radial-gradient(ellipse_at_8%_0%,var(--glow),transparent_65%),linear-gradient(145deg,var(--mid),var(--deep)_85%)] text-[#fff8e9] transition-[scale,filter] duration-[800ms] ease-[cubic-bezier(.22,.61,.36,1)] will-change-transform group-hover:scale-[1.035] group-hover:saturate-[1.12] group-focus-visible:scale-[1.035] group-focus-visible:saturate-[1.12] after:pointer-events-none after:absolute after:inset-0 after:z-3 after:bg-[repeating-linear-gradient(0deg,#fff1_0px,transparent_1px,transparent_4px)] after:opacity-22 after:shadow-[inset_0_0_0_1px_#fff2] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
     :class="PALETTES[shape.palette]"
   >
     <span
@@ -32,7 +32,7 @@ const PALETTES = [
       :class="artist ? 'top-[18%] left-[18%] size-[64%]' : 'top-[-29%] left-[35%] size-[93%]'"
     />
     <span
-      class="absolute font-sleeve leading-none font-normal tracking-[-0.14em] whitespace-nowrap text-[#fff4dc] opacity-27 transition-[transform,opacity] duration-700 group-hover:translate-y-[-3%] group-hover:rotate-[-8deg] group-hover:opacity-40 group-focus-visible:translate-y-[-3%] group-focus-visible:rotate-[-8deg] group-focus-visible:opacity-40"
+      class="absolute font-sleeve leading-none font-normal tracking-[-0.14em] whitespace-nowrap text-[#fff4dc] opacity-27 transition-[transform,translate,scale,rotate,opacity] duration-700 group-hover:translate-y-[-3%] group-hover:rotate-[-8deg] group-hover:opacity-40 group-focus-visible:translate-y-[-3%] group-focus-visible:rotate-[-8deg] group-focus-visible:opacity-40"
       :class="
         artist
           ? 'bottom-[-8%] left-0 rotate-[-8deg] text-[95cqw]'

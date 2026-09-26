@@ -17,7 +17,7 @@ const emit = defineEmits<{ tone: [color: string] }>()
     v-if="cover"
     :blob="cover"
     :tone="tone"
-    class="group-hover:scale-[1.045]"
+    class="group-hover:scale-[1.035] group-focus-visible:scale-[1.035] motion-reduce:group-hover:scale-100"
     @tone="(color) => emit('tone', color)"
   />
   <ArtworkSleeve v-else :title="title" :artist="artist" />

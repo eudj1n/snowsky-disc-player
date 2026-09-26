@@ -48,7 +48,7 @@ watch(active, async (index) => {
         :aria-current="index === active ? 'true' : undefined"
         :aria-label="line.text ? undefined : seekLabel"
         :disabled="!seekable || line.timeMs === null"
-        class="phone:text-16 block w-full rounded-8 px-6 py-5 text-left text-17 leading-[1.45] font-semibold tracking-[-0.2px] text-muted/70 transition-[color,opacity,transform] duration-300 hover:enabled:text-secondary aria-[current=true]:text-ink motion-reduce:transition-none"
+        class="phone:text-16 block w-full rounded-8 px-6 py-5 text-left text-17 leading-[1.45] font-semibold tracking-[-0.2px] text-muted/70 transition-[color,opacity,transform,translate,scale,rotate] duration-300 hover:enabled:text-secondary aria-[current=true]:text-ink motion-reduce:transition-none"
         :class="index < active ? 'opacity-60' : ''"
         @click="line.timeMs !== null && emit('seek', line.timeMs)"
       >

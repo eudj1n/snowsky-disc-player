@@ -447,6 +447,10 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
       (they restart playback or the connection).
 - [x] Long track lists render in batches of 60 as they scroll (about 700
       tracks felt slow).
+- [x] Cover hover zoom is smooth: Tailwind 4 scales through the `scale`
+      property, which the transitions did not list, so the zoom jumped; now
+      800 ms on a gentle curve to 1.035 (and the play button, row hearts and
+      lyrics animate their translate/scale too).
 - Owner check on the player: removing a favorite that was just liked works.
 
 ## Requests for the next service build
