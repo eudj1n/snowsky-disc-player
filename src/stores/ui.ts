@@ -30,6 +30,8 @@ export type PlaylistDialog =
 interface Toast {
   key: MessageKey
   error: boolean
+  /** Announced only (sr-only), not drawn. */
+  quiet: boolean
   id: number
 }
 
@@ -59,9 +61,16 @@ export function closeDialog(): void {
 }
 
 /** One toast slot; 4.5 s, errors 11 s (reference app.js toast()). */
+/**
+ * Confirmations the page already shows (the track plays, the heart fills, the
+ * level moves): announced to assistive technology only, never drawn (owner,
+ * round 9). Errors, uncertain outcomes and "please wait" stay visible.
+ */
+const QUIET: readonly MessageKey[] = ['done_verified_on_disc', 'already_set']
+
 export function toast(key: MessageKey, error = false): void {
   clearTimeout(toastTimer)
-  state.toast = { key, error, id: ++toastId }
+  state.toast = { key, error, quiet: !error && QUIET.includes(key), id: ++toastId }
   toastTimer = setTimeout(() => (state.toast = null), error ? 11_000 : 4_500)
 }
 

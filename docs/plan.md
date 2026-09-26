@@ -398,6 +398,28 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
       on, stock's current cover is never kept as an album cover (it may be an
       iTunes guess). Both options are read from the system settings.
 
+## Owner requests (round 9, after the combined-006 release)
+
+- [x] Lyrics button shows a "T" with lines of text; the microphone is kept
+      for voice control.
+- [x] Dark theme: warm charcoal by default; olive, graphite, espresso and
+      black kept in `src/styles/palettes.css` ([themes](themes.md)).
+- [x] Genre pages split joint credits; names known only from joint credits
+      offer no whole-artist play.
+- [x] Small text one step larger (8→9, 9→10, 10→11 px); text actions and the
+      genre filter at 12 px.
+- [x] Phones: the favorite heart sits in a lane inside the row, off the edge.
+- [x] The search field takes the free header width; the breadcrumb stays
+      beside the listening panel and yields only below 900 px.
+- [x] Folder import carries `.lrc` lyrics and cover/folder/front images; the
+      dialog says existing names are skipped. The card catalog now admits
+      only media names on uploads (service `ef56626`), so an upload cannot
+      create a card marker.
+- [x] The Now Playing cover spans the panel column on wide screens.
+- [x] Confirmations the page already shows ("Done. Verified on DISC.",
+      "Already set") are announced to screen readers only; errors, uncertain
+      outcomes and "please wait" stay on screen.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

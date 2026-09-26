@@ -270,6 +270,8 @@ test('connects on the first Play when paired, then follows keyboard shortcuts', 
   await page.goto('/#/album/Inner%20Space')
   await page.getByRole('button', { name: 'Play Weightless' }).click()
   await expect(page.getByRole('status').filter({ hasText: 'Done. Verified on DISC.' })).toBeVisible({ timeout: 15_000 })
+  // A confirmation the page already shows is announced, not drawn.
+  await expect(page.getByTestId('toast')).toHaveAttribute('data-quiet', 'true')
   await expect(page.getByTestId('track-title')).toHaveText('Weightless')
   await page.locator('main').click({ position: { x: 5, y: 5 } })
   await page.keyboard.press('Space')
@@ -651,6 +653,8 @@ test.describe('player controls on the mock', () => {
       .setInputFiles([{ name: `Busy Once ${tag}.flac`, mimeType: 'audio/flac', buffer: Buffer.from('fLaC-busy') }])
     await dialog.getByRole('button', { name: 'Transfer to DISC' }).click()
     await expect(dialog.getByTestId('import-flow')).toHaveText(/Transfer stopped/, { timeout: 20_000 })
+    // A refusal stays on screen.
+    await expect(page.getByTestId('toast')).toHaveAttribute('data-quiet', 'false')
     await expect(dialog.getByRole('button', { name: 'Transfer to DISC' })).toBeDisabled()
     await dialog.getByRole('button', { name: 'Send again' }).click()
     await dialog.getByRole('button', { name: 'Transfer to DISC' }).click()
