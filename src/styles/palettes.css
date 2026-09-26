@@ -119,44 +119,6 @@
   --toast: #33291f;
   --focus-ring: #7a624c;
 }
-:root[data-theme='dark'][data-dark-palette='black'] {
-  --paper: #000000;
-  --surface: #000000;
-  --raised: #0f0f0f;
-  --soft: #151515;
-  --hover: #1e1e1e;
-  --selected: #282828;
-  --line: #232323;
-  --ink: #f3f3f3;
-  --muted: #9b9b9b;
-  --secondary: #d2d2d2;
-  --banner: #101010;
-  --accent: #ff6a4a;
-  --banner-ink: #b4b4b4;
-  --progress-bg: #2f2f2f;
-  --progress-fill: #f3f3f3;
-  --player-bg: #0a0a0af2;
-  --strong: #f3f3f3;
-  --strong-hover: #ffffff;
-  --strong-ink: #0a0a0a;
-  --chip-on: #e0e0e0;
-  --chip-on-ink: #0a0a0a;
-  --art-a: #1c1c1c;
-  --art-b: #2b2b2b;
-  --art-edge: #3a3a3a;
-  --art-edge-2: #4a4a4a;
-  --ring-edge: #262626;
-  --ring-a: #141414;
-  --ring-b: #262626;
-  --ring-c: #0e0e0e;
-  --ring-d: #262626;
-  --online-ring: #1f1f1f;
-  --hero: #161616;
-  --hero-from: #111111;
-  --hero-mid: #181818;
-  --toast: #1f1f1f;
-  --focus-ring: #555555;
-}
 
 /* Light palettes. */
 

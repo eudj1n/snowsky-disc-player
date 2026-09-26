@@ -4,7 +4,7 @@
  * concrete data-theme and System follows the operating system live.
  * public/theme.js applies the saved choice before the stylesheet paints.
  */
-import { ref, watchEffect } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import { readPreference, writePreference } from '../lib/storage'
 import {
   DEFAULT_DARK,
@@ -33,9 +33,14 @@ const media = typeof matchMedia === 'function' ? matchMedia('(prefers-color-sche
 const systemDark = ref(media?.matches ?? false)
 media?.addEventListener('change', (event) => (systemDark.value = event.matches))
 
+/** The theme in effect: the choice, or the system's for System. */
+export const darkActive = computed(
+  () => appearance.value === 'dark' || (appearance.value === 'system' && systemDark.value),
+)
+
 watchEffect(() => {
   if (typeof document === 'undefined') return
-  const dark = appearance.value === 'dark' || (appearance.value === 'system' && systemDark.value)
+  const dark = darkActive.value
   const root = document.documentElement
   root.dataset.theme = dark ? 'dark' : 'light'
   if (lightPalette.value === DEFAULT_LIGHT) delete root.dataset.lightPalette

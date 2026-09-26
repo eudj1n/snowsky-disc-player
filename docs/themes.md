@@ -8,17 +8,17 @@ colors, so a palette changes the whole theme at once.
 
 ## Palettes
 
-Each theme has several palettes; the appearance dialog shows them as swatches
-under "Light theme tone" and "Dark theme tone" and keeps the choice in this
-browser (`disc-player.light-palette`, `disc-player.dark-palette`).
+Each theme has four palettes; the appearance dialog shows the swatches of the
+theme in effect ("Light theme tone" or "Dark theme tone") and keeps the choice
+in this browser (`disc-player.light-palette`, `disc-player.dark-palette`).
 `public/theme.js` applies it before the stylesheet paints, and the store
 (`src/stores/appearance.ts`) sets `data-light-palette` / `data-dark-palette` on
 `<html>`; the default of each theme sets no attribute. The catalog with the
 dialog's swatch colors is `src/domain/palettes.ts`.
 
 On 2026-09-26 the owner chose **warm charcoal** as the default dark palette
-after comparing five, and asked for light alternatives next to the original
-sage.
+after comparing five, asked for light alternatives next to the original sage,
+and dropped the pure black palette so that each theme has four.
 
 | Theme | Palette       | Attribute value | Character                                    |
 | ----- | ------------- | --------------- | -------------------------------------------- |
@@ -30,7 +30,6 @@ sage.
 | Dark  | Olive         | `olive`         | The original dark theme, green accents       |
 | Dark  | Graphite      | `graphite`      | Neutral cool dark grey                       |
 | Dark  | Espresso      | `espresso`      | Brown, cream buttons                         |
-| Dark  | Black         | `black`         | True black for OLED, nearly monochrome       |
 
 The coral accent (`--accent`) stays in every palette.
 

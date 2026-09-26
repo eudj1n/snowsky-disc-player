@@ -694,7 +694,7 @@ test.describe('player controls on the mock', () => {
   })
 })
 
-test('chooses light and dark palettes in the appearance dialog and keeps them', async ({ page }) => {
+test('offers the tones of the theme in effect and keeps the chosen palettes', async ({ page }) => {
   await english(page)
   const html = page.locator('html')
   await page
@@ -704,23 +704,27 @@ test('chooses light and dark palettes in the appearance dialog and keeps them', 
     .click()
   const dialog = page.getByRole('dialog')
   await dialog.getByRole('button', { name: 'Dark', exact: true }).click()
-  await dialog.getByRole('group', { name: 'Dark theme tone' }).getByRole('button', { name: 'Espresso' }).click()
-  await expect(html).toHaveAttribute('data-theme', 'dark')
+  await expect(dialog.getByRole('group', { name: 'Light theme tone' })).toHaveCount(0)
+  const dark = dialog.getByRole('group', { name: 'Dark theme tone' })
+  await expect(dark.getByRole('button')).toHaveCount(4)
+  await dark.getByRole('button', { name: 'Espresso' }).click()
   await expect(html).toHaveAttribute('data-dark-palette', 'espresso')
-  await dialog.getByRole('group', { name: 'Light theme tone' }).getByRole('button', { name: 'Paper' }).click()
+  await dialog.getByRole('button', { name: 'Light', exact: true }).click()
+  await expect(dialog.getByRole('group', { name: 'Dark theme tone' })).toHaveCount(0)
+  const light = dialog.getByRole('group', { name: 'Light theme tone' })
+  await expect(light.getByRole('button')).toHaveCount(4)
+  await light.getByRole('button', { name: 'Paper' }).click()
   await page.reload()
   // Applied before paint by theme.js, then kept by the store.
-  await expect(html).toHaveAttribute('data-dark-palette', 'espresso')
   await expect(html).toHaveAttribute('data-light-palette', 'paper')
+  await expect(html).toHaveAttribute('data-dark-palette', 'espresso')
   await page
     .getByRole('button', { name: /^Appearance/ })
     .filter({ visible: true })
     .first()
     .click()
-  await dialog.getByRole('group', { name: 'Dark theme tone' }).getByRole('button', { name: 'Warm charcoal' }).click()
-  await expect(html).not.toHaveAttribute('data-dark-palette', /.+/)
-  await dialog.getByRole('button', { name: 'Light', exact: true }).click()
-  await expect(html).toHaveAttribute('data-theme', 'light')
+  await dialog.getByRole('group', { name: 'Light theme tone' }).getByRole('button', { name: 'Sage' }).click()
+  await expect(html).not.toHaveAttribute('data-light-palette', /.+/)
 })
 
 test('keeps the reference layout on a phone without horizontal scrolling', async ({ page }) => {

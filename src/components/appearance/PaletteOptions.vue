@@ -8,7 +8,7 @@ const swatch = (id: string): Swatch => SWATCHES[id as keyof typeof SWATCHES]
 </script>
 
 <template>
-  <div role="group" :aria-label="label" class="grid grid-cols-5 gap-8 phone:grid-cols-3">
+  <div role="group" :aria-label="label" class="grid grid-cols-4 gap-8 phone:grid-cols-2">
     <button
       v-for="option in options"
       :key="option"

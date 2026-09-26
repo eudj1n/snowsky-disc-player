@@ -9,6 +9,7 @@ import {
   chooseAppearance,
   chooseDarkPalette,
   chooseLightPalette,
+  darkActive,
   darkPalette,
   lightPalette,
 } from '../stores/appearance'
@@ -26,7 +27,6 @@ const darkNames = computed(() => ({
   olive: t('palette_olive'),
   graphite: t('palette_graphite'),
   espresso: t('palette_espresso'),
-  black: t('palette_black'),
 }))
 </script>
 
@@ -46,22 +46,27 @@ const darkNames = computed(() => ({
       :dark="SWATCHES[darkPalette]"
       @choose="chooseAppearance"
     />
-    <h3 class="mt-4 mb-10 text-12 font-semibold">{{ t('palette_light_label') }}</h3>
-    <PaletteOptions
-      :label="t('palette_light_label')"
-      :options="LIGHT_PALETTES"
-      :value="lightPalette"
-      :names="lightNames"
-      @choose="chooseLightPalette"
-    />
-    <h3 class="mt-18 mb-10 text-12 font-semibold">{{ t('palette_dark_label') }}</h3>
-    <PaletteOptions
-      :label="t('palette_dark_label')"
-      :options="DARK_PALETTES"
-      :value="darkPalette"
-      :names="darkNames"
-      @choose="chooseDarkPalette"
-    />
+    <!-- Tones of the theme in effect only (owner, round 10): a shorter dialog. -->
+    <template v-if="darkActive">
+      <h3 class="mt-4 mb-10 text-12 font-semibold">{{ t('palette_tone_dark') }}</h3>
+      <PaletteOptions
+        :label="t('palette_tone_dark')"
+        :options="DARK_PALETTES"
+        :value="darkPalette"
+        :names="darkNames"
+        @choose="chooseDarkPalette"
+      />
+    </template>
+    <template v-else>
+      <h3 class="mt-4 mb-10 text-12 font-semibold">{{ t('palette_tone_light') }}</h3>
+      <PaletteOptions
+        :label="t('palette_tone_light')"
+        :options="LIGHT_PALETTES"
+        :value="lightPalette"
+        :names="lightNames"
+        @choose="chooseLightPalette"
+      />
+    </template>
     <p class="mt-23 text-11 leading-[1.7] text-muted">{{ t('saved_in_this_browser') }}</p>
   </UiDialog>
 </template>

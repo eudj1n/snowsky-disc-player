@@ -438,8 +438,10 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
 - [x] A tab that was connected reconnects after its own reload
       (sessionStorage mark, up to four attempts while the old socket lets go);
       Disconnect clears it and new tabs never take control on their own.
-- [x] Light palettes (sage, paper, mist, white) next to the dark ones, both
-      chosen in the appearance dialog ([themes](themes.md)).
+- [x] Light palettes (sage, paper, mist, white) next to the dark ones
+      (charcoal, olive, graphite, espresso; black dropped for four and four);
+      the appearance dialog offers the tones of the theme in effect
+      ([themes](themes.md)).
 - [x] English is the default language (the player's own language is still
       adopted when the listener has not chosen one).
 - [x] SPDIF in the sound settings; turning it on asks for a second yes,

@@ -5,7 +5,7 @@
  * sidebar surface, page paper and the primary button.
  */
 export const LIGHT_PALETTES = ['sage', 'paper', 'mist', 'white'] as const
-export const DARK_PALETTES = ['charcoal', 'olive', 'graphite', 'espresso', 'black'] as const
+export const DARK_PALETTES = ['charcoal', 'olive', 'graphite', 'espresso'] as const
 export type LightPalette = (typeof LIGHT_PALETTES)[number]
 export type DarkPalette = (typeof DARK_PALETTES)[number]
 export const DEFAULT_LIGHT: LightPalette = 'sage'
@@ -26,7 +26,6 @@ export const SWATCHES: Record<LightPalette | DarkPalette, Swatch> = {
   olive: { surface: '#101410', paper: '#22291f', strong: '#d8e1cc' },
   graphite: { surface: '#111213', paper: '#232527', strong: '#e2e5e8' },
   espresso: { surface: '#110e0b', paper: '#251f19', strong: '#ead9c5' },
-  black: { surface: '#000000', paper: '#151515', strong: '#f3f3f3' },
 }
 
 export const isLightPalette = (value: unknown): value is LightPalette =>
