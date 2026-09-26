@@ -309,7 +309,8 @@ export const en = {
   import_formats: 'Audio files up to {limit} · folder structure preserved · other files skipped',
   import_choose: 'Choose files',
   import_choose_folder: 'Choose folder',
-  import_no_overwrite: 'Existing names block the transfer; nothing is overwritten.',
+  import_no_overwrite:
+    'Files already on the card are skipped; nothing is overwritten. Lyrics (.lrc) and folder covers (cover, folder, front) travel with the music.',
   import_send: 'Transfer to DISC',
   import_clear: 'Clear list',
   import_scan_title: 'Find music on DISC',
@@ -333,7 +334,7 @@ export const en = {
   import_invalid: 'Choose up to 1,000 audio files, each between 1 byte and {limit}. Paths must be valid and unique.',
   import_connect: 'Connect your DISC to transfer music.',
   import_stop_batch: 'Transfer stopped. Remaining files have not been sent.',
-  import_skipped: 'other file types skipped: {count}',
+  import_skipped: 'other files skipped: {count}',
   import_batch_count: 'Confirmed: {done} of {total} · Waiting: {waiting}',
   import_flow_choose: 'Choose an album folder or individual files. Each step starts when you ask.',
   import_flow_selected: 'Your selection is ready. Transfer the waiting files to the memory card.',

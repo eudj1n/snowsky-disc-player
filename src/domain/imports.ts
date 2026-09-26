@@ -1,6 +1,7 @@
 /**
  * Selection rules for importing music (reference imports.mjs validFiles and
- * backend imports.py): up to 1000 audio files, unique paths (case-insensitive),
+ * backend imports.py): up to 1000 audio files (with their lyrics and folder
+ * covers), unique paths (case-insensitive),
  * sizes within the upload bound, FAT-safe names, bounded path lengths.
  */
 export const AUDIO_EXTENSIONS = [
@@ -27,6 +28,29 @@ const encoder = new TextEncoder()
 export function isAudio(path: string): boolean {
   const lower = path.toLowerCase()
   return AUDIO_EXTENSIONS.some((extension) => lower.endsWith(extension))
+}
+
+/**
+ * Files that travel with the music because the gateway reads them (service
+ * combined-006): same-stem lyrics and a folder cover. Their bounds match what
+ * the gateway serves; the card catalog admits only these names besides audio.
+ */
+const LYRICS = /\.lrc$/i
+const COVER = /(^|\/)(cover|folder|front)\.(jpe?g|png)$/i
+export const LYRICS_LIMIT = 256 * 1024
+export const COVER_LIMIT = 8 * 1024 * 1024
+
+export function companionLimit(path: string): number | null {
+  if (LYRICS.test(path)) return LYRICS_LIMIT
+  if (COVER.test(path)) return COVER_LIMIT
+  return null
+}
+
+/** Audio, or a lyrics/cover companion within its bound. */
+export function importable(path: string, size: number): boolean {
+  if (isAudio(path)) return true
+  const limit = companionLimit(path)
+  return limit !== null && size <= limit
 }
 
 export function validPath(path: string): boolean {
@@ -57,7 +81,8 @@ export function validSelection(files: readonly ImportCandidate[], limit: number)
     const key = file.path.toLowerCase()
     if (seen.has(key)) return false
     seen.add(key)
-    if (!(file.size > 0 && file.size <= limit) || !validPath(file.path) || !isAudio(file.path)) return false
+    if (!(file.size > 0 && file.size <= limit) || !validPath(file.path) || !importable(file.path, file.size))
+      return false
   }
   return true
 }

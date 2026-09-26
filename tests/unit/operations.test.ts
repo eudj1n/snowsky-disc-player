@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { isAudio, validPath, validSelection } from '../../src/domain/imports'
+import { importable, isAudio, validPath, validSelection } from '../../src/domain/imports'
 import { muteStep, UNMUTE_FALLBACK } from '../../src/domain/player'
 import { seek, setFavorite, setMode, setVolume, identityOf } from '../../src/gateway/controls'
 import { parsePlayback } from '../../src/gateway/playback'
@@ -98,6 +98,36 @@ describe('import selection rules', () => {
     expect(validSelection([{ path: 'A/big.flac', size: 101 }], 100)).toBe(false)
     expect(validSelection([{ path: 'A/empty.flac', size: 0 }], 100)).toBe(false)
     expect(validSelection([], 100)).toBe(false)
+  })
+
+  it('lets lyrics and folder covers travel with the music, within their bounds', () => {
+    expect(importable('Album/01 Track.lrc', 1000)).toBe(true)
+    expect(importable('Album/Cover.JPG', 1000)).toBe(true)
+    expect(importable('Album/folder.png', 1000)).toBe(true)
+    expect(importable('Album/front.jpeg', 1000)).toBe(true)
+    expect(importable('Album/back.jpg', 1000)).toBe(false)
+    expect(importable('Album/notes.txt', 10)).toBe(false)
+    expect(importable('Album/01 Track.lrc', 256 * 1024 + 1)).toBe(false)
+    expect(importable('Album/cover.jpg', 8 * 1024 * 1024 + 1)).toBe(false)
+    expect(
+      validSelection(
+        [
+          { path: 'A/1.flac', size: 10 },
+          { path: 'A/1.lrc', size: 10 },
+          { path: 'A/cover.jpg', size: 10 },
+        ],
+        100,
+      ),
+    ).toBe(true)
+    expect(
+      validSelection(
+        [
+          { path: 'A/1.flac', size: 10 },
+          { path: 'A/readme.txt', size: 10 },
+        ],
+        100,
+      ),
+    ).toBe(false)
   })
 
   it('encodes upload paths and maps gateway replies', () => {

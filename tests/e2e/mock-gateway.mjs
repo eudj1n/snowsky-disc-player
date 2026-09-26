@@ -24,6 +24,9 @@ import {
 } from './mock-collection.mjs'
 
 const busyOnce = new Set()
+// The card catalog's upload names (firmware/commands/v2.57.json in the service).
+const MEDIA_NAME = /\/[^/]+\.(flac|wav|mp3|m4a|aac|ogg|opus|ape|wv|wma|dsf|dff|aiff?|lrc|jpe?g|png)$/i
+const AUDIO_NAME = /\.(flac|wav|mp3|m4a|aac|ogg|opus|ape|wv|wma|dsf|dff|aiff?)$/i
 const PORT = Number(process.env.MOCK_GATEWAY_PORT ?? 4870)
 const DIST = process.env.MOCK_GATEWAY_DIST ?? 'dist'
 const FIXTURES = new URL('./fixtures/', import.meta.url)
@@ -172,6 +175,7 @@ const server = createServer((request, response) => {
     if (!credential(request.headers['x-disc-token'])) return send(response, 403, 'Token required\n')
     const id = request.headers['x-disc-request']
     if (!id || player.seen.has(id)) return send(response, 409, 'Request ID already used\n')
+    if (!MEDIA_NAME.test(path)) return send(response, 403, 'Not admitted by the command catalog\n')
     player.seen.add(id)
     const chunks = []
     request.on('data', (chunk) => chunks.push(chunk))
@@ -379,7 +383,8 @@ server.on('upgrade', (request, socket, head) => {
           ws.send(record('a60a', '000F'))
           setTimeout(() => ws.send(record('a622', hex4(TRACKS.length))), 300)
           setTimeout(() => {
-            for (const upload of player.uploads.splice(0)) indexUpload(upload.path, upload.bytes)
+            for (const upload of player.uploads.splice(0))
+              if (AUDIO_NAME.test(upload.path)) indexUpload(upload.path, upload.bytes)
             ws.send(record('a622', hex4(TRACKS.length)))
             ws.send(record('a60a', '0005'))
           }, 900)

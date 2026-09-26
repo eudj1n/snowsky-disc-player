@@ -608,6 +608,38 @@ test.describe('player controls on the mock', () => {
     await disconnect(page)
   })
 
+  test('carries lyrics and a folder cover with a folder, skipping other files', async ({ page }, info) => {
+    const { mkdtempSync, mkdirSync, writeFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const { tmpdir } = await import('node:os')
+    const tag = `${info.project.name} ${Date.now()}`
+    const folder = join(mkdtempSync(join(tmpdir(), 'disc-import-')), `Folder Album ${tag}`)
+    mkdirSync(folder)
+    for (const [name, body] of [
+      ['01 Tide.flac', 'fLaC-tide'],
+      ['01 Tide.lrc', '[00:00.00]Tide'],
+      ['cover.jpg', 'jpeg'],
+      ['back.jpg', 'jpeg'],
+      ['notes.txt', 'text'],
+    ])
+      writeFileSync(join(folder, name), body)
+    await english(page)
+    await connectAndPair(page)
+    await page.getByRole('button', { name: 'Add music' }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.locator('input[type=file][webkitdirectory]').setInputFiles(folder)
+    const files = dialog.getByTestId('import-files')
+    await expect(files.getByRole('listitem')).toHaveCount(3)
+    await expect(files).toContainText('01 Tide.lrc')
+    await expect(files).toContainText('cover.jpg')
+    await expect(dialog.getByText('other files skipped: 2')).toBeVisible()
+    await dialog.getByRole('button', { name: 'Transfer to DISC' }).click()
+    await expect(dialog.getByTestId('import-flow')).toHaveText(/confirmed files are on the card/, { timeout: 20_000 })
+    await expect(files.getByRole('listitem').filter({ hasText: 'On the memory card' })).toHaveCount(3)
+    await page.keyboard.press('Escape')
+    await disconnect(page)
+  })
+
   test('sends a refused file again only on request', async ({ page }, info) => {
     await english(page)
     await connectAndPair(page)

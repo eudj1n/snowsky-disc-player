@@ -6,7 +6,7 @@
  * only on the user's action; nothing is resent.
  */
 import { computed, reactive, readonly, watch } from 'vue'
-import { MAX_IMPORT_FILES, STOCK_UPLOAD_LIMIT, isAudio, validSelection } from '../domain/imports'
+import { MAX_IMPORT_FILES, STOCK_UPLOAD_LIMIT, importable, validSelection } from '../domain/imports'
 import { scanLibrary } from '../gateway/scan'
 import { uploadFile } from '../gateway/upload'
 import type { MessageKey } from '../i18n'
@@ -70,10 +70,10 @@ export function setRefreshAfterScan(value: boolean): void {
   state.refreshAfterScan = value
 }
 
-/** Adds a selection. Folders skip other file types; individual files must all be audio. */
+/** Adds a selection. Folders skip other file types; individual files must all be music, lyrics or covers. */
 export function addSelection(picked: readonly PickedFile[], fromFolder: boolean): boolean {
   if (state.transferring || state.scan.phase === 'scanning') return false
-  const audio = fromFolder ? picked.filter((item) => isAudio(item.path)) : [...picked]
+  const audio = fromFolder ? picked.filter((item) => importable(item.path, item.file.size)) : [...picked]
   const candidates = [
     ...state.items.filter((item) => item.phase === 'waiting'),
     ...audio.map((item) => ({ ...item, size: item.file.size })),
