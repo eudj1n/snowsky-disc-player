@@ -12,7 +12,11 @@ export const TRACK_ROW = 'relative grid items-center gap-13 rounded-8 px-12 py-1
 export type TrackLead = 'cover' | 'number'
 
 // Lead, title, [album], [duration], [actions]. Phones drop album. The favorite
-// heart sits outside the row, in the page gutter (owner's reference).
+// heart sits outside the row, in the page gutter (owner's reference); phones
+// have no gutter to spare, so there rows open a heart lane of their own.
+
+/** Rows and their header on phones when the list shows favorite hearts. */
+export const HEART_LANE = 'phone:pl-24'
 const COLUMNS = {
   'cover:album+duration':
     'grid-cols-[40px_minmax(100px,1fr)_minmax(70px,.55fr)_46px] phone:grid-cols-[34px_minmax(0,1fr)_30px]',

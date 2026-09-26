@@ -34,12 +34,13 @@ const language = computed<Locale>({ get: () => locale.value, set: chooseLocale }
   <header
     class="flex h-86 items-center gap-22 border-b border-line px-44 wide:h-94 compact:gap-15 compact:px-26 rail:gap-10 phone:h-65 phone:gap-5 phone:px-12 listening:gap-12 listening:px-24"
   >
-    <div class="text-11 font-semibold tracking-[1px] whitespace-nowrap phone:hidden listening:hidden">
+    <div class="text-11 font-semibold tracking-[1px] whitespace-nowrap max-[900px]:hidden listening:hidden">
       SNOWSKY <span class="mx-14 text-[#c3c4b9]">/</span>
       <strong class="font-medium tracking-normal text-[#85877c]">{{ t(section.title) }}</strong>
     </div>
+    <!-- Search takes the free width between the breadcrumb and the actions (owner, round 9). -->
     <label
-      class="ml-auto flex w-275 items-center gap-10 rounded-8 bg-soft px-13 py-10 text-muted focus-within:shadow-[0_0_0_2px_#abb99a] rail:w-210 phone:ml-0 phone:w-full phone:min-w-0 phone:px-10 phone:py-9 listening:min-w-0"
+      class="flex max-w-720 min-w-0 flex-1 items-center gap-10 rounded-8 bg-soft px-13 py-10 text-muted focus-within:shadow-[0_0_0_2px_var(--focus-ring)] phone:max-w-none phone:px-10 phone:py-9"
     >
       <UiIcon name="search" class="size-16" />
       <input
@@ -58,7 +59,7 @@ const language = computed<Locale>({ get: () => locale.value, set: chooseLocale }
       type="button"
       :aria-label="t('import_music')"
       :title="t('import_music')"
-      class="flex items-center justify-center gap-7 rounded-24 px-12 py-8 text-11 whitespace-nowrap text-secondary transition-colors duration-150 hover:bg-hover hover:text-ink compact:p-8 listening:p-8"
+      class="ml-auto flex items-center justify-center gap-7 rounded-24 px-12 py-8 text-11 whitespace-nowrap text-secondary transition-colors duration-150 hover:bg-hover hover:text-ink compact:p-8 listening:p-8"
       @click="openDialog('import')"
     >
       <UiIcon name="add-music" class="size-18" />

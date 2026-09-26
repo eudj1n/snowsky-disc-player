@@ -6,13 +6,21 @@
  * grid, so it lines up with rows and their skeletons.
  */
 import UiIcon from '../../ui/UiIcon.vue'
-import { TRACK_HEADER, trackColumns, type TrackColumnLabels, type TrackLead } from './trackGrid'
+import { HEART_LANE, TRACK_HEADER, trackColumns, type TrackColumnLabels, type TrackLead } from './trackGrid'
 
-defineProps<{ labels: TrackColumnLabels; lead: TrackLead; album: boolean; duration: boolean; actions: boolean }>()
+defineProps<{
+  labels: TrackColumnLabels
+  lead: TrackLead
+  album: boolean
+  duration: boolean
+  actions: boolean
+  /** Rows keep a heart lane on phones: the header follows. */
+  heartLane?: boolean
+}>()
 </script>
 
 <template>
-  <div role="row" :class="[TRACK_HEADER, trackColumns(lead, album, duration, actions)]">
+  <div role="row" :class="[TRACK_HEADER, trackColumns(lead, album, duration, actions), { [HEART_LANE]: heartLane }]">
     <!-- The title starts at the cover; on numbered lists after the number. -->
     <span v-if="lead === 'number'" role="columnheader" class="text-center">#</span>
     <span role="columnheader" :class="{ 'col-span-2': lead === 'cover' }">{{ labels.title }}</span>

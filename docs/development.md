@@ -106,7 +106,8 @@ player, emulator, sibling checkout or secret is needed in CI.
 
 ## Project layout
 
-See [architecture](architecture.md#layers). Configuration: `vite.config.ts`
+See [architecture](architecture.md#layers) and, for colors and the kept dark
+palettes, [themes](themes.md). Configuration: `vite.config.ts`
 (relative base, root-absolute index references, no inlined assets, dev
 proxy), `vitest.config.ts`, `playwright.config.ts`, `eslint.config.js`,
 `.prettierrc.json`, `tsconfig.*.json`.

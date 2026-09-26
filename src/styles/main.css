@@ -1,4 +1,6 @@
 @import 'tailwindcss';
+/* Alternative dark palettes (data-palette); their selectors outrank the defaults. */
+@import './palettes.css';
 
 /*
  * Design system ported from the reference DISC Web stylesheet
@@ -203,14 +205,15 @@
   --ring-c: #e5e9db;
   --ring-d: #d3dcc4;
   --online-ring: #e8eedf;
+  --focus-ring: #abb99a;
   /* Dark in both themes: the home banner and toasts. */
   --hero: #252e2b;
   --hero-from: #202b27;
   --hero-mid: #263129;
   --toast: #2e3829;
   /* The dark palette as the appearance dialog previews it in either theme. */
-  --preview-dark-a: #101410;
-  --preview-dark-b: #22291f;
+  --preview-dark-a: #121110;
+  --preview-dark-b: #262320;
   /* Layout: sidebar width and bottom player height per breakpoint. */
   --sidebar: 224px;
   --player: 100px;
@@ -219,176 +222,16 @@
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --paper: #151815;
-  --ink: #e7e9e0;
-  --line: #30372f;
-  --muted: #a0aa96;
-  --accent: #ff795a;
-  --surface: #101410;
-  --raised: #1d231c;
-  --soft: #22291f;
-  --hover: #2b3428;
-  --selected: #303d29;
-  --secondary: #bdc9b1;
-  --banner: #1c251a;
-  --banner-ink: #a4b692;
-  --progress-bg: #394331;
-  --progress-fill: #b2c891;
-  --player-bg: #191f18f5;
-  --strong: #d8e1cc;
-  --strong-hover: #e4ebd9;
-  --strong-ink: #1b2316;
-  --chip-on: #bfcea9;
-  --chip-on-ink: #192214;
-  --art-a: #35412c;
-  --art-b: #4b5b3e;
-  --art-edge: #536645;
-  --art-edge-2: #647c50;
-  --ring-edge: #3c4c33;
-  --ring-a: #2b3625;
-  --ring-b: #3c4c33;
-  --ring-c: #242f20;
-  --ring-d: #3c4c33;
-  --online-ring: #2f3e27;
-}
-
-/* Dark palette proposals for the owner's review (2026-09-26); olive, the
- * default above, stays until one is chosen. data-palette selects one. */
-:root[data-palette='graphite'] {
-  --preview-dark-a: #111213;
-  --preview-dark-b: #232527;
-}
-:root[data-theme='dark'][data-palette='graphite'] {
-  --paper: #161718;
-  --surface: #111213;
-  --raised: #1e2022;
-  --soft: #232527;
-  --hover: #2c2f31;
-  --selected: #34383b;
-  --line: #2f3235;
-  --ink: #e8e9ea;
-  --muted: #9ea3a8;
-  --secondary: #c3c8cc;
-  --banner: #1d2023;
-  --banner-ink: #aab2b9;
-  --progress-bg: #3a3e42;
-  --progress-fill: #c7cdd2;
-  --player-bg: #1a1b1df5;
-  --strong: #e2e5e8;
-  --strong-hover: #eef0f2;
-  --strong-ink: #16181a;
-  --chip-on: #c9ced3;
-  --chip-on-ink: #15171a;
-  --art-a: #2c2f32;
-  --art-b: #3d4145;
-  --art-edge: #4a4f54;
-  --art-edge-2: #5b6167;
-  --ring-edge: #34383c;
-  --ring-a: #222427;
-  --ring-b: #34383c;
-  --ring-c: #1d1f22;
-  --ring-d: #34383c;
-  --online-ring: #2a2e31;
-  --hero: #24272a;
-  --hero-from: #1d2023;
-  --hero-mid: #25282b;
-  --toast: #2a2d30;
-}
-:root[data-palette='espresso'] {
-  --preview-dark-a: #110e0b;
-  --preview-dark-b: #251f19;
-}
-:root[data-theme='dark'][data-palette='espresso'] {
-  --paper: #17130f;
-  --surface: #110e0b;
-  --raised: #1f1a15;
-  --soft: #251f19;
-  --hover: #2f2720;
-  --selected: #3b3027;
-  --line: #342b23;
-  --ink: #eee7df;
-  --muted: #ab9d8e;
-  --secondary: #d6c5b2;
-  --banner: #211b16;
-  --banner-ink: #c4ab8f;
-  --progress-bg: #45382d;
-  --progress-fill: #d0ad86;
-  --player-bg: #1b1612f5;
-  --strong: #ead9c5;
-  --strong-hover: #f3e6d6;
-  --strong-ink: #24190f;
-  --chip-on: #d5bc9d;
-  --chip-on-ink: #22170d;
-  --art-a: #3a2f25;
-  --art-b: #4e3f31;
-  --art-edge: #5d4b3a;
-  --art-edge-2: #715b45;
-  --ring-edge: #3f342a;
-  --ring-a: #2c241d;
-  --ring-b: #3f342a;
-  --ring-c: #231d17;
-  --ring-d: #3f342a;
-  --online-ring: #3a2f25;
-  --hero: #2e2520;
-  --hero-from: #261e19;
-  --hero-mid: #2f2621;
-  --toast: #33291f;
-}
-:root[data-palette='black'] {
-  --preview-dark-a: #000000;
-  --preview-dark-b: #151515;
-}
-:root[data-theme='dark'][data-palette='black'] {
-  --paper: #000000;
-  --surface: #000000;
-  --raised: #0f0f0f;
-  --soft: #151515;
-  --hover: #1e1e1e;
-  --selected: #282828;
-  --line: #232323;
-  --ink: #f3f3f3;
-  --muted: #9b9b9b;
-  --secondary: #d2d2d2;
-  --banner: #101010;
-  --accent: #ff6a4a;
-  --banner-ink: #b4b4b4;
-  --progress-bg: #2f2f2f;
-  --progress-fill: #f3f3f3;
-  --player-bg: #0a0a0af2;
-  --strong: #f3f3f3;
-  --strong-hover: #ffffff;
-  --strong-ink: #0a0a0a;
-  --chip-on: #e0e0e0;
-  --chip-on-ink: #0a0a0a;
-  --art-a: #1c1c1c;
-  --art-b: #2b2b2b;
-  --art-edge: #3a3a3a;
-  --art-edge-2: #4a4a4a;
-  --ring-edge: #262626;
-  --ring-a: #141414;
-  --ring-b: #262626;
-  --ring-c: #0e0e0e;
-  --ring-d: #262626;
-  --online-ring: #1f1f1f;
-  --hero: #161616;
-  --hero-from: #111111;
-  --hero-mid: #181818;
-  --toast: #1f1f1f;
-}
-:root[data-palette='charcoal'] {
-  --preview-dark-a: #121110;
-  --preview-dark-b: #262320;
-}
-:root[data-theme='dark'][data-palette='charcoal'] {
   --paper: #181614;
+  --ink: #ece8e3;
+  --line: #33302c;
+  --muted: #a59e96;
+  --accent: #ff795a;
   --surface: #121110;
   --raised: #201e1b;
   --soft: #262320;
   --hover: #2f2b27;
   --selected: #3a3530;
-  --line: #33302c;
-  --ink: #ece8e3;
-  --muted: #a59e96;
   --secondary: #d0c8be;
   --banner: #1f1c19;
   --banner-ink: #b9ad9f;
@@ -410,6 +253,7 @@
   --ring-c: #1e1c19;
   --ring-d: #36322d;
   --online-ring: #2e2a26;
+  --focus-ring: #6f665c;
   --hero: #292522;
   --hero-from: #221f1c;
   --hero-mid: #2a2623;

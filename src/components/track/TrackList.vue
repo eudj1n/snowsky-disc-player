@@ -18,7 +18,7 @@ import UiNowPlaying from '../../ui/UiNowPlaying.vue'
 import Artwork from '../artwork/Artwork.vue'
 import ArtistCredit from './ArtistCredit.vue'
 import TrackListHeader from './TrackListHeader.vue'
-import { ROW_DIVIDER, TRACK_ROW, trackColumns, type TrackColumnLabels, type TrackLead } from './trackGrid'
+import { HEART_LANE, ROW_DIVIDER, TRACK_ROW, trackColumns, type TrackColumnLabels, type TrackLead } from './trackGrid'
 
 export interface FavoriteLabels {
   /** Row state for assistive technology. */
@@ -94,7 +94,7 @@ const LINK = 'hover:text-ink hover:underline hover:underline-offset-3 focus-visi
 const REVEAL = 'opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100'
 /** The heart lives in the page gutter, left of the row (owner's reference). */
 const HEART =
-  'absolute top-1/2 -left-32 grid size-22 -translate-y-1/2 place-items-center rounded-full p-0 transition-[opacity,transform,color] duration-150 compact:-left-27 listening:-left-30 phone:-left-18 phone:size-16'
+  'absolute top-1/2 -left-32 grid size-22 -translate-y-1/2 place-items-center rounded-full p-0 transition-[opacity,transform,color] duration-150 compact:-left-27 listening:-left-30 phone:left-3 phone:size-18'
 const isCurrent = (track: Track) => props.currentPath !== null && track.path === props.currentPath
 const album = computed(() => props.showAlbum && props.tracks.some((track) => track.album))
 const duration = computed(() => props.tracks.some((track) => formatDuration(track.durationMs)))
@@ -139,6 +139,7 @@ function contextMenu(event: MouseEvent, index: number): void {
       :album="album"
       :duration="duration"
       :actions="menuLabel !== null"
+      :heart-lane="favoriteLabels !== null"
     />
     <template v-for="(track, index) in tracks" :key="`${track.path ?? ''}#${index}`">
       <div v-if="discHeadings.has(index)" role="row" class="pt-18 pb-6">
@@ -156,7 +157,7 @@ function contextMenu(event: MouseEvent, index: number): void {
           ROW_DIVIDER,
           columns,
           soloArtist ? 'min-h-46' : 'min-h-59',
-          { 'bg-selected hover:bg-selected': isCurrent(track) },
+          { 'bg-selected hover:bg-selected': isCurrent(track), [HEART_LANE]: favoriteLabels !== null },
         ]"
         @contextmenu="contextMenu($event, index)"
       >

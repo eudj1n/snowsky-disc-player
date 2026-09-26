@@ -24,7 +24,7 @@ watchEffect(() => {
   document.documentElement.dataset.theme = dark ? 'dark' : 'light'
   // The browser chrome follows the page background of the active palette.
   const paper = getComputedStyle(document.documentElement).getPropertyValue('--paper').trim()
-  document.querySelector('meta[name=theme-color]')?.setAttribute('content', paper || (dark ? '#151815' : '#faf9f6'))
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', paper || (dark ? '#181614' : '#faf9f6'))
 })
 
 export function chooseAppearance(value: Appearance): void {
