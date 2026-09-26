@@ -654,10 +654,26 @@ image; card-only items (catalog or query additions) are marked as such.
       track has no known route.
 - [x] _(card-only)_ Correct the `peq_presets` note in the query catalog: user
       slots are `STYLE_PRESET` 11..20; rows 160..169 hold `(null)`.
-- [ ] **Favorites for any track (research).** The stock remote protocol
-      likes or unlikes only the playing track (`0104`); the player's own
-      favorites screen may use another route. Find it on the emulator before
-      admitting anything; until then other rows show state only.
+- [x] **Favorites for any track (research, 2026-09-26).** No remote route
+      exists: `0104` changes the current track only, and the stock HTTP
+      batch adder (`POST /add_custom_list/`) hard-codes a custom playlist as
+      its destination (static analysis of V2.57 `mq_player`, handler
+      `0x493ee4`). The player's own screen favorites any track by writing
+      song.db itself (`mq_ui`: `INSERT INTO MY_LOVE (…) SELECT … FROM SONG
+    WHERE ID = ?`; removal `DELETE FROM MY_LOVE WHERE ID = ?`), or sends
+      `mq_player` its internal batch message `0117` with the favorites as
+      destination. Guest check of the first way (a non-playing track written
+      with that exact statement): the favorites list showed it, playing the
+      favorites started with it, a202 reported `love: true` while it played,
+      and the current-track unlike (`0104`) removed the row again. Not
+      checked: the player's own favorites screen (it reads the same table)
+      and a write racing stock's own writes.
+- [ ] Favorite any track through the service (next image, needs the owner's
+      decision): one reviewed data-level mutation that runs the stock
+      screen's own statement for a SONG.ID (and its delete by MY_LOVE.ID),
+      under the usual mutation guards, refused during scans, confirmed by
+      reading the row back. It would be the service's first write to a
+      stock database.
 - [ ] _(card-only)_ Revisit the upload bound: the catalog allows 1 GiB per
       file, the reference 2 GiB − 1; the UI uses the catalog value.
 
