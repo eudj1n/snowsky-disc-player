@@ -500,6 +500,13 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
       source. A service recorder would need its own view of the playing track
       (a second stock connection, untested) or would see only what passes
       through the gateway while a page is connected.
+      A passive source works (guest, 2026-09-26): stock keeps the playing
+      file open, so `/proc/<mq_player>/fd` names it; the path switched at the
+      track change, the file stayed open while paused, and its `fdinfo` read
+      position advanced in 32 KiB steps while playing (read-ahead reaches the
+      end a few seconds early); with the queue ended no audio file was open.
+      A service recorder can count a play when a file stays in use long
+      enough (for example 30 s or half its bytes), with no stock connection.
 
 ## Owner requests (round 12): lyrics timing
 
