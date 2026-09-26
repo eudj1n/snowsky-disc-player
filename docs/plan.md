@@ -517,6 +517,11 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
       `/usr/data/fiio/memory_playing_flag`. That row is only the last track
       and needs the setting, so the passive `/proc` source stays the
       candidate. The guest was set back to Off.
+      No other setting can change this: re-checked on the guest's
+      `mq_player` (MD5 `27abe015…`), the upsert at `0x43e93c` (it formats
+      `UPDATE RECORD_SONG SET PLAY_COUNT…`) has no `jal`/`j` to it and its
+      only pointer lies in `.pdr` (procedure descriptors, not code or data),
+      so no code path, gated by a setting or not, reaches it.
 
 ## Owner requests (round 12): lyrics timing
 
