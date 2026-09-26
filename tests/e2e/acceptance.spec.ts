@@ -285,7 +285,9 @@ test('lists same-titled albums apart, separates discs, shows years and joint cre
   await disconnect(page)
 })
 
-test('names the playing track as the library does when stock cuts long names', async ({ page }) => {
+test('names the playing track as the library does when stock cuts long names, pauses from the bar', async ({
+  page,
+}) => {
   const album = 'Quiet Meridian (The Complete Anniversary Recordings)'
   const title = 'An Unusually Long Track Title for the Play State'
   // Evidence only: what stock itself sends for the playing track (the song
@@ -303,6 +305,13 @@ test('names the playing track as the library does when stock cuts long names', a
   await page.goto(`/#/album/${encodeURIComponent(album)}`)
   await verified(page, () => page.getByRole('button', { name: 'Play album' }).click())
   await expect(page.getByTestId('track-title')).toHaveText(title, { timeout: 30_000 })
+  // The compact bar of a scrolled page pauses the album it belongs to.
+  await page.setViewportSize({ width: 1280, height: 520 })
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+  const bar = page.getByTestId('sticky-heading')
+  await bar.getByRole('button', { name: 'Pause', exact: true }).click()
+  await expect(bar.getByRole('button', { name: 'Play', exact: true })).toBeVisible({ timeout: 30_000 })
+  await page.setViewportSize({ width: 1280, height: 720 })
   await page
     .getByRole('region', { name: 'Player' })
     .getByRole('link', { name: `Album: ${album}` })

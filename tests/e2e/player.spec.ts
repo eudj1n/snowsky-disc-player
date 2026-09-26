@@ -569,6 +569,28 @@ test.describe('player controls on the mock', () => {
     await disconnect(page)
   })
 
+  test('the compact bar plays the page and then pauses and resumes it', async ({ page }) => {
+    await english(page)
+    await connectAndPair(page)
+    // Something from another album first: the mock player is shared by both projects.
+    await page.goto('/#/album/Inner%20Space/Forma')
+    await page.getByRole('button', { name: 'Play Weightless' }).click()
+    await expect(page.getByTestId('track-title')).toHaveText('Weightless', { timeout: 15_000 })
+    await page.setViewportSize({ width: page.viewportSize()?.width ?? 1280, height: 520 })
+    await page.goto('/#/album/Night%20Drive/Northline')
+    await expect(page.getByRole('button', { name: 'Play Last Exit' })).toBeVisible()
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+    const bar = page.getByTestId('sticky-heading')
+    await expect(bar).toBeVisible()
+    await bar.getByRole('button', { name: 'Play album' }).click()
+    await expect(page.getByTestId('track-title')).toHaveText(/Night Drive|City Glow|Last Exit/, { timeout: 15_000 })
+    await bar.getByRole('button', { name: 'Pause', exact: true }).click()
+    await expect(bar.getByRole('button', { name: 'Play', exact: true })).toBeVisible({ timeout: 15_000 })
+    await bar.getByRole('button', { name: 'Play', exact: true }).click()
+    await expect(bar.getByRole('button', { name: 'Pause', exact: true })).toBeVisible({ timeout: 15_000 })
+    await disconnect(page)
+  })
+
   test('the playing row pauses and resumes instead of starting over', async ({ page }) => {
     await english(page)
     await connectAndPair(page)
@@ -885,6 +907,26 @@ test('collapses the sidebar to its icon rail and remembers it', async ({ page },
   // Narrow windows always show the rail and need no toggle.
   await page.setViewportSize({ width: 760, height: 800 })
   await expect(page.getByRole('button', { name: 'Collapse sidebar' })).toBeHidden()
+})
+
+test("keeps the page's context in a compact bar once its header scrolls away", async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  await page.setViewportSize({ width: page.viewportSize()?.width ?? 1280, height: 520 })
+  await page.goto('/#/album/Afterglow/Northline')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Afterglow')
+  await expect(page.getByRole('row').filter({ hasText: 'Stay a Little Longer' })).toBeVisible()
+  const bar = page.getByTestId('sticky-heading')
+  await expect(bar).toHaveCount(0)
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+  await expect(bar).toBeVisible()
+  await expect(bar.getByRole('link', { name: 'Northline' })).toBeVisible()
+  // Not connected: nothing plays from here yet, but the button is there.
+  await expect(bar.getByRole('button', { name: 'Play album' })).toBeVisible()
+  // The name returns to the top, where the full header takes over again.
+  await bar.getByRole('button', { name: 'Afterglow' }).click()
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0)
+  await expect(bar).toHaveCount(0)
 })
 
 test('offers the tones of the theme in effect and keeps the chosen palettes', async ({ page }) => {

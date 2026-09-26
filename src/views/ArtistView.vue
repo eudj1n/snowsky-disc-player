@@ -16,13 +16,14 @@ import { creditLabel, credits } from '../domain/artist'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
 import { albumCover, albumYear } from '../stores/enrichment'
-import { albums, tracks } from '../stores/library'
+import { albums, artists, tracks } from '../stores/library'
 import { selection } from '../stores/selection'
 import { ui } from '../stores/ui'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { albumCardRoute, albumLines, withYear } from './captions'
 import CollectionGate from './CollectionGate.vue'
-import { playAlbumCard } from './playAlbum'
+import { useHeadingAction } from './headingAction'
+import { playAlbumCard, playFrom } from './playAlbum'
 
 const route = useRoute()
 const router = useRouter()
@@ -51,6 +52,14 @@ const match = (album: Album) => [album.title, ...album.artists]
 const items = computed(() => filterBy(own.value, ui.query, match))
 const joined = computed(() => filterBy(appears.value, ui.query, match))
 
+/** Stock plays an artist it knows by that exact name (not one known only from joint credits). */
+const playable = computed(() => artists.value.some((artist) => artist.name === name.value && artist.literal))
+const heading = useHeadingAction({
+  owns: (track) => credits(track.artist, name.value),
+  label: () => t('play_item', { name: creditLabel(name.value) }),
+  disabled: () => selection.busy,
+  play: () => void playFrom({ kind: 'artist', artist: name.value }),
+})
 function lines(album: Album) {
   const count = albumTracks(tracks.value, album.title, name.value).length
   const base = album.trackArtists.includes(name.value) ? [{ text: t('track_count', { count }) }] : albumLines(album)
@@ -62,7 +71,13 @@ function lines(album: Album) {
   <CollectionGate :count="items.length + joined.length" :searching="searching" empty-key="search_empty_albums">
     <template #heading="{ loading }">
       <UiTextButton class="text-12" @click="router.push('/artists')">← {{ t('back_to_collection') }}</UiTextButton>
-      <DetailHeading :title="creditLabel(name)" artist>
+      <DetailHeading
+        :title="creditLabel(name)"
+        artist
+        :sticky-action="loading || !playable ? null : heading.action.value"
+        @sticky="heading.run"
+      >
+        <template #sticky>{{ t('album_count', { count: own.length }) }}</template>
         <template #meta>
           <span v-if="loading" class="inline-block h-10 w-90 animate-pulse rounded-4 bg-soft align-middle" />
           <template v-else>{{ t('album_count', { count: own.length }) }}</template>

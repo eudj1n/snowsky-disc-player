@@ -30,7 +30,9 @@ import UiSkeleton from '../ui/UiSkeleton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { albumLines, albumRoute, artistRoute, genreAlbumRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
+import { useHeadingAction } from './headingAction'
 import { playFrom } from './playAlbum'
+import { toggleCurrent } from './trackRows'
 
 const LATEST = 12
 const route = useRoute()
@@ -89,6 +91,12 @@ function genreAlbumLink(title: string) {
 function target(track?: TrackKey): SelectionTarget {
   return { kind: 'genre', genre: name.value, ...(track ? { track } : {}) }
 }
+const heading = useHeadingAction({
+  owns: (track) => tracks.value.some((item) => item.path === track.path),
+  label: () => t('play_genre'),
+  disabled: () => !tracks.value.length || selection.busy,
+  play: () => void playFrom(target()),
+})
 function playAlbum(item: Album): void {
   const scope = albumScope(item)
   void playFrom(
@@ -105,7 +113,11 @@ function playAlbum(item: Album): void {
   <CollectionGate :count="count" :searching="searching" empty-key="search_empty_tracks">
     <template #heading="{ loading }">
       <UiTextButton class="text-12" @click="router.push('/genres')">← {{ t('back_to_genres') }}</UiTextButton>
-      <DetailHeading :title="name">
+      <DetailHeading :title="name" :sticky-action="loading ? null : heading.action.value" @sticky="heading.run">
+        <template #sticky
+          >{{ t('album_count', { count: genre?.albums.length ?? 0 }) }} ·
+          {{ t('track_count', { count: tracks.length }) }}</template
+        >
         <template #meta>
           <span v-if="loading" class="inline-block h-10 w-140 animate-pulse rounded-4 bg-soft align-middle" />
           <template v-else
@@ -142,6 +154,8 @@ function playAlbum(item: Album): void {
         :cover-of="coverFor"
         :current-path="current"
         :playing="isPlaying"
+        :toggle-current="toggleCurrent"
+        :pause-label="t('pause')"
         :title-to="titleTo"
         :artist-to="artistTo"
         :disabled="selection.busy"

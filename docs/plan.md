@@ -567,12 +567,19 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
       its library keeps the name whole. The playing track now takes title,
       artist and album from the library row of the same card file; the mock
       gateway cuts albums the same way.
-- [ ] Sticky context for long pages (item 8): options offered to the owner.
+- [x] Sticky context for long pages (item 8, owner chose option A without
+      column headers): once a detail header (album, artist, playlist, genre)
+      has scrolled under the top, a compact bar keeps a small cover, the name
+      (back to the top), a line of context (artists and year, counts) and one
+      button: it starts the page's music, or pauses and resumes it while the
+      current track belongs to the page. It sits in the workspace, so it
+      follows the sidebar and an open listening panel.
 
-Checks: `npm run check`, the mock suite (87 passed, both projects) and the
-emulator acceptance against real stock with the release `9802fe42…` (19
-desktop tests, including the new long-name test and the player tests that
-run against a gateway).
+Checks: `npm run check`, the mock suite (91 passed, both projects) and the
+emulator acceptance against real stock with the release `c0aa8242…` (18
+desktop tests passed, including the long-name test that also pauses from the
+compact bar; the Home featured-album test skipped itself while its button was
+still disabled).
 
 ## Requests for the next service build
 

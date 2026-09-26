@@ -75,7 +75,11 @@ watchEffect(() => {
     >{{ t('skip_to_content') }}</a
   >
   <AppSidebar />
-  <div class="ml-(--sidebar) min-h-screen pb-(--player) listening:mr-380" :class="{ 'listening-open': ui.panel }">
+  <div
+    id="workspace"
+    class="ml-(--sidebar) min-h-screen pb-(--player) listening:mr-380"
+    :class="{ 'listening-open': ui.panel }"
+  >
     <AppTopbar />
     <main
       id="main"

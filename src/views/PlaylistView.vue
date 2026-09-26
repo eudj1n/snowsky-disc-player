@@ -14,6 +14,7 @@ import { playlistEdits } from '../stores/playlistEdits'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { selection } from '../stores/selection'
+import { useHeadingAction } from './headingAction'
 import { playFrom } from './playAlbum'
 import CollectionGate from './CollectionGate.vue'
 import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
@@ -43,6 +44,12 @@ watch(
   { immediate: true },
 )
 const searching = computed(() => ui.query.trim() !== '')
+const heading = useHeadingAction({
+  owns: (track) => (tracks.value ?? []).some((item) => item.path === track.path),
+  label: () => t('listen_playlist'),
+  disabled: () => !tracks.value?.length || !playlist.value || selection.busy,
+  play: () => void (playlist.value && playFrom({ kind: 'playlist', name: playlist.value.name })),
+})
 const items = computed(() =>
   filterBy(tracks.value ?? [], ui.query, (track) => [track.title, track.artist, track.album]),
 )
@@ -52,7 +59,12 @@ const items = computed(() =>
   <CollectionGate :count="items.length" :searching="searching" empty-key="search_empty_tracks" :ready="tracks !== null">
     <template #heading="{ loading }">
       <UiTextButton class="text-12" @click="router.push('/playlists')">← {{ t('back_to_collection') }}</UiTextButton>
-      <DetailHeading :title="playlist?.name ?? ''">
+      <DetailHeading
+        :title="playlist?.name ?? ''"
+        :sticky-action="loading ? null : heading.action.value"
+        @sticky="heading.run"
+      >
+        <template #sticky>{{ t('track_count', { count: tracks?.length ?? 0 }) }}</template>
         <template #meta>
           <span v-if="loading" class="inline-block h-10 w-90 animate-pulse rounded-4 bg-soft align-middle" />
           <template v-else>{{ t('track_count', { count: tracks?.length ?? 0 }) }}</template>

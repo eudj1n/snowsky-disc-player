@@ -32,6 +32,7 @@ import UiTextButton from '../ui/UiTextButton.vue'
 import { albumCardRoute, albumRoute, artistRoute, genreRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
+import { useHeadingAction } from './headingAction'
 import { playAlbumCard, playFrom } from './playAlbum'
 
 const MORE_BY_ARTISTS = 3
@@ -136,6 +137,13 @@ function target(track?: TrackKey): SelectionTarget {
 const shelfScope = (album: { trackArtists: readonly string[] }, artist: string) =>
   album.trackArtists.includes(artist) ? artist : (album.trackArtists.find((other) => sameCredit(other, artist)) ?? null)
 const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums')
+const heading = useHeadingAction({
+  owns: (track) => tracks.value.some((item) => item.path === track.path),
+  label: () => t('play_album'),
+  disabled: () => !tracks.value.length || selection.busy,
+  play: () => void playFrom(target()),
+})
+const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:text-ink focus-visible:underline'
 </script>
 
 <template>
@@ -144,7 +152,18 @@ const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums
       <UiTextButton class="text-12" @click="back"
         >← {{ scope ? creditLabel(scope) : t('back_to_collection') }}</UiTextButton
       >
-      <DetailHeading :title="name" :cover="group ? albumCover(group, scope) : null">
+      <DetailHeading
+        :title="name"
+        :cover="group ? albumCover(group, scope) : null"
+        :sticky-action="loading ? null : heading.action.value"
+        @sticky="heading.run"
+      >
+        <template #sticky>
+          <template v-for="(artist, index) in credits" :key="artist"
+            >{{ creditSeparator(index, credits.length)
+            }}<RouterLink :to="artistRoute(artist)" :class="LINK">{{ artist }}</RouterLink></template
+          ><template v-if="year">{{ credits.length ? ' · ' : '' }}{{ year }}</template>
+        </template>
         <template #meta>
           <template v-if="loading"
             ><span class="inline-block h-10 w-140 animate-pulse rounded-4 bg-soft align-middle"
@@ -152,11 +171,7 @@ const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums
           <template v-else>
             <template v-for="(artist, index) in credits" :key="artist"
               >{{ creditSeparator(index, credits.length)
-              }}<RouterLink
-                :to="artistRoute(artist)"
-                class="underline-offset-3 hover:text-ink hover:underline focus-visible:text-ink focus-visible:underline"
-                >{{ artist }}</RouterLink
-              ></template
+              }}<RouterLink :to="artistRoute(artist)" :class="LINK">{{ artist }}</RouterLink></template
             >
             <span v-if="credits.length"> · </span><template v-if="year">{{ year }} · </template
             >{{ t('track_count', { count: tracks.length }) }}
