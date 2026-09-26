@@ -535,6 +535,12 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
       this page). A recorder can store each play as track + context + time +
       time listened, so "Recently played" can list what the listener started
       (album, artist, genre, playlist) and "Most played" can count tracks.
+- [ ] Contextual "Recently played" with the next service image (owner,
+      2026-09-26): one card per context the listener started, most recent
+      first and each once (album, artist, genre, playlist, favorites cards in
+      their own shapes); a track started from all tracks or a folder shows
+      as that track. "Most played" keeps counting tracks. Source: the
+      service's play history instead of stock's empty RECORD_SONG.
 
 ## Owner requests (round 12): lyrics timing
 
