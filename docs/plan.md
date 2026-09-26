@@ -349,6 +349,13 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
   SHA-256 after the write. `6391eee7bbc8b7ac` stays for rollback;
   `9b8d2afdaeb8f018` removed (active plus previous kept).
 
+- 2026-09-26: `f4770f9935dc4a2b` (commit `47f2611`, rounds 11–12: lyrics
+  following their stamps and opening at the current line, joint credits
+  linked in the listening panel, the hidden play-history shelf and order, and
+  the service's `most_played` query) published on PLAY after the full mock
+  suite; all 36 files matched by SHA-256 after the write. `4305f4bb03706477`
+  stays for rollback; `c4784ac08ccbe799` removed.
+
 - 2026-09-26: `4305f4bb03706477` (commit `d53589f`, round 10: palettes in
   the appearance dialog, SPDIF, reload resume, lazy lists, English default,
   smooth cover zoom) published on PLAY after the full mock suite; all 35 files
