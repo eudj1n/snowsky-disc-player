@@ -464,6 +464,19 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
   reconnecting after a reload works, the ~700-track list loads without lag,
   and the appearance palettes work. SPDIF was not reported yet.
 
+## Owner requests (round 11): play history
+
+- [x] Home shelf "Recently played": the albums of stock's play history
+      (RECORD_SONG through `recently_played`), each once in the order last
+      played, up to eight; rows whose file left the library are skipped; hidden
+      while the history is empty; re-read 8 s after the playing track changes
+      and cached for the saved copy.
+- [x] Tracks sort: library order, recently added, most played (the new
+      `most_played` card query, service `most_played` commit); "most played"
+      appears only when stock has recorded plays.
+- [ ] Find out when stock records a play: the owner's history was empty on
+      2026-09-25, and remote playback on the guest added no rows.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

@@ -1,14 +1,16 @@
 <script setup lang="ts">
 /**
- * Reference Home: intro, hero with the featured album, "Your albums",
- * recent tracks and the "Room for music" note. With a search query it
+ * Reference Home: intro, hero with the featured album, the albums played last
+ * (stock's play history; hidden while it is empty), "Your albums", recent
+ * tracks and the "Room for music" note. With a search query it
  * becomes an album list, as in the reference.
  */
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import CoverCard from '../components/collection/CoverCard.vue'
 import CoverCardSkeleton from '../components/collection/CoverCardSkeleton.vue'
 import CoverGrid from '../components/collection/CoverGrid.vue'
+import CoverRow from '../components/collection/CoverRow.vue'
 import SectionHeading from '../components/common/SectionHeading.vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
 import HomeHero from '../components/home/HomeHero.vue'
@@ -17,9 +19,11 @@ import ListeningNote from '../components/home/ListeningNote.vue'
 import TrackList from '../components/track/TrackList.vue'
 import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
 import { recentAlbums, albumScope } from '../domain/album'
+import { recentlyPlayedAlbums } from '../domain/history'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
 import { albumCover } from '../stores/enrichment'
+import { history, loadHistory } from '../stores/history'
 import { albums, featuredAlbum, tracks } from '../stores/library'
 import { selection } from '../stores/selection'
 import { openTrackMenu, ui } from '../stores/ui'
@@ -35,6 +39,8 @@ const recent = computed(() => recentAlbums(albums.value, 4))
 const featured = featuredAlbum
 const recentTracks = computed(() => [...tracks.value].sort((a, b) => (b.addedAt ?? 0) - (a.addedAt ?? 0)).slice(0, 3))
 const found = computed(() => filterBy(albums.value, ui.query, (album) => [album.title, ...album.artists]))
+const played = computed(() => recentlyPlayedAlbums(history.recent, albums.value, tracks.value, 8))
+onMounted(() => void loadHistory())
 const heroLines = computed<[string, string]>(() =>
   featured.value
     ? [
@@ -101,6 +107,24 @@ const heroLines = computed<[string, string]>(() =>
         </section>
       </div>
     </template>
+    <section v-if="played.length" :aria-label="t('recently_played')">
+      <SectionHeading :title="t('recently_played')" :subtitle="t('recently_played_subtitle')" />
+      <CoverRow :label="t('recently_played')">
+        <CoverCard
+          v-for="album in played"
+          :key="album.key"
+          role="listitem"
+          :title="album.title"
+          :to="albumCardRoute(album)"
+          :cover="albumCover(album, albumScope(album))"
+          :lines="albumLines(album)"
+          :open-label="t('open_item', { name: album.title })"
+          :play-label="t('play_item', { name: album.title })"
+          :play-disabled="selection.busy"
+          @play="playAlbumCard(album)"
+        />
+      </CoverRow>
+    </section>
     <SectionHeading :title="t('your_albums')" :subtitle="t('the_music_you_always_come_back_to')">
       <UiTextButton icon="arrow" @click="router.push('/albums')">{{ t('all_albums') }}</UiTextButton>
     </SectionHeading>

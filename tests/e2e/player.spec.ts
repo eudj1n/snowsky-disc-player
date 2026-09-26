@@ -694,6 +694,21 @@ test.describe('player controls on the mock', () => {
   })
 })
 
+test('shows the albums played last on Home and sorts tracks by plays', async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  const shelf = page.getByRole('region', { name: 'Recently played' })
+  await expect(shelf.getByRole('list').getByRole('heading')).toHaveText(['Blue Hours', 'Afterglow', 'Patterns'])
+  await page.goto('/#/tracks')
+  const sort = page.getByRole('group', { name: 'Sort tracks' })
+  await sort.getByRole('button', { name: 'Most played' }).click()
+  const rows = page.getByRole('table').getByRole('row')
+  await expect(rows.nth(1)).toContainText('Patterns')
+  await expect(rows.nth(2)).toContainText('Blue Hours')
+  await sort.getByRole('button', { name: 'Library order' }).click()
+  await expect(rows.nth(1)).toContainText('First Light')
+})
+
 test('offers the tones of the theme in effect and keeps the chosen palettes', async ({ page }) => {
   await english(page)
   const html = page.locator('html')

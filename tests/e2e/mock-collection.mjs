@@ -114,12 +114,14 @@ export function dataQuery(name, params, language) {
     const rows = PLAYLISTS.map((list) => ({ ...list, tracks: list.members.length }))
     return { status: 200, body: table(rows, ['ID', 'LIST_ID', 'LIST_NAME', 'M3U_PATH', 'tracks']) }
   }
-  if (name === 'recently_played') {
-    const rows = [TRACKS[9], TRACKS[2], TRACKS[21]].map((track, i) => ({
+  if (name === 'recently_played' || name === 'most_played') {
+    // Stock's play history: most recent first; most played sorts by count.
+    const rows = [TRACKS[9], TRACKS[2], TRACKS[21], TRACKS[10]].map((track, i) => ({
       ...track,
-      PLAY_COUNT: 3 - i,
+      PLAY_COUNT: [2, 1, 7, 1][i],
       LAST_PLAY_TIME: 1_790_100_000 - i * 60,
     }))
+    if (name === 'most_played') rows.sort((a, b) => b.PLAY_COUNT - a.PLAY_COUNT || b.LAST_PLAY_TIME - a.LAST_PLAY_TIME)
     return { status: 200, body: table(rows, [...COLUMNS, 'PLAY_COUNT', 'LAST_PLAY_TIME']) }
   }
   if (name === 'playlist_tracks') {
