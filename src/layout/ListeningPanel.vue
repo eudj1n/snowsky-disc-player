@@ -165,6 +165,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
       <LyricsView
         :lyrics="lyrics.lyrics"
         :position-ms="observations.positionMs"
+        :position-at="observations.positionAt"
+        :playing="isPlaying"
         :message="lyricsMessage"
         :source="lyricsSource"
         :seek-label="t('lyrics_seek')"

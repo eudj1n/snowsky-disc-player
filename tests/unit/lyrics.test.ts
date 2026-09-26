@@ -39,3 +39,15 @@ describe('lyrics', () => {
     )
   })
 })
+
+describe('position between ticks', () => {
+  it('adds the time since the last tick while playing, within a bound', async () => {
+    const { livePosition, MAX_EXTRAPOLATION_MS } = await import('../../src/domain/lyrics')
+    expect(livePosition(10_000, 1_000, 1_400, true)).toBe(10_400)
+    expect(livePosition(10_000, 1_000, 1_400, false)).toBe(10_000)
+    expect(livePosition(10_000, 1_000, 9_000, true)).toBe(10_000 + MAX_EXTRAPOLATION_MS)
+    expect(livePosition(10_000, 1_000, 900, true)).toBe(10_000)
+    expect(livePosition(null, 1_000, 1_400, true)).toBeNull()
+    expect(livePosition(10_000, null, 1_400, true)).toBe(10_000)
+  })
+})

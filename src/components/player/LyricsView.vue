@@ -4,12 +4,15 @@
  * and keep it in view (unless the listener scrolled in the last few seconds);
  * a line can be clicked to seek there. Plain lyrics read as text.
  */
-import { computed, nextTick, ref, watch, type DeepReadonly } from 'vue'
-import { activeLine, type Lyrics } from '../../domain/lyrics'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type DeepReadonly } from 'vue'
+import { activeLine, livePosition, type Lyrics } from '../../domain/lyrics'
 
 const props = defineProps<{
   lyrics: DeepReadonly<Lyrics> | null
   positionMs: number | null
+  /** When positionMs arrived (performance.now()); with `playing`, lines follow between ticks. */
+  positionAt?: number | null
+  playing?: boolean
   message: string | null
   source: string | null
   seekLabel: string
@@ -17,17 +20,42 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ seek: [ms: number] }>()
 const box = ref<HTMLElement | null>(null)
-const active = computed(() => (props.lyrics ? activeLine(props.lyrics as Lyrics, props.positionMs) : -1))
+/* A 100 ms clock while synced lyrics play, so lines change on their stamps, not on the next tick. */
+const now = ref(performance.now())
+let clock: ReturnType<typeof setInterval> | undefined
+watch(
+  () => Boolean(props.playing && props.lyrics?.synced),
+  (running) => {
+    clearInterval(clock)
+    clock = running ? setInterval(() => (now.value = performance.now()), 100) : undefined
+  },
+  { immediate: true },
+)
+onBeforeUnmount(() => clearInterval(clock))
+const position = computed(() =>
+  livePosition(props.positionMs, props.positionAt ?? null, now.value, props.playing ?? false),
+)
+const active = computed(() => (props.lyrics ? activeLine(props.lyrics as Lyrics, position.value) : -1))
 let touchedAt = 0
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 
-watch(active, async (index) => {
-  if (index < 0 || Date.now() - touchedAt < 4000) return
+async function reveal(index: number, smooth: boolean): Promise<void> {
+  if (index < 0) return
   await nextTick()
   box.value
     ?.querySelector<HTMLElement>(`[data-line="${String(index)}"]`)
-    ?.scrollIntoView({ block: 'center', behavior: reduced() ? 'auto' : 'smooth' })
+    ?.scrollIntoView({ block: 'center', behavior: smooth && !reduced() ? 'smooth' : 'auto' })
+}
+// Following playback: smoothly, unless the listener scrolled in the last few seconds.
+watch(active, (index) => {
+  if (Date.now() - touchedAt >= 4000) void reveal(index, true)
 })
+// Opening the tab (also paused) or new lyrics: straight to the current line.
+onMounted(() => void reveal(active.value, false))
+watch(
+  () => props.lyrics,
+  () => void reveal(active.value, false),
+)
 </script>
 
 <template>

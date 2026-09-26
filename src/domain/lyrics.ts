@@ -50,6 +50,25 @@ export function parseLyrics(text: string): Lyrics {
 }
 
 /** The index of the line sung at this position, or -1 before the first. */
+/** How far past the last position tick playback may be assumed to have run. */
+export const MAX_EXTRAPOLATION_MS = 1500
+
+/**
+ * The position now: stock reports it about once a second (a103), so while
+ * playing the time since the last tick is added, at most MAX_EXTRAPOLATION_MS,
+ * so a silent player does not run the lyrics ahead.
+ */
+export function livePosition(
+  positionMs: number | null,
+  tickAt: number | null,
+  now: number,
+  playing: boolean,
+): number | null {
+  if (positionMs === null) return null
+  if (!playing || tickAt === null) return positionMs
+  return positionMs + Math.min(Math.max(0, now - tickAt), MAX_EXTRAPOLATION_MS)
+}
+
 export function activeLine(lyrics: Lyrics, positionMs: number | null): number {
   if (!lyrics.synced || positionMs === null) return -1
   let found = -1

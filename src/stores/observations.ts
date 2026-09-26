@@ -10,6 +10,8 @@ import { onSessionOpened } from './connection'
 
 interface ObservationModel {
   positionMs: number | null
+  /** performance.now() when that position arrived, for extrapolation between ticks. */
+  positionAt: number | null
   /** Stock play mode 0..4 (list once, random, repeat one, repeat list, single once). */
   mode: number | null
   scanActive: boolean
@@ -21,6 +23,7 @@ interface ObservationModel {
 
 const state = reactive<ObservationModel>({
   positionMs: null,
+  positionAt: null,
   mode: null,
   scanActive: false,
   scanEvents: 0,
@@ -36,7 +39,10 @@ onSessionOpened((session) => {
   session.onRecord(({ tag, payload }) => {
     if (tag === 'a103') {
       const value = /^[0-9a-fA-F]{1,8}$/.test(payload) ? parseInt(payload, 16) : NaN
-      if (Number.isFinite(value)) state.positionMs = value
+      if (Number.isFinite(value)) {
+        state.positionMs = value
+        state.positionAt = performance.now()
+      }
     } else if (tag === 'a102') {
       const value = /^[0-9a-fA-F]{4}$/.test(payload) ? parseInt(payload, 16) : NaN
       if (value >= 0 && value <= 4) state.mode = value

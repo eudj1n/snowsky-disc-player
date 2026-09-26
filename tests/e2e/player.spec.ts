@@ -496,6 +496,13 @@ test.describe('player controls on the mock', () => {
     await expect(lyrics.getByRole('button', { name: 'Weightless, first line' })).toBeVisible({ timeout: 15_000 })
     await expect(lyrics.locator('[aria-current=true]')).toHaveCount(1, { timeout: 15_000 })
     await expect(lyrics).toContainText('From the .lrc file beside the track')
+    // Paused, away and back: the tab opens at the current line.
+    await page.getByTestId('toggle').click()
+    await expect(page.getByTestId('toggle')).toHaveAttribute('aria-label', 'Play', { timeout: 15_000 })
+    const panel = page.getByRole('complementary', { name: 'Player view' })
+    await panel.getByRole('button', { name: 'Now Playing', exact: true }).click()
+    await panel.getByRole('button', { name: 'Lyrics', exact: true }).click()
+    await expect(page.getByTestId('lyrics').locator('[aria-current=true]')).toBeInViewport()
     await page.keyboard.press('Escape')
     await disconnect(page)
   })

@@ -488,6 +488,16 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
       point read-only and keeps a bounded file on the card, or both. The shelf
       and the order are built and stay hidden until then.
 
+## Owner requests (round 12): lyrics timing
+
+- [x] Synced lyrics follow the `.lrc` stamps between stock's ~1 s position
+      ticks (the time since the last tick is added while playing, at most
+      1.5 s), on a 100 ms clock that runs only while synced lyrics play.
+- [x] Opening the lyrics tab (also paused, or after closing the panel) or
+      loading new lyrics scrolls straight to the current line. Without any
+      tick since the page connected (a track already paused) there is no
+      position to show: the protocol has no position read.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
