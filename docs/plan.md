@@ -482,8 +482,11 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
       playback added no rows) and so does the owner's player (empty on
       2026-09-25). The shelf and the order stay hidden until another source
       of history exists.
-- [ ] Our own play history: the page records the plays it observes, and/or the
-      service records them in the next image (owner's choice).
+- [ ] Our own play history (deferred by the owner, 2026-09-26): the page
+      recording the plays it observes (30 s or half the track, this browser
+      only), a service-side recorder in the next image that polls stock's resume
+      point read-only and keeps a bounded file on the card, or both. The shelf
+      and the order are built and stay hidden until then.
 
 ## Requests for the next service build
 
