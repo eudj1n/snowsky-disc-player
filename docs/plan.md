@@ -460,6 +460,9 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
       800 ms on a gentle curve to 1.035 (and the play button, row hearts and
       lyrics animate their translate/scale too).
 - Owner check on the player: removing a favorite that was just liked works.
+- Owner check on the player with release `4305f4bb03706477` (2026-09-26):
+  reconnecting after a reload works, the ~700-track list loads without lag,
+  and the appearance palettes work. SPDIF was not reported yet.
 
 ## Requests for the next service build
 
