@@ -522,6 +522,19 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
       `UPDATE RECORD_SONG SET PLAY_COUNT…`) has no `jal`/`j` to it and its
       only pointer lies in `.pdr` (procedure descriptors, not code or data),
       so no code path, gated by a setting or not, reaches it.
+      The context a play was started from is recoverable, not only the
+      track (guest, 2026-09-26, page-started playback): stock's a202
+      `playerflag` and the `SONG_TYPE` of every row of its queue table
+      `LIST_SONG_0` were album 3/3, one artist's album 7/2, a whole artist
+      7/2, a genre 8/2 and all tracks 1/1 (favorites and playlists were not
+      tried: none on the guest). `playerflag` needs a stock connection and
+      does not tell an artist from one artist's album; `SONG_TYPE` does not
+      tell an artist from a genre. The queue itself does: its set of files
+      equals an album's, an artist's, a genre's, a playlist's or the
+      favorites' tracks, whoever started it (player screen, FiiO Control or
+      this page). A recorder can store each play as track + context + time +
+      time listened, so "Recently played" can list what the listener started
+      (album, artist, genre, playlist) and "Most played" can count tracks.
 
 ## Owner requests (round 12): lyrics timing
 
