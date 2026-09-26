@@ -44,6 +44,8 @@ export interface CommandCatalog {
   catalog_sha256: string
   records: Record<string, CatalogRecord>
   http?: CatalogRoute[]
+  /** Built-in data mutations the card admits by name (next image), e.g. favorite_add. */
+  data?: { name: string; class: string; pacing_ms: number }[]
 }
 
 const PARENT = '..'

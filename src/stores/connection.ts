@@ -50,6 +50,9 @@ interface ConnectionModel {
   media: boolean
   /** The card lets the player's serial number stand in for the token. */
   snPairing: boolean
+  /** The service keeps a play history and can favorite any track (next image). */
+  history: boolean
+  favoriteAny: boolean
   connection: ConnectionState
   identity: PlayerIdentity | null
   /** currentVolume from the last 0501 read (0..120); null when unknown. */
@@ -61,6 +64,8 @@ const state = reactive<ConnectionModel>({
   gateway: null,
   media: false,
   snPairing: false,
+  history: false,
+  favoriteAny: false,
   connection: 'disconnected',
   identity: null,
   volume: null,
@@ -89,6 +94,8 @@ export async function probeGateway(): Promise<boolean> {
     state.gateway = true
     state.media = health.media === true
     state.snPairing = health.snPairing === true
+    state.history = health.history === true
+    state.favoriteAny = health.favoriteAny === true
   } catch {
     state.gateway = false
     state.notice = 'gateway_unreachable'

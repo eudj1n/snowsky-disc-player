@@ -15,6 +15,8 @@ export interface MediaInfo {
   sampleRate: number | null
   bitDepth: number | null
   channels: number | null
+  /** Average kbit/s of lossy files (MP3, AAC; service next image), else null. */
+  bitRate: number | null
   cover: 'embedded' | 'folder' | null
   lyrics: 'sidecar' | 'embedded' | null
   /** The year of the DATE tag (FLAC); stock keeps no year. */
@@ -59,6 +61,7 @@ export async function mediaInfo(http: GatewayHttp, path: string): Promise<MediaI
     sampleRate: count(value.sampleRate),
     bitDepth: count(value.bitDepth),
     channels: count(value.channels),
+    bitRate: count(value.bitRate),
     cover: value.cover === 'embedded' || value.cover === 'folder' ? value.cover : null,
     lyrics: value.lyrics === 'sidecar' || value.lyrics === 'embedded' ? value.lyrics : null,
     year: tagYear((value.tags as Record<string, unknown> | undefined)?.date),

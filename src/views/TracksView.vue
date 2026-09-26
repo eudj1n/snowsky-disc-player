@@ -9,7 +9,7 @@ import { sortTracks, TRACK_SORTS } from '../domain/history'
 import { filterBy } from '../domain/search'
 import type { SelectionTarget, TrackKey } from '../gateway/selection'
 import { t } from '../i18n'
-import { history, loadHistory } from '../stores/history'
+import { history, loadHistory, sourceOf } from '../stores/history'
 import { tracks, library } from '../stores/library'
 import { trackSort } from '../stores/preferences'
 import UiChips from '../ui/UiChips.vue'
@@ -17,6 +17,7 @@ import { openTrackMenu, ui } from '../stores/ui'
 import { countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { useGenreFilter } from './genreFilter'
+import { sourceNote } from './sourceTiles'
 import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
 import { playFrom } from './playAlbum'
 
@@ -25,13 +26,21 @@ const searching = computed(() => ui.query.trim() !== '')
 const source = computed(() => (genre.value ? genreTracks(tracks.value, genre.value) : tracks.value))
 const sorted = computed(() => sortTracks(source.value, trackSort.value, history.most))
 const items = computed(() => filterBy(sorted.value, ui.query, (track) => [track.title, track.artist, track.album]))
-/** "Most played" only when stock has recorded plays. */
+/** "Most played" only with recorded plays; "Recently played" with the service's history (next image). */
 const sorts = computed(() =>
-  TRACK_SORTS.filter((value) => value !== 'played' || history.most.length > 0).map((value) => ({
+  TRACK_SORTS.filter(
+    (value) => (value !== 'played' || history.most.length > 0) && (value !== 'recent' || history.plays.length > 0),
+  ).map((value) => ({
     value,
     text: t(`track_sort_${value}`),
   })),
 )
+/** The last play of each path, for the source note of the history order. */
+const lastPlay = computed(() => new Map(history.plays.map((play) => [play.path, play])))
+const sourceNoteOf = (track: { path: string | null }) => {
+  const play = track.path ? lastPlay.value.get(track.path) : undefined
+  return play ? sourceNote(sourceOf(play)) : null
+}
 onMounted(() => void loadHistory())
 /** With a genre filter, playback stays in that stock genre (reference). */
 const target = (track: TrackKey): SelectionTarget =>
@@ -71,6 +80,7 @@ const columns = computed(() => ({
       v-bind="trackRowProps"
       :tracks="items"
       :header="columns"
+      :album-note="trackSort === 'recent' ? sourceNoteOf : null"
       @menu="(index, anchor) => items[index] && openTrackMenu(items[index], target(items[index]), anchor)"
       @play="(index) => items[index] && playFrom(target(items[index]))"
       @favorite="onRowFavorite"

@@ -8,6 +8,7 @@
 import { computed } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 import type { Playback, TransportAction } from '../../domain/playback'
+import { formatRate, resampled, type OutputFacts } from '../../domain/device'
 import { isHiRes, qualityLabel, type AudioQuality } from '../../domain/quality'
 import { formatBadge } from '../../domain/track'
 import UiIcon from '../../ui/UiIcon.vue'
@@ -48,11 +49,20 @@ const props = defineProps<{
     unmute: string
     output: string
     format: string
+    /** "{rate}" stands for the output rate. */
+    resampled: string
     playingFrom: string
   }
   /** Where playback comes from, when known. */
   context?: { text: string; to: RouteLocationRaw | null } | null
+  /** The stream the DAC gets (next image); shown when its rate differs from the file's. */
+  output?: OutputFacts | null
 }>()
+const outputRate = computed(() =>
+  props.output && resampled(props.output, props.playback.track?.sampleRate) && props.output.rate
+    ? formatRate(props.output.rate)
+    : null,
+)
 /** The playing file's format and what stock reports about its decoding. */
 const quality = computed<AudioQuality>(() => ({
   format: formatBadge(props.playback.track?.path ?? null),
@@ -96,7 +106,10 @@ const emit = defineEmits<{
           >Hi-Res</span
         >
         <span :title="labels.format" class="rounded-5 border border-line px-7 py-4 text-11 tracking-[1px]"
-          >{{ quality.format }}<template v-if="qualityLabel(quality)"> · {{ qualityLabel(quality) }}</template></span
+          >{{ quality.format }}<template v-if="qualityLabel(quality)"> · {{ qualityLabel(quality) }}</template
+          ><span v-if="outputRate" data-testid="output-rate" :title="labels.resampled.replace('{rate}', outputRate)">
+            → {{ outputRate }}</span
+          ></span
         >
       </span>
     </p>

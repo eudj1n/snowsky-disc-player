@@ -12,6 +12,7 @@ import { extname, join, normalize } from 'node:path'
 import { WebSocketServer } from 'ws'
 import {
   FAVORITES,
+  HISTORY,
   PLAYLISTS,
   TRACKS,
   artistAlbum,
@@ -174,8 +175,46 @@ const server = createServer((request, response) => {
       readOnly: false,
       media: true,
       snPairing: true,
+      history: true,
+      favoriteAny: true,
     }
     return send(response, 200, JSON.stringify(health), 'application/json')
+  }
+  if (url.pathname === '/api/device') {
+    // The output runs at 48 kHz, whatever the file: 44.1 kHz tracks show the resampling.
+    const output = player.list[player.index]
+      ? {
+          active: true,
+          device: 'pcm3p',
+          state: player.state === 1 ? 'running' : 'paused',
+          format: 'S32_LE',
+          rate: 48000,
+          channels: 2,
+        }
+      : { active: false }
+    const facts = {
+      battery: { capacity: 72, voltageMv: 3950, temperatureC: 31.5, cycles: 12 },
+      card: { totalBytes: 64_000_000_000, freeBytes: 18_400_000_000 },
+      output,
+    }
+    return send(response, 200, JSON.stringify(facts), 'application/json')
+  }
+  if (url.pathname === '/api/history') {
+    return send(response, 200, JSON.stringify({ records: HISTORY, truncated: false }), 'application/json')
+  }
+  const favorite = /^\/api\/favorites\/(\d+)$/.exec(url.pathname)
+  if (favorite) {
+    if (request.method !== 'POST') return send(response, 405, 'Favorites take a bodyless POST\n')
+    if (!credential(request.headers['x-disc-token'])) return send(response, 403, 'Token required\n')
+    const id = request.headers['x-disc-request']
+    if (!id || player.seen.has(id)) return send(response, 409, 'Request ID already used\n')
+    player.seen.add(id)
+    const track = TRACKS.find((row) => row.ID === Number(favorite[1]))
+    if (!track) return send(response, 404, 'No such song in the library\n')
+    const already = FAVORITES.includes(track)
+    if (!already) FAVORITES.push(track)
+    const body = { songId: track.ID, favorite: true, loveId: 1000 + track.ID, already }
+    return send(response, 200, JSON.stringify(body), 'application/json')
   }
   if (url.pathname.startsWith('/api/data/')) {
     const query = url.pathname.slice(10)

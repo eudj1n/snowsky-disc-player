@@ -72,7 +72,7 @@ const quality = computed(() => {
     format: formatBadge(found.path),
     sampleRate: found.sampleRate,
     bitDepth: found.bitDepth,
-    bitRate: null,
+    bitRate: found.bitRate ?? null,
     dsd: false,
   }
   const label = qualityLabel(value)

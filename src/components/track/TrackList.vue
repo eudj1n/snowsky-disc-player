@@ -31,6 +31,8 @@ export interface FavoriteLabels {
   onlyCurrent: string
   /** Removing a favorite that is not playing. */
   removeAny: string
+  /** Adding a track that is not playing (service, next image). */
+  addAny?: string
 }
 
 const props = withDefaults(
@@ -60,6 +62,8 @@ const props = withDefaults(
     discLabel?: (disc: number) => string
     /** Route for a row's album, or null to keep it plain. */
     albumTo?: (track: Track) => RouteLocationRaw | null
+    /** A note that replaces a row's album (the source it last played from), or null. */
+    albumNote?: ((track: Track) => { text: string; to: RouteLocationRaw | null } | null) | null
     /** Favorite state per row (null: unknown); the heart column needs labels too. */
     favoriteOf?: (track: Track) => boolean | null
     favoriteLabels?: FavoriteLabels | null
@@ -67,6 +71,8 @@ const props = withDefaults(
     favoriteDisabled?: boolean
     /** Favorites that are not playing can be removed (catalog admits love/song). */
     favoriteRemovable?: boolean
+    /** Rows that are not favorites can be added (the service and the catalog admit it). */
+    favoriteAddable?: boolean
   }>(),
   {
     lead: 'cover',
@@ -84,10 +90,12 @@ const props = withDefaults(
     discOf: null,
     discLabel: (disc: number) => String(disc),
     albumTo: () => null,
+    albumNote: null,
     favoriteOf: () => null,
     favoriteLabels: null,
     favoriteDisabled: true,
     favoriteRemovable: false,
+    favoriteAddable: false,
   },
 )
 const emit = defineEmits<{
@@ -95,6 +103,7 @@ const emit = defineEmits<{
   menu: [index: number, anchor: HTMLElement]
   favorite: []
   unfavorite: [track: Track]
+  love: [track: Track]
 }>()
 const LINK = 'hover:text-ink hover:underline hover:underline-offset-3 focus-visible:text-ink focus-visible:underline'
 /** Shown on row hover or keyboard focus inside the row. */
@@ -242,6 +251,18 @@ function contextMenu(event: MouseEvent, index: number): void {
                 favoriteLabels.favorite
               }}</span>
             </span>
+            <button
+              v-else-if="favoriteAddable && typeof (track as Partial<LibraryTrack>).id === 'number'"
+              type="button"
+              aria-pressed="false"
+              :aria-label="`${favoriteLabels.addAny ?? favoriteLabels.add}: ${track.title}`"
+              :title="favoriteLabels.addAny ?? favoriteLabels.add"
+              class="text-muted hover:scale-110 hover:text-accent focus-visible:text-accent [&>svg]:transition-[fill,stroke] hover:[&>svg]:stroke-[2.2]"
+              :class="[HEART, `${REVEAL} focus-visible:opacity-100 [@media(hover:none)]:opacity-40`]"
+              @click="emit('love', track)"
+            >
+              <UiIcon name="heart" class="size-12 phone:size-11" />
+            </button>
             <span
               v-else
               aria-hidden="true"
@@ -321,8 +342,19 @@ function contextMenu(event: MouseEvent, index: number): void {
           }}</small>
         </div>
         <span v-if="album" role="cell" class="min-w-0 truncate text-11 text-muted phone:hidden">
+          <template v-if="albumNote && albumNote(track)">
+            <RouterLink
+              v-if="albumNote(track)?.to"
+              :to="albumNote(track)?.to ?? ''"
+              class="block w-fit max-w-full truncate"
+              :class="LINK"
+              data-testid="source-note"
+              >{{ albumNote(track)?.text }}</RouterLink
+            >
+            <template v-else>{{ albumNote(track)?.text }}</template>
+          </template>
           <RouterLink
-            v-if="track.album && albumTo(track)"
+            v-else-if="track.album && albumTo(track)"
             :to="albumTo(track) ?? ''"
             class="block w-fit max-w-full truncate"
             :class="LINK"

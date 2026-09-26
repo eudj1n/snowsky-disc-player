@@ -142,5 +142,15 @@
   "denied": {
     "records": {},
     "http": []
-  }
+  },
+  "data": [
+    {
+      "name": "favorite_add",
+      "kind": "mutation",
+      "class": "favorite",
+      "pacing_ms": 500,
+      "notes": "Adds one library track to the built-in favorites (service, next image).",
+      "evidence": "mock"
+    }
+  ]
 }

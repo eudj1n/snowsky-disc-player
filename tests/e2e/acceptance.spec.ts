@@ -322,6 +322,39 @@ test('names the playing track as the library does when stock cuts long names, pa
   await disconnect(page)
 })
 
+test('keeps a play history with its source, favorites any row and reads the device on stock', async ({ page }) => {
+  await english(page)
+  await connectAndPair(page)
+  // Device facts from the service: the guest's gauge (its battery overlay) and the card.
+  await openConnection(page)
+  const facts = page.getByRole('dialog').getByTestId('player-facts')
+  await expect(facts).toContainText(/Battery\d+%/)
+  await expect(facts).toContainText(/Card.+ free of /)
+  await page.keyboard.press('Escape')
+  // An album played past its track's threshold is a "Recently played" tile (an album
+  // the other tests do not play, so none of them finds its track current and paused).
+  const album = 'Quiet Meridian (The Complete Anniversary Recordings)'
+  await page.goto(`/#/album/${encodeURIComponent(album)}`)
+  await verified(page, () => page.getByRole('button', { name: 'Play album' }).click())
+  await page.waitForTimeout(20_000)
+  await page.getByTestId('toggle').click()
+  await page.goto('/#/')
+  await page.reload()
+  const shelf = page.getByRole('region', { name: 'Recently played' })
+  await expect(shelf.getByRole('listitem').first()).toContainText(album, { timeout: 30_000 })
+  // A track that is not playing becomes a favorite from its row, then leaves again.
+  await page.goto('/#/album/Harbor/Kestrel')
+  const row = page.getByRole('row').filter({ hasText: 'Salt' })
+  await row.hover()
+  await row.getByRole('button', { name: 'Add to favorites: Salt' }).click()
+  const remove = row.getByRole('button', { name: 'Remove from favorites: Salt' })
+  await expect(remove).toBeAttached({ timeout: 30_000 })
+  await remove.click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Remove' }).click()
+  await expect(row.getByRole('button', { name: 'Add to favorites: Salt' })).toBeAttached({ timeout: 30_000 })
+  await disconnect(page)
+})
+
 test('shows card covers, file durations and both kinds of lyrics on stock', async ({ page }) => {
   const errors = watchErrors(page)
   await english(page)

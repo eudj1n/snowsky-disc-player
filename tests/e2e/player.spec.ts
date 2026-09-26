@@ -517,12 +517,14 @@ test.describe('player controls on the mock', () => {
     await disconnect(page)
   })
 
-  test('shows the collection size, battery and audio quality', async ({ page }) => {
+  test('shows the collection size, battery, card space and audio quality', async ({ page }) => {
     await english(page)
     await connectAndPair(page)
     await openConnection(page)
     const facts = page.getByRole('dialog').getByTestId('player-facts')
-    await expect(facts).toContainText('Battery87%')
+    // The live gauge (72 %), not what stock last stored (87 %), and the card's space.
+    await expect(facts).toContainText('Battery72%')
+    await expect(facts).toContainText('Card18 GB free of 64 GB')
     await expect(facts).toContainText(/Albums\d+/)
     await expect(facts).toContainText(/Tracks\d+/)
     await page.keyboard.press('Escape')
@@ -532,7 +534,25 @@ test.describe('player controls on the mock', () => {
     await expect(page.getByTestId('track-title')).toHaveText('Weightless', { timeout: 15_000 })
     const panel = await openPanel(page, 'Open Now Playing panel')
     await expect(panel.getByTestId('quality')).toHaveText(/Hi-Res\s*FLAC · 24\/96/)
+    // The DAC gets 48 kHz here: the 96 kHz file is resampled on its way out.
+    await expect(panel.getByTestId('output-rate')).toHaveText('→ 48 kHz', { timeout: 15_000 })
     await page.keyboard.press('Escape')
+    await disconnect(page)
+  })
+
+  test('favorites a track that is not playing from its row', async ({ page }, info) => {
+    // The mock player is shared by both projects: each favorites its own track.
+    const title = info.project.name === 'desktop' ? 'Side by Side' : 'In Between'
+    await english(page)
+    await connectAndPair(page)
+    await page.goto('/#/album/Patterns/Parallel%20Lines')
+    const row = page.getByRole('row').filter({ hasText: title })
+    await row.hover()
+    await row.getByRole('button', { name: `Add to favorites: ${title}` }).click()
+    // Now a favorite; one that is not playing can be removed from its row.
+    await expect(row.getByRole('button', { name: `Remove from favorites: ${title}` })).toBeAttached({ timeout: 15_000 })
+    await page.goto('/#/favorites')
+    await expect(page.getByRole('row').filter({ hasText: title })).toHaveCount(1)
     await disconnect(page)
   })
 
@@ -801,17 +821,29 @@ test.describe('player controls on the mock', () => {
   })
 })
 
-test('shows the albums played last on Home and sorts tracks by plays', async ({ page }) => {
+test('shows what was played last as uniform tiles and a track history with its sources', async ({ page }, info) => {
   test.skip(external, 'Needs the mock collection')
   await english(page)
   const shelf = page.getByRole('region', { name: 'Recently played' })
-  await expect(shelf.getByRole('list').getByRole('heading')).toHaveText(['Blue Hours', 'Afterglow', 'Patterns'])
+  // Newest first, each source once; the all-tracks play stays off the shelf.
+  const tiles = shelf.getByRole('listitem')
+  await expect(tiles.locator('strong')).toHaveText(['Inner Space', 'Evening', 'Northline', 'Jazz'])
+  await expect(tiles.locator('small')).toHaveText(['Album · Forma', 'Playlist · 12 tracks', 'Artist', 'Genre'])
+  if (info.project.name === 'desktop') {
+    await expect(shelf.getByRole('button', { name: 'Play Jazz' })).toHaveCount(1)
+  }
+  await shelf.getByRole('link', { name: 'Open Evening' }).click()
+  await expect(page).toHaveURL(/#\/playlist\/\d+$/)
   await page.goto('/#/tracks')
   const sort = page.getByRole('group', { name: 'Sort tracks' })
-  await sort.getByRole('button', { name: 'Most played' }).click()
+  await sort.getByRole('button', { name: 'Recently played' }).click()
   const rows = page.getByRole('table').getByRole('row')
-  await expect(rows.nth(1)).toContainText('Patterns')
-  await expect(rows.nth(2)).toContainText('Blue Hours')
+  await expect(rows.nth(1)).toContainText('Weightless')
+  if (info.project.name === 'desktop') {
+    // Each played row names where it played from (phones drop the album column).
+    await expect(rows.filter({ hasText: 'Almost Sunday' }).getByTestId('source-note')).toHaveText('Genre · Jazz')
+    await expect(rows.filter({ hasText: 'First Light' }).getByTestId('source-note')).toHaveText('Playlist · Evening')
+  }
   await sort.getByRole('button', { name: 'Library order' }).click()
   await expect(rows.nth(1)).toContainText('First Light')
 })

@@ -32,7 +32,7 @@ interface EnrichmentModel {
   /** Track path → the year of its DATE tag. */
   years: Record<string, number>
   /** Track path → sample rate and bit depth read from the file. */
-  qualities: Record<string, { sampleRate: number; bitDepth: number | null }>
+  qualities: Record<string, { sampleRate: number; bitDepth: number | null; bitRate?: number | null }>
 }
 
 const state = reactive<EnrichmentModel>({
@@ -180,7 +180,8 @@ function wantInfo(path: string): void {
       else noDuration[path] = Date.now()
       if (info?.year) foundYears[path] = info.year
       else noYear[path] = Date.now()
-      if (info?.sampleRate) foundQualities[path] = { sampleRate: info.sampleRate, bitDepth: info.bitDepth }
+      if (info?.sampleRate)
+        foundQualities[path] = { sampleRate: info.sampleRate, bitDepth: info.bitDepth, bitRate: info.bitRate }
       else noQuality[path] = Date.now()
     } catch {
       // Asked again on a later load.
@@ -211,7 +212,7 @@ export function wantDurations(tracks: readonly Pick<Track, 'path' | 'durationMs'
 export function albumQuality(
   album: { paths?: Readonly<Record<string, string>> },
   artist: string | null = null,
-): { path: string; sampleRate: number; bitDepth: number | null } | null {
+): { path: string; sampleRate: number; bitDepth: number | null; bitRate?: number | null } | null {
   const path = album.paths?.[artist ?? ''] ?? album.paths?.['']
   if (!path) return null
   const quality = state.qualities[path]

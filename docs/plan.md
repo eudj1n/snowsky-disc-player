@@ -624,24 +624,41 @@ still disabled).
 
 ## Next release with the next service image (owner, 2026-09-26)
 
-Page work that follows the service stages (see the service plan's work order):
+Page work that follows the service stages (see the service plan's work order).
+All of it degrades to the earlier behavior on images without the new routes
+(health flags `history` and `favoriteAny`, 404 for `/api/device`).
 
-- [ ] "Recently played" as one shelf of uniform tiles (square picture, name,
-      a type caption such as "Album · Artist", "Artist", "Genre",
-      "Playlist · 32"): albums, one artist's albums, artists, genres,
-      playlists and favorites the listener started, most recent first, each
-      once; 6–8 tiles on desktop, 4 on phones. Loose tracks stay off it.
-- [ ] Track history: a "Recently played" order in Tracks, each row with the
-      context it played from.
-- [ ] Favorite any track from its row (the service's favorites mutation).
-- [ ] Live battery, card space and the output format in the player facts and
-      Now Playing.
-- [ ] MP3 and AAC details (years, discs, covers, lyrics) through the media
-      route, checked with such files on the guest.
+- [x] "Recently played" as one shelf of uniform tiles (`SourceTile`: square
+      picture, name, a caption such as "Album · Artist", "Artist", "Genre",
+      "Playlist · 12 tracks"): the sources the listener started, newest first,
+      each once; 8 tiles on desktop, 6 at compact widths, 4 on phones; plays
+      from all tracks stay off it. Each play's queue is named by its path
+      hash (albums and one artist's part of a title, literal artists, genres,
+      the favorites, all tracks; playlists of a matching size are read to
+      compare), else by the album, genre or artist all its rows shared.
+- [x] Track history: a "Recently played" order in Tracks (with the service's
+      history), each played row naming its source in the album column
+      ("Genre · Jazz", "Playlist · Evening", the album). "Most played" counts
+      the service's plays where it keeps them.
+- [x] Favorite any track from its row (the service's favorites mutation, when
+      health says `favoriteAny` and the card catalog admits `favorite_add`);
+      the heart shows faintly on touch screens, where nothing hovers.
+- [x] Live battery (the gauge, else stock's stored charge) and card space in
+      the player facts; Now Playing adds "→ 48 kHz" to the quality badge when
+      the DAC gets another rate than the file has.
+- [x] MP3 and AAC details through the media route: years, discs, covers and
+      lyrics as for FLAC; the album quality label uses the media bitrate
+      ("MP3 320 kbps").
 - [ ] Service playlists (card-only, owner liked the idea): a queue of one's
       own kept as a managed stock playlist that the page fills and starts;
-      additions reach playback when it is started again.
+      additions reach playback when it is started again. Design to be agreed.
 - Research first: live queue edits (see the service plan).
+
+Checks (2026-09-27): `npm run check` (148 unit tests), the mock suite (93
+passed, both projects) and the emulator acceptance through the next-image
+MIPS service (19 desktop tests, among them a new one on stock: a device facts
+dialog with the guest's gauge and card, an album played for 20 s appearing as
+the first tile, and a non-playing row favorited and removed again).
 
 ## Requests for the next service build
 

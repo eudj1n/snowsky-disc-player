@@ -15,6 +15,7 @@ import SectionHeading from '../components/common/SectionHeading.vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
 import HomeHero from '../components/home/HomeHero.vue'
 import HomeIntro from '../components/home/HomeIntro.vue'
+import SourceTile from '../components/home/SourceTile.vue'
 import ListeningNote from '../components/home/ListeningNote.vue'
 import TrackList from '../components/track/TrackList.vue'
 import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
@@ -24,13 +25,14 @@ import { recentlyPlayedAlbums } from '../domain/history'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
 import { albumCover } from '../stores/enrichment'
-import { history, loadHistory } from '../stores/history'
+import { history, loadHistory, recentSourcesShown } from '../stores/history'
 import { albums, featuredAlbum, tracks } from '../stores/library'
 import { selection } from '../stores/selection'
 import { openTrackMenu, ui } from '../stores/ui'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { albumCardRoute, albumLines, artistRoute, countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
+import { sourceTile } from './sourceTiles'
 import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
 import { playAlbumAction, playFrom, playAlbumCard } from './playAlbum'
 
@@ -41,6 +43,13 @@ const featured = featuredAlbum
 const recentTracks = computed(() => [...tracks.value].sort((a, b) => (b.addedAt ?? 0) - (a.addedAt ?? 0)).slice(0, 3))
 const found = computed(() => filterBy(albums.value, ui.query, (album) => [album.title, ...album.artists]))
 const played = computed(() => recentlyPlayedAlbums(history.recent, albums.value, tracks.value, 8))
+/** The service's history (next image): the sources the listener started. */
+const tiles = computed(() =>
+  recentSourcesShown.value.flatMap(({ source, path }) => {
+    const tile = sourceTile(source, path)
+    return tile ? [tile] : []
+  }),
+)
 onMounted(() => void loadHistory())
 const heroLines = computed<[string, string]>(() =>
   featured.value
@@ -112,7 +121,29 @@ const heroLines = computed<[string, string]>(() =>
         </section>
       </div>
     </template>
-    <section v-if="played.length" :aria-label="t('recently_played')">
+    <!-- The service's history: what the listener started, one tile shape for every kind. -->
+    <section v-if="tiles.length" :aria-label="t('recently_played')">
+      <SectionHeading :title="t('recently_played')" :subtitle="t('recently_played_subtitle')" />
+      <div
+        role="list"
+        :aria-label="t('recently_played')"
+        class="grid grid-cols-4 gap-10 compact:grid-cols-3 rail:grid-cols-2 phone:gap-8 phone:[&>*:nth-child(n+5)]:hidden compact:[&>*:nth-child(n+7)]:hidden"
+      >
+        <SourceTile
+          v-for="tile in tiles"
+          :key="tile.key"
+          :title="tile.title"
+          :caption="tile.caption"
+          :to="tile.to"
+          :cover="tile.cover"
+          :open-label="t('open_item', { name: tile.title })"
+          :play-label="tile.play ? t('play_item', { name: tile.title }) : null"
+          :play-disabled="selection.busy"
+          @play="tile.play && playFrom(tile.play)"
+        />
+      </div>
+    </section>
+    <section v-else-if="played.length" :aria-label="t('recently_played')">
       <SectionHeading :title="t('recently_played')" :subtitle="t('recently_played_subtitle')" />
       <CoverRow :label="t('recently_played')">
         <CoverCard

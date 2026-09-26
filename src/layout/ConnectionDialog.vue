@@ -7,8 +7,10 @@
 import { computed, watch } from 'vue'
 import ConnectionStatus from '../components/connection/ConnectionStatus.vue'
 import PairingForm from '../components/connection/PairingForm.vue'
-import { t } from '../i18n'
+import { formatBytes } from '../domain/device'
+import { locale, t } from '../i18n'
 import { connect, connection, disconnect } from '../stores/connection'
+import { device, refreshDevice } from '../stores/device'
 import { albums, library, refreshPlayerFacts } from '../stores/library'
 import { playerOptions } from '../stores/playerOptions'
 import { forgetToken, pairing, saveToken } from '../stores/pairing'
@@ -17,20 +19,37 @@ import UiDialog from '../ui/UiDialog.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 
-/** Collection size and battery for the player card (owner, round 13). */
-const facts = computed(() =>
-  [
+/**
+ * Collection size, battery and card space for the player card (owner, rounds
+ * 13 and 14). The battery is the live gauge where the service reads it, else
+ * the charge stock last stored.
+ */
+const battery = computed(() => device.facts?.battery?.capacity ?? playerOptions.battery)
+const facts = computed(() => {
+  const card = device.facts?.card
+  return [
     library.status === 'ready' ? { key: 'albums', label: t('stat_albums'), value: String(albums.value.length) } : null,
     library.summary ? { key: 'tracks', label: t('stat_tracks'), value: String(library.summary.tracks) } : null,
-    playerOptions.battery !== null
-      ? { key: 'battery', label: t('stat_battery'), value: `${playerOptions.battery}%` }
+    battery.value !== null ? { key: 'battery', label: t('stat_battery'), value: `${String(battery.value)}%` } : null,
+    card
+      ? {
+          key: 'card',
+          label: t('stat_card'),
+          value: t('card_free', {
+            free: formatBytes(card.freeBytes, locale.value),
+            total: formatBytes(card.totalBytes, locale.value),
+          }),
+        }
       : null,
-  ].filter((fact) => fact !== null),
-)
+  ].filter((fact) => fact !== null)
+})
 watch(
   () => ui.dialog === 'connection',
   (open) => {
-    if (open && connection.gateway !== false) void refreshPlayerFacts()
+    if (open && connection.gateway !== false) {
+      void refreshPlayerFacts()
+      void refreshDevice()
+    }
   },
 )
 

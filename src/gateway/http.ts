@@ -11,6 +11,10 @@ export interface Health {
   media?: boolean
   /** The card enables pairing with the player's serial number (combined-006). */
   snPairing?: boolean
+  /** The service keeps a play history on the card (next image). */
+  history?: boolean
+  /** The service can favorite any library track (next image). */
+  favoriteAny?: boolean
 }
 
 export interface DataResult {
@@ -129,6 +133,44 @@ export class GatewayHttp {
         cache: 'no-store',
       })
       return { requestId: id, response: await buffered(response) }
+    })
+  }
+
+  /** Live device facts (next image); null where the gateway has no such route. */
+  device(): Promise<unknown> {
+    return this.optional('/api/device')
+  }
+
+  /** The service's play history (next image); null where it keeps none. */
+  history(): Promise<unknown> {
+    return this.optional('/api/history')
+  }
+
+  /** Favorites any library track by its SONG.ID (next image): a mutation, never retried. */
+  async favorite(songId: number, token: string): Promise<{ requestId: string; status: number; body: unknown }> {
+    if (!Number.isInteger(songId) || songId < 1) throw new RangeError(`Invalid song id: ${String(songId)}`)
+    const id = newRequestId()
+    const response = await this.fetchImpl(`/api/favorites/${String(songId)}`, {
+      method: 'POST',
+      headers: { 'X-Disc-Token': token, 'X-Disc-Request': id },
+      cache: 'no-store',
+    })
+    const text = await response.text()
+    let body: unknown = text
+    try {
+      body = JSON.parse(text)
+    } catch {
+      // Error bodies are plain text.
+    }
+    return { requestId: id, status: response.status, body }
+  }
+
+  private optional(path: string): Promise<unknown> {
+    return this.retryBusy(async () => {
+      const response = await this.fetchImpl(path, { cache: 'no-store' })
+      if (response.status === 404) return null
+      if (!response.ok) throw new HttpError(response.status, (await response.text()).trim())
+      return (await response.json()) as unknown
     })
   }
 

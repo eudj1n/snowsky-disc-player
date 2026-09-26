@@ -319,3 +319,45 @@ export function indexUpload(path, size) {
     SIZE: size,
   })
 }
+
+/** The service's order-independent hash of a set of card paths (sum of FNV-1a 64). */
+export function pathsHash(paths) {
+  let sum = 0n
+  for (const path of paths) {
+    let h = 1469598103934665603n
+    for (const byte of Buffer.from(path)) h = ((h ^ BigInt(byte)) * 1099511628211n) & 0xffffffffffffffffn
+    sum = (sum + h) & 0xffffffffffffffffn
+  }
+  return sum.toString(16).padStart(16, '0')
+}
+
+/** Plays the service observed (oldest first), each with the queue it came from. */
+function queueContext(type, rows) {
+  const shared = (key) => (rows.every((row) => row[key] === rows[0]?.[key]) ? (rows[0]?.[key] ?? null) : null)
+  const folders = rows.map((row) => row.PATH.slice(0, row.PATH.lastIndexOf('/')))
+  return {
+    type,
+    count: rows.length,
+    hash: pathsHash(rows.map((row) => row.PATH)),
+    album: shared('ALBUM'),
+    artist: shared('ARTIST'),
+    genre: shared('GENRE'),
+    folder: folders.every((folder) => folder === folders[0]) ? (folders[0] ?? null) : null,
+  }
+}
+const byAlbum = (album, artist) => TRACKS.filter((t) => t.ALBUM === album && (!artist || t.ARTIST === artist))
+export const HISTORY = [
+  // Oldest first: an album, a genre, an artist, all tracks, a playlist, and the album again.
+  [byAlbum('Inner Space', 'Forma'), 3, 0],
+  [TRACKS.filter((t) => t.GENRE === 'Jazz'), 2, 1],
+  [TRACKS.filter((t) => t.ARTIST === 'Northline'), 2, 0],
+  [TRACKS, 1, 7],
+  [PLAYLISTS[0].members, 5, 0],
+  [byAlbum('Inner Space', 'Forma'), 3, 1],
+].map(([rows, type, index], n) => ({
+  v: 1,
+  t: 1790500000 + n * 600,
+  path: rows[index % rows.length].PATH,
+  s: 180,
+  ctx: queueContext(type, rows),
+}))

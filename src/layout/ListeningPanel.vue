@@ -8,6 +8,7 @@
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import NowPlayingDetails from '../components/player/NowPlayingDetails.vue'
+import { device } from '../stores/device'
 import LyricsView from '../components/player/LyricsView.vue'
 import ArtistCredit from '../components/track/ArtistCredit.vue'
 import QueueRows from '../components/player/QueueRows.vue'
@@ -49,6 +50,7 @@ const labels = computed(() => ({
   unmute: t('unmute'),
   output: t('audio_plays_on_your_disc'),
   format: t('format_from_filename'),
+  resampled: t('output_resampled'),
   playingFrom: t('playing_from'),
 }))
 const lyricsMessage = computed(() => {
@@ -131,6 +133,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
     >
       <NowPlayingDetails
         :playback="playback.current"
+        :output="device.facts?.output ?? null"
         :cover="playback.current.track ? coverFor(playback.current.track) : null"
         :status="status"
         :position-ms="observations.positionMs"

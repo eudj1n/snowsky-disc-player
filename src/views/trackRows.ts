@@ -5,9 +5,9 @@
  */
 import { computed } from 'vue'
 import { t } from '../i18n'
-import type { Track } from '../domain/track'
-import { commandCatalog } from '../stores/connection'
-import { controlsReady, toggleFavorite, transport } from '../stores/controls'
+import type { LibraryTrack, Track } from '../domain/track'
+import { commandCatalog, connection } from '../stores/connection'
+import { controlsReady, favoriteTrack, toggleFavorite, transport } from '../stores/controls'
 import { coverFor } from '../stores/enrichment'
 import { isFavorite } from '../stores/favorites'
 import { operation } from '../stores/operation'
@@ -38,7 +38,11 @@ export const trackRowProps = computed(() => ({
     remove: t('unfavorite_the_current_track'),
     onlyCurrent: t('favorite_only_current'),
     removeAny: t('remove_from_favorites'),
+    addAny: t('add_to_favorites'),
   },
+  // Any library row can be favorited where the service and the card admit it (next image).
+  favoriteAddable: favoritesAddable.value && controlsReady.value && !operation.busy,
+  onLove: onRowLove,
   favoriteRemovable: favoritesRemovable.value && controlsReady.value && !operation.busy,
   favoriteDisabled: !controlsReady.value || operation.busy || typeof playback.current.favorite !== 'boolean',
 }))
@@ -52,6 +56,17 @@ const favoritesRemovable = computed(() =>
       .includes('love/song'),
   ),
 )
+
+/** The service favorites any track and the card's catalog admits it (favorite_add). */
+const favoritesAddable = computed(
+  () => connection.favoriteAny && Boolean(commandCatalog()?.data?.some((entry) => entry.name === 'favorite_add')),
+)
+
+/** A row's heart when the service can favorite any library track. */
+export const onRowLove = (track: Track): void => {
+  const id = (track as Partial<LibraryTrack>).id
+  if (typeof id === 'number') void favoriteTrack({ id, path: track.path })
+}
 
 /** A favorite that is not playing: confirmed first, as adding it back needs it playing. */
 export const onRowUnfavorite = (track: Track): void => {

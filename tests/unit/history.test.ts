@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { groupReleases } from '../../src/domain/album'
-import { playRecords, recentlyPlayedAlbums, sortTracks } from '../../src/domain/history'
+import {
+  pathsHash,
+  playRecords,
+  playSource,
+  recentlyPlayedAlbums,
+  recentSources,
+  servicePlayRecords,
+  servicePlays,
+  sortTracks,
+  sourceIndex,
+  type PlayContext,
+} from '../../src/domain/history'
 import type { LibraryTrack } from '../../src/domain/track'
 
 const track = (id: number, album: string, artist: string, addedAt = id): LibraryTrack => ({
@@ -44,5 +55,97 @@ describe('play history', () => {
     expect(sortTracks(tracks, 'added').map((t) => t.id)).toEqual([3, 4, 2, 1])
     // Most played: counts, then the latest play; unplayed tracks keep library order.
     expect(sortTracks(tracks, 'played', records).map((t) => t.id)).toEqual([3, 2, 1, 4])
+  })
+})
+
+describe('the service play history (next image)', () => {
+  const genreTrack = (id: number, genre: string) => ({ ...track(id, 'G', `A${id}`), genre })
+  const library = [...tracks, genreTrack(5, 'Jazz'), genreTrack(6, 'Jazz')]
+  const albums = groupReleases(library)
+  const context = (paths: (string | null)[], type: number, extra = {}): PlayContext => ({
+    type,
+    count: paths.length,
+    hash: pathsHash(paths.flatMap((path) => (path ? [path] : []))),
+    album: null,
+    artist: null,
+    genre: null,
+    folder: null,
+    ...extra,
+  })
+  const paths = (list: LibraryTrack[]) => list.map((item) => item.path)
+
+  it('hashes a set of paths like the service, whatever their order', () => {
+    expect(pathsHash(['/x', '/y'])).toBe(pathsHash(['/y', '/x']))
+    expect(pathsHash([])).toBe('0000000000000000')
+    expect(pathsHash(['/tmp/sdcard/a.flac'])).toMatch(/^[0-9a-f]{16}$/)
+  })
+
+  it('reads records, ignores damaged ones and counts plays per track in list order', () => {
+    const plays = servicePlays({
+      records: [
+        { v: 1, t: 10, path: tracks[0]?.path, s: 40, ctx: { type: 3, count: 2, hash: 'abc', album: 'A' } },
+        { v: 1, t: 20, path: '', s: 40, ctx: {} },
+        { v: 1, t: 30, path: tracks[0]?.path, s: 35, ctx: { type: 1, count: 6, hash: '0123456789abcdef' } },
+        'not a record',
+      ],
+    })
+    expect(plays.map((play) => [play.at, play.context.hash])).toEqual([
+      [10, null],
+      [30, '0123456789abcdef'],
+    ])
+    expect(servicePlayRecords(plays)).toEqual([{ path: tracks[0]?.path, playCount: 2, lastPlayedAt: 2 }])
+  })
+
+  it('names the source of a play by its queue, then by the fields its rows shared', () => {
+    const loved = [tracks[0], tracks[3]] as LibraryTrack[]
+    const index = sourceIndex({ albums, tracks: library, favorites: loved })
+    const source = (ctx: PlayContext) => playSource(ctx, index, albums)
+    expect(source(context(paths(library.filter((t) => t.album === 'A')), 3))).toMatchObject({
+      kind: 'album',
+      scope: 'X',
+    })
+    expect(source(context(paths(library.filter((t) => t.genre === 'Jazz')), 2))).toEqual({
+      kind: 'genre',
+      genre: 'Jazz',
+    })
+    expect(source(context(paths(loved), 6))).toMatchObject({ kind: 'favorites' })
+    expect(source(context(paths(library), 1))).toEqual({ kind: 'library' })
+    // The library changed since: the shared album or genre still names it.
+    expect(source({ ...context(['/gone.flac'], 3), album: 'B', artist: 'Y' })).toMatchObject({
+      kind: 'album',
+      scope: 'Y',
+    })
+    expect(source({ ...context(['/gone.flac'], 2), genre: 'Jazz' })).toEqual({ kind: 'genre', genre: 'Jazz' })
+    expect(source(context(['/gone.flac'], 2))).toBeNull()
+  })
+
+  it('lists the sources the listener started, newest first, each once, without all tracks', () => {
+    const index = sourceIndex({ albums, tracks: library, favorites: [] })
+    const plays = servicePlays({
+      records: [
+        { v: 1, t: 1, path: tracks[0]?.path, s: 40, ctx: context(paths(library.filter((t) => t.album === 'A')), 3) },
+        {
+          v: 1,
+          t: 2,
+          path: library[4]?.path,
+          s: 40,
+          ctx: context(paths(library.filter((t) => t.genre === 'Jazz')), 2),
+        },
+        { v: 1, t: 3, path: tracks[1]?.path, s: 40, ctx: context(paths(library.filter((t) => t.album === 'A')), 3) },
+        { v: 1, t: 4, path: tracks[2]?.path, s: 40, ctx: context(paths(library), 1) },
+      ],
+    })
+    const recent = recentSources(plays, (ctx) => playSource(ctx, index, albums), 8)
+    expect(recent.map(({ source }) => source.kind)).toEqual(['album', 'genre'])
+    expect(recent[0]?.path).toBe(tracks[1]?.path)
+  })
+
+  it('orders tracks by their last play for the history sort', () => {
+    const records = servicePlayRecords(
+      servicePlays({
+        records: [tracks[2], tracks[0], tracks[2]].map((item, n) => ({ v: 1, t: n, path: item?.path, s: 40, ctx: {} })),
+      }),
+    )
+    expect(sortTracks(tracks, 'recent', records).map((item) => item.id)).toEqual([3, 1, 2, 4])
   })
 })

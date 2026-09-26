@@ -15,6 +15,7 @@ import {
   type Outcome,
   type SeekOutcome,
 } from '../gateway/controls'
+import { ScanObserved } from '../gateway/pacer'
 import type { CatalogRow } from '../gateway/catalog'
 import { selectQueueRow } from '../gateway/queue'
 import type { TransportAction } from '../domain/playback'
@@ -23,10 +24,11 @@ import { timeLabel } from '../domain/track'
 import type { MessageKey } from '../i18n'
 import { readPreference, writePreference } from '../lib/storage'
 import { connection, http } from './connection'
+import { markFavorite } from './favorites'
 import { refreshFavorites } from './library'
 import { observations } from './observations'
 import { run } from './operation'
-import { pairing } from './pairing'
+import { pairing, pairingToken } from './pairing'
 import { playback, refreshPlayback } from './playback'
 import { loadQueue } from './queue'
 import { toast } from './ui'
@@ -145,6 +147,39 @@ export async function toggleFavorite(): Promise<void> {
   await refreshPlayback()
   // The Favorites view and row hearts read the list, not the playing record.
   await refreshFavorites()
+}
+
+/**
+ * Favorites any library track through the service (next image): one guarded
+ * POST that the service confirms by reading the row back; never repeated. The
+ * list is read again afterwards.
+ */
+export async function favoriteTrack(track: { id: number; path: string | null }): Promise<void> {
+  const token = pairingToken()
+  if (!paired() || !token) return
+  let result
+  try {
+    result = await run('favorite', async (context) => {
+      await context.pace()
+      context.guard()
+      context.attempted()
+      return http.favorite(track.id, token)
+    })
+  } catch (error) {
+    if (error instanceof ScanObserved) toast('closed_scanning', true)
+    else toast('result_unconfirmed_the_command_was_not_retried', true)
+    return
+  }
+  if (result === 'busy' || result === 'no-session') {
+    report(result)
+    return
+  }
+  if (result.status === 200) {
+    markFavorite(track.path, true)
+    report('confirmed', true)
+    await refreshFavorites()
+  } else if (result.status === 503) toast('closed_scanning', true)
+  else toast('result_unconfirmed_the_command_was_not_retried', true)
 }
 
 const SEEK_FEEDBACK: Record<SeekOutcome, MessageKey> = {
