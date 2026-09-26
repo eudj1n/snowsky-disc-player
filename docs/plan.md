@@ -514,6 +514,21 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
       the Now Playing tab too, and read "A, B" in the queue, the track menu,
       unlinked rows and "Playing from".
 
+## Owner requests (round 13): player facts and audio quality
+
+- [x] The player dialog ("YOUR PLAYER") shows the number of albums and
+      tracks and the battery charge (SYSCONFIG.BATTERY, re-read whenever the
+      dialog opens; how often stock stores it is not yet compared with the
+      player's screen).
+- [x] Audio quality: Now Playing shows the format with bits/kHz (lossless),
+      kbit/s (lossy) or DSD rate from stock's a202 (every format, as stock
+      decodes it), and a Hi-Res mark above CD quality; album headers show the
+      first track's quality from the media route (FLAC and WAV now, MP3 and
+      AAC with the next image). Checked on the guest against real stock:
+      "FLAC · 16/44.1".
+- Stock's SONG columns for sample rate, bit depth and bit rate stay 0 on the
+  guest even after playback, so quality never comes from the database.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

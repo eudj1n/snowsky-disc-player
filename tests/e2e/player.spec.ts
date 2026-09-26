@@ -507,6 +507,25 @@ test.describe('player controls on the mock', () => {
     await disconnect(page)
   })
 
+  test('shows the collection size, battery and audio quality', async ({ page }) => {
+    await english(page)
+    await connectAndPair(page)
+    await openConnection(page)
+    const facts = page.getByRole('dialog').getByTestId('player-facts')
+    await expect(facts).toContainText('Battery87%')
+    await expect(facts).toContainText(/Albums\d+/)
+    await expect(facts).toContainText(/Tracks\d+/)
+    await page.keyboard.press('Escape')
+    await page.goto('/#/album/Inner%20Space/Forma')
+    await expect(page.getByTestId('album-quality')).toHaveText('FLAC 16/44.1', { timeout: 15_000 })
+    await page.getByRole('button', { name: 'Play Weightless' }).click()
+    await expect(page.getByTestId('track-title')).toHaveText('Weightless', { timeout: 15_000 })
+    const panel = await openPanel(page, 'Open Now Playing panel')
+    await expect(panel.getByTestId('quality')).toHaveText(/Hi-Res\s*FLAC · 24\/96/)
+    await page.keyboard.press('Escape')
+    await disconnect(page)
+  })
+
   test('links each artist of a joint credit in the listening panel', async ({ page }) => {
     await english(page)
     await connectAndPair(page)

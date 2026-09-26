@@ -24,7 +24,19 @@ describe('a202 playback observation', () => {
       path: '/tmp/sdcard/a.flac',
       durationMs: 200000,
       queuePosition: 2,
+      sampleRate: null,
+      bitDepth: null,
+      bitRate: null,
+      dsd: false,
     })
+  })
+
+  it('reads the decoding facts stock reports for the playing file', () => {
+    const facts = { ...song, song_sample_rate: 96000, song_encoding_rate: 24, song_bit_rate: 4608, is_dsd: false }
+    const playback = parsePlayback(JSON.stringify({ state: 0, playerflag: 3, song: facts }))
+    expect(playback.track).toMatchObject({ sampleRate: 96000, bitDepth: 24, bitRate: 4608, dsd: false })
+    const unknown = parsePlayback(JSON.stringify({ state: 0, song: { ...song, song_sample_rate: 0 } }))
+    expect(unknown.track?.sampleRate).toBeNull()
   })
 
   it('accepts the song as a JSON string, as stock sends it', () => {

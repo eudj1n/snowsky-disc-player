@@ -17,6 +17,12 @@ export function onlineOptions(result: DataResult): { covers: boolean; lyrics: bo
   return { covers: row.ONLINE_COVER === 1, lyrics: row.ONLINE_LRC === 1 }
 }
 
+/** Battery charge in percent as stock last stored it (SYSCONFIG.BATTERY), or null. */
+export function playerBattery(result: DataResult): number | null {
+  const value = rowsOf(result)[0]?.BATTERY
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 100 ? value : null
+}
+
 /** Firmware main OS number from the 0501 settings reply (a501). */
 export function socVersion(payload: string): number | null {
   const value: unknown = JSON.parse(payload)

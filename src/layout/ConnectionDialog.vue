@@ -4,16 +4,35 @@
  * so there is no address form. Connect/Disconnect, identity, the one-owner
  * note and pairing with the card token. Opening never connects.
  */
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import ConnectionStatus from '../components/connection/ConnectionStatus.vue'
 import PairingForm from '../components/connection/PairingForm.vue'
 import { t } from '../i18n'
 import { connect, connection, disconnect } from '../stores/connection'
+import { albums, library, refreshPlayerFacts } from '../stores/library'
+import { playerOptions } from '../stores/playerOptions'
 import { forgetToken, pairing, saveToken } from '../stores/pairing'
 import { closeDialog, ui } from '../stores/ui'
 import UiDialog from '../ui/UiDialog.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
+
+/** Collection size and battery for the player card (owner, round 13). */
+const facts = computed(() =>
+  [
+    library.status === 'ready' ? { key: 'albums', label: t('stat_albums'), value: String(albums.value.length) } : null,
+    library.summary ? { key: 'tracks', label: t('stat_tracks'), value: String(library.summary.tracks) } : null,
+    playerOptions.battery !== null
+      ? { key: 'battery', label: t('stat_battery'), value: `${playerOptions.battery}%` }
+      : null,
+  ].filter((fact) => fact !== null),
+)
+watch(
+  () => ui.dialog === 'connection',
+  (open) => {
+    if (open && connection.gateway !== false) void refreshPlayerFacts()
+  },
+)
 
 const status = computed(() => {
   if (connection.gateway === false) return t('server_unavailable')
@@ -42,6 +61,12 @@ const status = computed(() => {
       </div>
     </div>
     <ConnectionStatus :text="status" :connected="connection.connection === 'connected'" />
+    <dl v-if="facts.length" class="-mt-4 mb-18 grid grid-cols-3 gap-10" data-testid="player-facts">
+      <div v-for="fact in facts" :key="fact.key" class="rounded-10 bg-soft px-14 py-10">
+        <dt class="text-10 tracking-[1px] text-muted uppercase">{{ fact.label }}</dt>
+        <dd class="m-0 mt-2 text-17 font-semibold">{{ fact.value }}</dd>
+      </div>
+    </dl>
     <p v-if="connection.notice" role="status" class="-mt-8 mb-16 text-12 text-accent" data-testid="notice">
       {{ t(connection.notice) }}
     </p>

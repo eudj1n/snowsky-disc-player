@@ -38,6 +38,11 @@ function parseTrack(value: unknown): Track | null {
   const position = optionalCount(song, 'pos_id')
   const durationMs = optionalCount(song, 'song_duration_time')
   if (!title) return null
+  // Quality as stock decodes it (song_encoding_rate carries the bit depth); zero means unknown.
+  const positive = (key: string) => {
+    const value = optionalCount(song, key)
+    return value !== null && value > 0 ? value : null
+  }
   return {
     title,
     artist,
@@ -45,6 +50,10 @@ function parseTrack(value: unknown): Track | null {
     path,
     durationMs,
     queuePosition: position !== null && position > 0 ? position - 1 : null,
+    sampleRate: positive('song_sample_rate'),
+    bitDepth: positive('song_encoding_rate'),
+    bitRate: positive('song_bit_rate'),
+    dsd: song.is_dsd === true,
   }
 }
 

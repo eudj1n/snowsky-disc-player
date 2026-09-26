@@ -19,7 +19,9 @@ import { creditArtists, creditLabel } from '../domain/artist'
 import { filterBy } from '../domain/search'
 import type { SelectionTarget, TrackKey } from '../gateway/selection'
 import { t } from '../i18n'
-import { albumCover, albumYear } from '../stores/enrichment'
+import { albumCover, albumQuality, albumYear } from '../stores/enrichment'
+import { isHiRes, qualityLabel } from '../domain/quality'
+import { formatBadge } from '../domain/track'
 import { albums, titleGroups, tracks as collection } from '../stores/library'
 import { selection } from '../stores/selection'
 import { openPlaylistDialog, openTrackMenu, ui } from '../stores/ui'
@@ -59,6 +61,20 @@ const credits = computed(() => [
   ...new Set((scope.value ? [scope.value] : (group.value?.artists ?? [])).flatMap(creditArtists)),
 ])
 const year = computed(() => (group.value ? albumYear(group.value, scope.value) : null))
+/** "FLAC 24/96" and whether it is Hi-Res, from the first track's file. */
+const quality = computed(() => {
+  const found = group.value ? albumQuality(group.value, scope.value) : null
+  if (!found) return null
+  const value = {
+    format: formatBadge(found.path),
+    sampleRate: found.sampleRate,
+    bitDepth: found.bitDepth,
+    bitRate: null,
+    dsd: false,
+  }
+  const label = qualityLabel(value)
+  return { text: [value.format, label].filter(Boolean).join(' '), hiRes: isHiRes(value) }
+})
 /** Several releases share this title: offer their artists as filters (and the whole group). */
 const releases = computed(() => albums.value.filter((album) => album.title === name.value).length)
 const choices = computed(() => {
@@ -106,6 +122,14 @@ const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums
             </template>
             <span v-if="credits.length"> · </span><template v-if="year">{{ year }} · </template
             >{{ t('track_count', { count: tracks.length }) }}
+            <template v-if="quality">
+              · <span data-testid="album-quality">{{ quality.text }}</span>
+              <span
+                v-if="quality.hiRes"
+                class="ml-4 rounded-5 bg-accent px-6 py-2 align-middle text-10 font-semibold tracking-[1px] text-white"
+                >Hi-Res</span
+              >
+            </template>
           </template>
         </template>
         <UiPillButton icon="play" :disabled="loading || !tracks.length || selection.busy" @click="playFrom(target())">{{

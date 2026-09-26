@@ -9,6 +9,11 @@ export interface Track {
   /** Absolute path on the player, e.g. /tmp/sdcard/Album/01.flac. */
   path: string | null
   durationMs: number | null
+  /** What stock reports for the playing track (a202): sample rate, bits, kbit/s, DSD. */
+  sampleRate?: number | null
+  bitDepth?: number | null
+  bitRate?: number | null
+  dsd?: boolean
 }
 
 /** A track row from the stock library database (data level). */

@@ -31,9 +31,18 @@ interface EnrichmentModel {
   scopedCovers: Record<string, string>
   /** Track path → the year of its DATE tag. */
   years: Record<string, number>
+  /** Track path → sample rate and bit depth read from the file. */
+  qualities: Record<string, { sampleRate: number; bitDepth: number | null }>
 }
 
-const state = reactive<EnrichmentModel>({ durations: {}, covers: {}, albumCovers: {}, scopedCovers: {}, years: {} })
+const state = reactive<EnrichmentModel>({
+  durations: {},
+  covers: {},
+  albumCovers: {},
+  scopedCovers: {},
+  years: {},
+  qualities: {},
+})
 export const enrichment = readonly(state)
 
 const DURATIONS = 'enrichment:durations'
@@ -45,10 +54,13 @@ const NO_COVER = 'enrichment:no-cover'
 const NO_DURATION = 'enrichment:no-duration'
 const YEARS = 'enrichment:years'
 const NO_YEAR = 'enrichment:no-year'
+const QUALITIES = 'enrichment:qualities'
+const NO_QUALITY = 'enrichment:no-quality'
 const RECHECK_MS = 7 * 86_400_000
 let noCover: Record<string, number> = {}
 let noDuration: Record<string, number> = {}
 let noYear: Record<string, number> = {}
+let noQuality: Record<string, number> = {}
 
 export async function loadEnrichment(): Promise<void> {
   state.durations = (await cacheGet<Record<string, number>>(DURATIONS)) ?? {}
@@ -58,6 +70,8 @@ export async function loadEnrichment(): Promise<void> {
   noDuration = (await cacheGet<Record<string, number>>(NO_DURATION)) ?? {}
   state.years = (await cacheGet<Record<string, number>>(YEARS)) ?? {}
   noYear = (await cacheGet<Record<string, number>>(NO_YEAR)) ?? {}
+  state.qualities = (await cacheGet<EnrichmentModel['qualities']>(QUALITIES)) ?? {}
+  noQuality = (await cacheGet<Record<string, number>>(NO_QUALITY)) ?? {}
   for (const path of new Set([...Object.values(state.albumCovers), ...Object.values(state.scopedCovers)])) {
     const blob = await cacheGet<Blob>(coverKey(path))
     if (blob) state.covers[path] = blob
@@ -137,17 +151,22 @@ function wantCover(key: string, path: string, album: { title: string; key: strin
 const pendingInfo = new Set<string>()
 let found: Record<string, number> = {}
 let foundYears: Record<string, number> = {}
+let foundQualities: EnrichmentModel['qualities'] = {}
 let flush: ReturnType<typeof setTimeout> | undefined
 function saveInfo(): void {
   flush = undefined
   Object.assign(state.durations, found)
   Object.assign(state.years, foundYears)
+  Object.assign(state.qualities, foundQualities)
   found = {}
   foundYears = {}
+  foundQualities = {}
   void cacheSet(DURATIONS, { ...state.durations })
   void cacheSet(NO_DURATION, { ...noDuration })
   void cacheSet(YEARS, { ...state.years })
   void cacheSet(NO_YEAR, { ...noYear })
+  void cacheSet(QUALITIES, { ...state.qualities })
+  void cacheSet(NO_QUALITY, { ...noQuality })
 }
 
 /** One metadata read of a file: its duration and the year of its tags, whichever are missing. */
@@ -161,6 +180,8 @@ function wantInfo(path: string): void {
       else noDuration[path] = Date.now()
       if (info?.year) foundYears[path] = info.year
       else noYear[path] = Date.now()
+      if (info?.sampleRate) foundQualities[path] = { sampleRate: info.sampleRate, bitDepth: info.bitDepth }
+      else noQuality[path] = Date.now()
     } catch {
       // Asked again on a later load.
     } finally {
@@ -180,6 +201,23 @@ export function wantDurations(tracks: readonly Pick<Track, 'path' | 'durationMs'
     if (!path || track.durationMs !== null || state.durations[path] || recent(noDuration[path])) continue
     wantInfo(path)
   }
+}
+
+/**
+ * The quality of a release: its first member's sample rate and bit depth
+ * (FLAC and WAV through the media route; MP3 and AAC with the next image).
+ * Read with the year, so asking for both costs one request.
+ */
+export function albumQuality(
+  album: { paths?: Readonly<Record<string, string>> },
+  artist: string | null = null,
+): { path: string; sampleRate: number; bitDepth: number | null } | null {
+  const path = album.paths?.[artist ?? ''] ?? album.paths?.['']
+  if (!path) return null
+  const quality = state.qualities[path]
+  if (quality) return { path, ...quality }
+  if (connection.media && !recent(noQuality[path])) wantInfo(path)
+  return null
 }
 
 /**

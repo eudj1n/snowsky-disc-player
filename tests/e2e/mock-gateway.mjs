@@ -103,6 +103,11 @@ function a202() {
     song_file_path: track.PATH,
     pos_id: player.index + 1,
     song_duration_time: track.DURATION,
+    // Like stock: decoding facts of the playing file (Inner Space is a hi-res release here).
+    song_sample_rate: track.ALBUM === 'Inner Space' ? 96000 : 44100,
+    song_encoding_rate: track.ALBUM === 'Inner Space' ? 24 : 16,
+    song_bit_rate: track.ALBUM === 'Inner Space' ? 4608 : 1411,
+    is_dsd: false,
   }
   return JSON.stringify({
     state: player.state,

@@ -96,7 +96,7 @@ export function dataQuery(name, params, language) {
     return selected ? { status: 200, body: table(selected, COLUMNS) } : { status: 400, body: 'Invalid parameters\n' }
   }
   if (name === 'system_settings')
-    return { status: 200, body: table([{ LANGUAGE: language, BATTERY: 100 }], ['LANGUAGE', 'BATTERY']) }
+    return { status: 200, body: table([{ LANGUAGE: language, BATTERY: 87 }], ['LANGUAGE', 'BATTERY']) }
   if (name === 'library_summary') {
     const row = {
       tracks: TRACKS.length,

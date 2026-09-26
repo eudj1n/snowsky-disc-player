@@ -5,8 +5,10 @@
  * timeline with seek feedback, transport, modes, favorite and volume. It
  * mirrors the mini-player's disabled rules.
  */
+import { computed } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 import type { Playback, TransportAction } from '../../domain/playback'
+import { isHiRes, qualityLabel, type AudioQuality } from '../../domain/quality'
 import { formatBadge } from '../../domain/track'
 import UiIcon from '../../ui/UiIcon.vue'
 import UiIconButton from '../../ui/UiIconButton.vue'
@@ -15,7 +17,7 @@ import ArtistCredit from '../track/ArtistCredit.vue'
 import SeekBar from './SeekBar.vue'
 import VolumeControl from './VolumeControl.vue'
 
-defineProps<{
+const props = defineProps<{
   playback: Playback
   cover: Blob | null
   status: string
@@ -51,6 +53,14 @@ defineProps<{
   /** Where playback comes from, when known. */
   context?: { text: string; to: RouteLocationRaw | null } | null
 }>()
+/** The playing file's format and what stock reports about its decoding. */
+const quality = computed<AudioQuality>(() => ({
+  format: formatBadge(props.playback.track?.path ?? null),
+  sampleRate: props.playback.track?.sampleRate ?? null,
+  bitDepth: props.playback.track?.bitDepth ?? null,
+  bitRate: props.playback.track?.bitRate ?? null,
+  dsd: props.playback.track?.dsd ?? false,
+}))
 const emit = defineEmits<{
   transport: [action: TransportAction]
   mode: [kind: 'shuffle' | 'repeat']
@@ -79,12 +89,16 @@ const emit = defineEmits<{
     </div>
     <p class="flex items-center justify-between gap-10 text-11 text-muted">
       <span>{{ status }}</span>
-      <span
-        v-if="formatBadge(playback.track?.path ?? null)"
-        :title="labels.format"
-        class="rounded-5 border border-line px-7 py-4 text-11 tracking-[1px]"
-        >{{ formatBadge(playback.track?.path ?? null) }}</span
-      >
+      <span v-if="quality.format" class="flex items-center gap-6" data-testid="quality">
+        <span
+          v-if="isHiRes(quality)"
+          class="rounded-5 bg-accent px-7 py-4 text-10 font-semibold tracking-[1px] text-white"
+          >Hi-Res</span
+        >
+        <span :title="labels.format" class="rounded-5 border border-line px-7 py-4 text-11 tracking-[1px]"
+          >{{ quality.format }}<template v-if="qualityLabel(quality)"> · {{ qualityLabel(quality) }}</template></span
+        >
+      </span>
     </p>
     <h2 class="mt-14 mb-8 text-28 leading-[1.15] font-bold tracking-[-0.8px] [overflow-wrap:anywhere] phone:text-25">
       {{ playback.track?.title ?? labels.title }}

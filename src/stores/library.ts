@@ -15,8 +15,8 @@ import { librarySignature, type LibrarySummary } from '../domain/library'
 import type { Playlist } from '../domain/playlist'
 import type { LibraryTrack } from '../domain/track'
 import { librarySummary, libraryTracks, playlists as playlistRows } from '../gateway/library'
-import { onlineOptions, playerLanguage } from '../gateway/settings'
-import { adoptOnlineOptions } from './playerOptions'
+import { onlineOptions, playerBattery, playerLanguage } from '../gateway/settings'
+import { adoptBattery, adoptOnlineOptions } from './playerOptions'
 import { adoptPlayerLanguage } from '../i18n'
 import { cacheGet, cacheSet } from '../lib/idb'
 import { http } from './connection'
@@ -102,12 +102,22 @@ async function pages(query: string, params: Record<string, number> = {}): Promis
   return rows
 }
 
+/** Re-reads the stored settings for the player card (battery); failures keep the last value. */
+export async function refreshPlayerFacts(): Promise<void> {
+  try {
+    adoptBattery(playerBattery(await http.data('system_settings')))
+  } catch {
+    // Unreachable: the card keeps what it showed.
+  }
+}
+
 /** Settings (player language) and counts; cheap, read before the collection. */
 export async function loadLibraryFacts(): Promise<void> {
   const [settings, summary] = await Promise.allSettled([http.data('system_settings'), http.data('library_summary')])
   if (settings.status === 'fulfilled') {
     adoptPlayerLanguage(playerLanguage(settings.value))
     adoptOnlineOptions(onlineOptions(settings.value))
+    adoptBattery(playerBattery(settings.value))
   }
   if (summary.status === 'fulfilled') state.summary = librarySummary(summary.value)
 }
