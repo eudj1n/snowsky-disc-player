@@ -17,6 +17,15 @@ export interface MediaInfo {
   channels: number | null
   cover: 'embedded' | 'folder' | null
   lyrics: 'sidecar' | 'embedded' | null
+  /** The year of the DATE tag (FLAC); stock keeps no year. */
+  year: number | null
+}
+
+/** The leading year of a DATE tag ("2004", "2001-05-04"), within reason. */
+export function tagYear(date: unknown): number | null {
+  const match = typeof date === 'string' ? /^(\d{4})(?!\d)/.exec(date.trim()) : null
+  const year = match?.[1] ? Number(match[1]) : null
+  return year !== null && year >= 1000 && year <= 9999 ? year : null
 }
 
 export type LyricsSource = 'sidecar' | 'embedded' | 'player'
@@ -52,6 +61,7 @@ export async function mediaInfo(http: GatewayHttp, path: string): Promise<MediaI
     channels: count(value.channels),
     cover: value.cover === 'embedded' || value.cover === 'folder' ? value.cover : null,
     lyrics: value.lyrics === 'sidecar' || value.lyrics === 'embedded' ? value.lyrics : null,
+    year: tagYear((value.tags as Record<string, unknown> | undefined)?.date),
   }
 }
 

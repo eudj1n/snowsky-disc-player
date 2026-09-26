@@ -192,6 +192,34 @@ test('loads covers and missing durations from the card media', async ({ page }) 
   await expect(page.getByRole('row').first()).toContainText(/\d:\d\d/, { timeout: 15_000 })
 })
 
+test('lists same-titled albums apart, separates discs, shows years and joint credits', async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  await page.goto('/#/albums')
+  const afterglow = page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Afterglow' }) })
+  await expect(afterglow).toHaveCount(2)
+  await afterglow.filter({ hasText: 'Mira Sol' }).getByRole('link', { name: 'Afterglow' }).first().click()
+  await expect(page).toHaveURL(/#\/album\/Afterglow\/Mira%20Sol$/)
+  await expect(page.getByRole('row')).toHaveCount(2)
+
+  // A guest on one track leaves the album its lead artist's, without title filters.
+  const twoRooms = page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Two Rooms' }) })
+  await page.goto('/#/albums')
+  await expect(twoRooms.getByRole('link', { name: 'Kite Lines' })).toBeVisible()
+  await page.goto('/#/album/Two%20Rooms')
+  await expect(page.getByRole('navigation', { name: 'Albums with this title' })).toHaveCount(0)
+  await expect(page.getByRole('rowheader')).toHaveText(['Disc 1', 'Disc 2'])
+  await expect(page.getByRole('main')).toContainText('2021', { timeout: 15_000 })
+  const hallway = page.getByRole('row').filter({ hasText: 'Hallway' })
+  await expect(hallway.getByRole('link', { name: 'Kite Lines' })).toBeVisible()
+  await hallway.getByRole('link', { name: 'Mira Sol' }).click()
+  await expect(page).toHaveURL(/#\/artist\/Mira%20Sol$/)
+  await expect(
+    page.getByRole('region', { name: 'Appears on' }).getByRole('heading', { name: 'Two Rooms' }),
+  ).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Albums' }).getByRole('heading', { name: 'Blue Hours' })).toBeVisible()
+})
+
 test('pairs with the player serial number when the card allows it', async ({ page }) => {
   test.skip(external, 'Needs the mock collection')
   await english(page)

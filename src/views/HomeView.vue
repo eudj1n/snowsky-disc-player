@@ -60,7 +60,7 @@ const heroLines = computed<[string, string]>(() =>
     <CoverGrid>
       <CoverCard
         v-for="album in found"
-        :key="album.title"
+        :key="album.key"
         :title="album.title"
         :to="albumCardRoute(album)"
         :cover="albumCover(album, albumScope(album))"
@@ -107,7 +107,7 @@ const heroLines = computed<[string, string]>(() =>
     <CoverGrid v-if="recent.length" home>
       <CoverCard
         v-for="album in recent"
-        :key="album.title"
+        :key="album.key"
         :title="album.title"
         :to="albumCardRoute(album)"
         :cover="albumCover(album, albumScope(album))"

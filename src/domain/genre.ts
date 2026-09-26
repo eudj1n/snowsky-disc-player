@@ -48,9 +48,7 @@ export function genreTracks<T extends LibraryTrack>(tracks: readonly T[], genre:
 
 /** Title groups with tracks in this genre, most recently added first. */
 export function genreAlbums(albums: readonly Album[], genre: Genre): Album[] {
-  return albums
-    .filter((album) => genre.albums.includes(album.title))
-    .sort((a, b) => (b.addedAt ?? 0) - (a.addedAt ?? 0))
+  return albums.filter((album) => album.genres.includes(genre.name)).sort((a, b) => (b.addedAt ?? 0) - (a.addedAt ?? 0))
 }
 
 export interface GenreArtist {

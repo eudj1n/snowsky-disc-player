@@ -14,7 +14,7 @@ import { operation } from '../stores/operation'
 import { isPlaying, playback } from '../stores/playback'
 import { selection } from '../stores/selection'
 import { openPlaylistDialog } from '../stores/ui'
-import { trackAlbumRoute, trackArtistRoute } from './captions'
+import { artistRoute, trackAlbumRoute } from './captions'
 
 export const trackRowProps = computed(() => ({
   currentPath: playback.current.track?.path ?? null,
@@ -23,7 +23,7 @@ export const trackRowProps = computed(() => ({
   disabled: selection.busy,
   playLabel: t('play_label'),
   menuLabel: t('track_actions'),
-  artistTo: trackArtistRoute,
+  artistTo: artistRoute,
   albumTo: trackAlbumRoute,
   favoriteOf: isFavorite,
   favoriteLabels: {

@@ -19,6 +19,7 @@ import { operation } from '../stores/operation'
 import { isPlaying, playback } from '../stores/playback'
 import { loadQueue, queue } from '../stores/queue'
 import { lyrics } from '../stores/lyrics'
+import { playerOptions } from '../stores/playerOptions'
 import { closePanel, showPanelSection, ui } from '../stores/ui'
 import UiIconButton from '../ui/UiIconButton.vue'
 import { usePlaybackContext } from './usePlaybackContext'
@@ -61,7 +62,7 @@ const lyricsSource = computed(() =>
     : lyrics.source === 'embedded'
       ? t('lyrics_source_embedded')
       : lyrics.source === 'player'
-        ? t('lyrics_source_player')
+        ? t(playerOptions.onlineLyrics ? 'lyrics_source_player_online' : 'lyrics_source_player')
         : null,
 )
 const queueHint = computed(() => {

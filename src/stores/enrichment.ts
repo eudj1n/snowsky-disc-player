@@ -19,6 +19,7 @@ import { currentPlayback, readPlayback } from '../gateway/playback'
 import type { GatewaySession } from '../gateway/session'
 import { cacheGet, cacheSet } from '../lib/idb'
 import { connection, http, onSessionOpened } from './connection'
+import { playerOptions } from './playerOptions'
 
 interface EnrichmentModel {
   durations: Record<string, number>
@@ -28,9 +29,11 @@ interface EnrichmentModel {
   albumCovers: Record<string, string>
   /** Album title scoped by a literal track artist → path of a member with a cover. */
   scopedCovers: Record<string, string>
+  /** Track path → the year of its DATE tag. */
+  years: Record<string, number>
 }
 
-const state = reactive<EnrichmentModel>({ durations: {}, covers: {}, albumCovers: {}, scopedCovers: {} })
+const state = reactive<EnrichmentModel>({ durations: {}, covers: {}, albumCovers: {}, scopedCovers: {}, years: {} })
 export const enrichment = readonly(state)
 
 const DURATIONS = 'enrichment:durations'
@@ -40,9 +43,12 @@ const scopeKey = (title: string, artist: string) => JSON.stringify([title, artis
 const coverKey = (path: string) => `cover:${path}`
 const NO_COVER = 'enrichment:no-cover'
 const NO_DURATION = 'enrichment:no-duration'
+const YEARS = 'enrichment:years'
+const NO_YEAR = 'enrichment:no-year'
 const RECHECK_MS = 7 * 86_400_000
 let noCover: Record<string, number> = {}
 let noDuration: Record<string, number> = {}
+let noYear: Record<string, number> = {}
 
 export async function loadEnrichment(): Promise<void> {
   state.durations = (await cacheGet<Record<string, number>>(DURATIONS)) ?? {}
@@ -50,6 +56,8 @@ export async function loadEnrichment(): Promise<void> {
   state.scopedCovers = (await cacheGet<Record<string, string>>(SCOPED_COVERS)) ?? {}
   noCover = (await cacheGet<Record<string, number>>(NO_COVER)) ?? {}
   noDuration = (await cacheGet<Record<string, number>>(NO_DURATION)) ?? {}
+  state.years = (await cacheGet<Record<string, number>>(YEARS)) ?? {}
+  noYear = (await cacheGet<Record<string, number>>(NO_YEAR)) ?? {}
   for (const path of new Set([...Object.values(state.albumCovers), ...Object.values(state.scopedCovers)])) {
     const blob = await cacheGet<Blob>(coverKey(path))
     if (blob) state.covers[path] = blob
@@ -126,15 +134,42 @@ function wantCover(key: string, path: string, album: { title: string; key: strin
   pump()
 }
 
-const pendingDurations = new Set<string>()
+const pendingInfo = new Set<string>()
 let found: Record<string, number> = {}
+let foundYears: Record<string, number> = {}
 let flush: ReturnType<typeof setTimeout> | undefined
-function saveDurations(): void {
+function saveInfo(): void {
   flush = undefined
   Object.assign(state.durations, found)
+  Object.assign(state.years, foundYears)
   found = {}
+  foundYears = {}
   void cacheSet(DURATIONS, { ...state.durations })
   void cacheSet(NO_DURATION, { ...noDuration })
+  void cacheSet(YEARS, { ...state.years })
+  void cacheSet(NO_YEAR, { ...noYear })
+}
+
+/** One metadata read of a file: its duration and the year of its tags, whichever are missing. */
+function wantInfo(path: string): void {
+  if (pendingInfo.has(path)) return
+  pendingInfo.add(path)
+  durationTasks.push(async () => {
+    try {
+      const info = await mediaInfo(http, path)
+      if (info?.durationMs) found[path] = info.durationMs
+      else noDuration[path] = Date.now()
+      if (info?.year) foundYears[path] = info.year
+      else noYear[path] = Date.now()
+    } catch {
+      // Asked again on a later load.
+    } finally {
+      pendingInfo.delete(path)
+      // Batched, so lists re-render once per second, not once per track.
+      flush ??= setTimeout(saveInfo, 1000)
+    }
+  })
+  pump()
 }
 
 /** Queues metadata reads for tracks the database gives no duration. */
@@ -142,24 +177,26 @@ export function wantDurations(tracks: readonly Pick<Track, 'path' | 'durationMs'
   if (!connection.media) return
   for (const track of tracks) {
     const path = track.path
-    if (!path || track.durationMs !== null || state.durations[path] || pendingDurations.has(path)) continue
-    if (recent(noDuration[path])) continue
-    pendingDurations.add(path)
-    durationTasks.push(async () => {
-      try {
-        const info = await mediaInfo(http, path)
-        if (info?.durationMs) found[path] = info.durationMs
-        else noDuration[path] = Date.now()
-      } catch {
-        // Asked again on a later load.
-      } finally {
-        pendingDurations.delete(path)
-        // Batched, so lists re-render once per second, not once per track.
-        flush ??= setTimeout(saveDurations, 1000)
-      }
-    })
+    if (!path || track.durationMs !== null || state.durations[path] || recent(noDuration[path])) continue
+    wantInfo(path)
   }
-  pump()
+}
+
+/**
+ * The year of a release: its first member's DATE tag (stock keeps no year).
+ * Read once per album scope, like its cover; files without a DATE tag (every
+ * MP3 and AAC until the gateway reads their tags) are asked again after a week.
+ */
+export function albumYear(
+  album: { paths?: Readonly<Record<string, string>> },
+  artist: string | null = null,
+): number | null {
+  const path = album.paths?.[artist ?? ''] ?? album.paths?.['']
+  if (!path) return null
+  const year = state.years[path]
+  if (year) return year
+  if (connection.media && !recent(noYear[path])) wantInfo(path)
+  return null
 }
 
 /**
@@ -200,6 +237,8 @@ const attempted = new Set<string>()
 
 /** Reads the current cover once per track, guarded by reads before and after. */
 async function observeCover(session: GatewaySession, track: Track): Promise<void> {
+  // With online covers on, stock's current cover may be an iTunes guess: never keep it as the album's.
+  if (playerOptions.onlineCovers) return
   if (!track.path || state.covers[track.path] || reading !== null || attempted.has(track.path)) return
   reading = track.path
   attempted.add(track.path)

@@ -42,7 +42,7 @@ onMounted(async () => {
 })
 const current = computed(() => playback.current.track?.path ?? null)
 const titleTo = (track: Track) => (track.album ? albumRoute(track.album, track.artist || null) : null)
-const artistTo = (track: Track) => (track.artist ? artistRoute(track.artist) : null)
+const artistTo = (name: string) => artistRoute(name)
 </script>
 
 <template>
@@ -86,7 +86,7 @@ const artistTo = (track: Track) => (track.artist ? artistRoute(track.artist) : n
     <CoverRow :label="t('new_albums')">
       <CoverCard
         v-for="album in newAlbums"
-        :key="album.title"
+        :key="album.key"
         role="listitem"
         :title="album.title"
         :to="albumCardRoute(album)"

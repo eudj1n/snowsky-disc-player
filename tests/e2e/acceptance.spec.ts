@@ -93,8 +93,9 @@ test('plays genres, a genre album and a whole artist on stock', async ({ page })
   await expect(page.getByRole('region', { name: 'Player' }).getByRole('link', { name: 'Genre: Jazz' })).toBeVisible()
   await verified(page, () => page.getByRole('button', { name: 'Play Streetlight' }).click())
 
+  // The Jazz Harbor is Kestrel's release: its card opens that release, not the whole title.
   await page.getByRole('list', { name: 'Albums' }).getByRole('heading', { name: 'Harbor' }).getByRole('link').click()
-  await expect(page).toHaveURL(/#\/album\/Harbor\?genre=Jazz$/)
+  await expect(page).toHaveURL(/#\/album\/Harbor\/Kestrel$/)
   await expect(page.getByRole('row')).toHaveText([/Crossing/, /Salt/])
   await verified(page, () => page.getByRole('button', { name: 'Play album' }).click())
   await expect(page.getByTestId('track-title')).toHaveText(/Crossing|Salt/)
@@ -110,7 +111,9 @@ test('plays genres, a genre album and a whole artist on stock', async ({ page })
   const card = page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Lumen', exact: true }) })
   await card.hover()
   await verified(page, () => card.getByRole('button', { name: 'Play Lumen' }).click())
-  await expect(page.getByTestId('track-title')).toHaveText(/Harbor Light|Low Tide|Pier|Signal|Streetlight/)
+  await expect(page.getByTestId('track-title')).toHaveText(
+    /Harbor Light|Low Tide|Pier|Signal|Streetlight|Slack Water|Spring Tide|Neap/,
+  )
   await disconnect(page)
 })
 
@@ -250,14 +253,46 @@ test('reads and changes sound settings and the equalizer on stock, then restores
   await disconnect(page)
 })
 
+test('lists same-titled albums apart, separates discs, shows years and joint credits on stock', async ({ page }) => {
+  await english(page)
+  await page.goto('/#/albums')
+  await expect(page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Harbor' }) })).toHaveCount(2)
+  const tides = page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Tide Tables' }) })
+  await expect(tides.getByRole('link', { name: 'Lumen' })).toBeVisible()
+  await page.goto('/#/album/Tide%20Tables')
+  await expect(page.getByRole('navigation', { name: 'Albums with this title' })).toHaveCount(0)
+  await expect(page.getByRole('rowheader')).toHaveText(['Disc 1', 'Disc 2'])
+  await expect(page.getByRole('row').filter({ hasText: /Undertow|Slack Water|Spring Tide|Neap/ })).toHaveText([
+    /Undertow/,
+    /Slack Water/,
+    /Spring Tide/,
+    /Neap/,
+  ])
+  await expect(page.getByRole('main')).toContainText('2004', { timeout: 60_000 })
+  // Stock keeps the two ARTIST fields as one artist, "Lumen;Kestrel".
+  const undertow = page.getByRole('row').filter({ hasText: 'Undertow' })
+  await expect(undertow.getByRole('link', { name: 'Lumen', exact: true })).toBeVisible()
+  await undertow.getByRole('link', { name: 'Kestrel', exact: true }).click()
+  await expect(
+    page.getByRole('region', { name: 'Appears on' }).getByRole('heading', { name: 'Tide Tables' }),
+  ).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Albums' }).getByRole('heading', { name: 'Harbor' })).toBeVisible()
+
+  await connectAndPair(page)
+  await page.goto('/#/album/Tide%20Tables')
+  await verified(page, () => page.getByRole('button', { name: 'Play album' }).click())
+  await expect(page.getByTestId('track-title')).toHaveText(/Undertow|Slack Water|Spring Tide|Neap/)
+  await disconnect(page)
+})
+
 test('shows card covers, file durations and both kinds of lyrics on stock', async ({ page }) => {
   const errors = watchErrors(page)
   await english(page)
   await page.goto('/#/albums')
-  // The grid shows one Harbor card for both artists; its cover is Lumen's folder cover.png.
+  // Lumen's Harbor has a folder cover.png, Kestrel's a picture embedded in Crossing.
   const harbor = page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Harbor' }) })
-  await expect(harbor.locator('canvas')).toHaveCount(1, { timeout: 60_000 })
-  // Kestrel's Harbor has only a picture embedded in Crossing.
+  for (const artist of ['Lumen', 'Kestrel'])
+    await expect(harbor.filter({ hasText: artist }).locator('canvas')).toHaveCount(1, { timeout: 60_000 })
   await page.goto('/#/album/Harbor/Kestrel')
   await expect(page.locator('main canvas').first()).toBeVisible({ timeout: 60_000 })
   // Stock keeps DURATION 0 until a track has played; the files say 0:25.

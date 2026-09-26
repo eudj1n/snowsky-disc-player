@@ -169,6 +169,10 @@ export const en = {
   lyrics_source_sidecar: 'From the .lrc file beside the track',
   lyrics_source_embedded: "From the track's tags",
   lyrics_source_player: 'Prepared by the player',
+  disc_number: 'Disc {number}',
+  appears_on: 'Appears on',
+  lyrics_source_player_online:
+    'Prepared by the player. Its online lyrics option is on, so this text may come from the internet (NetEase).',
   lyrics_seek: 'Go to this line',
   closed_scanning: 'DISC is scanning its library, so the change was not sent. Connect again when the scan ends.',
   remove_from_favorites: 'Remove from favorites',

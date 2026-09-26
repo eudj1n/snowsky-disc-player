@@ -1,6 +1,7 @@
 /** Card captions and routes shared by views (reference cardCaption). */
-import type { CardLine } from '../components/collection/CoverCard.vue'
+import type { CardLine } from '../components/collection/cardLine'
 import { albumScope, type Album } from '../domain/album'
+import { creditArtists, credits } from '../domain/artist'
 import type { Playlist } from '../domain/playlist'
 import { t } from '../i18n'
 
@@ -21,11 +22,18 @@ export function genreAlbumRoute(album: Album, genre: string, mixed: boolean) {
 }
 export const genreRoute = (name: string) => ({ name: 'genre', params: { name } })
 
+/** The artist every credit of an album names (its lead, when others only join on some tracks). */
+export function leadArtist(album: Album): string | null {
+  const [first] = album.artists
+  if (!first) return null
+  return creditArtists(first).find((name) => album.artists.every((credit) => credits(credit, name))) ?? null
+}
+
 export function albumLines(album: Album): CardLine[] {
   const lines: CardLine[] = []
-  const [only] = album.artists
-  if (album.artists.length > 1) lines.push({ text: t('various_artists') })
-  else if (only) lines.push({ text: only, to: artistRoute(only) })
+  const lead = leadArtist(album)
+  if (lead) lines.push({ text: lead, to: artistRoute(lead) })
+  else if (album.artists.length > 1) lines.push({ text: t('various_artists') })
   lines.push({ text: t('track_count', { count: album.trackCount }) })
   return lines
 }
@@ -38,6 +46,12 @@ export const albumCardRoute = (album: Album, artist: string | null = null) =>
 export function artistAlbumLines(album: Album, artist: string, scopedCount: number): CardLine[] {
   if (album.trackArtists.includes(artist)) return [{ text: t('track_count', { count: scopedCount }) }]
   return albumLines(album)
+}
+
+/** Puts a year before the last line (the track count): "2004 · 3 tracks". */
+export function withYear(lines: CardLine[], year: number | null): CardLine[] {
+  if (!year) return lines
+  return lines.map((line, index) => (index === lines.length - 1 ? { ...line, text: `${year} · ${line.text}` } : line))
 }
 
 export function playlistLines(playlist: Playlist): CardLine[] {

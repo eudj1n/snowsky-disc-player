@@ -1,3 +1,4 @@
+import { credits } from './artist'
 import type { LibraryTrack } from './track'
 
 /**
@@ -8,6 +9,8 @@ import type { LibraryTrack } from './track'
  * the reference); album links carry it whenever it is known.
  */
 export interface Album {
+  /** Unique among the listed albums: the title, plus the release when a title is split. */
+  key: string
   title: string
   /** Distinct display credits (album artist, else track artist) in first-seen order. */
   artists: string[]
@@ -16,6 +19,10 @@ export interface Album {
   /** A member's card path per scope (the whole title under ''), for its cover. */
   paths: Record<string, string>
   trackCount: number
+  /** Distinct track genres in first-seen order. */
+  genres: string[]
+  /** Stock SONG IDs of its tracks. */
+  ids: number[]
   /** Latest ADD_TIME among its tracks (seconds), for "recently added". */
   addedAt: number | null
 }
@@ -27,10 +34,22 @@ export function groupAlbums(tracks: readonly LibraryTrack[]): Album[] {
     if (!track.album) continue
     let album = albums.get(track.album)
     if (!album) {
-      album = { title: track.album, artists: [], trackArtists: [], paths: {}, trackCount: 0, addedAt: null }
+      album = {
+        key: JSON.stringify([track.album]),
+        title: track.album,
+        artists: [],
+        trackArtists: [],
+        paths: {},
+        trackCount: 0,
+        genres: [],
+        ids: [],
+        addedAt: null,
+      }
       albums.set(track.album, album)
     }
     album.trackCount++
+    album.ids.push(track.id)
+    if (track.genre && !album.genres.includes(track.genre)) album.genres.push(track.genre)
     const credit = track.albumArtist ?? track.artist
     if (credit && !album.artists.includes(credit)) album.artists.push(credit)
     if (track.artist && !album.trackArtists.includes(track.artist)) album.trackArtists.push(track.artist)
@@ -42,6 +61,81 @@ export function groupAlbums(tracks: readonly LibraryTrack[]): Album[] {
       album.addedAt = track.addedAt
   }
   return [...albums.values()]
+}
+
+/** A disc folder inside an album folder: CD1, Disc 2, disk_3, Диск 1. */
+const DISC_FOLDER = /^(?:cd|disc|disk|диск)[\s._-]*(\d{1,2})$/i
+
+function folders(path: string): string[] {
+  return path.split('/').slice(0, -1)
+}
+
+/** The disc number: the tag, else a disc folder name (CD2/…); null when neither says. */
+export function discOf(track: { path: string | null; discNumber?: number | null }): number | null {
+  if (typeof track.discNumber === 'number' && track.discNumber > 0) return track.discNumber
+  const folder = track.path ? folders(track.path).at(-1) : undefined
+  const match = folder ? DISC_FOLDER.exec(folder) : null
+  return match?.[1] ? Number(match[1]) : null
+}
+
+/**
+ * Which release of its title a track belongs to: its album artist, else its
+ * album folder (a disc folder counts as its parent). Stock groups albums by
+ * title only, so two albums called "Harbor" in different folders are one
+ * stock group; the library view tells them apart by this.
+ */
+export function releaseOf(track: Pick<LibraryTrack, 'albumArtist' | 'artist' | 'path'>): string {
+  if (track.albumArtist) return `artist:${track.albumArtist}`
+  if (!track.path) return `track-artist:${track.artist ?? ''}`
+  const parts = folders(track.path)
+  if (DISC_FOLDER.test(parts.at(-1) ?? '')) parts.pop()
+  return `folder:${parts.join('/')}`
+}
+
+/**
+ * Albums as cards: title groups split into releases (releaseOf) when one
+ * title holds several. Releases that stock can only address by the same
+ * artist scope stay together, since they could not be opened or played apart;
+ * a release with several track artists (a compilation) keeps the title's
+ * page, where its artists are offered as filters.
+ */
+export function groupReleases(tracks: readonly LibraryTrack[]): Album[] {
+  const byTitle = new Map<string, LibraryTrack[]>()
+  for (const track of tracks) {
+    if (!track.album) continue
+    const list = byTitle.get(track.album)
+    if (list) list.push(track)
+    else byTitle.set(track.album, [track])
+  }
+  const result: Album[] = []
+  for (const [title, members] of byTitle) {
+    const [whole] = groupAlbums(members)
+    if (!whole) continue
+    const parts = new Map<string, LibraryTrack[]>()
+    for (const track of members) {
+      const release = releaseOf(track)
+      const part = parts.get(release)
+      if (part) part.push(track)
+      else parts.set(release, [track])
+    }
+    // Releases that only one and the same track artist credits merge back.
+    const scoped = new Map<string, LibraryTrack[]>()
+    for (const [release, part] of parts) {
+      const artists = new Set(part.map((track) => track.artist ?? ''))
+      const [only] = artists
+      const key = artists.size === 1 && only ? `scope:${only}` : release
+      scoped.set(key, [...(scoped.get(key) ?? []), ...part])
+    }
+    if (whole.trackArtists.length <= 1 || scoped.size <= 1) {
+      result.push(whole)
+      continue
+    }
+    for (const [release, part] of scoped) {
+      const [album] = groupAlbums(part)
+      if (album) result.push({ ...album, key: JSON.stringify([title, release]) })
+    }
+  }
+  return result
 }
 
 /** Most recently added first; ties keep library order. */
@@ -59,9 +153,11 @@ export function albumTracks<T extends LibraryTrack>(tracks: readonly T[], title:
   return tracks.filter((track) => track.album === title && (artist === null || track.artist === artist))
 }
 
-/** Other title groups with tracks by this artist ("More by"), most recently added first. */
+/** Other albums with tracks crediting this artist, alone or jointly ("More by"), most recently added first. */
 export function albumsBy(albums: readonly Album[], artist: string, except: string): Album[] {
-  return recentAlbums(albums.filter((album) => album.title !== except && album.trackArtists.includes(artist)))
+  return recentAlbums(
+    albums.filter((album) => album.title !== except && album.trackArtists.some((credit) => credits(credit, artist))),
+  )
 }
 
 export type AlbumSort = 'recent' | 'title' | 'artist'
@@ -84,7 +180,9 @@ export function sortAlbums(albums: readonly Album[], sort: AlbumSort, locale: st
  * their original order. Selection still resolves positions in the stock's
  * own order, so display order never changes what is sent.
  */
-export function byTrackNumber<T extends Pick<LibraryTrack, 'discNumber' | 'trackNumber'>>(tracks: readonly T[]): T[] {
+export function byTrackNumber<T extends Pick<LibraryTrack, 'discNumber' | 'trackNumber' | 'path'>>(
+  tracks: readonly T[],
+): T[] {
   const numbered = (track: T) => typeof track.trackNumber === 'number' && track.trackNumber > 0
   return tracks
     .map((track, index) => ({ track, index }))
@@ -94,7 +192,7 @@ export function byTrackNumber<T extends Pick<LibraryTrack, 'discNumber' | 'track
       if (an !== bn) return an ? -1 : 1
       if (!an) return a.index - b.index
       return (
-        (a.track.discNumber ?? 1) - (b.track.discNumber ?? 1) ||
+        (discOf(a.track) ?? 1) - (discOf(b.track) ?? 1) ||
         (a.track.trackNumber ?? 0) - (b.track.trackNumber ?? 0) ||
         a.index - b.index
       )

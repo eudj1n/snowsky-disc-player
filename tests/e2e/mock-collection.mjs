@@ -19,6 +19,8 @@ const ALBUMS = [
   // Northline's (the stock groups albums by title), and a second Northline one.
   ['Afterglow', 'Mira Sol', 'Jazz', ['Late Train', 'Afterglow (Reprise)'], 1_780_000_000],
   ['Night Drive', 'Northline', 'Electronic', ['Night Drive', 'City Glow', 'Last Exit'], 1_780_100_000],
+  // Two discs, and a joint credit that stock keeps as one artist string.
+  ['Two Rooms', 'Kite Lines', 'Alternative', ['Opening', 'Hallway', 'Closing', 'Encore'], 1_780_200_000],
 ]
 
 export const TRACKS = ALBUMS.flatMap(([album, artist, genre, songs, addedBase = 1_790_000_000], a) =>
@@ -53,6 +55,15 @@ export const TRACKS = ALBUMS.flatMap(([album, artist, genre, songs, addedBase = 
 // The database knows no duration for these (the media route supplies them).
 for (const track of TRACKS) if (track.ALBUM === 'Тихий океан') track.MEDIA_DURATION = track.DURATION
 for (const track of TRACKS) if (track.ALBUM === 'Тихий океан') track.DURATION = 0
+
+for (const [index, track] of TRACKS.filter((item) => item.ALBUM === 'Two Rooms').entries()) {
+  track.DISC = index < 2 ? 1 : 2
+  track.TRACK = (index % 2) + 1
+  if (track.TITLE === 'Hallway') track.ARTIST = 'Kite Lines; Mira Sol'
+}
+
+// DATE tags the files carry (stock keeps no year).
+const DATES = { 'Inner Space': '2019-03-01', 'Two Rooms': '2021' }
 
 // One mixed-genre album: a Soul album with a Jazz track, for genre-album scopes.
 const golden = TRACKS.find((track) => track.TITLE === 'Golden')
@@ -257,7 +268,13 @@ export function mediaRoute(kind, path) {
       sampleRate: 44100,
       bitDepth: 16,
       channels: 2,
-      tags: { title: track.TITLE, artist: track.ARTIST, album: track.ALBUM, genre: track.GENRE },
+      tags: {
+        title: track.TITLE,
+        artist: track.ARTIST,
+        album: track.ALBUM,
+        genre: track.GENRE,
+        date: DATES[track.ALBUM],
+      },
       cover: cover ? 'embedded' : null,
       lyrics: lyrics ? lyrics.source : null,
     }

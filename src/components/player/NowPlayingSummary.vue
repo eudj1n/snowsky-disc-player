@@ -17,11 +17,12 @@ withDefaults(
     favorite: boolean | null
     favoriteDisabled: boolean
     titleTo?: RouteLocationRaw | null
-    subtitleTo?: RouteLocationRaw | null
+    /** The subtitle as links (each artist of a joint credit), instead of plain text. */
+    subtitleLinks?: { text: string; to: RouteLocationRaw }[] | null
     /** Where playback comes from; shown after the artist on wide screens. */
     context?: { text: string; to: RouteLocationRaw | null } | null
   }>(),
-  { titleTo: null, subtitleTo: null, context: null },
+  { titleTo: null, subtitleLinks: null, context: null },
 )
 const emit = defineEmits<{ open: [opener: HTMLElement]; favorite: [] }>()
 </script>
@@ -60,12 +61,16 @@ const emit = defineEmits<{ open: [opener: HTMLElement]; favorite: [] }>()
         title
       }}</strong>
       <span class="mt-6 flex min-w-0 items-baseline gap-5 text-10 text-muted phone:text-9">
-        <RouterLink
-          v-if="subtitleTo"
-          :to="subtitleTo"
-          class="min-w-0 truncate hover:text-ink hover:underline hover:underline-offset-3 focus-visible:text-ink focus-visible:underline"
-          >{{ subtitle }}</RouterLink
-        >
+        <span v-if="subtitleLinks?.length" class="min-w-0 truncate">
+          <template v-for="(link, index) in subtitleLinks" :key="link.text"
+            ><template v-if="index">, </template
+            ><RouterLink
+              :to="link.to"
+              class="hover:text-ink hover:underline hover:underline-offset-3 focus-visible:text-ink focus-visible:underline"
+              >{{ link.text }}</RouterLink
+            ></template
+          >
+        </span>
         <span v-else class="min-w-0 truncate">{{ subtitle }}</span>
         <template v-if="context">
           <span aria-hidden="true" class="compact:hidden">·</span>

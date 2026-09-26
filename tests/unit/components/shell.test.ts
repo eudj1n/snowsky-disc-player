@@ -192,7 +192,7 @@ describe('TrackTiles', () => {
         playLabel: 'Play',
         menuLabel: 'Track actions',
         titleTo: (item: Track) => ({ name: 'album', params: { name: item.album, artist: item.artist } }),
-        artistTo: (item: Track) => ({ name: 'artist', params: { name: item.artist } }),
+        artistTo: (name: string) => ({ name: 'artist', params: { name } }),
       },
       ...LINK_STUB,
     })
@@ -250,7 +250,7 @@ describe('TrackList links and header', () => {
         tracks: [track('Волны', 'Тихий океан', 185_000)],
         menuLabel: 'Track actions',
         header: { title: 'Title', album: 'Album', duration: 'Duration' },
-        artistTo: (item: Track) => ({ name: 'artist', params: { name: item.artist } }),
+        artistTo: (name: string) => ({ name: 'artist', params: { name } }),
         albumTo: (item: Track) => ({ name: 'album', params: { name: item.album, artist: item.artist } }),
       },
       ...LINK_STUB,

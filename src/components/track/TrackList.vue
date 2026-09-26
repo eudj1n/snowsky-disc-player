@@ -16,6 +16,7 @@ import { formatDuration, type LibraryTrack, type Track } from '../../domain/trac
 import UiIcon from '../../ui/UiIcon.vue'
 import UiNowPlaying from '../../ui/UiNowPlaying.vue'
 import Artwork from '../artwork/Artwork.vue'
+import ArtistCredit from './ArtistCredit.vue'
 import TrackListHeader from './TrackListHeader.vue'
 import { ROW_DIVIDER, TRACK_ROW, trackColumns, type TrackColumnLabels, type TrackLead } from './trackGrid'
 
@@ -47,8 +48,11 @@ const props = withDefaults(
     coverOf?: (track: Track) => Blob | null
     /** Column names for a muted header row (long lists); none by default. */
     header?: TrackColumnLabels | null
-    /** Route for a row's artist, or null to keep it plain. */
-    artistTo?: (track: Track) => RouteLocationRaw | null
+    /** Route for one artist of a row's credit, or null to keep it plain. */
+    artistTo?: (name: string) => RouteLocationRaw | null
+    /** A row's disc: headings separate the discs of a multi-disc album. */
+    discOf?: ((track: Track) => number | null) | null
+    discLabel?: (disc: number) => string
     /** Route for a row's album, or null to keep it plain. */
     albumTo?: (track: Track) => RouteLocationRaw | null
     /** Favorite state per row (null: unknown); the heart column needs labels too. */
@@ -70,6 +74,8 @@ const props = withDefaults(
     coverOf: () => null,
     header: null,
     artistTo: () => null,
+    discOf: null,
+    discLabel: (disc: number) => String(disc),
     albumTo: () => null,
     favoriteOf: () => null,
     favoriteLabels: null,
@@ -97,6 +103,18 @@ const columns = computed(() => trackColumns(props.lead, album.value, duration.va
 const soloArtist = computed(
   () => props.lead === 'number' && new Set(props.tracks.map((track) => track.artist ?? '')).size <= 1,
 )
+/** Row index → disc heading, when the rows span more than one disc. */
+const discHeadings = computed(() => {
+  const headings = new Map<number, string>()
+  const discOf = props.discOf
+  if (!discOf) return headings
+  const discs = props.tracks.map((track) => discOf(track))
+  if (new Set(discs.filter((disc) => disc !== null)).size < 2) return headings
+  discs.forEach((disc, index) => {
+    if (disc !== null && disc !== discs[index - 1]) headings.set(index, props.discLabel(disc))
+  })
+  return headings
+})
 const numberOf = (track: Track, index: number) => {
   const number = (track as Partial<LibraryTrack>).trackNumber
   return typeof number === 'number' && number > 0 ? number : index + 1
@@ -122,147 +140,153 @@ function contextMenu(event: MouseEvent, index: number): void {
       :duration="duration"
       :actions="menuLabel !== null"
     />
-    <div
-      v-for="(track, index) in tracks"
-      :key="`${track.path ?? ''}#${index}`"
-      role="row"
-      class="group/row hover:bg-soft"
-      :data-solo="soloArtist"
-      :aria-current="isCurrent(track) ? 'true' : undefined"
-      :class="[
-        TRACK_ROW,
-        ROW_DIVIDER,
-        columns,
-        soloArtist ? 'min-h-46' : 'min-h-59',
-        { 'bg-selected hover:bg-selected': isCurrent(track) },
-      ]"
-      @contextmenu="contextMenu($event, index)"
-    >
-      <span role="cell" class="flex justify-center">
-        <template v-if="favoriteLabels && favoriteOf(track) !== null">
+    <template v-for="(track, index) in tracks" :key="`${track.path ?? ''}#${index}`">
+      <div v-if="discHeadings.has(index)" role="row" class="pt-18 pb-6">
+        <span role="rowheader" class="text-9 font-[650] tracking-[1.8px] text-muted uppercase">{{
+          discHeadings.get(index)
+        }}</span>
+      </div>
+      <div
+        role="row"
+        class="group/row hover:bg-soft"
+        :data-solo="soloArtist"
+        :aria-current="isCurrent(track) ? 'true' : undefined"
+        :class="[
+          TRACK_ROW,
+          ROW_DIVIDER,
+          columns,
+          soloArtist ? 'min-h-46' : 'min-h-59',
+          { 'bg-selected hover:bg-selected': isCurrent(track) },
+        ]"
+        @contextmenu="contextMenu($event, index)"
+      >
+        <span role="cell" class="flex justify-center">
+          <template v-if="favoriteLabels && favoriteOf(track) !== null">
+            <button
+              v-if="isCurrent(track) && !favoriteDisabled"
+              type="button"
+              :aria-pressed="favoriteOf(track) === true"
+              :aria-label="favoriteOf(track) ? favoriteLabels.remove : favoriteLabels.add"
+              :title="favoriteOf(track) ? favoriteLabels.remove : favoriteLabels.add"
+              class="text-muted hover:scale-110 hover:text-accent focus-visible:text-accent aria-pressed:text-accent aria-pressed:hover:text-accent/80 [&>svg]:transition-[fill,stroke] hover:[&>svg]:stroke-[2.2]"
+              :class="[HEART, favoriteOf(track) ? '' : `${REVEAL} focus-visible:opacity-100`]"
+              @click="emit('favorite')"
+            >
+              <UiIcon name="heart" class="size-13 phone:size-11" :filled="favoriteOf(track) === true" />
+            </button>
+            <button
+              v-else-if="favoriteOf(track) && favoriteRemovable"
+              type="button"
+              aria-pressed="true"
+              :aria-label="`${favoriteLabels.removeAny}: ${track.title}`"
+              :title="favoriteLabels.removeAny"
+              class="text-accent hover:scale-110 hover:text-accent/80"
+              :class="HEART"
+              @click="emit('unfavorite', track)"
+            >
+              <UiIcon name="heart" filled class="size-13 phone:size-11" />
+            </button>
+            <span v-else-if="favoriteOf(track)" class="text-accent" :class="HEART" :title="favoriteLabels.favorite">
+              <UiIcon filled name="heart" class="size-13 phone:size-11" /><span class="sr-only">{{
+                favoriteLabels.favorite
+              }}</span>
+            </span>
+            <span
+              v-else
+              aria-hidden="true"
+              class="cursor-help text-muted/70"
+              :class="[HEART, REVEAL]"
+              :title="favoriteLabels.onlyCurrent"
+            >
+              <UiIcon name="heart" class="size-13 phone:size-11" />
+            </span>
+          </template>
+          <template v-if="lead === 'cover'">
+            <button
+              v-if="playLabel"
+              type="button"
+              :aria-label="`${playLabel} ${track.title}`"
+              :disabled="disabled"
+              class="relative size-40 overflow-hidden rounded-6 p-0 phone:size-34"
+              @click="emit('play', index)"
+            >
+              <Artwork :title="track.title" :cover="coverOf(track)" />
+              <span
+                class="absolute inset-0 grid place-items-center bg-[#0006] text-white transition-opacity duration-200"
+                :class="isCurrent(track) ? 'bg-[#0004] opacity-100' : REVEAL"
+              >
+                <template v-if="isCurrent(track)">
+                  <UiNowPlaying :playing="playing" class="group-hover/row:hidden" />
+                  <UiIcon filled name="play" class="hidden size-14 group-hover/row:block" />
+                </template>
+                <UiIcon v-else filled name="play" class="size-14" />
+              </span>
+            </button>
+            <span v-else class="size-40 overflow-hidden rounded-6 phone:size-34"
+              ><Artwork :title="track.title" :cover="coverOf(track)"
+            /></span>
+          </template>
           <button
-            v-if="isCurrent(track) && !favoriteDisabled"
-            type="button"
-            :aria-pressed="favoriteOf(track) === true"
-            :aria-label="favoriteOf(track) ? favoriteLabels.remove : favoriteLabels.add"
-            :title="favoriteOf(track) ? favoriteLabels.remove : favoriteLabels.add"
-            class="text-muted hover:scale-110 hover:text-accent focus-visible:text-accent aria-pressed:text-accent aria-pressed:hover:text-accent/80 [&>svg]:transition-[fill,stroke] hover:[&>svg]:stroke-[2.2]"
-            :class="[HEART, favoriteOf(track) ? '' : `${REVEAL} focus-visible:opacity-100`]"
-            @click="emit('favorite')"
-          >
-            <UiIcon name="heart" class="size-13 phone:size-11" :filled="favoriteOf(track) === true" />
-          </button>
-          <button
-            v-else-if="favoriteOf(track) && favoriteRemovable"
-            type="button"
-            aria-pressed="true"
-            :aria-label="`${favoriteLabels.removeAny}: ${track.title}`"
-            :title="favoriteLabels.removeAny"
-            class="text-accent hover:scale-110 hover:text-accent/80"
-            :class="HEART"
-            @click="emit('unfavorite', track)"
-          >
-            <UiIcon name="heart" filled class="size-13 phone:size-11" />
-          </button>
-          <span v-else-if="favoriteOf(track)" class="text-accent" :class="HEART" :title="favoriteLabels.favorite">
-            <UiIcon filled name="heart" class="size-13 phone:size-11" /><span class="sr-only">{{
-              favoriteLabels.favorite
-            }}</span>
-          </span>
-          <span
-            v-else
-            aria-hidden="true"
-            class="cursor-help text-muted/70"
-            :class="[HEART, REVEAL]"
-            :title="favoriteLabels.onlyCurrent"
-          >
-            <UiIcon name="heart" class="size-13 phone:size-11" />
-          </span>
-        </template>
-        <template v-if="lead === 'cover'">
-          <button
-            v-if="playLabel"
+            v-else-if="playLabel"
             type="button"
             :aria-label="`${playLabel} ${track.title}`"
             :disabled="disabled"
-            class="relative size-40 overflow-hidden rounded-6 p-0 phone:size-34"
+            class="grid h-24 w-full place-items-center p-0 text-10 text-muted tabular-nums hover:enabled:text-ink"
             @click="emit('play', index)"
           >
-            <Artwork :title="track.title" :cover="coverOf(track)" />
-            <span
-              class="absolute inset-0 grid place-items-center bg-[#0006] text-white transition-opacity duration-200"
-              :class="isCurrent(track) ? 'bg-[#0004] opacity-100' : REVEAL"
-            >
-              <template v-if="isCurrent(track)">
-                <UiNowPlaying :playing="playing" class="group-hover/row:hidden" />
-                <UiIcon filled name="play" class="hidden size-14 group-hover/row:block" />
-              </template>
-              <UiIcon v-else filled name="play" class="size-14" />
-            </span>
+            <UiNowPlaying
+              v-if="isCurrent(track)"
+              :playing="playing"
+              class="text-progress-fill group-focus-within/row:hidden group-hover/row:hidden"
+            />
+            <span v-else class="group-focus-within/row:hidden group-hover/row:hidden">{{
+              numberOf(track, index)
+            }}</span>
+            <UiIcon
+              filled
+              name="play"
+              class="hidden size-13 text-secondary group-focus-within/row:block group-hover/row:block"
+            />
           </button>
-          <span v-else class="size-40 overflow-hidden rounded-6 phone:size-34"
-            ><Artwork :title="track.title" :cover="coverOf(track)"
-          /></span>
-        </template>
-        <button
-          v-else-if="playLabel"
-          type="button"
-          :aria-label="`${playLabel} ${track.title}`"
-          :disabled="disabled"
-          class="grid h-24 w-full place-items-center p-0 text-10 text-muted tabular-nums hover:enabled:text-ink"
-          @click="emit('play', index)"
-        >
-          <UiNowPlaying
-            v-if="isCurrent(track)"
-            :playing="playing"
-            class="text-progress-fill group-focus-within/row:hidden group-hover/row:hidden"
-          />
-          <span v-else class="group-focus-within/row:hidden group-hover/row:hidden">{{ numberOf(track, index) }}</span>
-          <UiIcon
-            filled
-            name="play"
-            class="hidden size-13 text-secondary group-focus-within/row:block group-hover/row:block"
-          />
-        </button>
-        <span v-else class="text-10 text-muted tabular-nums">{{ numberOf(track, index) }}</span>
-      </span>
-      <div role="cell" class="min-w-0">
-        <strong class="block truncate font-[550]">{{ track.title }}</strong>
-        <template v-if="soloArtist" />
-        <RouterLink
-          v-else-if="track.artist && artistTo(track)"
-          :to="artistTo(track) ?? ''"
-          class="mt-5 block w-fit max-w-full truncate text-10 text-muted"
-          :class="LINK"
-          >{{ track.artist }}</RouterLink
-        >
-        <small v-else class="mt-5 block truncate text-10 text-muted">{{ track.artist || '—' }}</small>
+          <span v-else class="text-10 text-muted tabular-nums">{{ numberOf(track, index) }}</span>
+        </span>
+        <div role="cell" class="min-w-0">
+          <strong class="block truncate font-[550]">{{ track.title }}</strong>
+          <template v-if="soloArtist" />
+          <span
+            v-else-if="track.artist && artistTo(track.artist)"
+            class="mt-5 block max-w-full truncate text-10 text-muted"
+          >
+            <ArtistCredit :credit="track.artist" :to="artistTo" :link-class="LINK" />
+          </span>
+          <small v-else class="mt-5 block truncate text-10 text-muted">{{ track.artist || '—' }}</small>
+        </div>
+        <span v-if="album" role="cell" class="min-w-0 truncate text-10 text-muted phone:hidden">
+          <RouterLink
+            v-if="track.album && albumTo(track)"
+            :to="albumTo(track) ?? ''"
+            class="block w-fit max-w-full truncate"
+            :class="LINK"
+            >{{ track.album }}</RouterLink
+          >
+          <template v-else>{{ track.album || '—' }}</template>
+        </span>
+        <span v-if="duration" role="cell" class="text-right text-10 text-muted tabular-nums">{{
+          formatDuration(track.durationMs) ?? '—:—'
+        }}</span>
+        <span v-if="menuLabel !== null" role="cell" class="flex justify-end">
+          <button
+            type="button"
+            data-track-menu
+            :aria-label="`${menuLabel}: ${track.title}`"
+            aria-haspopup="menu"
+            class="grid size-27 place-items-center rounded-full text-24 leading-none font-light tracking-[1px] text-secondary hover:bg-hover hover:text-ink"
+            @click="emit('menu', index, $event.currentTarget as HTMLElement)"
+          >
+            ⋯
+          </button>
+        </span>
       </div>
-      <span v-if="album" role="cell" class="min-w-0 truncate text-10 text-muted phone:hidden">
-        <RouterLink
-          v-if="track.album && albumTo(track)"
-          :to="albumTo(track) ?? ''"
-          class="block w-fit max-w-full truncate"
-          :class="LINK"
-          >{{ track.album }}</RouterLink
-        >
-        <template v-else>{{ track.album || '—' }}</template>
-      </span>
-      <span v-if="duration" role="cell" class="text-right text-10 text-muted tabular-nums">{{
-        formatDuration(track.durationMs) ?? '—:—'
-      }}</span>
-      <span v-if="menuLabel !== null" role="cell" class="flex justify-end">
-        <button
-          type="button"
-          data-track-menu
-          :aria-label="`${menuLabel}: ${track.title}`"
-          aria-haspopup="menu"
-          class="grid size-27 place-items-center rounded-full text-24 leading-none font-light tracking-[1px] text-secondary hover:bg-hover hover:text-ink"
-          @click="emit('menu', index, $event.currentTarget as HTMLElement)"
-        >
-          ⋯
-        </button>
-      </span>
-    </div>
+    </template>
   </div>
 </template>

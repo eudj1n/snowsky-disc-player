@@ -361,6 +361,32 @@ pairing under the card marker, upload with a scan).
       (`snPairing`); a credential the gateway refuses at once is forgotten, so
       reconnecting does not spend its attempt limit.
 
+## Owner requests (round 8): albums, discs, years, joint artists
+
+Stock facts found on the emulator with synthetic files (2026-09-26): SONG.DISC
+holds FLAC `DISCNUMBER` (also "1/2") and MP3 `TPOS`; SONG_PRODUCTION_YEAR stays
+empty for FLAC `DATE`/`YEAR` and MP3 `TDRC`/`TYER`; two FLAC `ARTIST` fields
+are stored as "A;B", a single "A; B" as written, an ID3v2.4 multi-value
+artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
+
+- [x] Albums that share a title are separate cards when they are separate
+      releases (album artist, else album folder; CD1/Disc 2 folders stay one
+      album). Releases stock can only address by one artist scope stay one
+      card; the album page keeps its artist filters only where titles clash.
+- [x] Disc headings on multi-disc album pages; the disc comes from the tag,
+      else from a CD1/Disc 2 folder name, and orders the tracks.
+- [x] Year from the files' DATE tag (FLAC through the media route) on album
+      pages and artist cards, newest first on artist pages. MP3 and AAC wait
+      for ID3/MP4 parsing in the next service image.
+- [x] Joint credits split on semicolons only (never "/", "&" or "feat."):
+      each artist links separately in rows, the player bar and album headers;
+      the artists list counts each; artist pages list "Appears on" albums; a
+      guest on some tracks leaves the album its lead artist's card.
+- [x] With the stock online lyrics option on, lyrics prepared by the player
+      are labelled as possibly from the internet (NetEase); with online covers
+      on, stock's current cover is never kept as an album cover (it may be an
+      iTunes guess). Both options are read from the system settings.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

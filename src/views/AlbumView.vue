@@ -14,17 +14,18 @@ import DetailHeading from '../components/collection/DetailHeading.vue'
 import SectionHeading from '../components/common/SectionHeading.vue'
 import TrackList from '../components/track/TrackList.vue'
 import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
-import { albumTracks, albumsBy, byTrackNumber } from '../domain/album'
+import { albumTracks, albumsBy, byTrackNumber, discOf } from '../domain/album'
+import { creditArtists, creditLabel } from '../domain/artist'
 import { filterBy } from '../domain/search'
 import type { SelectionTarget, TrackKey } from '../gateway/selection'
 import { t } from '../i18n'
-import { albumCover } from '../stores/enrichment'
-import { albums, tracks as collection } from '../stores/library'
+import { albumCover, albumYear } from '../stores/enrichment'
+import { albums, titleGroups, tracks as collection } from '../stores/library'
 import { selection } from '../stores/selection'
 import { openPlaylistDialog, openTrackMenu, ui } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumRoute, artistRoute, genreRoute } from './captions'
+import { albumCardRoute, albumRoute, artistRoute, genreRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
 import { playAlbumCard, playFrom } from './playAlbum'
@@ -45,7 +46,7 @@ const genre = computed(() => {
   const value = route.query.genre
   return scope.value === null && typeof value === 'string' && value !== '' ? value : null
 })
-const group = computed(() => albums.value.find((item) => item.title === name.value) ?? null)
+const group = computed(() => titleGroups.value.find((item) => item.title === name.value) ?? null)
 const tracks = computed(() =>
   byTrackNumber(
     albumTracks(collection.value, name.value, scope.value).filter(
@@ -53,13 +54,23 @@ const tracks = computed(() =>
     ),
   ),
 )
-const credits = computed(() => (scope.value ? [scope.value] : (group.value?.artists ?? [])))
-/** Several artists share this title: offer them as filters (and the whole group). */
-const choices = computed(() => ((group.value?.trackArtists.length ?? 0) > 1 ? (group.value?.trackArtists ?? []) : []))
+/** Each artist once, joint credits ("A; B") split into their artists. */
+const credits = computed(() => [
+  ...new Set((scope.value ? [scope.value] : (group.value?.artists ?? [])).flatMap(creditArtists)),
+])
+const year = computed(() => (group.value ? albumYear(group.value, scope.value) : null))
+/** Several releases share this title: offer their artists as filters (and the whole group). */
+const releases = computed(() => albums.value.filter((album) => album.title === name.value).length)
+const choices = computed(() => {
+  const artists = group.value?.trackArtists ?? []
+  // One album with a guest on some tracks needs no filters; homonymous albums (or an open scope) do.
+  return artists.length > 1 && (releases.value > 1 || scope.value !== null) ? artists : []
+})
 const searching = computed(() => ui.query.trim() !== '')
 const items = computed(() => filterBy(tracks.value, ui.query, (track) => [track.title, track.artist, track.album]))
 const moreBy = computed(() =>
-  (scope.value ? [scope.value] : (group.value?.trackArtists ?? []).slice(0, MORE_BY_ARTISTS))
+  [...new Set((scope.value ? [scope.value] : (group.value?.trackArtists ?? [])).flatMap(creditArtists))]
+    .slice(0, MORE_BY_ARTISTS)
     .map((artist) => ({ artist, albums: albumsBy(albums.value, artist, name.value) }))
     .filter((shelf) => shelf.albums.length > 0),
 )
@@ -70,6 +81,9 @@ function target(track?: TrackKey): SelectionTarget {
   if (genre.value) return { kind: 'genreAlbum', genre: genre.value, album: name.value, ...one }
   return { kind: 'album', album: name.value, ...one }
 }
+/** A shelf card opens the artist's own release when the artist is a literal track artist of it. */
+const shelfScope = (album: { trackArtists: readonly string[] }, artist: string) =>
+  album.trackArtists.includes(artist) ? artist : null
 const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums')
 </script>
 
@@ -90,7 +104,8 @@ const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums
                 >{{ artist }}</RouterLink
               ><span v-if="index < credits.length - 1"> · </span>
             </template>
-            <span v-if="credits.length"> · </span>{{ t('track_count', { count: tracks.length }) }}
+            <span v-if="credits.length"> · </span><template v-if="year">{{ year }} · </template
+            >{{ t('track_count', { count: tracks.length }) }}
           </template>
         </template>
         <UiPillButton icon="play" :disabled="loading || !tracks.length || selection.busy" @click="playFrom(target())">{{
@@ -120,7 +135,7 @@ const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums
             :to="albumRoute(name, artist)"
             :class="CHIP"
             :aria-current="scope === artist ? 'page' : undefined"
-            >{{ artist }}</RouterLink
+            >{{ creditLabel(artist) }}</RouterLink
           >
         </div>
       </nav>
@@ -142,6 +157,8 @@ const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums
       lead="number"
       :tracks="items"
       :show-album="false"
+      :disc-of="discOf"
+      :disc-label="(disc: number) => t('disc_number', { number: disc })"
       @menu="(index, anchor) => items[index] && openTrackMenu(items[index], target(items[index]), anchor)"
       @play="(index) => items[index] && playFrom(target(items[index]))"
       @favorite="onRowFavorite"
@@ -158,16 +175,16 @@ const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums
       <CoverRow :label="t('more_by', { artist: shelf.artist })">
         <CoverCard
           v-for="album in shelf.albums"
-          :key="album.title"
+          :key="album.key"
           role="listitem"
           :title="album.title"
-          :to="albumRoute(album.title, shelf.artist)"
-          :cover="albumCover(album, shelf.artist)"
-          :lines="[{ text: t('track_count', { count: albumTracks(collection, album.title, shelf.artist).length }) }]"
+          :to="albumCardRoute(album, shelfScope(album, shelf.artist))"
+          :cover="albumCover(album, shelfScope(album, shelf.artist))"
+          :lines="[{ text: t('track_count', { count: album.trackCount }) }]"
           :open-label="t('open_item', { name: album.title })"
           :play-label="t('play_item', { name: album.title })"
           :play-disabled="selection.busy"
-          @play="playAlbumCard(album, shelf.artist)"
+          @play="playAlbumCard(album, shelfScope(album, shelf.artist))"
         />
       </CoverRow>
     </section>

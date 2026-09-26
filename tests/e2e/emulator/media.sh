@@ -1,7 +1,8 @@
 #!/bin/sh
 # Generates the acceptance media on the disposable emulator card (never on a
 # player): two albums titled "Harbor" by different artists and genres, a second
-# Lumen album, and track numbers that differ from file order. Tagged FLAC
+# Lumen album, a two-disc Lumen album with a year and a joint credit, and track
+# numbers that differ from file order. Tagged FLAC
 # tones made with sox inside the emulator container; nothing is copied from a
 # real library. Usage: tests/e2e/emulator/media.sh <container> [remove]
 set -eu
@@ -34,6 +35,19 @@ sox -n --comment 'TITLE=Streetlight' --add-comment 'TRACKNUMBER=2' --add-comment
   --add-comment 'ARTIST=Lumen' --add-comment 'GENRE=Jazz' \
   --add-comment 'LYRICS=[00:00.00]Streetlight, embedded line' \
   -r 44100 -c 2 -b 16 "$root/Lumen - Night Lines/b Streetlight.flac" synth 25 sine 659 vol 0.1
+# Two discs in CD1/CD2 folders with DISCNUMBER and DATE tags, and a joint
+# credit: two ARTIST fields, which stock stores as "Lumen;Kestrel".
+disc() { # folder file title number disc frequency [extra comment]
+  mkdir -p "$root/Lumen - Tide Tables/$1"
+  sox -n --comment "TITLE=$3" --add-comment "TRACKNUMBER=$4" --add-comment "DISCNUMBER=$5" \
+    --add-comment 'DATE=2004-06-01' --add-comment 'ALBUM=Tide Tables' --add-comment 'ARTIST=Lumen' \
+    ${7:+--add-comment "$7"} --add-comment 'GENRE=Ambient' \
+    -r 44100 -c 2 -b 16 "$root/Lumen - Tide Tables/$1/$2" synth 25 sine "$6" vol 0.1
+}
+disc CD1 'a Undertow.flac' Undertow 1 1 349 'ARTIST=Kestrel'
+disc CD1 'b Slack Water.flac' 'Slack Water' 2 1 370
+disc CD2 'a Spring Tide.flac' 'Spring Tide' 1 2 415
+disc CD2 'b Neap.flac' Neap 2 2 466
 find "$root" -type f | sort
 GUEST
 # Covers need Python inside the container (a folder PNG, an embedded PICTURE).

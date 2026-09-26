@@ -13,6 +13,7 @@ import { coverFor } from '../stores/enrichment'
 import { observations } from '../stores/observations'
 import { playback } from '../stores/playback'
 import { togglePanel, ui } from '../stores/ui'
+import { creditArtists } from '../domain/artist'
 import { albumRoute, artistRoute } from '../views/captions'
 import { usePlaybackContext } from './usePlaybackContext'
 import { usePlayerControls } from './usePlayerControls'
@@ -30,7 +31,9 @@ const titleTo = computed(() => {
   return current?.artist ? artistRoute(current.artist) : null
 })
 const context = usePlaybackContext()
-const artistTo = computed(() => (track.value?.artist ? artistRoute(track.value.artist) : null))
+const artistLinks = computed(() =>
+  track.value?.artist ? creditArtists(track.value.artist).map((name) => ({ text: name, to: artistRoute(name) })) : null,
+)
 const labels = computed(() => ({
   shuffle: t('shuffle'),
   previous: t('previous_track'),
@@ -58,7 +61,7 @@ const labels = computed(() => ({
       :favorite="playback.current.favorite"
       :favorite-disabled="player.favoriteDisabled.value"
       :title-to="titleTo"
-      :subtitle-to="artistTo"
+      :subtitle-links="artistLinks"
       :context="context"
       @open="(opener) => togglePanel('now', opener)"
       @favorite="player.onFavorite"

@@ -21,7 +21,7 @@ import { recentlyAdded, type Track } from '../domain/track'
 import type { SelectionTarget, TrackKey } from '../gateway/selection'
 import { t } from '../i18n'
 import { albumCover, coverFor } from '../stores/enrichment'
-import { albums, genres, tracks as collection } from '../stores/library'
+import { albums, genres, titleGroups, tracks as collection } from '../stores/library'
 import { isPlaying, playback } from '../stores/playback'
 import { selection } from '../stores/selection'
 import { openTrackMenu, ui } from '../stores/ui'
@@ -59,23 +59,26 @@ const count = computed(() => latest.value.length + shelf.value.length + artists.
 const current = computed(() => playback.current.track?.path ?? null)
 /** The album also holds tracks of other genres. */
 const mixed = (album: Album) =>
-  albumTracks(collection.value, album.title, null).some((track) => track.genre !== name.value)
+  albumTracks(collection.value, album.title, albumScope(album)).some((track) => track.genre !== name.value)
 const titleTo = (track: Track) =>
   track.album
     ? genre.value && mixed(album(track.album))
       ? genreAlbumLink(track.album)
       : albumRoute(track.album, track.artist || null)
     : null
-const artistTo = (track: Track) => (track.artist ? artistRoute(track.artist) : null)
+const artistTo = (name: string) => artistRoute(name)
 
 function album(title: string): Album {
   return (
-    albums.value.find((item) => item.title === title) ?? {
+    titleGroups.value.find((item) => item.title === title) ?? {
+      key: JSON.stringify([title]),
       title,
       artists: [],
       trackArtists: [],
       paths: {},
       trackCount: 0,
+      genres: [],
+      ids: [],
       addedAt: null,
     }
   )
@@ -151,7 +154,7 @@ function playAlbum(item: Album): void {
       <CoverRow :label="t('albums')">
         <CoverCard
           v-for="item in shelf"
-          :key="item.title"
+          :key="item.key"
           role="listitem"
           :title="item.title"
           :to="genreAlbumRoute(item, name, mixed(item))"

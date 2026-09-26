@@ -10,6 +10,13 @@ export function playerLanguage(result: DataResult): StockLanguage | null {
   return typeof index === 'number' ? (STOCK_LANGUAGES[index] ?? null) : null
 }
 
+/** The online cover and lyrics options (ONLINE_COVER, ONLINE_LRC: 1 on, 0 off; stock default off). */
+export function onlineOptions(result: DataResult): { covers: boolean; lyrics: boolean } | null {
+  const row = rowsOf(result)[0]
+  if (!row) return null
+  return { covers: row.ONLINE_COVER === 1, lyrics: row.ONLINE_LRC === 1 }
+}
+
 /** Firmware main OS number from the 0501 settings reply (a501). */
 export function socVersion(payload: string): number | null {
   const value: unknown = JSON.parse(payload)

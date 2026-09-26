@@ -29,7 +29,8 @@ const source = computed(() =>
 )
 /** The album also holds tracks outside the filtered genre. */
 const mixed = (album: Album) =>
-  genre.value !== null && albumTracks(tracks.value, album.title, null).some((track) => track.genre !== genre.value)
+  genre.value !== null &&
+  albumTracks(tracks.value, album.title, albumScope(album)).some((track) => track.genre !== genre.value)
 const items = computed(() =>
   sortAlbums(
     filterBy(source.value, ui.query, (album) => [album.title, ...album.artists]),
@@ -69,7 +70,7 @@ const sorts = computed(() => ALBUM_SORTS.map((value) => ({ value, text: t(`sort_
     <CoverGrid>
       <CoverCard
         v-for="album in items"
-        :key="album.title"
+        :key="album.key"
         :title="album.title"
         :to="genre ? genreAlbumRoute(album, genre, mixed(album)) : albumCardRoute(album)"
         :cover="albumCover(album, albumScope(album))"

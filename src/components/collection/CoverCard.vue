@@ -10,10 +10,8 @@ import type { RouteLocationRaw } from 'vue-router'
 import UiIcon from '../../ui/UiIcon.vue'
 import Artwork from '../artwork/Artwork.vue'
 
-export interface CardLine {
-  text: string
-  to?: RouteLocationRaw
-}
+import type { CardLine } from './cardLine'
+export type { CardLine } from './cardLine'
 
 withDefaults(
   defineProps<{

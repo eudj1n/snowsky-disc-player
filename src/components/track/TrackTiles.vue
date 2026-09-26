@@ -10,6 +10,7 @@ import type { Track } from '../../domain/track'
 import UiIcon from '../../ui/UiIcon.vue'
 import UiNowPlaying from '../../ui/UiNowPlaying.vue'
 import Artwork from '../artwork/Artwork.vue'
+import ArtistCredit from './ArtistCredit.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -22,8 +23,8 @@ const props = withDefaults(
     disabled?: boolean
     /** Route for the title (usually the album), or null to keep it plain. */
     titleTo?: (track: Track) => RouteLocationRaw | null
-    /** Route for the artist line, or null to keep it plain. */
-    artistTo?: (track: Track) => RouteLocationRaw | null
+    /** Route for one artist of the credit, or null to keep it plain. */
+    artistTo?: (name: string) => RouteLocationRaw | null
   }>(),
   {
     coverOf: () => null,
@@ -80,13 +81,9 @@ const LINK = 'hover:underline hover:underline-offset-3 focus-visible:underline'
           >{{ track.title }}</RouterLink
         >
         <strong v-else class="block truncate text-12 font-[550]">{{ track.title }}</strong>
-        <RouterLink
-          v-if="track.artist && artistTo(track)"
-          :to="artistTo(track) ?? ''"
-          class="mt-3 block w-fit max-w-full truncate text-11 text-muted hover:text-ink"
-          :class="LINK"
-          >{{ track.artist }}</RouterLink
-        >
+        <span v-if="track.artist && artistTo(track.artist)" class="mt-3 block max-w-full truncate text-11 text-muted">
+          <ArtistCredit :credit="track.artist" :to="artistTo" :link-class="`hover:text-ink ${LINK}`" />
+        </span>
         <small v-else class="mt-3 block truncate text-11 text-muted">{{ track.artist || '—' }}</small>
       </span>
       <button

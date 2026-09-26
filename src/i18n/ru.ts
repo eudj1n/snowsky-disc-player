@@ -169,6 +169,10 @@ export const ru: Messages = {
   lyrics_source_sidecar: 'Из файла .lrc рядом с треком',
   lyrics_source_embedded: 'Из тегов трека',
   lyrics_source_player: 'Подготовлено плеером',
+  disc_number: 'Диск {number}',
+  appears_on: 'Участвует в',
+  lyrics_source_player_online:
+    'Подготовлено плеером. В нём включена онлайн-лирика, поэтому текст может быть из интернета (NetEase).',
   lyrics_seek: 'Перейти к строке',
   closed_scanning:
     'DISC сканирует медиатеку, изменение не отправлено. Подключитесь снова после окончания сканирования.',

@@ -8,14 +8,15 @@
  * unchanged, the page opens from the cache without paging the player.
  */
 import { computed, reactive, readonly } from 'vue'
-import { groupAlbums } from '../domain/album'
+import { groupAlbums, groupReleases } from '../domain/album'
 import { groupArtists } from '../domain/artist'
 import { groupGenres } from '../domain/genre'
 import { librarySignature, type LibrarySummary } from '../domain/library'
 import type { Playlist } from '../domain/playlist'
 import type { LibraryTrack } from '../domain/track'
 import { librarySummary, libraryTracks, playlists as playlistRows } from '../gateway/library'
-import { playerLanguage } from '../gateway/settings'
+import { onlineOptions, playerLanguage } from '../gateway/settings'
+import { adoptOnlineOptions } from './playerOptions'
 import { adoptPlayerLanguage } from '../i18n'
 import { cacheGet, cacheSet } from '../lib/idb'
 import { http } from './connection'
@@ -73,7 +74,10 @@ function enriched(tracks: readonly LibraryTrack[]): LibraryTrack[] {
 }
 export const tracks = computed(() => enriched(state.tracks))
 export const favorites = computed(() => enriched(state.favorites))
-export const albums = computed(() => groupAlbums(state.tracks))
+/** Stock title groups: an album page shows one, with its artists as filters. */
+export const titleGroups = computed(() => groupAlbums(state.tracks))
+/** Albums as listed: title groups split into releases where one title holds several. */
+export const albums = computed(() => groupReleases(state.tracks))
 export const artists = computed(() => groupArtists(state.tracks))
 export const genres = computed(() => groupGenres(state.tracks))
 /** Library rows by path, for the context of what is playing. */
@@ -101,7 +105,10 @@ async function pages(query: string, params: Record<string, number> = {}): Promis
 /** Settings (player language) and counts; cheap, read before the collection. */
 export async function loadLibraryFacts(): Promise<void> {
   const [settings, summary] = await Promise.allSettled([http.data('system_settings'), http.data('library_summary')])
-  if (settings.status === 'fulfilled') adoptPlayerLanguage(playerLanguage(settings.value))
+  if (settings.status === 'fulfilled') {
+    adoptPlayerLanguage(playerLanguage(settings.value))
+    adoptOnlineOptions(onlineOptions(settings.value))
+  }
   if (summary.status === 'fulfilled') state.summary = librarySummary(summary.value)
 }
 
