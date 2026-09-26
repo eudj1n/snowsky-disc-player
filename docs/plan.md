@@ -536,11 +536,18 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
       time listened, so "Recently played" can list what the listener started
       (album, artist, genre, playlist) and "Most played" can count tracks.
 - [ ] Contextual "Recently played" with the next service image (owner,
-      2026-09-26): one card per context the listener started, most recent
-      first and each once (album, artist, genre, playlist, favorites cards in
-      their own shapes); a track started from all tracks or a folder shows
-      as that track. "Most played" keeps counting tracks. Source: the
-      service's play history instead of stock's empty RECORD_SONG.
+      2026-09-26): what the listener started, not loose tracks, and no mix
+      of card shapes. How others do it: Apple Music's Recently Played lists
+      only started albums, playlists and stations, with a separate track
+      History by Now Playing; Spotify's Home opens with uniform shortcut
+      tiles of recent albums, playlists and artists; Yandex Music's "Вы
+      недавно слушали" holds albums, playlists and artists, and its History
+      lists tracks with their source. The shelf layout (uniform tiles, which
+      contexts) awaits the owner's choice; "Most played" keeps counting
+      tracks.
+- Idea (later): generated playlists by genre, era (tag years) or mood. The
+  stock playlist routes already create and fill playlists, so these need no
+  database write; mood has no source yet.
 
 ## Owner requests (round 12): lyrics timing
 
