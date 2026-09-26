@@ -491,9 +491,15 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
       of history exists.
 - [ ] Our own play history (deferred by the owner, 2026-09-26): the page
       recording the plays it observes (30 s or half the track, this browser
-      only), a service-side recorder in the next image that polls stock's resume
-      point read-only and keeps a bounded file on the card, or both. The shelf
-      and the order are built and stay hidden until then.
+      only), a service-side recorder in the next image, or both. The shelf and
+      the order are built and stay hidden until then.
+      Emulator check of stock's resume point (`MEMORY_PLAY`, 2026-09-26): it
+      does not change while tracks advance during playback (72 s over two
+      tracks, song.db untouched) and is rewritten only on pause, with the queue
+      row (`LIST_SONG_0`), not the library ID; so it cannot serve as a play
+      source. A service recorder would need its own view of the playing track
+      (a second stock connection, untested) or would see only what passes
+      through the gateway while a page is connected.
 
 ## Owner requests (round 12): lyrics timing
 
