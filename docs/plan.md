@@ -622,6 +622,27 @@ desktop tests passed, including the long-name test that also pauses from the
 compact bar; the Home featured-album test skipped itself while its button was
 still disabled).
 
+## Next release with the next service image (owner, 2026-09-26)
+
+Page work that follows the service stages (see the service plan's work order):
+
+- [ ] "Recently played" as one shelf of uniform tiles (square picture, name,
+      a type caption such as "Album · Artist", "Artist", "Genre",
+      "Playlist · 32"): albums, one artist's albums, artists, genres,
+      playlists and favorites the listener started, most recent first, each
+      once; 6–8 tiles on desktop, 4 on phones. Loose tracks stay off it.
+- [ ] Track history: a "Recently played" order in Tracks, each row with the
+      context it played from.
+- [ ] Favorite any track from its row (the service's favorites mutation).
+- [ ] Live battery, card space and the output format in the player facts and
+      Now Playing.
+- [ ] MP3 and AAC details (years, discs, covers, lyrics) through the media
+      route, checked with such files on the guest.
+- [ ] Service playlists (card-only, owner liked the idea): a queue of one's
+      own kept as a managed stock playlist that the page fills and starts;
+      additions reach playback when it is started again.
+- Research first: live queue edits (see the service plan).
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
