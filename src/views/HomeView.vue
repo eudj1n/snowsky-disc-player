@@ -19,6 +19,7 @@ import ListeningNote from '../components/home/ListeningNote.vue'
 import TrackList from '../components/track/TrackList.vue'
 import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
 import { recentAlbums, albumScope } from '../domain/album'
+import { creditLabel } from '../domain/artist'
 import { recentlyPlayedAlbums } from '../domain/history'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
@@ -28,7 +29,7 @@ import { albums, featuredAlbum, tracks } from '../stores/library'
 import { selection } from '../stores/selection'
 import { openTrackMenu, ui } from '../stores/ui'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumCardRoute, albumLines, countLine } from './captions'
+import { albumCardRoute, albumLines, artistRoute, countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
 import { playAlbumAction, playFrom, playAlbumCard } from './playAlbum'
@@ -44,7 +45,7 @@ onMounted(() => void loadHistory())
 const heroLines = computed<[string, string]>(() =>
   featured.value
     ? [
-        `${featured.value.title}${featured.value.artists[0] ? ` — ${featured.value.artists[0]}` : ''}.`,
+        `${featured.value.title}${featured.value.artists[0] ? ` — ${creditLabel(featured.value.artists[0])}` : ''}.`,
         t('press_play_everything_else_can_wait'),
       ]
     : [t('your_favorite_records_all_in_one_place'), t('let_music_into_your_day')],
@@ -91,6 +92,10 @@ const heroLines = computed<[string, string]>(() =>
         :title-lines="[t('your_collection'), t('your_rhythm')]"
         :cover="featured ? albumCover(featured, albumScope(featured)) : null"
         :lines="heroLines"
+        :featured="
+          featured ? { title: featured.title, to: albumCardRoute(featured), credit: featured.artists[0] ?? null } : null
+        "
+        :artist-to="artistRoute"
         :action="t('play_album')"
         :action-disabled="!featured || selection.busy"
         :loading="loading"

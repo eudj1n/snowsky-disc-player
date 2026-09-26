@@ -23,6 +23,7 @@ import { operation } from '../stores/operation'
 import { closePlaylistDialog, openPlaylistDialog, ui, type PlaylistDialog } from '../stores/ui'
 import UiDialog from '../ui/UiDialog.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
+import UiSelect from '../ui/UiSelect.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { ensureControl } from '../views/ensureControl'
 
@@ -149,12 +150,14 @@ async function submit(): Promise<void> {
       <template v-if="dialog.mode === 'add'">
         <label v-if="names.length" class="mb-16 block">
           <span class="mb-6 block text-11 text-muted">{{ t('playlist_choose') }}</span>
-          <select
-            v-model="choice"
-            class="w-full rounded-10 border border-line bg-paper px-12 py-10 text-13 text-ink focus-visible:border-secondary"
-          >
-            <option v-for="option in names" :key="option" :value="option">{{ option }}</option>
-          </select>
+          <UiSelect block>
+            <select
+              v-model="choice"
+              class="w-full rounded-10 border border-line bg-paper py-10 pl-12 text-13 text-ink focus-visible:border-secondary"
+            >
+              <option v-for="option in names" :key="option" :value="option">{{ option }}</option>
+            </select>
+          </UiSelect>
         </label>
         <p v-else class="mb-16 flex items-center gap-10 text-12 text-muted">
           {{ t('playlist_empty') }}

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Reference detail header: 220px sleeve, name, meta line, actions. The
- * entity type is left out: the breadcrumb already names the section. A soft
+ * entity type is left out: the sidebar marks the section. A soft
  * glow in the artwork's tone (the observed cover's average color, else the
  * sleeve palette) sits behind it, and a quiet rule separates it from the
  * content below. */

@@ -275,12 +275,18 @@ describe('releases', () => {
 
 describe('joint artist credits', () => {
   it('splits on semicolons only and counts each artist', async () => {
-    const { creditArtists, creditLabel, credits, groupArtists } = await import('../../src/domain/artist')
+    const { creditArtists, creditLabel, credits, groupArtists, sameCredit } = await import('../../src/domain/artist')
     expect(creditArtists('Alpha; Beta')).toEqual(['Alpha', 'Beta'])
     expect(creditArtists('Alpha;Beta;Alpha')).toEqual(['Alpha', 'Beta'])
     expect(creditArtists('AC/DC')).toEqual(['AC/DC'])
     expect(creditArtists('Simon & Garfunkel')).toEqual(['Simon & Garfunkel'])
-    expect(creditLabel('Alpha; Beta')).toBe('Alpha, Beta')
+    // Shown as "A & B", "A, B & C" (owner, round 14); one artist stays as is.
+    expect(creditLabel('Alpha; Beta')).toBe('Alpha & Beta')
+    expect(creditLabel('Alpha; Beta;Gamma')).toBe('Alpha, Beta & Gamma')
+    expect(creditLabel('Simon & Garfunkel')).toBe('Simon & Garfunkel')
+    expect(sameCredit('Alpha; Beta', 'Beta;Alpha')).toBe(true)
+    expect(sameCredit('Alpha; Beta', 'Alpha')).toBe(false)
+    expect(sameCredit('Alpha; Beta', 'Alpha; Beta; Gamma')).toBe(false)
     expect(credits('Alpha; Beta', 'Beta')).toBe(true)
     expect(credits('Alphabet', 'Alpha')).toBe(false)
     const artists = groupArtists([track(1, 'X', 'Alpha'), track(2, 'Y', 'Alpha; Beta')])

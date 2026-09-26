@@ -1,4 +1,4 @@
-// Applies the saved appearance before the stylesheet paints (no light flash
+// Applies the saved appearance (and sidebar) before the stylesheet paints (no light flash
 // in dark mode). External and synchronous because the gateway CSP forbids
 // inline scripts. src/stores/appearance.ts owns the preference afterwards.
 ;(function () {
@@ -21,4 +21,12 @@
   }
   if (light && /^[a-z]{1,16}$/.test(light)) root.dataset.lightPalette = light
   if (darkPalette && /^[a-z]{1,16}$/.test(darkPalette)) root.dataset.darkPalette = darkPalette
+  // The collapsed sidebar (src/stores/sidebar.ts).
+  var sidebar
+  try {
+    sidebar = localStorage.getItem('disc-player.sidebar')
+  } catch {
+    sidebar = null
+  }
+  if (sidebar === 'rail') root.dataset.sidebar = 'rail'
 })()

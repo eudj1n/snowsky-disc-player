@@ -16,6 +16,7 @@ import {
 } from '../../domain/eq'
 import { t } from '../../i18n'
 import UiPillButton from '../../ui/UiPillButton.vue'
+import UiSelect from '../../ui/UiSelect.vue'
 import UiTextButton from '../../ui/UiTextButton.vue'
 
 const props = defineProps<{ state: DeepReadonly<EqState> | null; locked: boolean }>()
@@ -71,25 +72,27 @@ function choose(event: Event): void {
       </div>
       <label class="flex items-center gap-8 text-11 text-muted">
         <span>{{ t('eq_preset') }}</span>
-        <select
-          :value="state?.preset ?? ''"
-          :disabled="locked || !state"
-          :aria-label="t('eq_preset')"
-          class="rounded-10 border border-line bg-raised px-10 py-9 text-12 text-ink"
-          @change="choose"
-        >
-          <option v-if="state && !known" :value="state.preset" disabled>
-            {{ t('eq_unknown', { value: state.preset }) }}
-          </option>
-          <optgroup :label="t('eq_stock_presets')">
-            <option v-for="preset in EQ_PRESETS" :key="preset.wire" :value="preset.wire">{{ t(preset.key) }}</option>
-          </optgroup>
-          <optgroup :label="t('eq_user_presets')">
-            <option v-for="(wire, index) in USER_PRESETS" :key="wire" :value="wire">
-              {{ t('eq_user', { n: index + 1 }) }}
+        <UiSelect>
+          <select
+            :value="state?.preset ?? ''"
+            :disabled="locked || !state"
+            :aria-label="t('eq_preset')"
+            class="rounded-10 border border-line bg-raised py-9 pl-12 text-12 text-ink"
+            @change="choose"
+          >
+            <option v-if="state && !known" :value="state.preset" disabled>
+              {{ t('eq_unknown', { value: state.preset }) }}
             </option>
-          </optgroup>
-        </select>
+            <optgroup :label="t('eq_stock_presets')">
+              <option v-for="preset in EQ_PRESETS" :key="preset.wire" :value="preset.wire">{{ t(preset.key) }}</option>
+            </optgroup>
+            <optgroup :label="t('eq_user_presets')">
+              <option v-for="(wire, index) in USER_PRESETS" :key="wire" :value="wire">
+                {{ t('eq_user', { n: index + 1 }) }}
+              </option>
+            </optgroup>
+          </select>
+        </UiSelect>
       </label>
     </div>
 

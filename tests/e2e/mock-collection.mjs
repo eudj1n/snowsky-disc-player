@@ -21,6 +21,10 @@ const ALBUMS = [
   ['Night Drive', 'Northline', 'Electronic', ['Night Drive', 'City Glow', 'Last Exit'], 1_780_100_000],
   // Two discs, and a joint credit that stock keeps as one artist string.
   ['Two Rooms', 'Kite Lines', 'Alternative', ['Opening', 'Hallway', 'Closing', 'Encore'], 1_780_200_000],
+  // A joint album: every track credits both artists, as one stock artist string.
+  ['Shared Light', 'Kite Lines; Mira Sol', 'Alternative', ['Two Voices', 'Common Ground'], 1_780_300_000],
+  // A long album name, which stock's play state cuts short (mock-gateway.mjs).
+  ['Quiet Meridian (The Complete Anniversary Recordings)', 'Sundial', 'Ambient', ['Meridian Line'], 1_780_400_000],
 ]
 
 export const TRACKS = ALBUMS.flatMap(([album, artist, genre, songs, addedBase = 1_790_000_000], a) =>

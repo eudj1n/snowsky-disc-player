@@ -4,6 +4,7 @@
  * title, artist and the ⋯ actions, in three columns on desktop, two on
  * tablets and one on phones, separated by quiet dividers. The title opens
  * the track's album and the artist their page when the view supplies routes.
+ * The current track's cover pauses or resumes it when the view can toggle.
  */
 import { creditLabel } from '../../domain/artist'
 import type { RouteLocationRaw } from 'vue-router'
@@ -26,6 +27,8 @@ const props = withDefaults(
     titleTo?: (track: Track) => RouteLocationRaw | null
     /** Route for one artist of the credit, or null to keep it plain. */
     artistTo?: (name: string) => RouteLocationRaw | null
+    toggleCurrent?: (() => void) | null
+    pauseLabel?: string | null
   }>(),
   {
     coverOf: () => null,
@@ -34,10 +37,19 @@ const props = withDefaults(
     disabled: false,
     titleTo: () => null,
     artistTo: () => null,
+    toggleCurrent: null,
+    pauseLabel: null,
   },
 )
 const emit = defineEmits<{ play: [index: number]; menu: [index: number, anchor: HTMLElement] }>()
 const isCurrent = (track: Track) => props.currentPath !== null && track.path === props.currentPath
+const toggles = (track: Track) => props.toggleCurrent !== null && isCurrent(track)
+const pauses = (track: Track) => toggles(track) && props.playing
+const leadLabel = (track: Track) => `${(pauses(track) ? props.pauseLabel : null) ?? props.playLabel} ${track.title}`
+function activate(track: Track, index: number): void {
+  if (toggles(track)) props.toggleCurrent?.()
+  else emit('play', index)
+}
 const LINK = 'hover:underline hover:underline-offset-3 focus-visible:underline'
 </script>
 
@@ -56,10 +68,10 @@ const LINK = 'hover:underline hover:underline-offset-3 focus-visible:underline'
     >
       <button
         type="button"
-        :aria-label="`${playLabel} ${track.title}`"
+        :aria-label="leadLabel(track)"
         :disabled="disabled"
         class="relative size-44 overflow-hidden rounded-6 p-0"
-        @click="emit('play', index)"
+        @click="activate(track, index)"
       >
         <Artwork :title="track.title" :cover="coverOf(track)" />
         <span
@@ -67,8 +79,13 @@ const LINK = 'hover:underline hover:underline-offset-3 focus-visible:underline'
           :class="{ 'bg-[#0004] opacity-100': isCurrent(track) }"
         >
           <template v-if="isCurrent(track)">
-            <UiNowPlaying :playing="playing" class="group-hover/tile:hidden" />
-            <UiIcon filled name="play" class="hidden size-16 group-hover/tile:block" />
+            <UiNowPlaying :playing="playing" class="group-focus-within/tile:hidden group-hover/tile:hidden" />
+            <UiIcon
+              filled
+              :name="pauses(track) ? 'pause' : 'play'"
+              class="hidden size-16 group-focus-within/tile:block group-hover/tile:block"
+              :class="{ '!stroke-[2.6]': pauses(track) }"
+            />
           </template>
           <UiIcon v-else filled name="play" class="size-16" />
         </span>

@@ -536,6 +536,44 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
 - Stock's SONG columns for sample rate, bit depth and bit rate stay 0 on the
   guest even after playback, so quality never comes from the database.
 
+## Owner requests (round 14): layout and names
+
+- [x] Favorite hearts: where the page gutter is narrow (compact widths, an
+      open listening panel, phones) the rows open a heart lane of their own,
+      so the heart no longer touches the sidebar or the screen edge.
+- [x] Selects (language, genre, sound filter, EQ preset, playlist choice)
+      draw their own chevron inside the right padding (`UiSelect`); the
+      native arrow sat almost on the rounded edge.
+- [x] The current row (lists and New tiles) offers pause while playing and
+      resume while paused, instead of starting the track again.
+- [x] Home: the featured album and its artists link to their pages, to open
+      them without playing.
+- [x] The lyrics tab drops its "Lyrics" eyebrow: the tab already says it.
+- [x] The breadcrumb gave way to a sidebar toggle (item 10): the sidebar
+      collapses to its icon rail on wide windows too (remembered, applied
+      before paint by `theme.js`; links carry tooltips there). The search keeps
+      to the actions on the right, so it no longer moves with the section name.
+- [x] Joint credits read "A & B" and "A, B & C" everywhere (rows, cards, back
+      links, headings, player bar). A joint album shows the pair's other
+      albums, else its first artist's ("More by"), then "On this album" with
+      each artist's page.
+- [x] Album title filters: the chosen artist chip, pressed again, returns to
+      the whole title; a single release with a guest then closes the filter.
+- [x] Now Playing named a long album cut short ("Meteora 20th Anniversary
+      Edit"), and its links opened an empty album. Stock cuts the album of
+      the playing track to 29 bytes in a202 (emulator acceptance: "Quiet
+      Meridian (The Complete Anniversary Recordings)" arrived as "Quiet
+      Meridian (The Complete "; a 48-character title arrived whole), while
+      its library keeps the name whole. The playing track now takes title,
+      artist and album from the library row of the same card file; the mock
+      gateway cuts albums the same way.
+- [ ] Sticky context for long pages (item 8): options offered to the owner.
+
+Checks: `npm run check`, the mock suite (87 passed, both projects) and the
+emulator acceptance against real stock with the release `9802fe42…` (19
+desktop tests, including the new long-name test and the player tests that
+run against a gateway).
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

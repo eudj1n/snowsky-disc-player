@@ -19,8 +19,27 @@ export function creditArtists(credit: string): string[] {
   return names.length ? names : [credit]
 }
 
-/** A credit for display: its artists joined by commas. */
-export const creditLabel = (credit: string) => creditArtists(credit).join(', ')
+/**
+ * What goes before the artist at `index` of `count` when a credit is shown:
+ * commas between, "&" before the last ("A & B", "A, B & C"; owner, round 14).
+ */
+export function creditSeparator(index: number, count: number): string {
+  if (index === 0) return ''
+  return index === count - 1 ? ' & ' : ', '
+}
+
+/** A credit for display: "A", "A & B", "A, B & C". */
+export function creditLabel(credit: string): string {
+  const names = creditArtists(credit)
+  return names.map((name, index) => creditSeparator(index, names.length) + name).join('')
+}
+
+/** Whether two credits name the same artists, in any order ("A; B" and "B;A"). */
+export function sameCredit(a: string, b: string): boolean {
+  const left = new Set(creditArtists(a))
+  const right = creditArtists(b)
+  return left.size === new Set(right).size && right.every((name) => left.has(name))
+}
 
 /** Whether a credit names this artist, alone or jointly. */
 export const credits = (credit: string | null, name: string) => credit !== null && creditArtists(credit).includes(name)

@@ -15,6 +15,15 @@
 @custom-variant wide (@media (min-width: 1500px));
 @custom-variant compact (@media (max-width: 1100px));
 @custom-variant rail (@media (max-width: 800px));
+/* The sidebar's icon rail: narrow windows, or a sidebar collapsed from the top bar (src/stores/sidebar.ts). */
+@custom-variant slim {
+  @media (max-width: 800px) {
+    @slot;
+  }
+  &:where([data-sidebar='rail'] *) {
+    @slot;
+  }
+}
 @custom-variant sheet (@media (max-width: 700px));
 @custom-variant narrow (@media (max-width: 600px));
 @custom-variant phone (@media (max-width: 540px));
@@ -269,6 +278,12 @@
 }
 @media (max-width: 800px) {
   :root {
+    --sidebar: 74px;
+  }
+}
+/* A collapsed sidebar takes the rail's width; phones keep the bottom navigation. */
+@media (min-width: 541px) {
+  :root[data-sidebar='rail'] {
     --sidebar: 74px;
   }
 }

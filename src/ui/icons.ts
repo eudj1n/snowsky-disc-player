@@ -30,6 +30,11 @@ export const ICON_PATHS = {
   clock: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 7v5l3 2',
   info: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 11v6M12 7h.01',
   sliders: 'M5 3v6m0 4v8M12 3v10m0 4v4M19 3v2m0 4v12M2 9h6M9 13h6M16 5h6',
+  chevron: 'm6 9 6 6 6-6',
+  'sidebar-collapse':
+    'M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z M9.5 4v16 M16 9.5 13.5 12l2.5 2.5',
+  'sidebar-expand':
+    'M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z M9.5 4v16 M13.5 9.5 16 12l-2.5 2.5',
 } as const
 
 export type IconName = keyof typeof ICON_PATHS

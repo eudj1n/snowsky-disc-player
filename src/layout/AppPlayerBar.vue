@@ -13,7 +13,7 @@ import { coverFor } from '../stores/enrichment'
 import { observations } from '../stores/observations'
 import { playback } from '../stores/playback'
 import { togglePanel, ui } from '../stores/ui'
-import { creditArtists } from '../domain/artist'
+import { creditArtists, creditLabel } from '../domain/artist'
 import { albumRoute, artistRoute } from '../views/captions'
 import { usePlaybackContext } from './usePlaybackContext'
 import { usePlayerControls } from './usePlayerControls'
@@ -22,7 +22,9 @@ const player = usePlayerControls()
 const track = player.track
 const title = computed(() => track.value?.title ?? t('your_music_awaits'))
 const subtitle = computed(
-  () => track.value?.artist ?? t(connection.connection === 'connected' ? 'choose_an_album' : 'connect_your_disc'),
+  () =>
+    (track.value?.artist ? creditLabel(track.value.artist) : null) ??
+    t(connection.connection === 'connected' ? 'choose_an_album' : 'connect_your_disc'),
 )
 /** The title opens the album in its artist scope (the artist without an album). */
 const titleTo = computed(() => {

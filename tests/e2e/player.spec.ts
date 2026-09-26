@@ -151,8 +151,18 @@ test('keeps albums that share a title apart by artist and offers more by the art
   await expect(
     page.getByRole('region', { name: 'More by Northline' }).getByRole('heading', { name: 'Night Drive' }),
   ).toBeVisible()
+  // The chosen artist again returns to the whole title.
+  await scopes.getByRole('link', { name: 'Northline' }).click()
+  await expect(page).toHaveURL(/#\/album\/Afterglow$/)
+  await expect(scopes.getByRole('link', { name: 'All artists' })).toHaveAttribute('aria-current', 'page')
+  await scopes.getByRole('link', { name: 'Northline' }).click()
   await page.getByRole('button', { name: '← Northline' }).click()
   await expect(page).toHaveURL(/#\/artist\/Northline$/)
+  // One release with a guest: clearing the artist leaves nothing to choose, so the choice closes.
+  await page.goto('/#/album/Two%20Rooms/Kite%20Lines')
+  await scopes.getByRole('link', { name: 'Kite Lines', exact: true }).click()
+  await expect(page).toHaveURL(/#\/album\/Two%20Rooms$/)
+  await expect(scopes).toHaveCount(0)
 })
 
 test('browses genres, narrows mixed albums and filters tracks by genre', async ({ page }) => {
@@ -538,7 +548,40 @@ test.describe('player controls on the mock', () => {
     await panel.getByRole('button', { name: 'Lyrics', exact: true }).click()
     await expect(panel.getByRole('link', { name: 'Mira Sol', exact: true })).toBeVisible()
     await expect(panel).not.toContainText('Kite Lines; Mira Sol')
+    // The tab names the lyrics; the header above them names only the track.
+    await expect(panel.getByText('Lyrics', { exact: true })).toHaveCount(1)
     await page.keyboard.press('Escape')
+    await disconnect(page)
+  })
+
+  test('names a long album in full although the play state cuts it short', async ({ page }) => {
+    const album = 'Quiet Meridian (The Complete Anniversary Recordings)'
+    await english(page)
+    await connectAndPair(page)
+    await page.goto(`/#/album/${encodeURIComponent(album)}`)
+    await page.getByRole('button', { name: 'Play Meridian Line' }).click()
+    const title = page.getByTestId('track-title')
+    await expect(title).toHaveText('Meridian Line', { timeout: 15_000 })
+    await page.goto('/#/tracks')
+    await title.click()
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(album)
+    await expect(page.getByRole('row').filter({ hasText: 'Meridian Line' })).toHaveCount(1)
+    await disconnect(page)
+  })
+
+  test('the playing row pauses and resumes instead of starting over', async ({ page }) => {
+    await english(page)
+    await connectAndPair(page)
+    await page.goto('/#/album/Afterglow/Northline')
+    await page.getByRole('button', { name: 'Play Soft Focus' }).click()
+    await expect(page.getByTestId('track-title')).toHaveText('Soft Focus', { timeout: 15_000 })
+    const row = page.getByRole('row').filter({ hasText: 'Soft Focus' })
+    await row.getByRole('button', { name: 'Pause Soft Focus' }).click()
+    await expect(row.getByRole('button', { name: 'Play Soft Focus' })).toBeAttached({ timeout: 15_000 })
+    await expect(page.getByRole('button', { name: 'Play', exact: true }).filter({ visible: true })).toHaveCount(1)
+    await row.getByRole('button', { name: 'Play Soft Focus' }).click()
+    await expect(row.getByRole('button', { name: 'Pause Soft Focus' })).toBeAttached({ timeout: 15_000 })
+    await expect(page.getByTestId('track-title')).toHaveText('Soft Focus')
     await disconnect(page)
   })
 
@@ -749,6 +792,99 @@ test('shows the albums played last on Home and sorts tracks by plays', async ({ 
   await expect(rows.nth(2)).toContainText('Blue Hours')
   await sort.getByRole('button', { name: 'Library order' }).click()
   await expect(rows.nth(1)).toContainText('First Light')
+})
+
+test('shows a joint album as "A & B", with its first artist\'s albums and its artists', async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  await page.goto('/#/albums')
+  const card = page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Shared Light' }) })
+  await expect(card.getByRole('link', { name: 'Kite Lines & Mira Sol' })).toBeVisible()
+  await card.getByRole('link', { name: 'Shared Light' }).first().click()
+  await expect(page).toHaveURL(/#\/album\/Shared%20Light\/Kite%20Lines(%3B|;)%20Mira%20Sol$/)
+  await expect(page.getByRole('main')).not.toContainText('Kite Lines; Mira Sol')
+  // No other album by the pair: the first artist's albums, then the artists themselves.
+  await expect(
+    page.getByRole('region', { name: 'More by Kite Lines' }).getByRole('heading', { name: 'Two Rooms' }),
+  ).toBeVisible()
+  await expect(page.getByRole('region', { name: 'More by Kite Lines & Mira Sol' })).toHaveCount(0)
+  const members = page.getByRole('region', { name: 'On this album' })
+  await expect(members.getByRole('list').getByRole('heading')).toHaveText(['Kite Lines', 'Mira Sol'])
+  await members.getByRole('link', { name: 'Mira Sol' }).first().click()
+  await expect(page).toHaveURL(/#\/artist\/Mira%20Sol$/)
+  await page.goBack()
+  // The back link names the pair and opens their page.
+  await page.getByRole('button', { name: /Kite Lines & Mira Sol/ }).click()
+  await expect(page).toHaveURL(/#\/artist\/Kite%20Lines(%3B|;)%20Mira%20Sol$/)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Kite Lines & Mira Sol')
+})
+
+test('links the featured album and its artist on Home without playing', async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  const hero = page.getByRole('region', { name: 'Album from your collection' })
+  const album = hero.getByRole('link').first()
+  await expect(album).toBeVisible()
+  const title = (await album.textContent()) ?? ''
+  await album.click()
+  await expect(page).toHaveURL(/#\/album\//)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(title)
+  await page.goBack()
+  await hero.getByRole('link').nth(1).click()
+  await expect(page).toHaveURL(/#\/artist\//)
+})
+
+test('keeps favorite hearts clear of the sidebar and the screen edge', async ({ page }, info) => {
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  await page.goto('/#/tracks')
+  const widths = info.project.name === 'desktop' ? [1280, 1000, 760] : [390]
+  for (const width of widths) {
+    await page.setViewportSize({ width, height: 800 })
+    const heart = page.getByTitle('In favorites').first()
+    await expect(heart).toBeVisible()
+    const box = await heart.boundingBox()
+    const sidebar = await page.getByRole('complementary', { name: 'Main navigation' }).boundingBox()
+    // Phones show the sidebar as the bottom navigation: only the screen edge counts there.
+    const edge = width > 540 && sidebar ? sidebar.x + sidebar.width : 0
+    expect(box && box.x - edge, `width ${width}`).toBeGreaterThanOrEqual(8)
+  }
+})
+
+test('draws select arrows inside the rounded edge', async ({ page }) => {
+  await english(page)
+  await page.goto('/#/tracks')
+  for (const select of [
+    page.getByRole('combobox', { name: 'Genre' }),
+    page.getByRole('combobox', { name: 'Interface language' }),
+  ]) {
+    await expect(select).toHaveCSS('appearance', 'none')
+    const box = await select.boundingBox()
+    const arrow = await select.locator('xpath=following-sibling::*[1]').boundingBox()
+    expect(box && arrow && box.x + box.width - (arrow.x + arrow.width)).toBeGreaterThanOrEqual(6)
+    expect(box && arrow && arrow.x - box.x).toBeGreaterThan(0)
+  }
+})
+
+test('collapses the sidebar to its icon rail and remembers it', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'Phones use the bottom navigation')
+  await english(page)
+  const sidebar = page.getByRole('complementary', { name: 'Main navigation' })
+  const width = async () => (await sidebar.boundingBox())?.width
+  const full = await width()
+  await page.getByRole('button', { name: 'Collapse sidebar' }).click()
+  await expect.poll(width).toBe(74)
+  await expect(sidebar.getByRole('link', { name: 'Albums' })).toHaveAttribute('title', 'Albums')
+  await page.reload()
+  // Applied before paint by theme.js, then kept by the store.
+  await expect(page.locator('html')).toHaveAttribute('data-sidebar', 'rail')
+  await expect.poll(width).toBe(74)
+  await page.getByRole('button', { name: 'Expand sidebar' }).click()
+  await expect.poll(width).toBe(full)
+  await expect(sidebar.getByRole('link', { name: 'Albums' })).not.toHaveAttribute('title', /.*/)
+  // Narrow windows always show the rail and need no toggle.
+  await page.setViewportSize({ width: 760, height: 800 })
+  await expect(page.getByRole('button', { name: 'Collapse sidebar' })).toBeHidden()
 })
 
 test('offers the tones of the theme in effect and keeps the chosen palettes', async ({ page }) => {

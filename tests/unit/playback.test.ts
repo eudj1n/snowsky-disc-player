@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { UNKNOWN_PLAYBACK } from '../../src/domain/playback'
+import { UNKNOWN_PLAYBACK, withLibraryNames } from '../../src/domain/playback'
 import { mergePlayback, parsePlayback, playbackOf, playbackWire } from '../../src/gateway/playback'
 
 const song = {
@@ -93,5 +93,23 @@ describe('partial a202 reduction (reference merge_snapshot)', () => {
     const state = full('Волны')
     expect(mergePlayback(state, playbackWire(''))).toBe(state)
     expect(playbackOf(mergePlayback(state, full('Волны')))).toEqual(playbackOf(state))
+  })
+})
+
+describe('the playing track named by the library', () => {
+  const cut = parsePlayback(
+    JSON.stringify({ state: 1, song: { ...song, song_album_name: 'Meteora 20th Anniversary Edit' } }),
+  )
+  const row = { title: 'Question!', artist: 'System Of A Down', album: 'Meteora 20th Anniversary Edition' }
+
+  it('takes the whole names of the same card file from the library', () => {
+    const named = withLibraryNames(cut, (path) => (path === '/tmp/sdcard/a.flac' ? row : undefined))
+    expect(named.track).toMatchObject({ album: 'Meteora 20th Anniversary Edition', path: '/tmp/sdcard/a.flac' })
+    expect(named.state).toBe(cut.state)
+  })
+
+  it('keeps the play state without a library row, and nothing playing as it is', () => {
+    expect(withLibraryNames(cut, () => undefined)).toBe(cut)
+    expect(withLibraryNames(UNKNOWN_PLAYBACK, () => row)).toBe(UNKNOWN_PLAYBACK)
   })
 })

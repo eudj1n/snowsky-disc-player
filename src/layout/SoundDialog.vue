@@ -17,6 +17,7 @@ import { closeDialog, ui } from '../stores/ui'
 import UiChips from '../ui/UiChips.vue'
 import UiDialog from '../ui/UiDialog.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
+import UiSelect from '../ui/UiSelect.vue'
 
 const open = computed(() => ui.dialog === 'sound')
 const ready = computed(() => connection.connection === 'connected' && connection.identity?.compatible === true)
@@ -132,17 +133,19 @@ const applyDisabled = (name: SoundName, draft: number) => locked.value || sound.
           <small class="text-11 text-muted">{{ t('sound_filter_note') }}</small>
         </div>
         <div class="flex items-center gap-10">
-          <select
-            v-model.number="filter"
-            :disabled="locked"
-            :aria-label="t('sound_filter')"
-            class="rounded-10 border border-line bg-raised px-10 py-9 text-12 text-ink"
-            @change="markSoundDraft"
-          >
-            <option v-for="(label, index) in FILTER_LABELS" :key="label" :value="index">
-              {{ index + 1 }} · {{ label }}
-            </option>
-          </select>
+          <UiSelect>
+            <select
+              v-model.number="filter"
+              :disabled="locked"
+              :aria-label="t('sound_filter')"
+              class="rounded-10 border border-line bg-raised py-9 pl-12 text-12 text-ink"
+              @change="markSoundDraft"
+            >
+              <option v-for="(label, index) in FILTER_LABELS" :key="label" :value="index">
+                {{ index + 1 }} · {{ label }}
+              </option>
+            </select>
+          </UiSelect>
           <UiPillButton
             variant="secondary"
             :disabled="applyDisabled('filter', filter)"

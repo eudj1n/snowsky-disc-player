@@ -2,10 +2,14 @@
 /**
  * Reference Home hero: dark green panel, headline, featured album line and a
  * "Play album" pill. Colors are fixed in both themes. Without observed cover
- * art the right side stays the base color under the gradient.
+ * art the right side stays the base color under the gradient. The featured
+ * album and its artists link to their pages, to open them without playing
+ * (owner, round 14).
  */
+import type { RouteLocationRaw } from 'vue-router'
 import UiIcon from '../../ui/UiIcon.vue'
 import CoverCanvas from '../artwork/CoverCanvas.vue'
+import ArtistCredit from '../track/ArtistCredit.vue'
 
 defineProps<{
   label: string
@@ -19,7 +23,11 @@ defineProps<{
   loading?: boolean
   /** Observed cover of the featured album, shown on the right as in the reference. */
   cover?: Blob | null
+  /** The featured album as links; replaces the first line. */
+  featured?: { title: string; to: RouteLocationRaw; credit: string | null } | null
+  artistTo?: (name: string) => RouteLocationRaw | null
 }>()
+const LINK = 'underline-offset-3 hover:text-white hover:underline focus-visible:text-white focus-visible:underline'
 const emit = defineEmits<{ play: [] }>()
 </script>
 
@@ -48,6 +56,13 @@ const emit = defineEmits<{ play: [] }>()
         <span v-if="loading" aria-hidden="true" class="flex h-[1lh] items-center"
           ><span class="block h-[0.8em] w-[70%] animate-pulse rounded-4 bg-white/15 motion-reduce:animate-none"
         /></span>
+        <template v-else-if="featured"
+          ><RouterLink :to="featured.to" :class="LINK">{{ featured.title }}</RouterLink
+          ><template v-if="featured.credit">
+            —
+            <ArtistCredit :credit="featured.credit" :to="artistTo ?? (() => null)" :link-class="LINK" /></template
+          >.<br
+        /></template>
         <template v-else>{{ lines[0] }}<br /></template>{{ lines[1] }}
       </p>
       <button

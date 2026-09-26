@@ -156,9 +156,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
       />
     </div>
     <template v-else-if="ui.panel === 'lyrics'">
+      <!-- The tab already says Lyrics: the header names the track only (owner, round 14). -->
       <div class="shrink-0 px-24 pb-10">
-        <span class="text-10 font-[650] tracking-[1.8px] text-muted uppercase">{{ t('lyrics_tab') }}</span>
-        <h2 class="mt-6 mb-0 truncate text-24 font-bold tracking-[-0.8px]">
+        <h2 class="mt-0 mb-0 truncate text-24 font-bold tracking-[-0.8px]">
           {{ playback.current.track?.title ?? t('lyrics_tab') }}
         </h2>
         <p

@@ -3,7 +3,8 @@
  * Track list. A row leads with its cover (Tracks, Favorites, playlists) or
  * its track number (album pages, where the album shares one cover); hovering
  * or focusing the row turns the lead into its play button, as on the New
- * tiles. The current track shows a pulsing dot there. A favorite heart sits
+ * tiles. The current track shows a pulsing dot there; on hover it offers
+ * pause (or resume) instead of starting the track again (owner, round 14). A favorite heart sits
  * in the gutter left of the row (always shown for favorites, on hover
  * otherwise; a button only for the current track, the one the stock can
  * change). Then title and linked artist, the linked album, duration and the
@@ -42,6 +43,9 @@ const props = withDefaults(
     playing?: boolean
     /** Rows get a play button that emits `play` with the row index. */
     playLabel?: string | null
+    /** The current row's button pauses or resumes through this instead of playing it again. */
+    toggleCurrent?: (() => void) | null
+    pauseLabel?: string | null
     /** Rows get a ⋯ button (and a context menu) that emit `menu`. */
     menuLabel?: string | null
     disabled?: boolean
@@ -70,6 +74,8 @@ const props = withDefaults(
     currentPath: null,
     playing: false,
     playLabel: null,
+    toggleCurrent: null,
+    pauseLabel: null,
     menuLabel: null,
     disabled: false,
     coverOf: () => null,
@@ -93,10 +99,18 @@ const emit = defineEmits<{
 const LINK = 'hover:text-ink hover:underline hover:underline-offset-3 focus-visible:text-ink focus-visible:underline'
 /** Shown on row hover or keyboard focus inside the row. */
 const REVEAL = 'opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100'
-/** The heart lives in the page gutter, left of the row (owner's reference). */
+/** The heart lives in the page gutter, left of the row (owner's reference), or in the row's lane (HEART_LANE). */
 const HEART =
-  'absolute top-1/2 -left-32 grid size-22 -translate-y-1/2 place-items-center rounded-full p-0 transition-[opacity,transform,translate,scale,rotate,color] duration-150 compact:-left-27 listening:-left-30 phone:left-3 phone:size-18'
+  'absolute top-1/2 -left-32 grid size-22 -translate-y-1/2 place-items-center rounded-full p-0 transition-[opacity,transform,translate,scale,rotate,color] duration-150 compact:left-10 listening:left-10 phone:left-3 phone:size-18'
 const isCurrent = (track: Track) => props.currentPath !== null && track.path === props.currentPath
+/** The current row pauses while playing (resumes while paused) when the view can toggle. */
+const toggles = (track: Track) => props.toggleCurrent !== null && isCurrent(track)
+const pauses = (track: Track) => toggles(track) && props.playing
+const leadLabel = (track: Track) => `${(pauses(track) ? props.pauseLabel : null) ?? props.playLabel} ${track.title}`
+function activate(track: Track, index: number): void {
+  if (toggles(track)) props.toggleCurrent?.()
+  else emit('play', index)
+}
 const album = computed(() => props.showAlbum && props.tracks.some((track) => track.album))
 const duration = computed(() => props.tracks.some((track) => formatDuration(track.durationMs)))
 const columns = computed(() => trackColumns(props.lead, album.value, duration.value, props.menuLabel !== null))
@@ -242,10 +256,10 @@ function contextMenu(event: MouseEvent, index: number): void {
             <button
               v-if="playLabel"
               type="button"
-              :aria-label="`${playLabel} ${track.title}`"
+              :aria-label="leadLabel(track)"
               :disabled="disabled"
               class="relative size-40 overflow-hidden rounded-6 p-0 phone:size-34"
-              @click="emit('play', index)"
+              @click="activate(track, index)"
             >
               <Artwork :title="track.title" :cover="coverOf(track)" />
               <span
@@ -253,8 +267,13 @@ function contextMenu(event: MouseEvent, index: number): void {
                 :class="isCurrent(track) ? 'bg-[#0004] opacity-100' : REVEAL"
               >
                 <template v-if="isCurrent(track)">
-                  <UiNowPlaying :playing="playing" class="group-hover/row:hidden" />
-                  <UiIcon filled name="play" class="hidden size-14 group-hover/row:block" />
+                  <UiNowPlaying :playing="playing" class="group-focus-within/row:hidden group-hover/row:hidden" />
+                  <UiIcon
+                    filled
+                    :name="pauses(track) ? 'pause' : 'play'"
+                    class="hidden size-14 group-focus-within/row:block group-hover/row:block"
+                    :class="{ '!stroke-[2.6]': pauses(track) }"
+                  />
                 </template>
                 <UiIcon v-else filled name="play" class="size-14" />
               </span>
@@ -266,10 +285,10 @@ function contextMenu(event: MouseEvent, index: number): void {
           <button
             v-else-if="playLabel"
             type="button"
-            :aria-label="`${playLabel} ${track.title}`"
+            :aria-label="leadLabel(track)"
             :disabled="disabled"
             class="grid h-24 w-full place-items-center p-0 text-11 text-muted tabular-nums hover:enabled:text-ink"
-            @click="emit('play', index)"
+            @click="activate(track, index)"
           >
             <UiNowPlaying
               v-if="isCurrent(track)"
@@ -281,8 +300,9 @@ function contextMenu(event: MouseEvent, index: number): void {
             }}</span>
             <UiIcon
               filled
-              name="play"
+              :name="pauses(track) ? 'pause' : 'play'"
               class="hidden size-13 text-secondary group-focus-within/row:block group-hover/row:block"
+              :class="{ '!stroke-[2.6]': pauses(track) }"
             />
           </button>
           <span v-else class="text-11 text-muted tabular-nums">{{ numberOf(track, index) }}</span>

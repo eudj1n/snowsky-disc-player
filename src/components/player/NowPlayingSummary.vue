@@ -2,6 +2,7 @@
 /** Left block of the player bar: cover, title and artist, favorite. The title
  * opens the track's album and the artist their page when routes are given. */
 import type { RouteLocationRaw } from 'vue-router'
+import { creditSeparator } from '../../domain/artist'
 import Artwork from '../artwork/Artwork.vue'
 import UiIconButton from '../../ui/UiIconButton.vue'
 
@@ -63,8 +64,8 @@ const emit = defineEmits<{ open: [opener: HTMLElement]; favorite: [] }>()
       <span class="mt-6 flex min-w-0 items-baseline gap-5 text-11 text-muted phone:text-10">
         <span v-if="subtitleLinks?.length" class="min-w-0 truncate">
           <template v-for="(link, index) in subtitleLinks" :key="link.text"
-            ><template v-if="index">, </template
-            ><RouterLink
+            >{{ creditSeparator(index, subtitleLinks.length)
+            }}<RouterLink
               :to="link.to"
               class="hover:text-ink hover:underline hover:underline-offset-3 focus-visible:text-ink focus-visible:underline"
               >{{ link.text }}</RouterLink

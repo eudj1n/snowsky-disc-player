@@ -35,4 +35,29 @@ export interface Playback {
 
 export const UNKNOWN_PLAYBACK: Playback = { state: 'unknown', track: null, favorite: null, source: null }
 
+/** How the library names one card file. */
+export type LibraryNames = Pick<Track, 'title' | 'artist' | 'album'>
+
+/**
+ * The playing track as the library names it. Stock cuts long names short in
+ * its play state (owner, round 14: "Meteora 20th Anniversary Edition" arrived
+ * as "Meteora 20th Anniversary Edit", so its album link opened an empty page),
+ * while its library database keeps them whole. The library row of the same
+ * card file wins; without one the play state stays as it came.
+ */
+export function withLibraryNames(current: Playback, lookup: (path: string) => LibraryNames | undefined): Playback {
+  const track = current.track
+  const row = track?.path ? lookup(track.path) : undefined
+  if (!track || !row) return current
+  return {
+    ...current,
+    track: {
+      ...track,
+      title: row.title || track.title,
+      artist: row.artist ?? track.artist,
+      album: row.album ?? track.album,
+    },
+  }
+}
+
 export type TransportAction = 'previous' | 'toggle' | 'next'

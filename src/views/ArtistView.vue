@@ -12,7 +12,7 @@ import CoverGrid from '../components/collection/CoverGrid.vue'
 import DetailHeading from '../components/collection/DetailHeading.vue'
 import SectionHeading from '../components/common/SectionHeading.vue'
 import { albumScope, albumTracks, recentAlbums, type Album } from '../domain/album'
-import { credits } from '../domain/artist'
+import { creditLabel, credits } from '../domain/artist'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
 import { albumCover, albumYear } from '../stores/enrichment'
@@ -62,7 +62,7 @@ function lines(album: Album) {
   <CollectionGate :count="items.length + joined.length" :searching="searching" empty-key="search_empty_albums">
     <template #heading="{ loading }">
       <UiTextButton class="text-12" @click="router.push('/artists')">← {{ t('back_to_collection') }}</UiTextButton>
-      <DetailHeading :title="name" artist>
+      <DetailHeading :title="creditLabel(name)" artist>
         <template #meta>
           <span v-if="loading" class="inline-block h-10 w-90 animate-pulse rounded-4 bg-soft align-middle" />
           <template v-else>{{ t('album_count', { count: own.length }) }}</template>

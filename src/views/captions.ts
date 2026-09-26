@@ -1,7 +1,7 @@
 /** Card captions and routes shared by views (reference cardCaption). */
 import type { CardLine } from '../components/collection/cardLine'
 import { albumScope, type Album } from '../domain/album'
-import { creditArtists, credits } from '../domain/artist'
+import { creditArtists, creditLabel, credits } from '../domain/artist'
 import type { Playlist } from '../domain/playlist'
 import { t } from '../i18n'
 
@@ -31,8 +31,12 @@ export function leadArtist(album: Album): string | null {
 
 export function albumLines(album: Album): CardLine[] {
   const lines: CardLine[] = []
+  const [only] = album.artists
   const lead = leadArtist(album)
-  if (lead) lines.push({ text: lead, to: artistRoute(lead) })
+  // A joint album names the pair ("A & B") and opens their page.
+  if (album.artists.length === 1 && only && creditArtists(only).length > 1)
+    lines.push({ text: creditLabel(only), to: artistRoute(only) })
+  else if (lead) lines.push({ text: lead, to: artistRoute(lead) })
   else if (album.artists.length > 1) lines.push({ text: t('various_artists') })
   lines.push({ text: t('track_count', { count: album.trackCount }) })
   return lines

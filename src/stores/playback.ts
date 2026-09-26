@@ -1,16 +1,20 @@
 /** The latest playback observation, from 0202 reads and a202 pushes. */
 import { computed, reactive, readonly } from 'vue'
-import { UNKNOWN_PLAYBACK, type Playback } from '../domain/playback'
+import { UNKNOWN_PLAYBACK, withLibraryNames, type Playback } from '../domain/playback'
 import { currentPlayback, readPlayback } from '../gateway/playback'
 import { NoObservation, type GatewaySession } from '../gateway/session'
 import { activeSession, onSessionOpened } from './connection'
+import { tracks } from './library'
 
 interface PlaybackModel {
   current: Playback
 }
 
 const state = reactive<PlaybackModel>({ current: UNKNOWN_PLAYBACK })
-export const playback = readonly(state)
+/** Library rows by card path: stock's play state cuts long names short. */
+const byPath = computed(() => new Map(tracks.value.flatMap((track) => (track.path ? [[track.path, track]] : []))))
+const current = computed(() => withLibraryNames(state.current, (path) => byPath.value.get(path)))
+export const playback = readonly(reactive({ current }))
 
 /** The bottom player shows only while a track is observed (owner's decision):
  * playing, paused or loading. Nothing observed means nothing to control. */

@@ -285,6 +285,34 @@ test('lists same-titled albums apart, separates discs, shows years and joint cre
   await disconnect(page)
 })
 
+test('names the playing track as the library does when stock cuts long names', async ({ page }) => {
+  const album = 'Quiet Meridian (The Complete Anniversary Recordings)'
+  const title = 'An Unusually Long Track Title for the Play State'
+  // Evidence only: what stock itself sends for the playing track (the song
+  // object arrives as an escaped JSON string inside the a202 payload).
+  const sent = new Set<string>()
+  page.on('websocket', (socket) =>
+    socket.on('framereceived', ({ payload }) => {
+      const text = typeof payload === 'string' ? payload : payload.toString('utf8')
+      for (const match of text.matchAll(/\\?"(song_album_name|song_name)\\?":\s*\\?"([^"\\]*)/g))
+        if (match[2]) sent.add(`${match[1]}=${match[2]}`)
+    }),
+  )
+  await english(page)
+  await connectAndPair(page)
+  await page.goto(`/#/album/${encodeURIComponent(album)}`)
+  await verified(page, () => page.getByRole('button', { name: 'Play album' }).click())
+  await expect(page.getByTestId('track-title')).toHaveText(title, { timeout: 30_000 })
+  await page
+    .getByRole('region', { name: 'Player' })
+    .getByRole('link', { name: `Album: ${album}` })
+    .click()
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(album)
+  await expect(page.getByRole('row').filter({ hasText: title })).toHaveCount(1)
+  test.info().annotations.push({ type: 'stock names', description: [...sent].join(' | ') || 'not seen' })
+  await disconnect(page)
+})
+
 test('shows card covers, file durations and both kinds of lyrics on stock', async ({ page }) => {
   const errors = watchErrors(page)
   await english(page)

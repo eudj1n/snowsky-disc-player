@@ -4,7 +4,9 @@
  * literal track artist (reference album scope): a scoped page lists and plays
  * only that artist's release (stock type 7), so albums that share a title stay
  * apart. An unscoped title group with several artists offers the artists as
- * filters instead of guessing an album artist. "More by" shelves follow.
+ * filters instead of guessing an album artist. "More by" shelves follow. A
+ * joint album ("A; B") shows the pair's other albums, else its first
+ * artist's, and then its artists (owner, round 14).
  */
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -14,15 +16,15 @@ import DetailHeading from '../components/collection/DetailHeading.vue'
 import SectionHeading from '../components/common/SectionHeading.vue'
 import TrackList from '../components/track/TrackList.vue'
 import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
-import { albumTracks, albumsBy, byTrackNumber, discOf } from '../domain/album'
-import { creditArtists, creditLabel } from '../domain/artist'
+import { albumTracks, albumsBy, byTrackNumber, discOf, recentAlbums } from '../domain/album'
+import { creditArtists, creditLabel, creditSeparator, sameCredit } from '../domain/artist'
 import { filterBy } from '../domain/search'
 import type { SelectionTarget, TrackKey } from '../gateway/selection'
 import { t } from '../i18n'
 import { albumCover, albumQuality, albumYear } from '../stores/enrichment'
 import { isHiRes, qualityLabel } from '../domain/quality'
 import { formatBadge } from '../domain/track'
-import { albums, titleGroups, tracks as collection } from '../stores/library'
+import { albums, artists, titleGroups, tracks as collection } from '../stores/library'
 import { selection } from '../stores/selection'
 import { openPlaylistDialog, openTrackMenu, ui } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
@@ -84,12 +86,45 @@ const choices = computed(() => {
 })
 const searching = computed(() => ui.query.trim() !== '')
 const items = computed(() => filterBy(tracks.value, ui.query, (track) => [track.title, track.artist, track.album]))
-const moreBy = computed(() =>
-  [...new Set((scope.value ? [scope.value] : (group.value?.trackArtists ?? [])).flatMap(creditArtists))]
+/** The page's joint credit ("A; B"): its scope, or the only track artist of the title. */
+const joint = computed(() => {
+  const credit = scope.value ?? (group.value?.trackArtists.length === 1 ? group.value.trackArtists[0] : null)
+  return credit && creditArtists(credit).length > 1 ? credit : null
+})
+const moreBy = computed(() => {
+  const credit = joint.value
+  if (credit) {
+    // Other albums credited to the same artists together (not a guest track on
+    // one artist's album); else the first artist's other albums.
+    const together = recentAlbums(
+      albums.value.filter(
+        (album) => album.title !== name.value && album.artists.some((other) => sameCredit(other, credit)),
+      ),
+    )
+    if (together.length) return [{ artist: credit, label: creditLabel(credit), albums: together }]
+    const first = creditArtists(credit)[0] ?? credit
+    const own = albumsBy(albums.value, first, name.value)
+    return own.length ? [{ artist: first, label: first, albums: own }] : []
+  }
+  return [...new Set((scope.value ? [scope.value] : (group.value?.trackArtists ?? [])).flatMap(creditArtists))]
     .slice(0, MORE_BY_ARTISTS)
-    .map((artist) => ({ artist, albums: albumsBy(albums.value, artist, name.value) }))
-    .filter((shelf) => shelf.albums.length > 0),
-)
+    .map((artist) => ({ artist, label: artist, albums: albumsBy(albums.value, artist, name.value) }))
+    .filter((shelf) => shelf.albums.length > 0)
+})
+/** The artists of a joint album, each with their page (and play, when stock knows them alone). */
+const members = computed(() => {
+  const credit = joint.value
+  if (!credit) return []
+  return creditArtists(credit).map(
+    (artist) =>
+      artists.value.find((item) => item.name === artist) ?? {
+        name: artist,
+        albumCount: 0,
+        trackCount: 0,
+        literal: false,
+      },
+  )
+})
 
 function target(track?: TrackKey): SelectionTarget {
   const one = track ? { track } : {}
@@ -99,27 +134,30 @@ function target(track?: TrackKey): SelectionTarget {
 }
 /** A shelf card opens the artist's own release when the artist is a literal track artist of it. */
 const shelfScope = (album: { trackArtists: readonly string[] }, artist: string) =>
-  album.trackArtists.includes(artist) ? artist : null
+  album.trackArtists.includes(artist) ? artist : (album.trackArtists.find((other) => sameCredit(other, artist)) ?? null)
 const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums')
 </script>
 
 <template>
   <CollectionGate :count="items.length" :searching="searching" empty-key="search_empty_tracks">
     <template #heading="{ loading }">
-      <UiTextButton class="text-12" @click="back">← {{ scope ?? t('back_to_collection') }}</UiTextButton>
+      <UiTextButton class="text-12" @click="back"
+        >← {{ scope ? creditLabel(scope) : t('back_to_collection') }}</UiTextButton
+      >
       <DetailHeading :title="name" :cover="group ? albumCover(group, scope) : null">
         <template #meta>
           <template v-if="loading"
             ><span class="inline-block h-10 w-140 animate-pulse rounded-4 bg-soft align-middle"
           /></template>
           <template v-else>
-            <template v-for="(artist, index) in credits" :key="artist">
-              <RouterLink
+            <template v-for="(artist, index) in credits" :key="artist"
+              >{{ creditSeparator(index, credits.length)
+              }}<RouterLink
                 :to="artistRoute(artist)"
                 class="underline-offset-3 hover:text-ink hover:underline focus-visible:text-ink focus-visible:underline"
                 >{{ artist }}</RouterLink
-              ><span v-if="index < credits.length - 1"> · </span>
-            </template>
+              ></template
+            >
             <span v-if="credits.length"> · </span><template v-if="year">{{ year }} · </template
             >{{ t('track_count', { count: tracks.length }) }}
             <template v-if="quality">
@@ -153,10 +191,12 @@ const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums
           <RouterLink :to="albumRoute(name)" :class="CHIP" :aria-current="scope === null ? 'page' : undefined">{{
             t('album_scope_all')
           }}</RouterLink>
+          <!-- The chosen artist again clears the choice, like the All chip (owner, round 14). -->
           <RouterLink
             v-for="artist in choices"
             :key="artist"
-            :to="albumRoute(name, artist)"
+            :to="scope === artist ? albumRoute(name) : albumRoute(name, artist)"
+            :title="scope === artist ? t('album_scope_all') : undefined"
             :class="CHIP"
             :aria-current="scope === artist ? 'page' : undefined"
             >{{ creditLabel(artist) }}</RouterLink
@@ -191,12 +231,12 @@ const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums
     <section
       v-for="shelf in searching ? [] : moreBy"
       :key="shelf.artist"
-      :aria-label="t('more_by', { artist: shelf.artist })"
+      :aria-label="t('more_by', { artist: shelf.label })"
     >
-      <SectionHeading :title="t('more_by', { artist: shelf.artist })">
+      <SectionHeading :title="t('more_by', { artist: shelf.label })">
         <UiTextButton icon="arrow" @click="router.push(artistRoute(shelf.artist))">{{ t('all_albums') }}</UiTextButton>
       </SectionHeading>
-      <CoverRow :label="t('more_by', { artist: shelf.artist })">
+      <CoverRow :label="t('more_by', { artist: shelf.label })">
         <CoverCard
           v-for="album in shelf.albums"
           :key="album.key"
@@ -209,6 +249,24 @@ const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums
           :play-label="t('play_item', { name: album.title })"
           :play-disabled="selection.busy"
           @play="playAlbumCard(album, shelfScope(album, shelf.artist))"
+        />
+      </CoverRow>
+    </section>
+    <section v-if="!searching && members.length" :aria-label="t('on_this_album')">
+      <SectionHeading :title="t('on_this_album')" />
+      <CoverRow :label="t('on_this_album')">
+        <CoverCard
+          v-for="artist in members"
+          :key="artist.name"
+          role="listitem"
+          :title="artist.name"
+          :to="artistRoute(artist.name)"
+          artist
+          :lines="artist.albumCount ? [{ text: t('album_count', { count: artist.albumCount }) }] : []"
+          :open-label="t('open_item', { name: artist.name })"
+          :play-label="artist.literal ? t('play_item', { name: artist.name }) : null"
+          :play-disabled="selection.busy"
+          @play="playFrom({ kind: 'artist', artist: artist.name })"
         />
       </CoverRow>
     </section>

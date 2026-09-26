@@ -25,6 +25,7 @@ import UiTextButton from '../ui/UiTextButton.vue'
 import { albumLines, albumCardRoute, albumRoute, artistRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { playFrom, playAlbumCard } from './playAlbum'
+import { toggleCurrent } from './trackRows'
 
 const newTracks = computed(() =>
   filterBy(recentlyAdded(tracks.value, 12), ui.query, (track) => [track.title, track.artist, track.album]),
@@ -71,6 +72,8 @@ const artistTo = (name: string) => artistRoute(name)
       :cover-of="coverFor"
       :current-path="current"
       :playing="isPlaying"
+      :toggle-current="toggleCurrent"
+      :pause-label="t('pause')"
       :title-to="titleTo"
       :artist-to="artistTo"
       :disabled="selection.busy"
@@ -107,6 +110,8 @@ const artistTo = (name: string) => artistRoute(name)
         :cover-of="coverFor"
         :current-path="current"
         :playing="isPlaying"
+        :toggle-current="toggleCurrent"
+        :pause-label="t('pause')"
         :title-to="titleTo"
         :artist-to="artistTo"
         :disabled="selection.busy"

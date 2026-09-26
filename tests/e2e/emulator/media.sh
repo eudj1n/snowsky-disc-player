@@ -1,8 +1,8 @@
 #!/bin/sh
 # Generates the acceptance media on the disposable emulator card (never on a
 # player): two albums titled "Harbor" by different artists and genres, a second
-# Lumen album, a two-disc Lumen album with a year and a joint credit, and track
-# numbers that differ from file order. Tagged FLAC
+# Lumen album, a two-disc Lumen album with a year and a joint credit, an album
+# and a track with long names, and track numbers that differ from file order. Tagged FLAC
 # tones made with sox inside the emulator container; nothing is copied from a
 # real library. Usage: tests/e2e/emulator/media.sh <container> [remove]
 set -eu
@@ -48,6 +48,9 @@ disc CD1 'a Undertow.flac' Undertow 1 1 349 'ARTIST=Kestrel'
 disc CD1 'b Slack Water.flac' 'Slack Water' 2 1 370
 disc CD2 'a Spring Tide.flac' 'Spring Tide' 1 2 415
 disc CD2 'b Neap.flac' Neap 2 2 466
+# Long names, as on anniversary editions: stock cuts them short in its play state.
+tone 'Lumen - Anniversary' 'a Long.flac' 'An Unusually Long Track Title for the Play State' 1 \
+  'Quiet Meridian (The Complete Anniversary Recordings)' Lumen Ambient 311
 find "$root" -type f | sort
 GUEST
 # Covers need Python inside the container (a folder PNG, an embedded PICTURE).

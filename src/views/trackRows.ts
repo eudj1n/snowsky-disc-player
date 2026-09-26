@@ -7,7 +7,7 @@ import { computed } from 'vue'
 import { t } from '../i18n'
 import type { Track } from '../domain/track'
 import { commandCatalog } from '../stores/connection'
-import { controlsReady, toggleFavorite } from '../stores/controls'
+import { controlsReady, toggleFavorite, transport } from '../stores/controls'
 import { coverFor } from '../stores/enrichment'
 import { isFavorite } from '../stores/favorites'
 import { operation } from '../stores/operation'
@@ -16,12 +16,18 @@ import { selection } from '../stores/selection'
 import { openPlaylistDialog } from '../stores/ui'
 import { artistRoute, trackAlbumRoute } from './captions'
 
+/** The current row's button: pause or resume, never the track again from its start. */
+export const toggleCurrent = (): void => void transport('toggle')
+
 export const trackRowProps = computed(() => ({
   currentPath: playback.current.track?.path ?? null,
   playing: isPlaying.value,
   coverOf: coverFor,
   disabled: selection.busy,
   playLabel: t('play_label'),
+  // The current row pauses or resumes rather than starting the track again.
+  pauseLabel: t('pause'),
+  toggleCurrent,
   menuLabel: t('track_actions'),
   artistTo: artistRoute,
   albumTo: trackAlbumRoute,

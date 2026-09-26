@@ -93,13 +93,25 @@ setInterval(() => {
   player.socket.send(record('a103', player.position.toString(16).toUpperCase().padStart(8, '0')))
 }, 1000)
 
+// Stock V2.57 cuts the playing track's album to 29 bytes in a202 (emulator
+// acceptance: "Quiet Meridian (The Complete "); titles arrive whole.
+function cutAlbum(album) {
+  const bytes = Buffer.from(album ?? '')
+  return bytes.length <= 29
+    ? album
+    : bytes
+        .subarray(0, 29)
+        .toString('utf8')
+        .replace(/\uFFFD+$/, '')
+}
+
 function a202() {
   const track = player.list[player.index]
   if (!track) return ''
   const song = {
     song_name: track.TITLE,
     song_artist_name: track.ARTIST,
-    song_album_name: track.ALBUM,
+    song_album_name: cutAlbum(track.ALBUM),
     song_file_path: track.PATH,
     pos_id: player.index + 1,
     song_duration_time: track.DURATION,
