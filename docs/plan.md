@@ -497,6 +497,9 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
       loading new lyrics scrolls straight to the current line. Without any
       tick since the page connected (a track already paused) there is no
       position to show: the protocol has no position read.
+- [x] Joint credits ("Баста; GUF") link each artist in the lyrics header and
+      the Now Playing tab too, and read "A, B" in the queue, the track menu,
+      unlinked rows and "Playing from".
 
 ## Requests for the next service build
 

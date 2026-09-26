@@ -11,6 +11,7 @@ import { formatBadge } from '../../domain/track'
 import UiIcon from '../../ui/UiIcon.vue'
 import UiIconButton from '../../ui/UiIconButton.vue'
 import Artwork from '../artwork/Artwork.vue'
+import ArtistCredit from '../track/ArtistCredit.vue'
 import SeekBar from './SeekBar.vue'
 import VolumeControl from './VolumeControl.vue'
 
@@ -88,13 +89,18 @@ const emit = defineEmits<{
     <h2 class="mt-14 mb-8 text-28 leading-[1.15] font-bold tracking-[-0.8px] [overflow-wrap:anywhere] phone:text-25">
       {{ playback.track?.title ?? labels.title }}
     </h2>
-    <RouterLink
+    <!-- Each artist of a joint credit ("A; B") links on its own. -->
+    <p
       v-if="playback.track?.artist"
-      :to="{ name: 'artist', params: { name: playback.track.artist } }"
-      class="block text-15 leading-[1.5] [overflow-wrap:anywhere] text-secondary hover:underline"
-      @click="emit('navigate')"
-      >{{ playback.track.artist }}</RouterLink
+      class="m-0 text-15 leading-[1.5] [overflow-wrap:anywhere] text-secondary"
+      @click="($event.target as HTMLElement).closest('a') && emit('navigate')"
     >
+      <ArtistCredit
+        :credit="playback.track.artist"
+        :to="(name) => ({ name: 'artist', params: { name } })"
+        link-class="hover:underline"
+      />
+    </p>
     <RouterLink
       v-if="playback.track?.album"
       :to="

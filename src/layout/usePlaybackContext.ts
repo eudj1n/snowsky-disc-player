@@ -4,6 +4,7 @@
  * artist, its genre tag in the library, its folder, or the one playlist that
  * holds it. Unknown stays unnamed; nothing is guessed across candidates.
  */
+import { creditLabel } from '../domain/artist'
 import { computed, ref, watch, type ComputedRef } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 import { t } from '../i18n'
@@ -65,14 +66,16 @@ function createContext() {
       case 'favorites':
         return { text: t('from_favorites'), to: '/favorites' }
       case 'artist':
-        return track.artist ? { text: t('from_artist', { name: track.artist }), to: artistRoute(track.artist) } : null
+        return track.artist
+          ? { text: t('from_artist', { name: creditLabel(track.artist) }), to: artistRoute(track.artist) }
+          : null
       case 'album':
         return track.album ? { text: t('from_album', { name: track.album }), to: albumRoute(track.album) } : null
       case 'artistAlbum':
         return track.album
           ? { text: t('from_album', { name: track.album }), to: albumRoute(track.album, track.artist) }
           : track.artist
-            ? { text: t('from_artist', { name: track.artist }), to: artistRoute(track.artist) }
+            ? { text: t('from_artist', { name: creditLabel(track.artist) }), to: artistRoute(track.artist) }
             : null
       case 'genre':
       case 'genreTrack': {

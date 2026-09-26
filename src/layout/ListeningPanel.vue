@@ -9,6 +9,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import NowPlayingDetails from '../components/player/NowPlayingDetails.vue'
 import LyricsView from '../components/player/LyricsView.vue'
+import ArtistCredit from '../components/track/ArtistCredit.vue'
 import QueueRows from '../components/player/QueueRows.vue'
 import { t } from '../i18n'
 import { connection } from '../stores/connection'
@@ -160,7 +161,17 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         <h2 class="mt-6 mb-0 truncate text-24 font-bold tracking-[-0.8px]">
           {{ playback.current.track?.title ?? t('lyrics_tab') }}
         </h2>
-        <p class="mt-2 mb-0 truncate text-11 text-muted">{{ playback.current.track?.artist ?? '' }}</p>
+        <p
+          v-if="playback.current.track?.artist"
+          class="mt-2 mb-0 truncate text-11 text-muted"
+          @click="($event.target as HTMLElement).closest('a') && onNavigate()"
+        >
+          <ArtistCredit
+            :credit="playback.current.track.artist"
+            :to="(name) => ({ name: 'artist', params: { name } })"
+            link-class="hover:text-ink hover:underline"
+          />
+        </p>
       </div>
       <LyricsView
         :lyrics="lyrics.lyrics"

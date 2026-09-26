@@ -5,6 +5,7 @@
  * enabled items with wrap-around, Home/End jump, Escape closes (native).
  * Activating an item closes the menu first.
  */
+import { creditLabel } from '../domain/artist'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import Artwork from '../components/artwork/Artwork.vue'
@@ -121,7 +122,9 @@ onBeforeUnmount(() => cleanup())
         /></span>
         <span class="min-w-0 flex-1">
           <strong class="block truncate text-13 font-semibold">{{ menu.track.title }}</strong>
-          <small class="mt-3 block truncate text-11 text-muted">{{ menu.track.artist || '—' }}</small>
+          <small class="mt-3 block truncate text-11 text-muted">{{
+            menu.track.artist ? creditLabel(menu.track.artist) : '—'
+          }}</small>
         </span>
         <UiIconButton icon="close" :label="t('close')" @click="closeTrackMenu" />
       </div>

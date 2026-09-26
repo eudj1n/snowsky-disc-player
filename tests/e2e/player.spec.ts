@@ -507,6 +507,22 @@ test.describe('player controls on the mock', () => {
     await disconnect(page)
   })
 
+  test('links each artist of a joint credit in the listening panel', async ({ page }) => {
+    await english(page)
+    await connectAndPair(page)
+    await page.goto('/#/album/Two%20Rooms')
+    await page.getByRole('button', { name: 'Play Hallway' }).click()
+    await expect(page.getByTestId('track-title')).toHaveText('Hallway', { timeout: 15_000 })
+    const panel = await openPanel(page, 'Open Now Playing panel')
+    for (const name of ['Kite Lines', 'Mira Sol'])
+      await expect(panel.getByRole('link', { name, exact: true })).toBeVisible()
+    await panel.getByRole('button', { name: 'Lyrics', exact: true }).click()
+    await expect(panel.getByRole('link', { name: 'Mira Sol', exact: true })).toBeVisible()
+    await expect(panel).not.toContainText('Kite Lines; Mira Sol')
+    await page.keyboard.press('Escape')
+    await disconnect(page)
+  })
+
   test('removes a favorite that is not playing after confirmation', async ({ page }) => {
     await english(page)
     await connectAndPair(page)

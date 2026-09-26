@@ -5,6 +5,7 @@
  * tablets and one on phones, separated by quiet dividers. The title opens
  * the track's album and the artist their page when the view supplies routes.
  */
+import { creditLabel } from '../../domain/artist'
 import type { RouteLocationRaw } from 'vue-router'
 import type { Track } from '../../domain/track'
 import UiIcon from '../../ui/UiIcon.vue'
@@ -84,7 +85,9 @@ const LINK = 'hover:underline hover:underline-offset-3 focus-visible:underline'
         <span v-if="track.artist && artistTo(track.artist)" class="mt-3 block max-w-full truncate text-11 text-muted">
           <ArtistCredit :credit="track.artist" :to="artistTo" :link-class="`hover:text-ink ${LINK}`" />
         </span>
-        <small v-else class="mt-3 block truncate text-11 text-muted">{{ track.artist || '—' }}</small>
+        <small v-else class="mt-3 block truncate text-11 text-muted">{{
+          track.artist ? creditLabel(track.artist) : '—'
+        }}</small>
       </span>
       <button
         type="button"

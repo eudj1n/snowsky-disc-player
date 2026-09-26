@@ -10,6 +10,7 @@
  * actions button. Album and duration
  * columns disappear when no row knows them (stock rows often lack both).
  */
+import { creditLabel } from '../../domain/artist'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 import { formatDuration, type LibraryTrack, type Track } from '../../domain/track'
@@ -295,7 +296,9 @@ function contextMenu(event: MouseEvent, index: number): void {
           >
             <ArtistCredit :credit="track.artist" :to="artistTo" :link-class="LINK" />
           </span>
-          <small v-else class="mt-5 block truncate text-11 text-muted">{{ track.artist || '—' }}</small>
+          <small v-else class="mt-5 block truncate text-11 text-muted">{{
+            track.artist ? creditLabel(track.artist) : '—'
+          }}</small>
         </div>
         <span v-if="album" role="cell" class="min-w-0 truncate text-11 text-muted phone:hidden">
           <RouterLink

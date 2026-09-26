@@ -32,9 +32,7 @@ watch(
   { immediate: true },
 )
 onBeforeUnmount(() => clearInterval(clock))
-const position = computed(() =>
-  livePosition(props.positionMs, props.positionAt ?? null, now.value, props.playing ?? false),
-)
+const position = computed(() => livePosition(props.positionMs, props.positionAt ?? null, now.value, props.playing))
 const active = computed(() => (props.lyrics ? activeLine(props.lyrics as Lyrics, position.value) : -1))
 let touchedAt = 0
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches

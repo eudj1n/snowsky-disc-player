@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Queue rows (reference rows(queueItems, true)): select button, sleeve, title, artist. */
+import { creditLabel } from '../../domain/artist'
 import type { QueueItem } from '../../domain/queue'
 import UiIcon from '../../ui/UiIcon.vue'
 import UiNowPlaying from '../../ui/UiNowPlaying.vue'
@@ -43,7 +44,7 @@ const emit = defineEmits<{ select: [index: number] }>()
       <span class="size-36 overflow-hidden rounded-6"><ArtworkSleeve :title="item.title" /></span>
       <span class="min-w-0">
         <strong class="block truncate font-[550]">{{ item.title }}</strong>
-        <small class="mt-4 block truncate text-11 text-muted">{{ item.artist || '—' }}</small>
+        <small class="mt-4 block truncate text-11 text-muted">{{ item.artist ? creditLabel(item.artist) : '—' }}</small>
       </span>
     </li>
   </ol>
