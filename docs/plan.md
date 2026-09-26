@@ -659,9 +659,9 @@ image; card-only items (catalog or query additions) are marked as such.
       batch adder (`POST /add_custom_list/`) hard-codes a custom playlist as
       its destination (static analysis of V2.57 `mq_player`, handler
       `0x493ee4`). The player's own screen favorites any track by writing
-      song.db itself (`mq_ui`: `INSERT INTO MY_LOVE (…) SELECT … FROM SONG
-    WHERE ID = ?`; removal `DELETE FROM MY_LOVE WHERE ID = ?`), or sends
-      `mq_player` its internal batch message `0117` with the favorites as
+      song.db itself: `mq_ui` copies the SONG row by its ID into `MY_LOVE`
+      (an `INSERT … SELECT` from SONG) and removes by `MY_LOVE.ID`, or it
+      sends `mq_player` its internal batch message `0117` with the favorites as
       destination. Guest check of the first way (a non-playing track written
       with that exact statement): the favorites list showed it, playing the
       favorites started with it, a202 reported `love: true` while it played,
