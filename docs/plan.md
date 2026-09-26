@@ -474,8 +474,16 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
 - [x] Tracks sort: library order, recently added, most played (the new
       `most_played` card query, service `most_played` commit); "most played"
       appears only when stock has recorded plays.
-- [ ] Find out when stock records a play: the owner's history was empty on
-      2026-09-25, and remote playback on the guest added no rows.
+- [x] Find out when stock records a play: **never** in V2.57 (and V2.40).
+      The only RECORD_SONG writer in `mq_player` (an upsert of PLAY_COUNT and
+      LAST_PLAY_TIME in epoch seconds) has no callers; stock only reads the
+      table (TCP 0467/0468, which do not answer while it is empty) and has no
+      UI for it. Static analysis of the V2.57 binary; the guest agrees (remote
+      playback added no rows) and so does the owner's player (empty on
+      2026-09-25). The shelf and the order stay hidden until another source
+      of history exists.
+- [ ] Our own play history: the page records the plays it observes, and/or the
+      service records them in the next image (owner's choice).
 
 ## Requests for the next service build
 
