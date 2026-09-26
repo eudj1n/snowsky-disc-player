@@ -31,6 +31,22 @@ const dre = computed({
   get: () => String(sound.values?.dre ?? 0),
   set: (value: string) => void applySound('dre', Number(value)),
 })
+/** Turning SPDIF on sends a digital signal to the 3.5 mm jack: it waits for a second, explicit yes. */
+const spdifConfirm = ref(false)
+const spdif = computed({
+  get: () => String(sound.values?.spdif ?? 0),
+  set: (value: string) => {
+    if (value === '1') spdifConfirm.value = true
+    else void applySound('spdif', 0)
+  },
+})
+function enableSpdif(): void {
+  spdifConfirm.value = false
+  void applySound('spdif', 1)
+}
+watch(open, (value) => {
+  if (!value) spdifConfirm.value = false
+})
 
 watch(
   () => sound.values,
@@ -149,6 +165,34 @@ const applyDisabled = (name: SoundName, draft: number) => locked.value || sound.
           ]"
           :class="{ 'pointer-events-none opacity-45': locked }"
         />
+      </div>
+      <div class="border-t border-line py-16">
+        <div class="flex flex-wrap items-center justify-between gap-12">
+          <div>
+            <strong class="block text-13">SPDIF</strong>
+            <small class="text-11 text-muted">{{ t('sound_spdif_note') }}</small>
+          </div>
+          <UiChips
+            v-model="spdif"
+            label="SPDIF"
+            :options="[
+              { value: '0', text: t('sound_off') },
+              { value: '1', text: t('sound_on') },
+            ]"
+            :class="{ 'pointer-events-none opacity-45': locked }"
+          />
+        </div>
+        <div
+          v-if="spdifConfirm"
+          role="alert"
+          class="mt-12 flex flex-wrap items-center justify-between gap-12 rounded-10 bg-soft px-14 py-12"
+        >
+          <p class="m-0 text-12 leading-[1.6] text-ink">{{ t('sound_spdif_warning') }}</p>
+          <div class="flex gap-8">
+            <UiPillButton variant="secondary" @click="spdifConfirm = false">{{ t('cancel') }}</UiPillButton>
+            <UiPillButton :disabled="locked" @click="enableSpdif">{{ t('sound_spdif_enable') }}</UiPillButton>
+          </div>
+        </div>
       </div>
       <EqualizerPanel
         :state="eq.current"

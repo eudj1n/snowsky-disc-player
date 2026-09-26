@@ -43,7 +43,7 @@ onBeforeUnmount(() => {
 <template>
   <dialog
     ref="dialog"
-    class="m-auto max-h-[calc(100dvh-32px)] w-[calc(100%-32px)] overflow-auto overscroll-contain rounded-20 border border-line bg-paper p-30 text-ink shadow-[0_30px_100px_#27341c30] backdrop:bg-[#25301a50] backdrop:backdrop-blur-[5px] narrow:max-h-[calc(100dvh-20px)] narrow:w-[calc(100vw-20px)] narrow:p-22"
+    class="m-auto max-h-[calc(100dvh-32px)] w-[calc(100%-32px)] overflow-auto overscroll-contain rounded-20 border border-line bg-paper p-30 text-ink shadow-[0_30px_100px_#27341c30] backdrop:bg-black/30 backdrop:backdrop-blur-[5px] narrow:max-h-[calc(100dvh-20px)] narrow:w-[calc(100vw-20px)] narrow:p-22"
     :class="
       size === 'xl'
         ? 'max-w-690 px-32 py-28 text-left'

@@ -16,6 +16,7 @@ import {
 import { Disconnected, GatewaySession, type CloseReason } from '../gateway/session'
 import { trackPlayback } from '../gateway/playback'
 import { currentVolume, socVersion } from '../gateway/settings'
+import { readTabState, writeTabState } from '../lib/storage'
 
 export type ConnectionNotice =
   | 'gateway_unreachable'
@@ -99,6 +100,29 @@ export async function probeGateway(): Promise<boolean> {
   return true
 }
 
+/**
+ * A tab that was connected reconnects after its own reload (owner, round 10).
+ * The mark lives in sessionStorage, so a new tab never takes control on its
+ * own; an explicit Disconnect clears it. Resuming only reads: nothing that was
+ * sent before the reload is sent again.
+ */
+const RESUME_KEY = 'disc-player.resume-session'
+const RESUME_ATTEMPTS = 4
+const RESUME_PAUSE_MS = 1500
+
+export async function resumeAfterReload(pause = RESUME_PAUSE_MS): Promise<void> {
+  if (readTabState(RESUME_KEY) !== '1') return
+  // connect() changes the state; read it afresh after each attempt.
+  const current = (): ConnectionState => state.connection
+  for (let attempt = 1; attempt <= RESUME_ATTEMPTS; attempt++) {
+    if (current() !== 'disconnected') return
+    await connect()
+    // The previous page's socket may still hold control for a moment; anything else ends the attempt.
+    if (current() === 'connected' || state.notice !== 'control_busy' || attempt === RESUME_ATTEMPTS) return
+    await new Promise((done) => setTimeout(done, pause))
+  }
+}
+
 function socketUrl(): string {
   return `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/websocket`
 }
@@ -131,6 +155,7 @@ export async function connect(): Promise<void> {
     state.identity = { handshake: opened.identity, firmware, compatible }
     if (!compatible) state.notice = 'incompatible'
     state.connection = 'connected'
+    writeTabState(RESUME_KEY, '1')
     for (const listener of openedListeners) listener(session)
     // The play mode is known only from a102: read it once, as the reference does at connect.
     await session.read('0105', 'a102').catch(() => undefined)
@@ -155,6 +180,7 @@ export async function refreshSettings(): Promise<void> {
 }
 
 export function disconnect(): void {
+  writeTabState(RESUME_KEY, null)
   session?.close()
   session = null
   state.connection = 'disconnected'

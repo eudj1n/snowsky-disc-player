@@ -27,6 +27,23 @@ test('loads from / under the gateway CSP, adopts the player language and shows t
   expect(errors).toEqual([])
 })
 
+test('a connected tab reconnects after a reload; after Disconnect it waits', async ({ page }) => {
+  test.skip(external, 'Needs the mock gateway')
+  await english(page)
+  await connectAndPair(page)
+  await page.reload()
+  await openConnection(page)
+  await expect(page.getByRole('dialog').getByTestId('connection-state')).toContainText('Connected', {
+    timeout: 15_000,
+  })
+  await page.keyboard.press('Escape')
+  await disconnect(page)
+  await page.reload()
+  await page.waitForTimeout(2_000)
+  await openConnection(page)
+  await expect(page.getByRole('dialog').getByTestId('connection-state')).not.toContainText('Connected')
+})
+
 test('connects as the single owner and reads identity, then disconnects', async ({ page }) => {
   const errors = watchErrors(page)
   await english(page)
@@ -559,6 +576,19 @@ test.describe('player controls on the mock', () => {
     await expect(dialog.getByTestId('sound-feedback')).toHaveText('The player confirmed the new value.', {
       timeout: 15_000,
     })
+    // SPDIF: On asks first (a digital signal on the 3.5 mm jack), Off applies at once.
+    const spdif = dialog.getByRole('group', { name: 'SPDIF' })
+    await spdif.getByRole('button', { name: 'On' }).click()
+    const warning = dialog.getByRole('alert')
+    await expect(warning).toContainText('unplug them first')
+    await expect(spdif.getByRole('button', { name: 'Off' })).toHaveAttribute('aria-pressed', 'true')
+    await warning.getByRole('button', { name: 'Turn on SPDIF' }).click()
+    await expect(spdif.getByRole('button', { name: 'On' })).toHaveAttribute('aria-pressed', 'true', { timeout: 15_000 })
+    await expect(dialog.getByTestId('sound-feedback')).toHaveText('The player confirmed the new value.')
+    await spdif.getByRole('button', { name: 'Off' }).click()
+    await expect(spdif.getByRole('button', { name: 'Off' })).toHaveAttribute('aria-pressed', 'true', {
+      timeout: 15_000,
+    })
     await page.keyboard.press('Escape')
     await disconnect(page)
   })
@@ -662,6 +692,35 @@ test.describe('player controls on the mock', () => {
     await page.keyboard.press('Escape')
     await disconnect(page)
   })
+})
+
+test('chooses light and dark palettes in the appearance dialog and keeps them', async ({ page }) => {
+  await english(page)
+  const html = page.locator('html')
+  await page
+    .getByRole('button', { name: /^Appearance/ })
+    .filter({ visible: true })
+    .first()
+    .click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByRole('button', { name: 'Dark', exact: true }).click()
+  await dialog.getByRole('group', { name: 'Dark theme tone' }).getByRole('button', { name: 'Espresso' }).click()
+  await expect(html).toHaveAttribute('data-theme', 'dark')
+  await expect(html).toHaveAttribute('data-dark-palette', 'espresso')
+  await dialog.getByRole('group', { name: 'Light theme tone' }).getByRole('button', { name: 'Paper' }).click()
+  await page.reload()
+  // Applied before paint by theme.js, then kept by the store.
+  await expect(html).toHaveAttribute('data-dark-palette', 'espresso')
+  await expect(html).toHaveAttribute('data-light-palette', 'paper')
+  await page
+    .getByRole('button', { name: /^Appearance/ })
+    .filter({ visible: true })
+    .first()
+    .click()
+  await dialog.getByRole('group', { name: 'Dark theme tone' }).getByRole('button', { name: 'Warm charcoal' }).click()
+  await expect(html).not.toHaveAttribute('data-dark-palette', /.+/)
+  await dialog.getByRole('button', { name: 'Light', exact: true }).click()
+  await expect(html).toHaveAttribute('data-theme', 'light')
 })
 
 test('keeps the reference layout on a phone without horizontal scrolling', async ({ page }) => {

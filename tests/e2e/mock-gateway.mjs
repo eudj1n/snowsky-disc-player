@@ -59,7 +59,7 @@ const player = {
   volume: 40,
   mode: 0,
   loved: new Set(),
-  sound: { gain: 0, balance: 0, filter: 1, dre: 1 },
+  sound: { gain: 0, balance: 0, filter: 1, dre: 1, spdif: 0 },
   // Equalizer: network preset, and profiles of the user presets 160..169.
   eq: { preset: 255, profiles: new Map(), last: 160 },
   uploads: [],
@@ -280,7 +280,7 @@ server.on('upgrade', (request, socket, head) => {
         return ws.send(record('a501', JSON.stringify({ soc_version: 257, currentVolume: player.volume })))
       if (tag === '0105') return ws.send(record('a102', player.mode.toString(16).padStart(4, '0')))
       const hex4 = (value) => value.toString(16).toUpperCase().padStart(4, '0')
-      const SOUND_READS = { '064a': 'gain', '0712': 'balance', '0603': 'filter', '0813': 'dre' }
+      const SOUND_READS = { '064a': 'gain', '0712': 'balance', '0603': 'filter', '0813': 'dre', '0824': 'spdif' }
       if (SOUND_READS[tag]) {
         const name = SOUND_READS[tag]
         const value = player.sound[name]
@@ -305,6 +305,7 @@ server.on('upgrade', (request, socket, head) => {
           '0713',
           '0653',
           '0812',
+          '0823',
           '0690',
           '0630',
           '0678',
@@ -389,8 +390,8 @@ server.on('upgrade', (request, socket, head) => {
             ws.send(record('a60a', '0005'))
           }, 900)
           return
-        } else if (['0649', '0713', '0653', '0812'].includes(tag)) {
-          const name = { '0649': 'gain', '0713': 'balance', '0653': 'filter', '0812': 'dre' }[tag]
+        } else if (['0649', '0713', '0653', '0812', '0823'].includes(tag)) {
+          const name = { '0649': 'gain', '0713': 'balance', '0653': 'filter', '0812': 'dre', '0823': 'spdif' }[tag]
           player.sound[name] =
             name === 'balance' ? (value >> 8 ? value & 0xff : -(value & 0xff)) : name === 'filter' ? value - 9 : value
           return

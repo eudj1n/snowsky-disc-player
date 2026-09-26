@@ -10,7 +10,7 @@
  * actions button. Album and duration
  * columns disappear when no row knows them (stock rows often lack both).
  */
-import { computed } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 import { formatDuration, type LibraryTrack, type Track } from '../../domain/track'
 import UiIcon from '../../ui/UiIcon.vue'
@@ -115,6 +115,41 @@ const discHeadings = computed(() => {
   })
   return headings
 })
+/**
+ * Long lists render progressively (owner, round 10: ~700 tracks felt slow):
+ * the first rows at once, the next batch whenever the end of the rendered part
+ * comes within 800 px of the viewport. Rows keep their indexes, since only a
+ * prefix of the same list is drawn.
+ */
+const BATCH = 60
+const shown = ref(BATCH)
+const rows = computed(() => props.tracks.slice(0, shown.value))
+const sentinel = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
+watch(sentinel, (element) => {
+  observer?.disconnect()
+  observer = null
+  if (!element) return
+  if (typeof IntersectionObserver !== 'function') {
+    shown.value = Infinity
+    return
+  }
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return
+      shown.value += BATCH
+      // Still in range after the batch (a tall window): observing again re-checks at once.
+      void nextTick(() => {
+        observer?.unobserve(element)
+        if (sentinel.value === element) observer?.observe(element)
+      })
+    },
+    { rootMargin: '800px 0px' },
+  )
+  observer.observe(element)
+})
+onBeforeUnmount(() => observer?.disconnect())
+
 const numberOf = (track: Track, index: number) => {
   const number = (track as Partial<LibraryTrack>).trackNumber
   return typeof number === 'number' && number > 0 ? number : index + 1
@@ -141,7 +176,7 @@ function contextMenu(event: MouseEvent, index: number): void {
       :actions="menuLabel !== null"
       :heart-lane="favoriteLabels !== null"
     />
-    <template v-for="(track, index) in tracks" :key="`${track.path ?? ''}#${index}`">
+    <template v-for="(track, index) in rows" :key="`${track.path ?? ''}#${index}`">
       <div v-if="discHeadings.has(index)" role="row" class="pt-18 pb-6">
         <span role="rowheader" class="text-10 font-[650] tracking-[1.8px] text-muted uppercase">{{
           discHeadings.get(index)
@@ -173,7 +208,7 @@ function contextMenu(event: MouseEvent, index: number): void {
               :class="[HEART, favoriteOf(track) ? '' : `${REVEAL} focus-visible:opacity-100`]"
               @click="emit('favorite')"
             >
-              <UiIcon name="heart" class="size-13 phone:size-11" :filled="favoriteOf(track) === true" />
+              <UiIcon name="heart" class="size-12 phone:size-11" :filled="favoriteOf(track) === true" />
             </button>
             <button
               v-else-if="favoriteOf(track) && favoriteRemovable"
@@ -185,10 +220,10 @@ function contextMenu(event: MouseEvent, index: number): void {
               :class="HEART"
               @click="emit('unfavorite', track)"
             >
-              <UiIcon name="heart" filled class="size-13 phone:size-11" />
+              <UiIcon name="heart" filled class="size-12 phone:size-11" />
             </button>
             <span v-else-if="favoriteOf(track)" class="text-accent" :class="HEART" :title="favoriteLabels.favorite">
-              <UiIcon filled name="heart" class="size-13 phone:size-11" /><span class="sr-only">{{
+              <UiIcon filled name="heart" class="size-12 phone:size-11" /><span class="sr-only">{{
                 favoriteLabels.favorite
               }}</span>
             </span>
@@ -199,7 +234,7 @@ function contextMenu(event: MouseEvent, index: number): void {
               :class="[HEART, REVEAL]"
               :title="favoriteLabels.onlyCurrent"
             >
-              <UiIcon name="heart" class="size-13 phone:size-11" />
+              <UiIcon name="heart" class="size-12 phone:size-11" />
             </span>
           </template>
           <template v-if="lead === 'cover'">
@@ -289,5 +324,6 @@ function contextMenu(event: MouseEvent, index: number): void {
         </span>
       </div>
     </template>
+    <div v-if="rows.length < tracks.length" ref="sentinel" aria-hidden="true" class="h-1" />
   </div>
 </template>

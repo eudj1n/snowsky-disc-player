@@ -431,6 +431,24 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
       "Already set") are announced to screen readers only; errors, uncertain
       outcomes and "please wait" stay on screen.
 
+## Owner requests (round 10, card-only)
+
+- [x] Hearts in the player bar and panel 17 px with a muted outline; row
+      hearts one pixel smaller.
+- [x] A tab that was connected reconnects after its own reload
+      (sessionStorage mark, up to four attempts while the old socket lets go);
+      Disconnect clears it and new tabs never take control on their own.
+- [x] Light palettes (sage, paper, mist, white) next to the dark ones, both
+      chosen in the appearance dialog ([themes](themes.md)).
+- [x] English is the default language (the player's own language is still
+      adopted when the listener has not chosen one).
+- [x] SPDIF in the sound settings; turning it on asks for a second yes,
+      because the jack then carries a digital signal. Codec and work mode wait
+      (they restart playback or the connection).
+- [x] Long track lists render in batches of 60 as they scroll (about 700
+      tracks felt slow).
+- Owner check on the player: removing a favorite that was just liked works.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

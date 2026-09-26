@@ -1,5 +1,5 @@
 @import 'tailwindcss';
-/* Alternative dark palettes (data-palette); their selectors outrank the defaults. */
+/* Alternative palettes (data-light-palette, data-dark-palette); their selectors outrank the defaults. */
 @import './palettes.css';
 
 /*
@@ -211,9 +211,6 @@
   --hero-from: #202b27;
   --hero-mid: #263129;
   --toast: #2e3829;
-  /* The dark palette as the appearance dialog previews it in either theme. */
-  --preview-dark-a: #121110;
-  --preview-dark-b: #262320;
   /* Layout: sidebar width and bottom player height per breakpoint. */
   --sidebar: 224px;
   --player: 100px;

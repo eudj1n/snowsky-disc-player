@@ -70,6 +70,32 @@
       "timeout_ms": 4000,
       "pacing_ms": 500,
       "max_bytes": 528
+    },
+    "0824": {
+      "name": "spdif_read",
+      "kind": "read",
+      "class": "sound",
+      "payload": "",
+      "reply": "a824",
+      "silent_ok": false,
+      "timeout_ms": 4000,
+      "pacing_ms": 0,
+      "max_bytes": 12,
+      "notes": "",
+      "evidence": "snowsky-disc-qemu docs/protocol/remote-settings.md"
+    },
+    "0823": {
+      "name": "set_spdif",
+      "kind": "mutation",
+      "class": "sound",
+      "payload": "000[01]",
+      "reply": null,
+      "silent_ok": false,
+      "timeout_ms": 4000,
+      "pacing_ms": 250,
+      "max_bytes": 528,
+      "notes": "Readback 0824.",
+      "evidence": "snowsky-disc-qemu docs/protocol/remote-settings.md"
     }
   },
   "http": [

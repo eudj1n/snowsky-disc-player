@@ -1,20 +1,22 @@
 /**
  * Sound settings after the reference Controller (fiio_settings.py, sound.py):
- * gain, channel balance, DAC filter and DRE. Reads return four hex digits;
+ * gain, channel balance, DAC filter, DRE and SPDIF output. Reads return four hex digits;
  * a change compares the fresh value with what the user saw (stale → not
  * sent), sends one setter and confirms with fresh reads within 8 s.
  */
 import type { GatewaySession } from './session'
 
-export type SoundName = 'gain' | 'balance' | 'filter' | 'dre'
+export type SoundName = 'gain' | 'balance' | 'filter' | 'dre' | 'spdif'
 export type SoundValues = Record<SoundName, number>
-export const SOUND_NAMES: readonly SoundName[] = ['gain', 'balance', 'filter', 'dre']
+export const SOUND_NAMES: readonly SoundName[] = ['gain', 'balance', 'filter', 'dre', 'spdif']
 
 const WIRE: Record<SoundName, { read: string; reply: string; write: string }> = {
   gain: { read: '064a', reply: 'a64a', write: '0649' },
   balance: { read: '0712', reply: 'a712', write: '0713' },
   filter: { read: '0603', reply: 'a603', write: '0653' },
   dre: { read: '0813', reply: 'a813', write: '0812' },
+  // Digital output on the 3.5 mm jack (FiiO Control's SPDIF switch; read on a V2.57 player).
+  spdif: { read: '0824', reply: 'a824', write: '0823' },
 }
 
 /** Stock DAC filter labels by value (not localized). */

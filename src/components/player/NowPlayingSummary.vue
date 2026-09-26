@@ -89,7 +89,7 @@ const emit = defineEmits<{ open: [opener: HTMLElement]; favorite: [] }>()
       :label="favoriteLabel"
       :pressed="favorite ?? false"
       :disabled="favoriteDisabled"
-      class="ml-6 rail:hidden"
+      class="ml-6 not-aria-pressed:text-muted rail:hidden [&>svg]:size-17"
       @click="emit('favorite')"
     />
   </div>

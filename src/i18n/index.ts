@@ -1,5 +1,6 @@
 /** Interface strings only: device metadata is never translated. The locale is
- * a browser preference; the player's own language is the first default. */
+ * a browser preference; without one the player's own language is adopted, and
+ * English is the default (owner, round 10: not the browser's language). */
 import { ref, watchEffect } from 'vue'
 import { en, type MessageKey, type PluralForms } from './en'
 import { ru } from './ru'
@@ -16,7 +17,7 @@ function isLocale(value: unknown): value is Locale {
 }
 
 const saved = readPreference(STORAGE_KEY)
-export const locale = ref<Locale>(isLocale(saved) ? saved : navigator.language.startsWith('ru') ? 'ru' : 'en')
+export const locale = ref<Locale>(isLocale(saved) ? saved : 'en')
 let explicit = isLocale(saved)
 
 watchEffect(() => {

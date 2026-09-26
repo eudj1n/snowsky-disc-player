@@ -166,6 +166,7 @@ const emit = defineEmits<{
         :label="labels.favorite"
         :pressed="playback.favorite ?? false"
         :disabled="favoriteDisabled"
+        class="not-aria-pressed:text-muted [&>svg]:size-17"
         @click="emit('favorite')"
       />
       <UiIconButton

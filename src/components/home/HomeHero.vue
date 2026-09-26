@@ -36,7 +36,7 @@ const emit = defineEmits<{ play: [] }>()
     <div
       class="max-w-[61%] px-36 py-30 wide:pl-44 compact:p-28 rail:max-w-[75%] phone:max-w-[87%] phone:px-23 phone:py-26"
     >
-      <span class="text-9 font-[650] tracking-[2.2px] text-[#bdc7b3] uppercase phone:text-8 phone:tracking-[1.5px]">{{
+      <span class="text-9 font-[650] tracking-[2.2px] text-white/70 uppercase phone:text-8 phone:tracking-[1.5px]">{{
         eyebrow
       }}</span>
       <h2
@@ -44,7 +44,7 @@ const emit = defineEmits<{ play: [] }>()
       >
         {{ titleLines[0] }}<br />{{ titleLines[1] }}
       </h2>
-      <p class="mt-0 mb-22 text-11 leading-[1.8] text-[#c1c7be] wide:text-13 phone:max-w-235 phone:text-11">
+      <p class="mt-0 mb-22 text-11 leading-[1.8] text-white/75 wide:text-13 phone:max-w-235 phone:text-11">
         <span v-if="loading" aria-hidden="true" class="flex h-[1lh] items-center"
           ><span class="block h-[0.8em] w-[70%] animate-pulse rounded-4 bg-white/15 motion-reduce:animate-none"
         /></span>

@@ -19,7 +19,7 @@ import ListeningPanel from './layout/ListeningPanel.vue'
 import SoundDialog from './layout/SoundDialog.vue'
 import TrackMenuDialog from './layout/TrackMenuDialog.vue'
 import './stores/appearance'
-import { connection, probeGateway } from './stores/connection'
+import { connection, probeGateway, resumeAfterReload } from './stores/connection'
 import { loadEnrichment } from './stores/enrichment'
 import { loadCollection, loadLibraryFacts, loadSavedCollection } from './stores/library'
 import { playerVisible } from './stores/playback'
@@ -51,6 +51,8 @@ onMounted(async () => {
   document.addEventListener('keydown', handleShortcut)
   void loadEnrichment()
   if (await probeGateway()) {
+    // A tab that was connected before its reload takes control back (reads only).
+    void resumeAfterReload()
     await loadLibraryFacts()
     await loadCollection()
   } else {

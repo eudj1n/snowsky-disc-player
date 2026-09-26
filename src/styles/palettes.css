@@ -1,18 +1,12 @@
 /*
- * Alternative dark palettes, kept for a later choice (owner, 2026-09-26: warm
- * charcoal became the default dark theme in main.css). Each palette sets the
- * dark tokens under `data-palette` on <html>; nothing selects one yet, so to
- * compare, set e.g. `document.documentElement.dataset.palette = 'espresso'`.
- * The preview pair drives the appearance dialog's dark swatch in either theme.
- * See docs/themes.md.
+ * Alternative palettes (owner, 2026-09-26). Sage (light) and warm charcoal
+ * (dark) are the defaults in main.css; the appearance dialog picks one of each
+ * (src/domain/palettes.ts) and sets `data-light-palette` / `data-dark-palette`
+ * on <html>. Every palette sets every token of its theme. See docs/themes.md.
  */
 
 /* Olive: the original dark theme (green accents), default until 2026-09-26. */
-:root[data-palette='olive'] {
-  --preview-dark-a: #101410;
-  --preview-dark-b: #22291f;
-}
-:root[data-theme='dark'][data-palette='olive'] {
+:root[data-theme='dark'][data-dark-palette='olive'] {
   --paper: #151815;
   --ink: #e7e9e0;
   --line: #30372f;
@@ -51,11 +45,7 @@
   --focus-ring: #abb99a;
 }
 
-:root[data-palette='graphite'] {
-  --preview-dark-a: #111213;
-  --preview-dark-b: #232527;
-}
-:root[data-theme='dark'][data-palette='graphite'] {
+:root[data-theme='dark'][data-dark-palette='graphite'] {
   --paper: #161718;
   --surface: #111213;
   --raised: #1e2022;
@@ -92,11 +82,7 @@
   --toast: #2a2d30;
   --focus-ring: #6b7177;
 }
-:root[data-palette='espresso'] {
-  --preview-dark-a: #110e0b;
-  --preview-dark-b: #251f19;
-}
-:root[data-theme='dark'][data-palette='espresso'] {
+:root[data-theme='dark'][data-dark-palette='espresso'] {
   --paper: #17130f;
   --surface: #110e0b;
   --raised: #1f1a15;
@@ -133,11 +119,7 @@
   --toast: #33291f;
   --focus-ring: #7a624c;
 }
-:root[data-palette='black'] {
-  --preview-dark-a: #000000;
-  --preview-dark-b: #151515;
-}
-:root[data-theme='dark'][data-palette='black'] {
+:root[data-theme='dark'][data-dark-palette='black'] {
   --paper: #000000;
   --surface: #000000;
   --raised: #0f0f0f;
@@ -174,4 +156,123 @@
   --hero-mid: #181818;
   --toast: #1f1f1f;
   --focus-ring: #555555;
+}
+
+/* Light palettes. */
+
+/* Paper: warm cream with brown ink. */
+:root[data-theme='light'][data-light-palette='paper'] {
+  --paper: #faf7f2;
+  --line: #e6e0d6;
+  --ink: #2a2622;
+  --surface: #f3efe8;
+  --raised: #fbf9f5;
+  --soft: #efeae2;
+  --hover: #e9e3d9;
+  --selected: #e6dfd3;
+  --secondary: #6e6356;
+  --banner: #f2ede5;
+  --banner-ink: #7e705f;
+  --progress-bg: #e6ddd0;
+  --progress-fill: #7a6a58;
+  --player-bg: #fcfaf6ee;
+  --muted: #857c72;
+  --strong: #3a322a;
+  --strong-hover: #473e35;
+  --strong-ink: #ffffff;
+  --chip-on: #6e6356;
+  --chip-on-ink: #ffffff;
+  --art-a: #ddd3c5;
+  --art-b: #ece6dc;
+  --art-edge: #cbbfae;
+  --art-edge-2: #baab96;
+  --ring-edge: #dcd2c4;
+  --ring-a: #e8e1d6;
+  --ring-b: #d9cebf;
+  --ring-c: #efe9e0;
+  --ring-d: #ded4c6;
+  --online-ring: #efe8dc;
+  --focus-ring: #c2b3a0;
+  --hero: #2e2823;
+  --hero-from: #27221d;
+  --hero-mid: #302923;
+  --toast: #3a322a;
+}
+
+/* Mist: cool grey-blue. */
+:root[data-theme='light'][data-light-palette='mist'] {
+  --paper: #f7f8f9;
+  --line: #e1e5e9;
+  --ink: #22262a;
+  --surface: #eff1f3;
+  --raised: #fafbfc;
+  --soft: #eceff2;
+  --hover: #e4e8ec;
+  --selected: #dfe4e9;
+  --secondary: #56616c;
+  --banner: #eef1f4;
+  --banner-ink: #66727e;
+  --progress-bg: #dde3e9;
+  --progress-fill: #5b6773;
+  --player-bg: #fafbfcee;
+  --muted: #7c848c;
+  --strong: #2b3137;
+  --strong-hover: #363d44;
+  --strong-ink: #ffffff;
+  --chip-on: #56616c;
+  --chip-on-ink: #ffffff;
+  --art-a: #d5dbe1;
+  --art-b: #e7ebef;
+  --art-edge: #c3cbd3;
+  --art-edge-2: #aeb8c2;
+  --ring-edge: #d3d9df;
+  --ring-a: #e3e7eb;
+  --ring-b: #d0d7de;
+  --ring-c: #eaedf0;
+  --ring-d: #d6dce2;
+  --online-ring: #e6eaee;
+  --focus-ring: #a9b4bf;
+  --hero: #262b30;
+  --hero-from: #20252a;
+  --hero-mid: #282d33;
+  --toast: #2c3238;
+}
+
+/* White: neutral, near monochrome. */
+:root[data-theme='light'][data-light-palette='white'] {
+  --paper: #ffffff;
+  --line: #e8e8e8;
+  --ink: #1a1a1a;
+  --surface: #f5f5f5;
+  --raised: #ffffff;
+  --soft: #f2f2f2;
+  --hover: #ebebeb;
+  --selected: #e6e6e6;
+  --secondary: #4d4d4d;
+  --banner: #f4f4f4;
+  --banner-ink: #666666;
+  --progress-bg: #e3e3e3;
+  --progress-fill: #4d4d4d;
+  --player-bg: #ffffffee;
+  --muted: #7d7d7d;
+  --strong: #1f1f1f;
+  --strong-hover: #333333;
+  --strong-ink: #ffffff;
+  --chip-on: #333333;
+  --chip-on-ink: #ffffff;
+  --art-a: #dedede;
+  --art-b: #eeeeee;
+  --art-edge: #cccccc;
+  --art-edge-2: #bbbbbb;
+  --ring-edge: #dddddd;
+  --ring-a: #ececec;
+  --ring-b: #d9d9d9;
+  --ring-c: #f3f3f3;
+  --ring-d: #e0e0e0;
+  --online-ring: #eeeeee;
+  --focus-ring: #b5b5b5;
+  --hero: #1f1f1f;
+  --hero-from: #1a1a1a;
+  --hero-mid: #222222;
+  --toast: #262626;
 }

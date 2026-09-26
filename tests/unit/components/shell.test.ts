@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import ArtworkSleeve from '../../../src/components/artwork/ArtworkSleeve.vue'
 import CoverCard from '../../../src/components/collection/CoverCard.vue'
 import CoverCardSkeleton from '../../../src/components/collection/CoverCardSkeleton.vue'
@@ -330,5 +331,31 @@ describe('CoverCard play', () => {
     expect(card.emitted('play')).toHaveLength(1)
     const plain = mount(CoverCard, { props: { title: 'X', to: '/x', openLabel: 'Open' }, ...LINK_STUB })
     expect(plain.find('button').exists()).toBe(false)
+  })
+})
+
+describe('TrackList progressive rendering', () => {
+  it('draws long lists in batches as the end comes into view', async () => {
+    const callbacks: ((entries: { isIntersecting: boolean }[]) => void)[] = []
+    class FakeObserver {
+      constructor(callback: (entries: { isIntersecting: boolean }[]) => void) {
+        callbacks.push(callback)
+      }
+      observe(): void {}
+      unobserve(): void {}
+      disconnect(): void {}
+    }
+    vi.stubGlobal('IntersectionObserver', FakeObserver)
+    const tracks = Array.from({ length: 150 }, (_, index) => track(`Song ${index + 1}`, 'Album', 180_000))
+    const list = mount(TrackList, { props: { tracks }, ...LINK_STUB })
+    await nextTick()
+    expect(list.findAll('[role=row]')).toHaveLength(60)
+    callbacks.at(-1)?.([{ isIntersecting: true }])
+    await nextTick()
+    expect(list.findAll('[role=row]')).toHaveLength(120)
+    callbacks.at(-1)?.([{ isIntersecting: true }])
+    await nextTick()
+    expect(list.findAll('[role=row]')).toHaveLength(150)
+    vi.unstubAllGlobals()
   })
 })
