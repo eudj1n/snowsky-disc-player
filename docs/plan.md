@@ -507,6 +507,16 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
       end a few seconds early); with the queue ended no audio file was open.
       A service recorder can count a play when a file stays in use long
       enough (for example 30 s or half its bytes), with no stock connection.
+      The player's "Memory playback" setting (Off / Position / Song, stored
+      as `SYSCONFIG.MEMORY_PLAY` 0 / 1 / 2; the owner chose Song on the player,
+      2026-09-26) does not start a history either. Guest check with Song: an
+      album of four 25 s tracks played to the end left RECORD_SONG empty; with
+      it, stock rewrites `MEMORY_PLAY` at every track change (queue row ID of
+      `LIST_SONG_0`, its track number, `POSITION` 0), keeps `IS_PLAYING` 1
+      after the queue ended, writes song.db each time and creates an empty
+      `/usr/data/fiio/memory_playing_flag`. That row is only the last track
+      and needs the setting, so the passive `/proc` source stays the
+      candidate. The guest was set back to Off.
 
 ## Owner requests (round 12): lyrics timing
 
