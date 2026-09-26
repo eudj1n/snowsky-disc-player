@@ -221,11 +221,13 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
   hold no artwork at all (verified on the stock schema), and stock serves
   only the current track's cover (`/usr/data/fiio/cover.jpg`). Eight library
   rows point at `.part` files on the card.
-- [ ] Service media endpoint (snowsky-disc-service, next image): read FLAC
+- [x] Service media endpoint (snowsky-disc-service, next image): read FLAC
       STREAMINFO (duration, sample rate, bit depth) and embedded PICTURE blocks
       or folder `cover.jpg`/`folder.jpg` from the card, bounded and read-only,
       so every album and track gets artwork and duration without playing it;
       forward proper image types. The UI then prefers it over enrichment.
+      Shipped in combined-006 for FLAC and WAV (installed 2026-09-26); MP3 and
+      AAC tags wait for the next image.
 
 ## M2 — Library browsing
 
@@ -347,9 +349,12 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
   SHA-256 after the write. `6391eee7bbc8b7ac` stays for rollback;
   `9b8d2afdaeb8f018` removed (active plus previous kept).
 
-- [ ] Owner's browser acceptance on the player: covers, durations, lyrics,
-      favorite removal, playlists by `LIST_ID`, albums and discs, pairing by
-      the serial number.
+- [x] Owner's browser acceptance on the player (2026-09-26, release
+      `c4784ac08ccbe799` on combined-006): the owner reported "все работает"
+      and specifically checked, for the first time on the player, uploading an
+      album folder and the rescan that indexes it. The listed features (covers,
+      durations, lyrics, favorite removal, playlists by `LIST_ID`, albums and
+      discs, SN pairing) were not reported one by one.
 
 ## Combined-006 client (round 7)
 
