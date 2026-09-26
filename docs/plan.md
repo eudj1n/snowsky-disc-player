@@ -349,6 +349,12 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
   SHA-256 after the write. `6391eee7bbc8b7ac` stays for rollback;
   `9b8d2afdaeb8f018` removed (active plus previous kept).
 
+- 2026-09-26: `4305f4bb03706477` (commit `d53589f`, round 10: palettes in
+  the appearance dialog, SPDIF, reload resume, lazy lists, English default,
+  smooth cover zoom) published on PLAY after the full mock suite; all 35 files
+  matched by SHA-256 after the write. `c4784ac08ccbe799` stays for rollback;
+  `6391eee7bbc8b7ac` removed.
+
 - [x] Owner's browser acceptance on the player (2026-09-26, release
       `c4784ac08ccbe799` on combined-006): the owner reported "все работает"
       and specifically checked, for the first time on the player, uploading an
