@@ -744,6 +744,17 @@ recorded for later.
        artists at hand, for example at the top of Home and of their lists.
        Where pins live (this browser, or the card so every browser shares
        them) to be decided.
+9. [ ] Karaoke mode (owner): the current track's LRC lyrics full screen in
+       a large font, no more than 6 to 8 lines on screen. Proposed: opened
+       from the Lyrics tab (and a key), the current line centred with the
+       previous and next lines dimmed around it, a fill sweeping the current
+       line from its stamp to the next one, the font sized to the screen
+       height, the cover's tone behind, and play/pause, previous, next and
+       Esc to leave. Plain (unsynced) lyrics scroll without a highlight.
+       Limits: the Fullscreen API works over the player's plain HTTP, but the
+       Screen Wake Lock needs a secure context, so the screen may still dim;
+       word timings (`<mm:ss.xx>`) are dropped today and could drive a
+       per-word sweep later.
 
 ## Requests for the next service build
 
