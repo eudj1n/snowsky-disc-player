@@ -706,7 +706,8 @@ recorded for later.
        Done as the "Card" page under "Your player" in the sidebar, also
        reached from the connection dialog's card bar: the used space as
        music and other files, formats (hi-res and the two MP4 kinds apart),
-       the largest albums with their plays, artists by their albums' space
+       the largest albums with their plays (title, cover and artist link to
+       their pages, as the owner asked), artists by their albums' space
        and possible duplicates by folder pair (same title and credit, lengths
        within 2 s). Sizes are cached in IndexedDB until "Measure again".
        Unit tests for the grouping and duplicates, a mock test (both

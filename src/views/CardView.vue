@@ -9,6 +9,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import Artwork from '../components/artwork/Artwork.vue'
 import SectionHeading from '../components/common/SectionHeading.vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
+import type { Album } from '../domain/album'
 import { cardSpace, formatBytes } from '../domain/device'
 import { albumSpace, artistSpace, byFormat, cardUsage, duplicates, playsByPath, type FileFacts } from '../domain/space'
 import { locale, t } from '../i18n'
@@ -19,7 +20,7 @@ import { history, loadHistory } from '../stores/history'
 import { albums, library, tracks } from '../stores/library'
 import UiSkeleton from '../ui/UiSkeleton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumCardRoute, artistRoute, leadArtist } from './captions'
+import { albumCardRoute, albumLines, artistRoute, leadArtist } from './captions'
 import CollectionGate from './CollectionGate.vue'
 
 const ALBUM_ROWS = 12
@@ -60,7 +61,17 @@ const duplicateRows = computed(() => duplicates(tracks.value, files.value))
 const allAlbums = ref(false)
 const allArtists = ref(false)
 const allDuplicates = ref(false)
-const shownAlbums = computed(() => (allAlbums.value ? albumRows.value : albumRows.value.slice(0, ALBUM_ROWS)))
+/** The album's credit as its cards show it: the artist (or pair) with a link, or "Various artists". */
+function creditOf(album: Album) {
+  const lines = albumLines(album)
+  return lines.length > 1 ? (lines[0] ?? null) : null
+}
+const shownAlbums = computed(() =>
+  (allAlbums.value ? albumRows.value : albumRows.value.slice(0, ALBUM_ROWS)).map((entry) => ({
+    ...entry,
+    credit: creditOf(entry.album),
+  })),
+)
 const shownArtists = computed(() => (allArtists.value ? artistRows.value : artistRows.value.slice(0, ARTIST_ROWS)))
 const shownDuplicates = computed(() =>
   allDuplicates.value ? duplicateRows.value : duplicateRows.value.slice(0, DUPLICATE_ROWS),
@@ -180,15 +191,26 @@ watch(
           :key="entry.album.key"
           class="flex items-center gap-14 border-b border-line py-9 last:border-b-0"
         >
-          <span class="size-44 shrink-0 overflow-hidden rounded-6">
+          <RouterLink
+            :to="albumCardRoute(entry.album)"
+            tabindex="-1"
+            aria-hidden="true"
+            class="group size-44 shrink-0 overflow-hidden rounded-6"
+          >
             <Artwork :title="entry.album.title" :cover="albumCover(entry.album)" />
-          </span>
+          </RouterLink>
           <div class="min-w-0 flex-1">
             <RouterLink :to="albumCardRoute(entry.album)" class="block truncate text-13 font-semibold hover:underline">
               {{ entry.album.title }}
             </RouterLink>
             <p class="m-0 mt-2 truncate text-11 text-muted">
-              <template v-if="leadArtist(entry.album)">{{ leadArtist(entry.album) }} · </template>
+              <template v-if="entry.credit">
+                <RouterLink v-if="entry.credit.to" :to="entry.credit.to" class="hover:text-ink hover:underline">{{
+                  entry.credit.text
+                }}</RouterLink>
+                <template v-else>{{ entry.credit.text }}</template>
+                ·
+              </template>
               {{ t('track_count', { count: entry.files }) }}
               <template v-if="entry.formats.length"> · {{ entry.formats.join(', ') }}</template>
               <template v-if="playsShown">
