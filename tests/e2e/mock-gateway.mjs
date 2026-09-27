@@ -332,8 +332,13 @@ server.on('upgrade', (request, socket, head) => {
       }
       const tag = text.slice(0, 4)
       if (tag === '0599') return ws.send(record('a599', '0306'))
+      // Stock answers status reads with a noticeable delay (as on the guest),
+      // which exposes any state read back only after a result is reported.
       if (tag === '0501')
-        return ws.send(record('a501', JSON.stringify({ soc_version: 257, currentVolume: player.volume })))
+        return void setTimeout(
+          () => ws.send(record('a501', JSON.stringify({ soc_version: 257, currentVolume: player.volume }))),
+          600,
+        )
       if (tag === '0105') return ws.send(record('a102', player.mode.toString(16).padStart(4, '0')))
       const hex4 = (value) => value.toString(16).toUpperCase().padStart(4, '0')
       const SOUND_READS = { '064a': 'gain', '0712': 'balance', '0603': 'filter', '0813': 'dre', '0824': 'spdif' }

@@ -383,6 +383,19 @@ test.describe('player controls on the mock', () => {
     await expect(output).toHaveText('0', { timeout: 15_000 })
     await panel.getByRole('button', { name: 'Unmute' }).click()
     await expect(output).toHaveText(before, { timeout: 15_000 })
+
+    // Muting right after a verified change keeps the new level for Unmute.
+    const level = before === '37' ? '38' : '37'
+    const toast = page.getByTestId('toast')
+    await expect(toast).toBeHidden({ timeout: 15_000 })
+    await panel.getByRole('slider', { name: 'Player volume' }).fill(level)
+    await expect(toast).toHaveText('Done. Verified on DISC.', { timeout: 15_000 })
+    await panel.getByRole('button', { name: 'Mute' }).click()
+    await expect(output).toHaveText('0', { timeout: 15_000 })
+    await panel.getByRole('button', { name: 'Unmute' }).click()
+    await expect(output).toHaveText(level, { timeout: 15_000 })
+    await panel.getByRole('slider', { name: 'Player volume' }).fill(before)
+    await expect(output).toHaveText(before, { timeout: 15_000 })
     await disconnect(page)
   })
 
@@ -631,17 +644,19 @@ test.describe('player controls on the mock', () => {
     await english(page)
     await connectAndPair(page)
     await page.goto('/#/favorites')
-    const rows = page.getByRole('row')
-    await expect(rows.first()).toBeVisible()
-    const before = await rows.count()
+    await expect(page.getByRole('row').first()).toBeVisible()
     const heart = page.getByRole('button', { name: /^Remove from favorites: / }).first()
-    const title = ((await heart.getAttribute('aria-label')) ?? '').replace('Remove from favorites: ', '')
+    const label = (await heart.getAttribute('aria-label')) ?? ''
+    const title = label.replace('Remove from favorites: ', '')
+    // The list may still grow while it loads, so follow this track, not a row count.
+    const same = page.getByRole('button', { name: label, exact: true })
+    const copies = await same.count()
     await heart.click()
     const dialog = page.getByRole('dialog')
     await expect(dialog).toContainText(title)
     await dialog.getByRole('button', { name: 'Remove', exact: true }).click()
     await expect(dialog).toBeHidden({ timeout: 20_000 })
-    await expect(rows).toHaveCount(before - 1, { timeout: 20_000 })
+    await expect(same).toHaveCount(copies - 1, { timeout: 20_000 })
     await disconnect(page)
   })
 

@@ -93,8 +93,10 @@ export async function changeVolume(value: number): Promise<void> {
     await context.pace()
     return setVolume(context, value)
   })
-  report(result)
+  // Observe the new level before reporting it: a Mute pressed right after the
+  // toast must remember this level, not the one it replaced.
   await refreshVolume()
+  report(result)
 }
 
 const VOLUME_BEFORE_MUTE = 'disc-player.volume-before-mute'
