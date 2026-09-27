@@ -388,6 +388,7 @@ export const en = {
   stat_battery: 'Battery',
   stat_card: 'Card',
   card_free: '{free} free of {total}',
+  card_used: 'Card space used',
   output_resampled: 'Plays at {rate} on the output (stock resamples it)',
   add_to_favorites: 'Add to favorites',
   your_player: 'YOUR PLAYER',

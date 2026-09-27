@@ -196,6 +196,8 @@
   --progress-fill: #6b7959;
   --player-bg: #fbfcf8ee;
   --muted: #82847b;
+  /* A filling card: amber below a quarter free (critical uses the accent). */
+  --caution: #c98a1c;
   --accent: #f35c3f;
   --accent-ink: #21140f;
   /* Primary buttons (play), pressed filters, decorative art. */
@@ -228,6 +230,7 @@
 
 :root[data-theme='dark'] {
   color-scheme: dark;
+  --caution: #e0a84e;
   --paper: #181614;
   --ink: #ece8e3;
   --line: #33302c;

@@ -538,6 +538,10 @@ test.describe('player controls on the mock', () => {
     // The live gauge (72 %), not what stock last stored (87 %), and the card's space.
     await expect(facts).toContainText('Battery72%')
     await expect(facts).toContainText('Card18 GB free of 64 GB')
+    // The card is a full-width bar of the used space: 71 % used, colored as plenty left.
+    const meter = facts.getByRole('meter', { name: 'Card space used' })
+    await expect(meter).toHaveAttribute('aria-valuenow', '71')
+    await expect(meter).toHaveAttribute('data-level', 'ok')
     await expect(facts).toContainText(/Albums\d+/)
     await expect(facts).toContainText(/Tracks\d+/)
     await page.keyboard.press('Escape')

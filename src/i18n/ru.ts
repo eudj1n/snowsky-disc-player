@@ -390,6 +390,7 @@ export const ru: Messages = {
   stat_battery: 'Батарея',
   stat_card: 'Карта',
   card_free: 'свободно {free} из {total}',
+  card_used: 'Занято на карте',
   output_resampled: 'На выход идёт {rate} (сток пересэмплирует)',
   add_to_favorites: 'Добавить в избранное',
   your_player: 'ВАШ ПЛЕЕР',

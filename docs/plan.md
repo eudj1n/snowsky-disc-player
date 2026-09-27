@@ -673,6 +673,22 @@ MIPS service (19 desktop tests, among them a new one on stock: a device facts
 dialog with the guest's gauge and card, an album played for 20 s appearing as
 the first tile, and a non-playing row favorited and removed again).
 
+Owner's acceptance on the player (2026-09-27, release `ccdaf06c54348329` on
+combined-007): "Recently played" fills, favoriting any track works, and the
+output rate, the battery and the card space show. MP3 files are checked
+separately.
+
+## Owner requests (round 15): card space
+
+- [x] The card fact as a full-width bar instead of a fourth tile alone on its
+      row: the used share fills it, colored by what is left (the palette's
+      progress color, amber under 25 % free, the accent under 10 %, the level
+      at which Windows turns a drive red). The label and "2.7 GB free of
+      31 GB" stay above it; the bar is a `meter` for assistive technology.
+      Unit test for the levels (the owner's card, 8.7 % free, reads
+      critical); the mock test reads the meter. Checked in light and dark and
+      on a phone with screenshots of the three levels.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

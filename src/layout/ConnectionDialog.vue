@@ -7,7 +7,7 @@
 import { computed, watch } from 'vue'
 import ConnectionStatus from '../components/connection/ConnectionStatus.vue'
 import PairingForm from '../components/connection/PairingForm.vue'
-import { formatBytes } from '../domain/device'
+import { cardSpace, formatBytes } from '../domain/device'
 import { locale, t } from '../i18n'
 import { connect, connection, disconnect } from '../stores/connection'
 import { device, refreshDevice } from '../stores/device'
@@ -25,24 +25,28 @@ import UiTextButton from '../ui/UiTextButton.vue'
  * the charge stock last stored.
  */
 const battery = computed(() => device.facts?.battery?.capacity ?? playerOptions.battery)
-const facts = computed(() => {
-  const card = device.facts?.card
-  return [
+const facts = computed(() =>
+  [
     library.status === 'ready' ? { key: 'albums', label: t('stat_albums'), value: String(albums.value.length) } : null,
     library.summary ? { key: 'tracks', label: t('stat_tracks'), value: String(library.summary.tracks) } : null,
     battery.value !== null ? { key: 'battery', label: t('stat_battery'), value: `${String(battery.value)}%` } : null,
-    card
-      ? {
-          key: 'card',
-          label: t('stat_card'),
-          value: t('card_free', {
-            free: formatBytes(card.freeBytes, locale.value),
-            total: formatBytes(card.totalBytes, locale.value),
-          }),
-        }
-      : null,
-  ].filter((fact) => fact !== null)
+  ].filter((fact) => fact !== null),
+)
+/** The card as a full-width bar of the used space, colored by what is left (owner, round 15). */
+const card = computed(() => {
+  const space = device.facts?.card
+  const shares = space ? cardSpace(space) : null
+  if (!space || !shares) return null
+  return {
+    text: t('card_free', {
+      free: formatBytes(space.freeBytes, locale.value),
+      total: formatBytes(space.totalBytes, locale.value),
+    }),
+    percent: Math.round(shares.used * 100),
+    level: shares.level,
+  }
 })
+const LEVEL_FILL = { ok: 'bg-progress-fill', low: 'bg-[var(--caution)]', critical: 'bg-accent' } as const
 watch(
   () => ui.dialog === 'connection',
   (open) => {
@@ -80,10 +84,30 @@ const status = computed(() => {
       </div>
     </div>
     <ConnectionStatus :text="status" :connected="connection.connection === 'connected'" />
-    <dl v-if="facts.length" class="-mt-4 mb-18 grid grid-cols-3 gap-10" data-testid="player-facts">
+    <dl v-if="facts.length || card" class="-mt-4 mb-18 grid grid-cols-3 gap-10" data-testid="player-facts">
       <div v-for="fact in facts" :key="fact.key" class="rounded-10 bg-soft px-14 py-10">
         <dt class="text-10 tracking-[1px] text-muted uppercase">{{ fact.label }}</dt>
         <dd class="m-0 mt-2 text-17 font-semibold">{{ fact.value }}</dd>
+      </div>
+      <div v-if="card" class="col-span-3 rounded-10 bg-soft px-14 py-10" data-testid="card-space">
+        <div class="flex items-baseline justify-between gap-12">
+          <dt class="text-10 tracking-[1px] text-muted uppercase">{{ t('stat_card') }}</dt>
+          <dd class="m-0 text-13 font-semibold">{{ card.text }}</dd>
+        </div>
+        <dd class="m-0 mt-8">
+          <div
+            role="meter"
+            :aria-label="t('card_used')"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            :aria-valuenow="card.percent"
+            :aria-valuetext="card.text"
+            :data-level="card.level"
+            class="h-6 overflow-hidden rounded-full bg-progress-bg"
+          >
+            <div class="h-full rounded-full" :class="LEVEL_FILL[card.level]" :style="{ width: `${card.percent}%` }" />
+          </div>
+        </dd>
       </div>
     </dl>
     <p v-if="connection.notice" role="status" class="-mt-8 mb-16 text-12 text-accent" data-testid="notice">

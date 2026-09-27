@@ -76,6 +76,16 @@ export function formatBytes(bytes: number, locale: string): string {
   return `${new Intl.NumberFormat(locale, { maximumFractionDigits: digits }).format(value)} ${units[unit] ?? 'B'}`
 }
 
+/** How full the card looks: `critical` under 10 % free (where Windows turns a drive red), `low` under 25 %. */
+export type SpaceLevel = 'ok' | 'low' | 'critical'
+
+/** The used share of the card (0..1) and its level; null when the size is unknown. */
+export function cardSpace(card: { totalBytes: number; freeBytes: number }): { used: number; level: SpaceLevel } | null {
+  if (!(card.totalBytes > 0)) return null
+  const free = Math.min(Math.max(card.freeBytes / card.totalBytes, 0), 1)
+  return { used: 1 - free, level: free < 0.1 ? 'critical' : free < 0.25 ? 'low' : 'ok' }
+}
+
 /** "48 kHz", "44.1 kHz". */
 export function formatRate(hertz: number): string {
   return `${String(Math.round(hertz / 100) / 10)} kHz`
