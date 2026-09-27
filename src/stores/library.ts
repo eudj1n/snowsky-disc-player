@@ -64,10 +64,10 @@ const state = reactive<LibraryModel>({
 })
 export const library = readonly(state)
 
-/** Durations the database lacks, filled from listening observations. */
+/** Durations the database lacks, filled from listening observations (not for a CUE track: its file is the whole sheet). */
 function enriched(tracks: readonly LibraryTrack[]): LibraryTrack[] {
   return tracks.map((track) =>
-    track.durationMs === null && track.path && enrichment.durations[track.path]
+    track.durationMs === null && track.path && !track.cue && enrichment.durations[track.path]
       ? { ...track, durationMs: enrichment.durations[track.path] ?? null }
       : track,
   )

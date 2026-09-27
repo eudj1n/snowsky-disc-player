@@ -156,7 +156,12 @@ export async function toggleFavorite(): Promise<void> {
  * POST that the service confirms by reading the row back; never repeated. The
  * list is read again afterwards.
  */
-export async function favoriteTrack(track: { id: number; path: string | null }): Promise<void> {
+export async function favoriteTrack(track: {
+  id: number
+  path: string | null
+  title: string
+  cue?: boolean
+}): Promise<void> {
   const token = pairingToken()
   if (!paired() || !token) return
   let result
@@ -177,7 +182,7 @@ export async function favoriteTrack(track: { id: number; path: string | null }):
     return
   }
   if (result.status === 200) {
-    markFavorite(track.path, true)
+    markFavorite(track, true)
     report('confirmed', true)
     await refreshFavorites()
   } else if (result.status === 503) toast('closed_scanning', true)

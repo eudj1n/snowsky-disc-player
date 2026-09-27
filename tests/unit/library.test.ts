@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { groupAlbums, recentAlbums } from '../../src/domain/album'
 import type { LibraryTrack } from '../../src/domain/track'
 import { libraryTrack, libraryTracks } from '../../src/gateway/library'
+import { sameTrack, trackKey } from '../../src/domain/track'
 
 const row = {
   ID: 2,
@@ -52,6 +53,26 @@ describe('library rows', () => {
       trackNumber: 1,
       addedAt: 1790017438,
     })
+  })
+
+  it('tells the tracks of one CUE sheet apart by title, since they share the file', () => {
+    const image = '/tmp/sdcard/Guano Apes/Best of.flac'
+    const first = libraryTrack({ ...row, ID: 7, PATH: image, TITLE: 'Break the Line', IS_CUE: 1, OFFSET: 0 })
+    const second = libraryTrack({ ...row, ID: 8, PATH: image, TITLE: 'Open Your Eyes', IS_CUE: 1, OFFSET: 211000 })
+    expect(first?.cue).toBe(true)
+    expect(libraryTrack(row)).not.toHaveProperty('cue')
+    if (!first || !second) throw new Error('parsed rows')
+    expect(trackKey(first)).not.toBe(trackKey(second))
+    expect(trackKey({ path: image, title: 'Break the Line ', cue: true })).toBe(trackKey(first))
+    // Now playing reports the shared path, is_cue and the title (song_track stays 0).
+    const playing = { path: image, title: 'Open Your Eyes', cue: true }
+    expect(sameTrack(first, playing)).toBe(false)
+    expect(sameTrack(second, playing)).toBe(true)
+    // Ordinary files still match by path alone (the title stock reports may differ).
+    const plain = libraryTrack(row)
+    if (!plain) throw new Error('parsed row')
+    expect(sameTrack(plain, { path: plain.path, title: 'Other name' })).toBe(true)
+    expect(sameTrack(plain, null)).toBe(false)
   })
 
   it('falls back to the file name for untagged files and drops broken rows', () => {

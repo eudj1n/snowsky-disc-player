@@ -2,7 +2,8 @@
 # Generates the acceptance media on the disposable emulator card (never on a
 # player): two albums titled "Harbor" by different artists and genres, a second
 # Lumen album, a two-disc Lumen album with a year and a joint credit, an album
-# and a track with long names, and track numbers that differ from file order. Tagged FLAC
+# and a track with long names, a CUE image of three tracks, and track numbers
+# that differ from file order. Tagged FLAC
 # tones made with sox inside the emulator container; nothing is copied from a
 # real library. Usage: tests/e2e/emulator/media.sh <container> [remove]
 set -eu
@@ -48,6 +49,28 @@ disc CD1 'a Undertow.flac' Undertow 1 1 349 'ARTIST=Kestrel'
 disc CD1 'b Slack Water.flac' 'Slack Water' 2 1 370
 disc CD2 'a Spring Tide.flac' 'Spring Tide' 1 2 415
 disc CD2 'b Neap.flac' Neap 2 2 466
+# A CUE image: one FLAC holding three tracks and its sheet. Stock indexes three
+# tracks that share the file path (IS_CUE=1) and tells them apart by title only.
+mkdir -p "$root/Tessera - Image Sessions"
+sox -n -r 44100 -c 2 -b 16 "$root/Tessera - Image Sessions/Image Sessions.flac" \
+  synth 20 sine 300 vol 0.1 : synth 20 sine 400 vol 0.1 : synth 20 sine 500 vol 0.1
+cat > "$root/Tessera - Image Sessions/Image Sessions.cue" <<'CUE'
+PERFORMER "Tessera"
+TITLE "Image Sessions"
+FILE "Image Sessions.flac" WAVE
+  TRACK 01 AUDIO
+    TITLE "Opening Frame"
+    PERFORMER "Tessera"
+    INDEX 01 00:00:00
+  TRACK 02 AUDIO
+    TITLE "Second Frame"
+    PERFORMER "Tessera"
+    INDEX 01 00:20:00
+  TRACK 03 AUDIO
+    TITLE "Last Frame"
+    PERFORMER "Tessera"
+    INDEX 01 00:40:00
+CUE
 # Long names, as on anniversary editions: stock cuts them short in its play state.
 tone 'Lumen - Anniversary' 'a Long.flac' 'An Unusually Long Track Title for the Play State' 1 \
   'Quiet Meridian (The Complete Anniversary Recordings)' Lumen Ambient 311

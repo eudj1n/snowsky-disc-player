@@ -21,6 +21,8 @@ export const toggleCurrent = (): void => void transport('toggle')
 
 export const trackRowProps = computed(() => ({
   currentPath: playback.current.track?.path ?? null,
+  currentTitle: playback.current.track?.title ?? null,
+  currentCue: playback.current.track?.cue === true,
   playing: isPlaying.value,
   coverOf: coverFor,
   disabled: selection.busy,
@@ -65,7 +67,7 @@ const favoritesAddable = computed(
 /** A row's heart when the service can favorite any library track. */
 export const onRowLove = (track: Track): void => {
   const id = (track as Partial<LibraryTrack>).id
-  if (typeof id === 'number') void favoriteTrack({ id, path: track.path })
+  if (typeof id === 'number') void favoriteTrack({ id, path: track.path, title: track.title, cue: track.cue === true })
 }
 
 /** A favorite that is not playing: confirmed first, as adding it back needs it playing. */

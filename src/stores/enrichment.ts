@@ -220,12 +220,16 @@ function wantInfo(path: string): void {
   pump()
 }
 
-/** Queues metadata reads for tracks the database gives no duration. */
-export function wantDurations(tracks: readonly Pick<Track, 'path' | 'durationMs'>[]): void {
+/**
+ * Queues metadata reads for tracks the database gives no duration. A CUE
+ * track is left out: its file holds the whole sheet, so the file's length is
+ * not the track's.
+ */
+export function wantDurations(tracks: readonly Pick<Track, 'path' | 'durationMs' | 'cue'>[]): void {
   if (!connection.media) return
   for (const track of tracks) {
     const path = track.path
-    if (!path || track.durationMs !== null || state.durations[path] || recent(noDuration[path])) continue
+    if (!path || track.cue || track.durationMs !== null || state.durations[path] || recent(noDuration[path])) continue
     wantInfo(path)
   }
 }
@@ -300,7 +304,8 @@ export function albumCover(
 }
 
 function rememberDuration(track: Track): void {
-  if (!track.path || !track.durationMs || state.durations[track.path] === track.durationMs) return
+  // A CUE track's duration belongs to the track, not to the file it shares.
+  if (!track.path || track.cue || !track.durationMs || state.durations[track.path] === track.durationMs) return
   state.durations[track.path] = track.durationMs
   void cacheSet(DURATIONS, { ...state.durations })
 }

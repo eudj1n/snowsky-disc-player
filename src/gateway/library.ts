@@ -48,6 +48,7 @@ export function libraryTrack(row: Record<string, unknown>): LibraryTrack | null 
     durationMs: positive(row.DURATION),
     queuePosition: null,
     addedAt: positive(row.ADD_TIME),
+    ...(row.IS_CUE === 1 ? { cue: true } : {}),
   }
 }
 

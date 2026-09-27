@@ -86,6 +86,24 @@ describe('TrackList', () => {
     expect(list.emitted('menu')?.map(([index]) => index)).toEqual([0, 0])
   })
 
+  it('marks only the playing track of a CUE sheet whose tracks share one file', () => {
+    const cue = (title: string): Track => ({
+      ...track(title, 'Best of', null),
+      path: '/tmp/sdcard/Image.flac',
+      cue: true,
+    })
+    const list = mount(TrackList, {
+      props: {
+        tracks: [cue('Break the Line'), cue('Open Your Eyes'), cue('Big in Japan')],
+        currentPath: '/tmp/sdcard/Image.flac',
+        currentTitle: 'Open Your Eyes',
+        currentCue: true,
+      },
+    })
+    const current = list.findAll('[role=row]').map((row) => row.classes().includes('bg-selected'))
+    expect(current).toEqual([false, true, false])
+  })
+
   it('marks the current row by path', () => {
     const list = mount(TrackList, {
       props: { tracks: [track('A', null, null), track('B', null, null)], currentPath: '/tmp/sdcard/B.flac' },

@@ -1,6 +1,7 @@
 /** The latest playback observation, from 0202 reads and a202 pushes. */
 import { computed, reactive, readonly } from 'vue'
 import { UNKNOWN_PLAYBACK, withLibraryNames, type Playback } from '../domain/playback'
+import { trackKey } from '../domain/track'
 import { currentPlayback, readPlayback } from '../gateway/playback'
 import { NoObservation, type GatewaySession } from '../gateway/session'
 import { activeSession, onSessionOpened } from './connection'
@@ -11,9 +12,12 @@ interface PlaybackModel {
 }
 
 const state = reactive<PlaybackModel>({ current: UNKNOWN_PLAYBACK })
-/** Library rows by card path: stock's play state cuts long names short. */
-const byPath = computed(() => new Map(tracks.value.flatMap((track) => (track.path ? [[track.path, track]] : []))))
-const current = computed(() => withLibraryNames(state.current, (path) => byPath.value.get(path)))
+/**
+ * Library rows by track identity: stock's play state cuts long names short.
+ * A CUE sheet's tracks share one file, so their key includes the title.
+ */
+const byKey = computed(() => new Map(tracks.value.flatMap((track) => (track.path ? [[trackKey(track), track]] : []))))
+const current = computed(() => withLibraryNames(state.current, (track) => byKey.value.get(trackKey(track))))
 export const playback = readonly(reactive({ current }))
 
 /** The bottom player shows only while a track is observed (owner's decision):

@@ -54,6 +54,7 @@ function parseTrack(value: unknown): Track | null {
     bitDepth: positive('song_encoding_rate'),
     bitRate: positive('song_bit_rate'),
     dsd: song.is_dsd === true,
+    ...(song.is_cue === true ? { cue: true } : {}),
   }
 }
 

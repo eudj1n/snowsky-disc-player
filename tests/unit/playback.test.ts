@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { UNKNOWN_PLAYBACK, withLibraryNames } from '../../src/domain/playback'
 import { mergePlayback, parsePlayback, playbackOf, playbackWire } from '../../src/gateway/playback'
+import { trackKey } from '../../src/domain/track'
 
 const song = {
   song_name: 'Question!',
@@ -12,6 +13,12 @@ const song = {
 }
 
 describe('a202 playback observation', () => {
+  it('marks a CUE track, whose file path the other tracks of its sheet share', () => {
+    const cue = { ...song, song_track: 0, is_cue: true }
+    expect(parsePlayback(JSON.stringify({ state: 0, playerflag: 3, song: cue })).track?.cue).toBe(true)
+    expect(parsePlayback(JSON.stringify({ state: 0, playerflag: 3, song })).track).not.toHaveProperty('cue')
+  })
+
   it('reads a playing track with its one-based queue position', () => {
     const playback = parsePlayback(JSON.stringify({ state: 0, playerflag: 3, love: true, song }))
     expect(playback.state).toBe('playing')
@@ -103,9 +110,29 @@ describe('the playing track named by the library', () => {
   const row = { title: 'Question!', artist: 'System Of A Down', album: 'Meteora 20th Anniversary Edition' }
 
   it('takes the whole names of the same card file from the library', () => {
-    const named = withLibraryNames(cut, (path) => (path === '/tmp/sdcard/a.flac' ? row : undefined))
+    const named = withLibraryNames(cut, (track) => (track.path === '/tmp/sdcard/a.flac' ? row : undefined))
     expect(named.track).toMatchObject({ album: 'Meteora 20th Anniversary Edition', path: '/tmp/sdcard/a.flac' })
     expect(named.state).toBe(cut.state)
+  })
+
+  it('names a CUE track from its own row, not from another track of the same file', () => {
+    const image = '/tmp/sdcard/Best of/Image.flac'
+    const rows = [
+      { path: image, title: 'Opening Frame', artist: 'Tessera', album: 'Image Sessions', cue: true },
+      { path: image, title: 'Second Frame', artist: 'Tessera', album: 'Image Sessions', cue: true },
+      { path: image, title: 'Last Frame', artist: 'Tessera', album: 'Image Sessions', cue: true },
+    ]
+    const byKey = new Map(rows.map((row) => [trackKey(row), row]))
+    const song = {
+      song_name: 'Second Frame',
+      song_artist_name: 'Tessera',
+      song_album_name: 'Image Sess',
+      song_file_path: image,
+      is_cue: true,
+    }
+    const playing = parsePlayback(JSON.stringify({ state: 0, playerflag: 3, song }))
+    const named = withLibraryNames(playing, (track) => byKey.get(trackKey(track)))
+    expect(named.track).toMatchObject({ title: 'Second Frame', album: 'Image Sessions', cue: true })
   })
 
   it('keeps the play state without a library row, and nothing playing as it is', () => {

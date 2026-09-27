@@ -14,7 +14,7 @@
 import { creditLabel } from '../../domain/artist'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
-import { formatDuration, type LibraryTrack, type Track } from '../../domain/track'
+import { formatDuration, sameTrack, type LibraryTrack, type Track } from '../../domain/track'
 import UiIcon from '../../ui/UiIcon.vue'
 import UiNowPlaying from '../../ui/UiNowPlaying.vue'
 import Artwork from '../artwork/Artwork.vue'
@@ -41,6 +41,9 @@ const props = withDefaults(
     lead?: TrackLead
     showAlbum?: boolean
     currentPath?: string | null
+    /** The current track's title and CUE flag, which tell a CUE sheet's tracks apart. */
+    currentTitle?: string | null
+    currentCue?: boolean
     /** The current track is playing (its marker pulses) rather than paused. */
     playing?: boolean
     /** Rows get a play button that emits `play` with the row index. */
@@ -78,6 +81,8 @@ const props = withDefaults(
     lead: 'cover',
     showAlbum: true,
     currentPath: null,
+    currentTitle: null,
+    currentCue: false,
     playing: false,
     playLabel: null,
     toggleCurrent: null,
@@ -111,7 +116,10 @@ const REVEAL = 'opacity-0 group-hover/row:opacity-100 group-focus-within/row:opa
 /** The heart lives in the page gutter, left of the row (owner's reference), or in the row's lane (HEART_LANE). */
 const HEART =
   'absolute top-1/2 -left-32 grid size-22 -translate-y-1/2 place-items-center rounded-full p-0 transition-[opacity,transform,translate,scale,rotate,color] duration-150 compact:left-10 listening:left-10 phone:left-3 phone:size-18'
-const isCurrent = (track: Track) => props.currentPath !== null && track.path === props.currentPath
+// A CUE sheet's tracks share one file: its title tells them apart.
+const isCurrent = (track: Track) =>
+  props.currentPath !== null &&
+  sameTrack(track, { path: props.currentPath, title: props.currentTitle ?? '', cue: props.currentCue })
 /** The current row pauses while playing (resumes while paused) when the view can toggle. */
 const toggles = (track: Track) => props.toggleCurrent !== null && isCurrent(track)
 const pauses = (track: Track) => toggles(track) && props.playing

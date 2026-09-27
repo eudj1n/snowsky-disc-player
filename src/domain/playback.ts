@@ -43,11 +43,12 @@ export type LibraryNames = Pick<Track, 'title' | 'artist' | 'album'>
  * its play state (owner, round 14: "Meteora 20th Anniversary Edition" arrived
  * as "Meteora 20th Anniversary Edit", so its album link opened an empty page),
  * while its library database keeps them whole. The library row of the same
- * card file wins; without one the play state stays as it came.
+ * track wins (the same card file, and for a CUE sheet whose tracks share the
+ * file also the same title); without one the play state stays as it came.
  */
-export function withLibraryNames(current: Playback, lookup: (path: string) => LibraryNames | undefined): Playback {
+export function withLibraryNames(current: Playback, lookup: (track: Track) => LibraryNames | undefined): Playback {
   const track = current.track
-  const row = track?.path ? lookup(track.path) : undefined
+  const row = track?.path ? lookup(track) : undefined
   if (!track || !row) return current
   return {
     ...current,

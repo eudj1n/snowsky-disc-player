@@ -14,6 +14,8 @@ export interface Track {
   bitDepth?: number | null
   bitRate?: number | null
   dsd?: boolean
+  /** One track of a CUE sheet: several tracks share one file path (IS_CUE, a202 is_cue). */
+  cue?: boolean
 }
 
 /** A track row from the stock library database (data level). */
@@ -27,6 +29,26 @@ export interface LibraryTrack extends Track {
   trackNumber: number | null
   /** ADD_TIME in seconds since the epoch. */
   addedAt: number | null
+}
+
+/**
+ * One track's identity across the library, playlists, favorites and a202:
+ * its file path, and for a CUE track also its title, since the tracks of one
+ * CUE sheet share the file and stock reports no other distinguishing field
+ * in a202 (song_track stays 0).
+ */
+export function trackKey(track: Pick<Track, 'path' | 'title' | 'cue'>): string | null {
+  if (!track.path) return null
+  return track.cue ? `${track.path}\u0000${track.title.trim()}` : track.path
+}
+
+/** The same track: the same file and, when either side is a CUE track, the same title. */
+export function sameTrack(
+  a: Pick<Track, 'path' | 'title' | 'cue'>,
+  b: Pick<Track, 'path' | 'title' | 'cue'> | null,
+): boolean {
+  if (!b || !a.path || a.path !== b.path) return false
+  return a.cue || b.cue ? a.title.trim() === b.title.trim() : true
 }
 
 /** Most recently added first (ADD_TIME); ties keep library order. */

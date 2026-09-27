@@ -7,6 +7,7 @@
  */
 import { reactive, readonly, watch } from 'vue'
 import { parseLyrics, type Lyrics } from '../domain/lyrics'
+import { trackKey } from '../domain/track'
 import { currentLyrics, mediaLyrics, type LyricsSource } from '../gateway/media'
 import { connection, http } from './connection'
 import { observations } from './observations'
@@ -36,7 +37,7 @@ function settle(text: string, source: LyricsSource): void {
   state.status = parsed.lines.length ? 'ready' : 'none'
 }
 
-async function load(path: string | null, media: boolean): Promise<void> {
+async function load(path: string | null, media: boolean, cue: boolean): Promise<void> {
   const current = ++request
   state.path = path
   state.lyrics = null
@@ -53,7 +54,9 @@ async function load(path: string | null, media: boolean): Promise<void> {
   // When the track started: from the observed position if known, else now.
   const startedAt = Date.now() - (observations.positionMs ?? 0)
   try {
-    const own = await mediaLyrics(http, path)
+    // A CUE track's file holds the whole sheet: its .lrc or embedded text would
+    // be timed from the file's start, so only stock's own lyrics are used.
+    const own = cue ? null : await mediaLyrics(http, path)
     if (current !== request) return
     if (own) {
       settle(own.text, own.source)
@@ -75,11 +78,13 @@ async function load(path: string | null, media: boolean): Promise<void> {
   }
 }
 
+// Keyed by trackKey: moving between a CUE sheet's tracks keeps the file but changes the track.
 watch(
-  () => [playback.current.track?.path ?? null, connection.media] as const,
-  ([path, media], previous) => {
-    if (previous && previous[0] === path && previous[1] === media) return
-    void load(path, media)
+  () => [playback.current.track ? trackKey(playback.current.track) : null, connection.media] as const,
+  ([key, media], previous) => {
+    if (previous && previous[0] === key && previous[1] === media) return
+    const track = playback.current.track
+    void load(track?.path ?? null, media, track?.cue === true)
   },
   { immediate: true },
 )

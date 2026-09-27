@@ -66,7 +66,7 @@ export interface AlbumSpace {
   album: Album
   /** Bytes of its measured files. */
   bytes: number
-  /** Files with a path, and how many of them are measured. */
+  /** Distinct files (a CUE sheet is one), and how many of them are measured. */
   files: number
   measured: number
   /** Format labels of its measured files, most bytes first. */
@@ -85,10 +85,15 @@ export function albumSpace(
   const byId = new Map(tracks.map((track) => [track.id, track]))
   return albums
     .map((album) => {
-      const members = album.ids.flatMap((id) => {
-        const track = byId.get(id)
-        return track?.path ? [track.path] : []
-      })
+      // A CUE sheet's tracks share one file: it is counted once.
+      const members = [
+        ...new Set(
+          album.ids.flatMap((id) => {
+            const track = byId.get(id)
+            return track?.path ? [track.path] : []
+          }),
+        ),
+      ]
       const measured = members.flatMap((path) => (files[path] ? [files[path]] : []))
       return {
         album,

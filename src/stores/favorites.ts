@@ -5,17 +5,18 @@
  * service (next image) can add any library track.
  */
 import { computed, reactive, watch } from 'vue'
-import type { Track } from '../domain/track'
+import { trackKey, type Track } from '../domain/track'
 import { favorites, library } from './library'
 import { playback } from './playback'
 
 const observed = reactive(new Map<string, boolean>())
-const snapshot = computed(() => new Set(favorites.value.flatMap((track) => (track.path ? [track.path] : []))))
+/* Keyed by trackKey: a CUE sheet's tracks share a path, so their titles count too. */
+const snapshot = computed(() => new Set(favorites.value.flatMap((track) => trackKey(track) ?? [])))
 
 watch(
-  () => [playback.current.track?.path, playback.current.favorite] as const,
-  ([path, favorite]) => {
-    if (path && typeof favorite === 'boolean') observed.set(path, favorite)
+  () => [playback.current.track ? trackKey(playback.current.track) : null, playback.current.favorite] as const,
+  ([key, favorite]) => {
+    if (key && typeof favorite === 'boolean') observed.set(key, favorite)
   },
 )
 // A new snapshot already includes earlier changes.
@@ -25,12 +26,14 @@ watch(
 )
 
 /** True or false when known; null for rows without a path. */
-export function isFavorite(track: Pick<Track, 'path'>): boolean | null {
-  if (!track.path) return null
-  return observed.get(track.path) ?? snapshot.value.has(track.path)
+export function isFavorite(track: Pick<Track, 'path' | 'title' | 'cue'>): boolean | null {
+  const key = trackKey(track)
+  if (!key) return null
+  return observed.get(key) ?? snapshot.value.has(key)
 }
 
 /** A favorite the page just confirmed, shown before the next list read. */
-export function markFavorite(path: string | null, favorite: boolean): void {
-  if (path) observed.set(path, favorite)
+export function markFavorite(track: Pick<Track, 'path' | 'title' | 'cue'>, favorite: boolean): void {
+  const key = trackKey(track)
+  if (key) observed.set(key, favorite)
 }

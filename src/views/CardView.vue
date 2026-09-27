@@ -30,10 +30,15 @@ const DUPLICATE_ROWS = 8
 const bytes = (value: number) => formatBytes(value, locale.value)
 const percent = (part: number, whole: number) => (whole > 0 ? `${Math.max((part / whole) * 100, 0.5)}%` : '0%')
 
-const withPath = computed(() => tracks.value.filter((track) => track.path))
+/** Distinct files of the library: a CUE sheet's tracks share one. */
+const withPath = computed(() => [
+  ...new Map(
+    tracks.value.flatMap((track) => (track.path ? [[track.path, { path: track.path }] as const] : [])),
+  ).values(),
+])
 const measuredFiles = computed(() =>
   withPath.value.flatMap((track) => {
-    const file = track.path ? enrichment.files[track.path] : undefined
+    const file = enrichment.files[track.path]
     return file ? [file] : []
   }),
 )
@@ -211,7 +216,7 @@ watch(
                 <template v-else>{{ entry.credit.text }}</template>
                 ·
               </template>
-              {{ t('track_count', { count: entry.files }) }}
+              {{ t('track_count', { count: entry.album.trackCount }) }}
               <template v-if="entry.formats.length"> · {{ entry.formats.join(', ') }}</template>
               <template v-if="playsShown">
                 ·

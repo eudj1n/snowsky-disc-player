@@ -355,6 +355,22 @@ test('keeps a play history with its source, favorites any row and reads the devi
   await disconnect(page)
 })
 
+test('marks only the playing track of a CUE image whose tracks share one file on stock', async ({ page }) => {
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/album/Image%20Sessions')
+  await expect(page.getByRole('row')).toHaveText([/Opening Frame/, /Second Frame/, /Last Frame/], { timeout: 30_000 })
+  await verified(page, () => page.getByRole('button', { name: 'Play Second Frame' }).click())
+  await expect(page.getByTestId('track-title')).toHaveText('Second Frame', { timeout: 30_000 })
+  // Stock reports the shared file path and is_cue; the title picks the row.
+  const current = page.locator('[role=row][aria-current=true]')
+  await expect(current).toHaveCount(1)
+  await expect(current).toContainText('Second Frame')
+  await page.getByTestId('toggle').click()
+  await expect(page.getByTestId('toggle')).toHaveAttribute('aria-label', 'Play', { timeout: 30_000 })
+  await disconnect(page)
+})
+
 test('measures what takes space on the card through the media route on stock', async ({ page }) => {
   await english(page)
   await page.goto('/#/card')

@@ -8,7 +8,7 @@
  */
 import { creditLabel } from '../../domain/artist'
 import type { RouteLocationRaw } from 'vue-router'
-import type { Track } from '../../domain/track'
+import { sameTrack, type Track } from '../../domain/track'
 import UiIcon from '../../ui/UiIcon.vue'
 import UiNowPlaying from '../../ui/UiNowPlaying.vue'
 import Artwork from '../artwork/Artwork.vue'
@@ -21,6 +21,9 @@ const props = withDefaults(
     menuLabel: string
     coverOf?: (track: Track) => Blob | null
     currentPath?: string | null
+    /** The current track's title and CUE flag, which tell a CUE sheet's tracks apart. */
+    currentTitle?: string | null
+    currentCue?: boolean
     playing?: boolean
     disabled?: boolean
     /** Route for the title (usually the album), or null to keep it plain. */
@@ -33,6 +36,8 @@ const props = withDefaults(
   {
     coverOf: () => null,
     currentPath: null,
+    currentTitle: null,
+    currentCue: false,
     playing: false,
     disabled: false,
     titleTo: () => null,
@@ -42,7 +47,10 @@ const props = withDefaults(
   },
 )
 const emit = defineEmits<{ play: [index: number]; menu: [index: number, anchor: HTMLElement] }>()
-const isCurrent = (track: Track) => props.currentPath !== null && track.path === props.currentPath
+// A CUE sheet's tracks share one file: its title tells them apart.
+const isCurrent = (track: Track) =>
+  props.currentPath !== null &&
+  sameTrack(track, { path: props.currentPath, title: props.currentTitle ?? '', cue: props.currentCue })
 const toggles = (track: Track) => props.toggleCurrent !== null && isCurrent(track)
 const pauses = (track: Track) => toggles(track) && props.playing
 const leadLabel = (track: Track) => `${(pauses(track) ? props.pauseLabel : null) ?? props.playLabel} ${track.title}`

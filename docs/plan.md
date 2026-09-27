@@ -774,6 +774,32 @@ recorded for later.
        the words fill, the next line takes over, at most seven lines show),
        screenshots on a desktop and a phone.
 
+## Owner finding (2026-09-27): CUE albums
+
+On the player every row of "Planet of the Apes: Best of Guano Apes" showed as
+the current track while one played; other albums were fine. The album is a
+CUE image: one FLAC and its sheet. Stock indexes one SONG row per CUE track,
+all with the same PATH (IS_CUE=1, TRACK, OFFSET), and a202 reports that path,
+`is_cue: true` and `song_track: 0`, so only the title tells the tracks apart
+(snowsky-disc-qemu docs/protocol/formats.md). The page compared paths only.
+
+- [x] A track's identity is its path and, for a CUE track, its title
+      (`trackKey`, `sameTrack`; IS_CUE and a202 `is_cue` are read): the
+      current row in lists and tiles, favorites (MY_LOVE keeps one row per CUE
+      track) and the playing track's library names. The last one was a
+      second bug the emulator found: the player bar named the playing CUE
+      track after another track of the same file.
+- [x] The file's own duration, .lrc and embedded lyrics are not applied to a
+      CUE track (they describe the whole image); stock's own lyrics still
+      are, and moving between tracks of one image reloads them.
+- [x] The Card page counts an image once for its album and in the totals.
+- Emulator acceptance now includes a CUE image (three tracks in one FLAC):
+  selecting the second track plays and names it, and exactly one row is
+  current (14 acceptance tests passed through the MIPS service). Unit and
+  component tests cover the identity, parsing, naming and sizes.
+- Service note: the play observer counts plays per open file, so a CUE image
+  played through records at most one play per file, not one per track.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

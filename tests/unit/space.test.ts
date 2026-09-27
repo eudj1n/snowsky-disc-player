@@ -92,6 +92,19 @@ describe('card space', () => {
     ])
   })
 
+  it('counts the one file of a CUE sheet once for its album', () => {
+    const image = '/tmp/sdcard/Best of/Image.flac'
+    const tracks = [
+      track(image, 'Break the Line', { album: 'Best of', cue: true }),
+      track(image, 'Open Your Eyes', { album: 'Best of', cue: true }),
+      track(image, 'Big in Japan', { album: 'Best of', cue: true }),
+    ]
+    const [album] = albumSpace(groupReleases(tracks), tracks, { [image]: file(400) }, new Map())
+    expect([album?.bytes, album?.files, album?.measured, album?.album.trackCount]).toEqual([400, 1, 1, 3])
+    // Same folder, same file: never a duplicate of itself.
+    expect(duplicates(tracks, { [image]: file(400) })).toEqual([])
+  })
+
   it('compares titles without case, numbers, extensions and punctuation', () => {
     expect(comparable('01 - Numb.flac')).toBe('numb')
     expect(comparable('Numb!')).toBe('numb')
