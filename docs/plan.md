@@ -349,6 +349,19 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
   SHA-256 after the write. `6391eee7bbc8b7ac` stays for rollback;
   `9b8d2afdaeb8f018` removed (active plus previous kept).
 
+- 2026-09-27: `ccdaf06c54348329` (commit `041d3b3`: rounds 13–14, the
+  Recently played shelf by source, favoriting any row, device facts, MP3/AAC
+  metadata and the volume read-back fix) published on PLAY at the owner's
+  request, on the installed combined-007 image, after `npm run check`, the
+  full mock suite (93) and the emulator acceptance of this exact release
+  through the MIPS service (20 desktop tests); all 65 files matched by
+  SHA-256 after the write. `f4770f9935dc4a2b` stays for rollback;
+  `4305f4bb03706477` is still on the card (its removal was not authorized in
+  this session). The first acceptance run of `c9e810d06bde4642` had caught
+  the volume race (a Mute right after a verified change restored the old
+  level); a rerun of the fixed release once hit stock's reset of a fast
+  reconnect before passing in full.
+
 - 2026-09-26: `f4770f9935dc4a2b` (commit `47f2611`, rounds 11–12: lyrics
   following their stamps and opening at the current line, joint credits
   linked in the listening panel, the hidden play-history shelf and order, and
