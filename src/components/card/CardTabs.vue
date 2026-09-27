@@ -8,7 +8,7 @@ const TAB =
 </script>
 
 <template>
-  <nav :aria-label="t('card_tabs')" class="-mt-14 mb-24 flex gap-6">
+  <nav :aria-label="t('card_tabs')" class="flex gap-6 rounded-24 bg-soft p-4">
     <RouterLink to="/card" :class="TAB" :aria-current="current === 'space' ? 'page' : undefined">{{
       t('space_tab')
     }}</RouterLink>

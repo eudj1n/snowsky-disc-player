@@ -20,6 +20,7 @@ import { catalogPage, catalogRows, sameRows, type CatalogFilters, type CatalogRo
 import type { GatewayHttp } from './http'
 import type { PlaybackSource } from '../domain/playback'
 import { mergePlayback, playbackOf, readPlaybackWire, type PlaybackWire } from './playback'
+import { selectFolder } from './folderSelection'
 import { NoObservation, type GatewaySession } from './session'
 
 export type SelectionOutcome = 'playing' | 'uncertain' | 'changed' | 'ambiguous' | 'unavailable'
@@ -38,6 +39,8 @@ export type SelectionTarget =
   | { kind: 'library'; track: TrackKey }
   | { kind: 'favorites'; track: TrackKey }
   | { kind: 'playlist'; name: string; track?: TrackKey }
+  /** A card folder (relative to the card root): from its first audio file, or one file of it. */
+  | { kind: 'folder'; folder: string; file?: string }
 
 export interface TrackKey {
   title: string
@@ -94,6 +97,9 @@ export function genreSelector(genre: string, album: string): string | null {
 /** The read, send and confirmation plan for a target, or null when the stock cannot carry it. */
 function plan(target: SelectionTarget, indexed: boolean): Plan | null {
   switch (target.kind) {
+    // Folders have their own sequence (folderSelection.ts).
+    case 'folder':
+      return null
     case 'album':
       return {
         category: 'album/song',
@@ -204,6 +210,7 @@ async function albumMatches(
 }
 
 export async function selectSource(deps: SelectionDeps, target: SelectionTarget): Promise<SelectionOutcome> {
+  if (target.kind === 'folder') return selectFolder(deps, target.folder, target.file)
   const { session, http, timeoutMs } = deps
   const now = deps.now ?? Date.now
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((done) => setTimeout(done, ms)))

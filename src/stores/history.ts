@@ -14,6 +14,7 @@ import {
   servicePlayRecords,
   servicePlays,
   sourceIndex,
+  type PlayContext,
   type PlayRecord,
   type PlaySource,
   type ServicePlay,
@@ -55,6 +56,11 @@ export const recentSourcesShown = computed(() =>
 /** Where one play came from, for the track history. */
 export function sourceOf(play: ServicePlay): PlaySource | null {
   return playSource(play.context, index.value, albums.value)
+}
+
+/** The source a queue came from, from its description (a remembered queue, for instance). */
+export function sourceOfContext(context: PlayContext): PlaySource | null {
+  return playSource(context, index.value, albums.value)
 }
 
 /** Plays whose queue matches no known source may be playlists of the same size: read those. */

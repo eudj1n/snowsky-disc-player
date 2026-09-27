@@ -69,6 +69,14 @@ const player = {
   socket: null,
 }
 
+/** The library tracks directly in a card folder (stock's folder play is not recursive), in listing order. */
+function folderTracks(path) {
+  const order = folderEntries(path.replace('/tmp/sdcard/', '')).map((entry) => entry.name)
+  return TRACKS.filter((track) => track.PATH.slice(0, track.PATH.lastIndexOf('/')) === path).sort(
+    (a, b) => order.indexOf(a.PATH.split('/').pop()) - order.indexOf(b.PATH.split('/').pop()),
+  )
+}
+
 /** Stock's transfer browser for one card folder: its subfolders and files, from every known path. */
 function folderEntries(folder) {
   const prefix = folder ? `/tmp/sdcard/${folder}/` : '/tmp/sdcard/'
@@ -130,7 +138,8 @@ function cutAlbum(album) {
 
 function a202() {
   const track = player.list[player.index]
-  if (!track) return ''
+  // Like stock after its queue ended or USB storage mode: no play state at all.
+  if (!track || player.silent) return ''
   const song = {
     song_name: track.TITLE,
     song_artist_name: track.ARTIST,
@@ -240,13 +249,40 @@ const server = createServer((request, response) => {
   }
   if (url.pathname.startsWith('/api/data/')) {
     const query = url.pathname.slice(10)
-    const result = dataQuery(query, url.searchParams, LANGUAGE, player.list)
+    const memory = { row: player.index + 1, type: player.flag === 3 ? 3 : player.flag === 1 ? 1 : 2 }
+    const result = dataQuery(query, url.searchParams, LANGUAGE, player.list, memory)
     const json = typeof result.body !== 'string'
     const body = json
       ? JSON.stringify({ query, ...result.body, rows_returned: result.body.rows.length, truncated: false })
       : result.body
     const reply = () => send(response, result.status, body, json ? 'application/json' : 'text/plain; charset=utf-8')
     return DELAY ? void setTimeout(reply, DELAY) : reply()
+  }
+  // Test hook: stock falls silent (its queue ended, or USB storage mode handed the card back).
+  if (url.pathname === '/__mock/silent' && request.method === 'POST') {
+    player.silent = true
+    player.state = 1
+    return send(response, 204, '')
+  }
+  // The playback browser: the same entries with stock's positions (subfolders count).
+  if (url.pathname.startsWith('/api/stock/localdir/tmp/sdcard/') && request.method === 'GET') {
+    const relative = decodeURIComponent(url.pathname.slice('/api/stock/localdir/tmp/sdcard/'.length))
+    const entries = folderEntries(relative.replace(/\/$/, ''))
+    if (!entries.length) return send(response, 200, '')
+    const start = Number(request.headers['start-pos'] ?? 0)
+    const max = Math.min(Number(request.headers['num-max'] ?? 200), 200)
+    const rows = entries.slice(start, start + max).map((entry, index) => ({
+      pos: start + index,
+      is_dir: entry.dir,
+      name: entry.name,
+      is_cue: false,
+      is_m3u: false,
+      is_image: entry.image,
+    }))
+    return send(response, 200, JSON.stringify(rows), 'application/json', {
+      'total-num': String(entries.length),
+      'mark-pos': '-1',
+    })
   }
   // Folders: GET lists one (paged, total-num; an empty folder answers an empty 200), POST creates one.
   if (url.pathname.startsWith('/api/stock/dir/tmp/sdcard/')) {
@@ -432,6 +468,7 @@ server.on('upgrade', (request, socket, head) => {
         player.seen.add(id)
         const payload = text.slice(8)
         const select = (list, index, flag) => {
+          player.silent = false
           player.list = list
           player.index = index
           player.flag = flag
@@ -513,6 +550,7 @@ server.on('upgrade', (request, socket, head) => {
         } else if (tag === '0101' && payload.startsWith('0003')) select(album(payload.slice(4)), 0, 3)
         else if (tag === '0101' && payload.startsWith('0007')) select(scoped(payload.slice(4)), 0, 7)
         else if (tag === '0101' && payload.startsWith('0008')) select(styled(payload.slice(4)), 0, 8)
+        else if (tag === '0101' && payload.startsWith('0004')) select(folderTracks(payload.slice(4)), 0, 4)
         else if (tag === '0101' && payload.startsWith('0005'))
           select(PLAYLISTS[JSON.parse(payload.slice(4)).id]?.members ?? [], 0, 5)
         else if (tag === '0100') {
@@ -526,7 +564,15 @@ server.on('upgrade', (request, socket, head) => {
           else if (type === '0006') select(FAVORITES, index, 6)
           else if (type === '0005') select(PLAYLISTS[JSON.parse(payload.slice(8)).id]?.members ?? [], index, 5)
           else if (type === '0000') select(player.list, index, 0)
-          else return ws.close(1008)
+          else if (type === '0004') {
+            // A position in the playback browser, subfolders included; the queue holds the folder's files.
+            const folder = payload.slice(8)
+            const entry = folderEntries(folder.replace('/tmp/sdcard/', ''))[index]
+            const files = folderTracks(folder)
+            const at = entry ? files.findIndex((track) => track.PATH === `${folder}/${entry.name}`) : -1
+            if (at < 0) return ws.close(1008)
+            select(files, at, 4)
+          } else return ws.close(1008)
         } else if (payload === '0000') player.state = player.state === 0 ? 1 : 0
         else if (payload === '0001') {
           player.index = Math.min(player.index + 1, player.list.length - 1)

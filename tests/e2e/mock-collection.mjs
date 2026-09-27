@@ -95,7 +95,7 @@ function page(rows, params) {
 }
 
 /** Data-level queries: returns { status, body }. */
-export function dataQuery(name, params, language, queue = []) {
+export function dataQuery(name, params, language, queue = [], memory = null) {
   const tracks = (rows) => {
     const selected = page(rows, params)
     return selected ? { status: 200, body: table(selected, COLUMNS) } : { status: 400, body: 'Invalid parameters\n' }
@@ -130,9 +130,22 @@ export function dataQuery(name, params, language, queue = []) {
     return { status: 200, body: table(rows, [...COLUMNS, 'PLAY_COUNT', 'LAST_PLAY_TIME']) }
   }
   // The persisted queue (LIST_SONG_0) with paths, in queue order.
+  // LIST_SONG_0 rows have IDs of their own (1…n), which MEMORY_PLAY points at.
   if (name === 'queue') {
-    const rows = queue.map((track, index) => ({ ...track, POS_ID: index + 1 }))
-    return { status: 200, body: table(rows, [...COLUMNS, 'POS_ID']) }
+    const rows = queue.map((track, index) => ({
+      ...track,
+      ID: index + 1,
+      POS_ID: index + 1,
+      SONG_TYPE: memory?.type ?? 3,
+    }))
+    return { status: 200, body: table(rows, [...COLUMNS, 'POS_ID', 'SONG_TYPE']) }
+  }
+  if (name === 'resume_point') {
+    const columns = ['MUSIC_ID', 'IS_PLAYING', 'POSITION', 'IS_CUE', 'IS_ISO', 'TRACK', 'IS_NAS', 'IS_M3U']
+    const rows = memory
+      ? [{ MUSIC_ID: memory.row, IS_PLAYING: 1, POSITION: 0, IS_CUE: 0, IS_ISO: 0, TRACK: 0, IS_NAS: 0, IS_M3U: null }]
+      : []
+    return { status: 200, body: table(rows, columns) }
   }
   if (name === 'playlist_tracks') {
     // Like stock: the query addresses CUSTOM_PLAYLIST_INDEX.LIST_ID, not the row ID.

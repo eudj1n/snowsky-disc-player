@@ -18,8 +18,10 @@ import {
 import { ScanObserved } from '../gateway/pacer'
 import type { CatalogRow } from '../gateway/catalog'
 import { selectQueueRow } from '../gateway/queue'
+import { resumeTarget } from '../gateway/resume'
 import type { TransportAction } from '../domain/playback'
 import { muteStep } from '../domain/player'
+import type { Remembered } from '../domain/resume'
 import { timeLabel } from '../domain/track'
 import type { MessageKey } from '../i18n'
 import { readPreference, writePreference } from '../lib/storage'
@@ -29,7 +31,9 @@ import { refreshFavorites } from './library'
 import { observations } from './observations'
 import { run } from './operation'
 import { pairing, pairingToken } from './pairing'
-import { playback, refreshPlayback } from './playback'
+import { playback, refreshPlayback, rememberedPlayback } from './playback'
+import { sourceOfContext } from './history'
+import { play } from './selection'
 import { loadQueue } from './queue'
 import { toast } from './ui'
 
@@ -78,6 +82,13 @@ function paired(): boolean {
 
 export async function transport(action: TransportAction): Promise<void> {
   if (!paired()) return
+  const kept = rememberedPlayback.value
+  if (kept) {
+    // Stock reports nothing: its remembered track is shown paused, and only Play applies.
+    if (action === 'toggle') await resumeRemembered(kept)
+    else toast('remembered_play_first')
+    return
+  }
   const result = await run('transport', async (context) => {
     await context.pace()
     return transportAction(context, action)
@@ -85,6 +96,33 @@ export async function transport(action: TransportAction): Promise<void> {
   await refreshPlayback()
   // Transport is frequent: only problems get a toast.
   report(result, true)
+}
+
+/**
+ * Continues a remembered track (owner, round 16): its source is named from
+ * the remembered queue as the play history names queues, the track is
+ * selected there with the guarded selection, and a remembered position is
+ * sought once it plays. Nothing is sent without a fresh preflight, and an
+ * uncertain outcome is not repeated.
+ */
+async function resumeRemembered(kept: Remembered): Promise<void> {
+  const outcome = await play(resumeTarget(kept, sourceOfContext(kept.context)))
+  if (outcome === 'busy') {
+    report('busy')
+    return
+  }
+  if (outcome !== 'playing') {
+    toast(
+      outcome === 'changed' || outcome === 'ambiguous'
+        ? 'remembered_changed'
+        : 'result_unconfirmed_the_command_was_not_retried',
+      true,
+    )
+    return
+  }
+  const position = kept.positionMs
+  const identity = identityOf(playback.current)
+  if (position !== null && position > 2000 && identity) await seekTo(Math.floor(position / 1000), identity)
 }
 
 export async function changeVolume(value: number): Promise<void> {

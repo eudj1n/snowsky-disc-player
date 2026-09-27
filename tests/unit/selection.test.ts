@@ -324,3 +324,77 @@ describe('queue observation', () => {
     await expect(readQueue(queueFetch(ROWS, () => (++calls > 2 ? 0 : 1)))).rejects.toThrow('changed')
   })
 })
+
+describe('folder playback (0101/0100 with 0004)', () => {
+  const FOLDER = '/tmp/sdcard/Берег - Тихий океан'
+  const LISTING = [
+    { pos: 0, is_dir: true, name: 'Scans' },
+    { pos: 1, is_dir: false, name: 'cover.jpg', is_image: true },
+    { pos: 2, is_dir: false, name: '01 Волны.flac' },
+    { pos: 3, is_dir: false, name: '02 Тихий океан.flac' },
+  ]
+  function folderHttp(listing: () => typeof LISTING) {
+    const urls: string[] = []
+    const impl = (input: RequestInfo | URL) => {
+      const url = input instanceof Request ? input.url : input.toString()
+      urls.push(url)
+      const rows = listing()
+      return Promise.resolve(new Response(JSON.stringify(rows), { headers: { 'total-num': String(rows.length) } }))
+    }
+    return { http: new GatewayHttp(impl), urls }
+  }
+  const playingFile = (name: string, flag = 4) =>
+    encodeRecord(
+      'a202',
+      JSON.stringify({
+        state: 0,
+        playerflag: flag,
+        song: JSON.stringify({ song_name: name, song_file_path: `${FOLDER}/${name}`, pos_id: 1 }),
+      }),
+    )
+
+  it('plays a folder from its first audio file, past subfolders and covers', async () => {
+    const { http: gateway, urls } = folderHttp(() => LISTING)
+    const { socket, session } = await open((data) => (data === '02020008' ? [playingFile('01 Волны.flac')] : []))
+    const outcome = await selectSource(
+      { session, http: gateway, timeoutMs: 4000, pauseMs: 1 },
+      { kind: 'folder', folder: 'Берег - Тихий океан' },
+    )
+    expect(outcome).toBe('playing')
+    expect(urls[0]).toBe(
+      '/api/stock/localdir/tmp/sdcard/%D0%91%D0%B5%D1%80%D0%B5%D0%B3%20-%20%D0%A2%D0%B8%D1%85%D0%B8%D0%B9%20%D0%BE%D0%BA%D0%B5%D0%B0%D0%BD/',
+    )
+    expect(socket.sent.filter((data) => data.startsWith('0101'))).toEqual([encodeRecord('0101', `0004${FOLDER}`)])
+  })
+
+  it('plays one file by its position in the playback browser, subfolders counted', async () => {
+    const { http: gateway } = folderHttp(() => LISTING)
+    const { socket, session } = await open((data) => (data === '02020008' ? [playingFile('02 Тихий океан.flac')] : []))
+    const outcome = await selectSource(
+      { session, http: gateway, timeoutMs: 4000, pauseMs: 1 },
+      { kind: 'folder', folder: 'Берег - Тихий океан', file: '02 Тихий океан.flac' },
+    )
+    expect(outcome).toBe('playing')
+    expect(socket.sent.filter((data) => data.startsWith('0100'))).toEqual([encodeRecord('0100', `00030004${FOLDER}`)])
+  })
+
+  it('sends nothing for a cover, a missing file or a folder that changes while it is read', async () => {
+    const { http: gateway } = folderHttp(() => LISTING)
+    const { socket, session } = await open(() => [])
+    const deps = { session, http: gateway, timeoutMs: 4000, pauseMs: 1 }
+    expect(await selectSource(deps, { kind: 'folder', folder: 'Берег - Тихий океан', file: 'cover.jpg' })).toBe(
+      'changed',
+    )
+    expect(await selectSource(deps, { kind: 'folder', folder: 'Берег - Тихий океан', file: 'gone.flac' })).toBe(
+      'changed',
+    )
+    let reads = 0
+    const moving = folderHttp(() => (++reads === 2 ? LISTING.slice(1) : LISTING)).http
+    expect(await selectSource({ ...deps, http: moving }, { kind: 'folder', folder: 'Берег - Тихий океан' })).toBe(
+      'changed',
+    )
+    // Stock treats any .m3u in the path as a playlist.
+    expect(await selectSource(deps, { kind: 'folder', folder: 'lists.m3u.d' })).toBe('unavailable')
+    expect(socket.sent.filter((data) => data.startsWith('010'))).toEqual([])
+  })
+})

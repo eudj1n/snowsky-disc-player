@@ -20,7 +20,10 @@ playing on the DISC; nothing streams to the browser.
 > - see what takes space on the player's card: music by format, the largest
 >   albums and artists, and possible duplicates in two folders.
 >
-> - browse the card's folders, create one and add music straight into it;
+> - browse the card's folders, play a folder or a file, create a folder and
+>   add music straight into it;
+> - pick up where the player stopped: after its queue ended or USB storage
+>   mode, the bar shows the remembered track and Play continues it;
 > - sing along in karaoke: synced lyrics full screen, word by word where the
 >   lyrics file has word timings.
 >

@@ -46,7 +46,7 @@ function addMusic(): void {
       <UiIconButton
         :icon="sidebarRail ? 'sidebar-expand' : 'sidebar-collapse'"
         :label="t(sidebarRail ? 'sidebar_expand' : 'sidebar_collapse')"
-        class="-ml-32 wide:-ml-48 compact:-ml-16 listening:-ml-14"
+        class="-ml-32 wide:-ml-38 compact:-ml-16 listening:-ml-14"
         @click="toggleSidebar"
       />
     </span>

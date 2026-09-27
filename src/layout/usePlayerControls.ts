@@ -22,7 +22,7 @@ import {
 } from '../stores/controls'
 import { observations } from '../stores/observations'
 import { operation } from '../stores/operation'
-import { playback } from '../stores/playback'
+import { playback, rememberedPlayback } from '../stores/playback'
 import { toast } from '../stores/ui'
 
 export function usePlayerControls() {
@@ -33,10 +33,12 @@ export function usePlayerControls() {
   const modesDisabled = computed(() => !ready.value || operation.busy || observations.mode === null)
   const favoriteDisabled = computed(() => controlsDisabled.value || typeof playback.current.favorite !== 'boolean')
   const volumeDisabled = computed(() => !ready.value || operation.busy)
+  // A remembered track (stock reports nothing) only plays; it cannot be sought yet.
   const seekDisabled = computed(
     () =>
       !ready.value ||
       operation.busy ||
+      rememberedPlayback.value !== null ||
       (playback.current.state !== 'playing' && playback.current.state !== 'paused') ||
       (track.value?.durationMs ?? 0) < 1000,
   )

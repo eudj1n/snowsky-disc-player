@@ -399,6 +399,46 @@ test('browses the card folders and creates one through the service on stock', as
   await disconnect(page)
 })
 
+test('plays a card folder from the file manager with stock folder play', async ({ page }) => {
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/card/files?folder=Player%20Acceptance')
+  const folder = page.getByTestId('files-list').getByRole('listitem').filter({ hasText: 'Lumen - Night Lines' })
+  await folder.hover()
+  // 0101 with list type 0004 and the folder path: stock starts at its first audio file.
+  await verified(page, () => folder.getByRole('button', { name: 'Play Lumen - Night Lines' }).click())
+  await expect(page.getByTestId('track-title')).toHaveText('Signal', { timeout: 30_000 })
+  await expect(folder).toHaveAttribute('aria-current', 'true')
+  await page.getByTestId('toggle').click()
+  await expect(page.getByTestId('toggle')).toHaveAttribute('aria-label', 'Play', { timeout: 30_000 })
+  await disconnect(page)
+})
+
+test('shows the remembered track after the queue ended and continues it with Play on stock', async ({ page }) => {
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/album/Night%20Lines/Lumen')
+  await verified(page, () => page.getByRole('button', { name: 'Play Streetlight' }).click())
+  // A pause makes stock remember this queue row (MEMORY_PLAY); the last track then plays to its end.
+  const toggle = page.getByTestId('toggle')
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-label', 'Play', { timeout: 30_000 })
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-label', 'Pause', { timeout: 30_000 })
+  await page.waitForTimeout(30_000)
+  await disconnect(page)
+  // Stock now answers no play state; the page shows what it remembers, paused.
+  await connectAndPair(page)
+  await expect(page.getByTestId('track-title')).toHaveText('Streetlight', { timeout: 30_000 })
+  await expect(page.getByTestId('toggle')).toHaveAttribute('aria-label', 'Play')
+  await page.getByTestId('toggle').click()
+  await expect(page.getByTestId('toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 30_000 })
+  await expect(page.getByTestId('track-title')).toHaveText('Streetlight')
+  await page.getByTestId('toggle').click()
+  await expect(page.getByTestId('toggle')).toHaveAttribute('aria-label', 'Play', { timeout: 30_000 })
+  await disconnect(page)
+})
+
 test('measures what takes space on the card through the media route on stock', async ({ page }) => {
   await english(page)
   await page.goto('/#/card')

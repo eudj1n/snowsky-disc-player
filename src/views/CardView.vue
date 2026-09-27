@@ -122,8 +122,9 @@ watch(
 <template>
   <CollectionGate :count="withPath.length" :searching="false" empty-key="search_empty_tracks">
     <template #heading="{ loading }">
-      <ViewHeading :eyebrow="t('your_player')" :title="t('card_section')" :meta="loading ? null : meta" />
-      <CardTabs current="space" />
+      <ViewHeading :eyebrow="t('your_player')" :title="t('card_section')" :meta="loading ? null : meta">
+        <CardTabs current="space" />
+      </ViewHeading>
     </template>
     <template #skeleton>
       <UiSkeleton class="h-120 rounded-14" />

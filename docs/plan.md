@@ -879,6 +879,44 @@ all with the same PATH (IS_CUE=1, TRACK, OFFSET), and a202 reports that path,
       row play glyphs); a separate pass with before/after screenshots for the
       owner. The heart uses an important size meanwhile.
 
+## Owner requests (2026-09-27): folder play, a remembered track and layout
+
+- [x] The Space / Files tabs sit on the right of the Card heading.
+- [x] Folder play in the file manager: hovering a folder (or a file) offers
+      Play, the playing one Pause/Resume, as in track lists. Stock's own
+      folder play, documented and physically observed in snowsky-disc-qemu
+      (docs/protocol/library-browsing.md): `0101` + list type `0004` + the
+      folder path plays it from its first audio file (not its subfolders);
+      `0100` + a position in the playback browser (`/localdir/…/`,
+      subfolders counted) plays one file; `playerflag` 4. Already admitted by
+      the card catalog. The guarded sequence reads the folder twice, checks it
+      again right before the one send and confirms by the playing file's
+      path. Unit tests (first file past subfolders and covers, one file by
+      position, nothing sent for covers, missing files, a changing folder or
+      an `.m3u` path), a mock test and the emulator acceptance on stock.
+- [x] The sidebar toggle 10 px further from the sidebar on wide screens.
+- [x] A remembered track after a reconnect: when stock reports no play state
+      (its queue ended, or USB storage mode handed the card back), the bar
+      shows the track stock remembers, paused, as the player's own screen
+      does, and Play continues it. Emulator findings (2026-09-27): after a
+      reboot stock still reports the paused track; after its queue ends it
+      answers no play state while `curlist/song` keeps the queue and its mark;
+      after the card leaves and returns (the emulator refuses while a file is
+      open, so only after the queue ended) the live queue is empty too, but
+      MEMORY_PLAY (a LIST_SONG_0 row, and with "Position" the position) and
+      LIST_SONG_0 stay. The page reads both, names the queue's source as the
+      play history does, and Play selects that track in the same source with
+      the guarded selection (a whole artist continues in the track's album of
+      that artist; an unknown one-folder queue through folder play), then
+      seeks to a remembered position. Previous and next wait for Play; seeking
+      is off until it plays. The guest now runs with memory playback "Song",
+      like the owner's player. Unit tests, a mock test (a silent stock) and
+      the emulator acceptance (Streetlight paused, resumed, played to the
+      queue's end, reconnect: shown paused, Play continues it; 17 acceptance
+      tests passed).
+- [x] The sidebar's "Good music. Always within reach." note is gone, so the
+      sidebar does not scroll.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

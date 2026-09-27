@@ -17,8 +17,6 @@ export const ru: Messages = {
   tracks: 'Треки',
   favorites: 'Любимое',
   playlists: 'Плейлисты',
-  good_music: 'Хорошая музыка.',
-  always_within_reach: 'Всегда под рукой.',
   disconnected: 'Не подключён',
   connected: 'Подключён',
   connecting: 'Подключение…',
@@ -440,6 +438,9 @@ export const ru: Messages = {
   files_name_invalid: 'Имя без / \\ : * ? " < > | и без точки или пробела в конце.',
   files_name_reserved: 'Это имя занято плеером и страницей.',
   files_album: 'Альбом «{name}»',
+  files_play: 'Играть «{name}»',
+  remembered_play_first: 'Нажмите Play, чтобы продолжить с того места, где плеер остановился.',
+  remembered_changed: 'Запомненный трек уже не там, где был; выберите его в коллекции.',
   files_truncated: 'Показаны только первые {count} элементов.',
   folder_entries: {
     one: '{count} элемент',

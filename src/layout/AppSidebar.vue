@@ -57,19 +57,10 @@ const label = () =>
         </RouterLink>
       </template>
     </nav>
-    <div
-      class="mt-auto flex items-center gap-12 px-14 pt-24 pb-26 text-11 leading-[1.6] text-muted compact:px-10 compact:py-20 compact:text-11 slim:hidden short:hidden"
-    >
-      <span
-        aria-hidden="true"
-        class="relative inline-block size-27 shrink-0 rounded-full border border-current after:absolute after:top-1/2 after:left-1/2 after:size-9 after:-translate-1/2 after:rounded-full after:border after:border-current"
-      />
-      <p class="my-[1em]">{{ t('good_music') }}<br />{{ t('always_within_reach') }}</p>
-    </div>
     <button
       type="button"
       :aria-label="t('disc_connection')"
-      class="flex items-center gap-10 rounded-11 border border-line bg-raised px-10 py-13 text-left compact:gap-7 compact:px-8 compact:py-12 slim:mt-auto slim:justify-center slim:border-0 slim:bg-transparent slim:p-12 phone:hidden short:mt-auto"
+      class="mt-auto flex items-center gap-10 rounded-11 border border-line bg-raised px-10 py-13 text-left compact:gap-7 compact:px-8 compact:py-12 slim:justify-center slim:border-0 slim:bg-transparent slim:p-12 phone:hidden"
       @click="openDialog('connection')"
     >
       <UiIcon name="device" class="size-27" />

@@ -1117,6 +1117,55 @@ test('browses the card, creates a folder and adds music into it', async ({ page 
   await disconnect(page)
 })
 
+test('plays a folder and a file from the file manager, and pauses the playing one', async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  test.skip(!TOKEN, 'E2E_TOKEN is required against a real gateway')
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/card/files')
+  const list = page.getByTestId('files-list')
+  const folder = list.getByRole('listitem').filter({ hasText: 'Sundial - Daybreak' })
+  await folder.hover()
+  await folder.getByRole('button', { name: 'Play Sundial - Daybreak' }).click()
+  await expect(page.getByRole('status').filter({ hasText: 'Done. Verified on DISC.' })).toBeVisible({ timeout: 15_000 })
+  // Stock plays the folder from its first audio file; the folder row is the playing one.
+  await expect(page.getByTestId('track-title')).toHaveText('Daybreak')
+  await expect(folder).toHaveAttribute('aria-current', 'true')
+  await folder.hover()
+  await folder.getByRole('button', { name: 'Pause Sundial - Daybreak' }).click()
+  await expect(page.getByTestId('toggle')).toHaveAttribute('aria-label', 'Play', { timeout: 15_000 })
+  // One file plays within its folder.
+  await folder.getByRole('link', { name: 'Sundial - Daybreak' }).click()
+  const file = list.getByRole('listitem').filter({ hasText: '03 Good Things.flac' })
+  await file.hover()
+  await file.getByRole('button', { name: 'Play 03 Good Things.flac' }).click()
+  await expect(page.getByTestId('track-title')).toHaveText('Good Things', { timeout: 15_000 })
+  await expect(file).toHaveAttribute('aria-current', 'true')
+  await disconnect(page)
+})
+
+test('shows the track stock remembers when it reports nothing, and Play continues it', async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  test.skip(!TOKEN, 'E2E_TOKEN is required against a real gateway')
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/album/Night%20Drive/Northline')
+  await page.getByRole('button', { name: 'Play City Glow' }).click()
+  await expect(page.getByTestId('track-title')).toHaveText('City Glow', { timeout: 15_000 })
+  await disconnect(page)
+  // Like the queue ending or USB storage mode: stock answers no play state any more.
+  await page.request.post('/__mock/silent')
+  await connectAndPair(page)
+  // The bar shows the remembered track paused, as the player's own screen does.
+  await expect(page.getByTestId('track-title')).toHaveText('City Glow', { timeout: 15_000 })
+  const toggle = page.getByTestId('toggle')
+  await expect(toggle).toHaveAttribute('aria-label', 'Play')
+  await toggle.click()
+  await expect(page.getByTestId('toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 15_000 })
+  await expect(page.getByTestId('track-title')).toHaveText('City Glow')
+  await disconnect(page)
+})
+
 test('shows what takes space on the card by format, album and artist', async ({ page }) => {
   test.skip(external, 'Needs the mock collection')
   await english(page)

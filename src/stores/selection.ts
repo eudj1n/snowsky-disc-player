@@ -11,7 +11,14 @@ export type { SelectionOutcome, SelectionTarget }
 export const selection = operation
 
 export async function play(target: SelectionTarget): Promise<SelectionOutcome | 'busy'> {
-  const code = (target.kind === 'album' || target.kind === 'playlist') && !target.track ? '0101' : '0100'
+  const code =
+    target.kind === 'folder'
+      ? target.file === undefined
+        ? '0101'
+        : '0100'
+      : (target.kind === 'album' || target.kind === 'playlist') && !target.track
+        ? '0101'
+        : '0100'
   const entry = commandCatalog()?.records[code]
   if (!pairing.paired || connection.identity?.compatible !== true || entry?.kind !== 'mutation') return 'unavailable'
   const outcome = await run('selection', async (context) => {

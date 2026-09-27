@@ -22,14 +22,19 @@ import { connection, http } from '../stores/connection'
 import { coverFor, enrichment, wantSizes } from '../stores/enrichment'
 import { setImportDestination } from '../stores/imports'
 import { tracks } from '../stores/library'
+import { isPlaying, playback } from '../stores/playback'
 import { operation, run } from '../stores/operation'
 import { pairing, pairingToken } from '../stores/pairing'
 import { openDialog, toast } from '../stores/ui'
 import UiIcon from '../ui/UiIcon.vue'
+import UiNowPlaying from '../ui/UiNowPlaying.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiSkeleton from '../ui/UiSkeleton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
+import { playable } from '../gateway/folderSelection'
 import { albumRoute } from './captions'
+import { playFrom } from './playAlbum'
+import { toggleCurrent } from './trackRows'
 
 const route = useRoute()
 const router = useRouter()
@@ -70,6 +75,36 @@ const rows = computed(() =>
   }),
 )
 const here = computed(() => folderStats(tracks.value, enrichment.files, folder.value))
+
+/*
+ * Playing from the card (owner, round 16): a folder plays from its first audio
+ * file (stock's folder play, not its subfolders), a file plays within its
+ * folder. The playing one pauses or resumes instead of starting again.
+ */
+type Row = (typeof rows.value)[number]
+const playingPath = computed(() => playback.current.track?.path ?? null)
+const canPlay = (row: Row) => (row.entry.folder ? true : playable(row.entry))
+function isCurrent(row: Row): boolean {
+  const path = playingPath.value
+  if (!path) return false
+  if (!row.entry.folder) return path === CARD_ROOT + row.path
+  return playback.current.source === 'folder' && path.slice(0, path.lastIndexOf('/')) === CARD_ROOT + row.path
+}
+const playLabel = (row: Row) =>
+  isCurrent(row)
+    ? `${t(isPlaying.value ? 'pause' : 'play')} ${row.entry.name}`
+    : t('files_play', { name: row.entry.name })
+function activate(row: Row): void {
+  if (isCurrent(row)) {
+    toggleCurrent()
+    return
+  }
+  void playFrom(
+    row.entry.folder
+      ? { kind: 'folder', folder: row.path }
+      : { kind: 'folder', folder: folder.value, file: row.entry.name },
+  )
+}
 // The files shown are measured (once, remembered) so their sizes appear.
 watch(
   () => rows.value.flatMap((row) => (row.track ? [row.track] : [])),
@@ -148,8 +183,9 @@ function addHere(): void {
 </script>
 
 <template>
-  <ViewHeading :eyebrow="t('your_player')" :title="t('card_section')" :meta="meta" />
-  <CardTabs current="files" />
+  <ViewHeading :eyebrow="t('your_player')" :title="t('card_section')" :meta="meta">
+    <CardTabs current="files" />
+  </ViewHeading>
 
   <nav
     :aria-label="t('files_breadcrumbs')"
@@ -218,17 +254,44 @@ function addHere(): void {
     <li
       v-for="row in rows"
       :key="row.entry.name"
-      class="flex items-center gap-14 border-b border-line py-9 last:border-b-0"
+      class="group/row flex items-center gap-14 rounded-8 border-b border-line py-9 last:border-b-0"
+      :class="{ 'bg-selected': isCurrent(row) }"
       :data-folder="row.entry.folder ? 'true' : undefined"
+      :aria-current="isCurrent(row) ? 'true' : undefined"
     >
-      <span
-        class="grid size-36 shrink-0 place-items-center overflow-hidden rounded-6"
+      <component
+        :is="canPlay(row) ? 'button' : 'span'"
+        :type="canPlay(row) ? 'button' : undefined"
+        :aria-label="canPlay(row) ? playLabel(row) : undefined"
+        :disabled="canPlay(row) ? !ready || operation.busy : undefined"
+        class="relative grid size-36 shrink-0 place-items-center overflow-hidden rounded-6 p-0"
         :class="row.entry.folder || !row.track ? 'bg-soft text-secondary' : ''"
+        @click="canPlay(row) && activate(row)"
       >
         <UiIcon v-if="row.entry.folder" name="folder" class="size-18" />
         <Artwork v-else-if="row.track" :title="row.track.album ?? row.track.title" :cover="coverFor(row.track)" />
         <UiIcon v-else :name="row.entry.image ? 'album' : 'music'" class="size-16" />
-      </span>
+        <span
+          v-if="canPlay(row)"
+          aria-hidden="true"
+          class="absolute inset-0 grid place-items-center bg-[#0006] text-white transition-opacity duration-200"
+          :class="
+            isCurrent(row)
+              ? 'bg-[#0004] opacity-100'
+              : 'opacity-0 group-focus-within/row:opacity-100 group-hover/row:opacity-100'
+          "
+        >
+          <template v-if="isCurrent(row)">
+            <UiNowPlaying :playing="isPlaying" class="group-focus-within/row:hidden group-hover/row:hidden" />
+            <UiIcon
+              filled
+              :name="isPlaying ? 'pause' : 'play'"
+              class="hidden size-14 group-focus-within/row:block group-hover/row:block"
+            />
+          </template>
+          <UiIcon v-else filled name="play" class="size-14" />
+        </span>
+      </component>
       <div class="min-w-0 flex-1">
         <RouterLink
           v-if="row.entry.folder"
