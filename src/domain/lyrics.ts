@@ -135,10 +135,18 @@ const LINE_SWEEP_MAX_MS = 10_000
 /** A last word with no closing stamp is taken to last this long at most. */
 const LAST_WORD_MS = 1500
 
-/** How much of a line has been sung (0..1): linearly from its stamp to the next line's. */
-export function lineProgress(line: LyricLine, nextMs: number | null, positionMs: number | null): number {
+/**
+ * How much of a line has been sung (0..1): linearly from its stamp to the next
+ * line's, over at most `capMs` (a pause is measured to the next line in full).
+ */
+export function lineProgress(
+  line: LyricLine,
+  nextMs: number | null,
+  positionMs: number | null,
+  capMs = LINE_SWEEP_MAX_MS,
+): number {
   if (line.timeMs === null || positionMs === null) return 0
-  const end = Math.min(nextMs ?? line.timeMs + LINE_SWEEP_MAX_MS, line.timeMs + LINE_SWEEP_MAX_MS)
+  const end = Math.min(nextMs ?? line.timeMs + LINE_SWEEP_MAX_MS, line.timeMs + capMs)
   if (end <= line.timeMs) return positionMs >= line.timeMs ? 1 : 0
   return Math.min(Math.max((positionMs - line.timeMs) / (end - line.timeMs), 0), 1)
 }
@@ -158,6 +166,15 @@ export function wordProgress(line: LyricLine, nextMs: number | null, positionMs:
     if (end <= word.timeMs) return positionMs >= word.timeMs ? 1 : 0
     return Math.min(Math.max((positionMs - word.timeMs) / (end - word.timeMs), 0), 1)
   })
+}
+
+/** A line with nothing to sing: empty, or only a note or dots marking an instrumental part. */
+export const silentLine = (line: Pick<LyricLine, 'text'>): boolean => /^[\s♪♫♬♩.·•…\-–—*]*$/u.test(line.text)
+
+/** How far each of three dots is filled (0..1) when a pause is `progress` done. */
+export function dotsProgress(progress: number): [number, number, number] {
+  const dot = (index: number) => Math.min(Math.max(progress * 3 - index, 0), 1)
+  return [dot(0), dot(1), dot(2)]
 }
 
 /** The lines karaoke shows around the current one: `before` sung, the current and `after` coming. */

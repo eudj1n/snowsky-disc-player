@@ -42,6 +42,8 @@ interface ImportModel {
   scan: { phase: 'idle' | 'scanning' | 'done' | 'not-sent' | 'uncertain'; discovered: number | null }
   collection: 'idle' | 'refreshing' | 'done' | 'failed'
   refreshAfterScan: boolean
+  /** The card folder new files go into ('' is the card root; the file manager sets it). */
+  destination: string
 }
 
 const state = reactive<ImportModel>({
@@ -51,6 +53,7 @@ const state = reactive<ImportModel>({
   scan: { phase: 'idle', discovered: null },
   collection: 'idle',
   refreshAfterScan: readPreference(REFRESH_KEY) !== 'off',
+  destination: '',
 })
 export const imports = readonly(state)
 watch(
@@ -66,6 +69,16 @@ export const uploadLimit = computed(() => {
   return Math.min(STOCK_UPLOAD_LIMIT, route?.max_body_bytes ?? STOCK_UPLOAD_LIMIT)
 })
 
+/**
+ * Where the next selection goes. It changes only while nothing waits or
+ * travels, so files already chosen keep the folder they were chosen for.
+ */
+export function setImportDestination(folder: string): boolean {
+  if (state.transferring || state.items.some((item) => item.phase === 'waiting')) return state.destination === folder
+  state.destination = folder
+  return true
+}
+
 export function setRefreshAfterScan(value: boolean): void {
   state.refreshAfterScan = value
 }
@@ -73,7 +86,10 @@ export function setRefreshAfterScan(value: boolean): void {
 /** Adds a selection. Folders skip other file types; individual files must all be music, lyrics or covers. */
 export function addSelection(picked: readonly PickedFile[], fromFolder: boolean): boolean {
   if (state.transferring || state.scan.phase === 'scanning') return false
-  const audio = fromFolder ? picked.filter((item) => importable(item.path, item.file.size)) : [...picked]
+  const into = (path: string) => (state.destination ? `${state.destination}/${path}` : path)
+  const audio = (fromFolder ? picked.filter((item) => importable(item.path, item.file.size)) : [...picked]).map(
+    (item) => ({ ...item, path: into(item.path) }),
+  )
   const candidates = [
     ...state.items.filter((item) => item.phase === 'waiting'),
     ...audio.map((item) => ({ ...item, size: item.file.size })),

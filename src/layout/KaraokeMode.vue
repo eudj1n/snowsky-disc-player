@@ -9,12 +9,15 @@
  * Controls and the pointer hide while the listener only listens.
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import CoverCanvas from '../components/artwork/CoverCanvas.vue'
 import {
   activeLine,
+  dotsProgress,
   karaokeRange,
   lineProgress,
   livePosition,
+  silentLine,
   wordProgress,
   type LyricLine,
   type Lyrics,
@@ -32,6 +35,12 @@ import { usePlayerControls } from './usePlayerControls'
 const IDLE_MS = 3000
 
 const player = usePlayerControls()
+// Going elsewhere (the browser's back button, a link) leaves karaoke.
+const route = useRoute()
+watch(
+  () => route.fullPath,
+  () => closeKaraoke(),
+)
 const root = ref<HTMLElement | null>(null)
 const stage = ref<HTMLElement | null>(null)
 const column = ref<HTMLElement | null>(null)
@@ -77,21 +86,60 @@ const sung = computed(() => {
     const progress = wordProgress(line, nextMs.value, position.value)
     return line.words.map((word, index) => ({ text: word.text, progress: progress[index] ?? 0 }))
   }
-  return [{ text: line.text || '♪', progress: lineProgress(line, nextMs.value, position.value) }]
+  return [{ text: line.text, progress: lineProgress(line, nextMs.value, position.value) }]
+})
+/*
+ * Pauses (an empty line, or a note or dots in the LRC) show three dots that
+ * fill one after another until the next line, like the sung words; the dot
+ * filling now twinkles. Before the first line the intro counts down the same way.
+ */
+const pause = computed(() => {
+  const line = lines.value[active.value]
+  if (!line || !silentLine(line)) return null
+  return dotsProgress(lineProgress(line, nextMs.value, position.value, Infinity))
+})
+const intro = computed(() => {
+  const first = lines.value[0]?.timeMs
+  if (!synced.value || active.value !== -1 || first === null || first === undefined || first < 3000) return null
+  const at = position.value ?? 0
+  return dotsProgress(Math.min(Math.max(at / first, 0), 1))
+})
+const dot = (progress: number) => ({
+  backgroundColor:
+    progress >= 1
+      ? 'var(--accent)'
+      : `color-mix(in srgb, var(--accent) ${String(Math.round(progress * 100))}%, rgb(255 255 255 / 0.9))`,
+  transform: `scale(${String(0.72 + 0.28 * progress)})`,
 })
 const fill = (progress: number) => {
   const at = `${(progress * 100).toFixed(2)}%`
   return { backgroundImage: `linear-gradient(90deg, var(--accent) ${at}, rgb(255 255 255 / 0.96) ${at})` }
 }
 
-/** Past lines fade, the coming ones stay readable; lines outside the window are hidden. */
-function lineClass(index: number): string {
+/*
+ * Lines fade and blur more the further they are from the one being sung
+ * (owner, round 16): sung lines faster than coming ones, which stay readable
+ * a little longer. Lines outside the window are hidden.
+ */
+const COMING = [
+  { opacity: 0.86, blur: 0 },
+  { opacity: 0.72, blur: 0 },
+  { opacity: 0.5, blur: 0.012 },
+  { opacity: 0.32, blur: 0.026 },
+  { opacity: 0.18, blur: 0.042 },
+]
+const SUNG = [
+  { opacity: 0.42, blur: 0.014 },
+  { opacity: 0.2, blur: 0.034 },
+]
+function lineStyle(index: number): { opacity: number; filter?: string } {
   const { from, to, center } = range.value
-  if (!synced.value) return 'opacity-95'
-  if (index < from || index > to) return 'opacity-0'
-  if (index === active.value) return 'opacity-100'
-  if (index < center) return 'opacity-35'
-  return index - center <= 1 ? 'opacity-75' : 'opacity-50'
+  if (!synced.value) return { opacity: 0.95 }
+  if (index < from || index > to) return { opacity: 0 }
+  if (index === active.value) return { opacity: 1 }
+  const level = index < center ? SUNG[center - index - 1] : COMING[index - center]
+  if (!level) return { opacity: 0 }
+  return level.blur ? { opacity: level.opacity, filter: `blur(${String(level.blur)}em)` } : { opacity: level.opacity }
 }
 
 /* The current line sits a little above the middle; the column slides to it. */
@@ -221,12 +269,26 @@ onBeforeUnmount(() => {
       >
         {{ message }}
       </p>
+      <p
+        v-if="intro"
+        class="absolute inset-x-0 top-[18%] m-0 flex justify-center gap-[0.34em]"
+        :style="{ fontSize: 'clamp(24px, min(6.4vh, 6.6vw), 88px)' }"
+        data-testid="karaoke-intro"
+      >
+        <span
+          v-for="(filled, at) in intro"
+          :key="at"
+          class="inline-block size-[0.3em] rounded-full"
+          :class="{ 'motion-safe:animate-pulse': filled > 0 && filled < 1 }"
+          :style="dot(filled)"
+        />
+      </p>
       <div
-        v-else
+        v-if="lines.length"
         ref="column"
         class="px-[6vw] text-center font-bold tracking-[-0.02em] text-balance motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-out"
         :class="synced ? 'absolute inset-x-0 top-0' : 'py-[8vh]'"
-        :style="{ transform: `translateY(${offset}px)`, fontSize: 'clamp(24px, min(7.2vh, 7vw), 96px)' }"
+        :style="{ transform: `translateY(${offset}px)`, fontSize: 'clamp(24px, min(6.4vh, 6.6vw), 88px)' }"
         data-testid="karaoke-lines"
       >
         <p
@@ -235,10 +297,24 @@ onBeforeUnmount(() => {
           :data-line="index"
           :aria-current="index === active ? 'true' : undefined"
           :aria-hidden="synced && (index < range.from || index > range.to) ? 'true' : undefined"
-          class="m-0 py-[0.16em] leading-[1.18] motion-safe:transition-opacity motion-safe:duration-500"
-          :class="lineClass(index)"
+          class="m-0 py-[0.3em] leading-[1.18] motion-safe:transition-[opacity,filter] motion-safe:duration-500"
+          :style="lineStyle(index)"
         >
-          <template v-if="synced && index === active">
+          <span
+            v-if="synced && silentLine(line)"
+            class="inline-flex h-[1.18em] items-center gap-[0.34em] align-top"
+            :data-testid="index === active ? 'karaoke-dots' : undefined"
+          >
+            <span
+              v-for="(filled, at) in index === active && pause ? pause : [0, 0, 0]"
+              :key="at"
+              class="inline-block size-[0.3em] rounded-full"
+              :class="{ 'motion-safe:animate-pulse': index === active && filled > 0 && filled < 1 }"
+              :data-fill="index === active ? filled.toFixed(2) : undefined"
+              :style="dot(filled)"
+            />
+          </span>
+          <template v-else-if="synced && index === active">
             <span
               v-for="(part, at) in sung"
               :key="at"
@@ -248,7 +324,7 @@ onBeforeUnmount(() => {
               >{{ part.text }}</span
             >
           </template>
-          <template v-else>{{ line.text || (synced ? '♪' : ' ') }}</template>
+          <template v-else>{{ line.text || ' ' }}</template>
         </p>
       </div>
     </div>

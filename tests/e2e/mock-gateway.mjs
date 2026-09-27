@@ -64,7 +64,29 @@ const player = {
   // Equalizer: network preset, and profiles of the user presets 160..169.
   eq: { preset: 255, profiles: new Map(), last: 160 },
   uploads: [],
+  // Folders created through the file manager (relative to the card root).
+  folders: new Set(),
   socket: null,
+}
+
+/** Stock's transfer browser for one card folder: its subfolders and files, from every known path. */
+function folderEntries(folder) {
+  const prefix = folder ? `/tmp/sdcard/${folder}/` : '/tmp/sdcard/'
+  const paths = [
+    ...TRACKS.map((track) => track.PATH),
+    ...player.uploads.map((upload) => upload.path),
+    ...[...player.folders].map((created) => `/tmp/sdcard/${created}/`),
+  ]
+  const entries = new Map()
+  for (const path of paths) {
+    if (!path.startsWith(prefix)) continue
+    const rest = path.slice(prefix.length)
+    const [name] = rest.split('/')
+    if (!name) continue
+    const dir = rest.includes('/')
+    if (!entries.has(name) || dir) entries.set(name, { name, dir, image: /\.(jpe?g|png)$/i.test(name) })
+  }
+  return [...entries.values()]
 }
 /** The profile the player reads from: the selected user preset, else the last used one. */
 function eqProfile() {
@@ -225,6 +247,38 @@ const server = createServer((request, response) => {
       : result.body
     const reply = () => send(response, result.status, body, json ? 'application/json' : 'text/plain; charset=utf-8')
     return DELAY ? void setTimeout(reply, DELAY) : reply()
+  }
+  // Folders: GET lists one (paged, total-num; an empty folder answers an empty 200), POST creates one.
+  if (url.pathname.startsWith('/api/stock/dir/tmp/sdcard/')) {
+    const relative = decodeURIComponent(url.pathname.slice('/api/stock/dir/tmp/sdcard/'.length))
+    if (request.method === 'GET') {
+      const entries = folderEntries(relative.replace(/\/$/, ''))
+      if (!entries.length) return send(response, 200, '')
+      const start = Number(request.headers['start-pos'] ?? 0)
+      const max = Math.min(Number(request.headers['num-max'] ?? 200), 200)
+      const rows = entries.slice(start, start + max).map((entry, index) => ({
+        pos: start + index,
+        is_dir: entry.dir,
+        name: entry.name,
+        is_cue: false,
+        is_m3u: false,
+        is_image: entry.image,
+      }))
+      return send(response, 200, JSON.stringify(rows), 'application/json', { 'total-num': String(entries.length) })
+    }
+    if (request.method === 'POST') {
+      if (!credential(request.headers['x-disc-token'])) return send(response, 403, 'Token required\n')
+      const id = request.headers['x-disc-request']
+      if (!id || player.seen.has(id)) return send(response, 409, 'Request ID already used\n')
+      player.seen.add(id)
+      const created = relative.replace(/\/$/, '')
+      const parent = created.includes('/') ? created.slice(0, created.lastIndexOf('/')) : ''
+      const name = created.slice(parent ? parent.length + 1 : 0)
+      const exists = folderEntries(parent).some((entry) => entry.dir && entry.name === name)
+      if (!exists) player.folders.add(created)
+      return send(response, 200, '', 'text/plain', { 'is-exist': exists ? '1' : '0' })
+    }
+    return send(response, 405, 'Folder routes are GET or POST\n')
   }
   if (url.pathname.startsWith('/api/stock/audio/tmp/sdcard/') && request.method === 'POST') {
     const path = decodeURIComponent(url.pathname.slice('/api/stock/audio'.length))

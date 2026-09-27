@@ -20,6 +20,10 @@ playing on the DISC; nothing streams to the browser.
 > - see what takes space on the player's card: music by format, the largest
 >   albums and artists, and possible duplicates in two folders.
 >
+> - browse the card's folders, create one and add music straight into it;
+> - sing along in karaoke: synced lyrics full screen, word by word where the
+>   lyrics file has word timings.
+>
 > Covers and durations appear as tracks play: the player's library keeps
 > neither for most files.
 

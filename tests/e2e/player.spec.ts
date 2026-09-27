@@ -1063,6 +1063,10 @@ test('sings along in karaoke: word timings sweep the current line and at most se
   await expect(current).toHaveText('Counting the lights outside', { timeout: 15_000 })
   const shown = karaoke.getByTestId('karaoke-lines').locator('p:not([aria-hidden=true])')
   expect(await shown.count()).toBeLessThanOrEqual(7)
+  // A pause shows three dots that fill in turn until the next line.
+  const dots = karaoke.getByTestId('karaoke-dots')
+  await expect(dots).toBeVisible({ timeout: 15_000 })
+  await expect(dots.locator('[data-fill="1.00"]').first()).toBeVisible({ timeout: 5_000 })
   // Escape leaves karaoke, not the listening panel under it.
   await page.keyboard.press('Escape')
   await expect(karaoke).toBeHidden()
@@ -1073,6 +1077,43 @@ test('sings along in karaoke: word timings sweep the current line and at most se
   await expect(karaoke).toBeVisible()
   await page.keyboard.press('k')
   await expect(karaoke).toBeHidden()
+  await disconnect(page)
+})
+
+test('browses the card, creates a folder and adds music into it', async ({ page }, info) => {
+  test.skip(external, 'Needs the mock collection')
+  test.skip(!TOKEN, 'E2E_TOKEN is required against a real gateway')
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/card/files')
+  await expect(
+    page.getByRole('navigation', { name: 'Card views' }).getByRole('link', { name: 'Files' }),
+  ).toHaveAttribute('aria-current', 'page')
+  const list = page.getByTestId('files-list')
+  await list.getByRole('link', { name: 'Forma - Inner Space' }).click()
+  await expect(page.getByTestId('files-path')).toContainText('Forma - Inner Space')
+  // A file names its track and links its album from the library.
+  const orbit = list.getByRole('listitem').filter({ hasText: '01 Orbit.flac' })
+  await expect(orbit.getByRole('link', { name: 'Inner Space' })).toBeVisible()
+  await page.getByTestId('files-path').getByRole('link', { name: 'Card' }).click()
+  await expect(list.getByRole('link', { name: 'Forma - Inner Space' })).toBeVisible()
+
+  const name = `Test folder ${info.project.name}`
+  await page.getByRole('button', { name: 'New folder' }).click()
+  const field = page.getByRole('textbox', { name: 'Folder name' })
+  await field.fill('bad/name')
+  await expect(page.getByRole('alert')).toContainText('Use a name without')
+  await field.fill(name)
+  await page.getByRole('button', { name: 'Create', exact: true }).click()
+  await expect(page.getByRole('status').filter({ hasText: 'Folder created and found on the card.' })).toBeVisible({
+    timeout: 15_000,
+  })
+  await expect(page.getByTestId('files-path')).toContainText(name)
+  await expect(page.getByTestId('files-empty')).toBeVisible()
+  // Adding music here chooses this folder in the import dialog.
+  await page.getByTestId('files-add').click()
+  await expect(page.getByTestId('import-destination')).toContainText(name)
+  await page.keyboard.press('Escape')
   await disconnect(page)
 })
 

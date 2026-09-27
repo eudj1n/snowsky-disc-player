@@ -12,7 +12,7 @@ import { useRoute } from 'vue-router'
 import { chooseLocale, locale, t, type Locale, type MessageKey } from '../i18n'
 import { appearance } from '../stores/appearance'
 import { library, loadCollection } from '../stores/library'
-import { imports } from '../stores/imports'
+import { imports, setImportDestination } from '../stores/imports'
 import { sidebarRail, toggleSidebar } from '../stores/sidebar'
 import { openDialog, setQuery, ui } from '../stores/ui'
 import UiIcon from '../ui/UiIcon.vue'
@@ -31,6 +31,11 @@ const placeholder = computed(() => t(SEARCH[String(route.name)] ?? 'search_track
 const appearanceTitle = computed(() => t('appearance_label') + t(`${appearance.value}_label`))
 const importActive = computed(() => imports.transferring || imports.scan.phase === 'scanning')
 const language = computed<Locale>({ get: () => locale.value, set: chooseLocale })
+/** The top bar adds music to the card root; the file manager chooses a folder. */
+function addMusic(): void {
+  setImportDestination('')
+  openDialog('import')
+}
 </script>
 
 <template>
@@ -41,7 +46,7 @@ const language = computed<Locale>({ get: () => locale.value, set: chooseLocale }
       <UiIconButton
         :icon="sidebarRail ? 'sidebar-expand' : 'sidebar-collapse'"
         :label="t(sidebarRail ? 'sidebar_expand' : 'sidebar_collapse')"
-        class="-ml-8"
+        class="-ml-32 wide:-ml-48 compact:-ml-16 listening:-ml-14"
         @click="toggleSidebar"
       />
     </span>
@@ -67,7 +72,7 @@ const language = computed<Locale>({ get: () => locale.value, set: chooseLocale }
       :aria-label="t('import_music')"
       :title="t('import_music')"
       class="flex items-center justify-center gap-7 rounded-24 px-12 py-8 text-11 whitespace-nowrap text-secondary transition-colors duration-150 hover:bg-hover hover:text-ink compact:p-8 listening:p-8"
-      @click="openDialog('import')"
+      @click="addMusic"
     >
       <UiIcon name="add-music" class="size-18" />
       <span class="compact:hidden listening:hidden">{{ t('import_music') }}</span>

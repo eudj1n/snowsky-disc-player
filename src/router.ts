@@ -28,6 +28,7 @@ export function sectionOf(name: unknown): SectionName {
   if (name === 'artist') return 'artists'
   if (name === 'playlist') return 'playlists'
   if (name === 'genre') return 'genres'
+  if (name === 'cardFiles') return 'card'
   return SECTIONS.find((section) => section.name === name)?.name ?? 'home'
 }
 
@@ -42,6 +43,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/favorites', name: 'favorites', component: () => import('./views/FavoritesView.vue') },
   { path: '/playlists', name: 'playlists', component: () => import('./views/PlaylistsView.vue') },
   { path: '/card', name: 'card', component: () => import('./views/CardView.vue') },
+  { path: '/card/files', name: 'cardFiles', component: () => import('./views/CardFilesView.vue') },
   // The optional artist narrows a title group to one release (reference scope).
   { path: '/album/:name/:artist?', name: 'album', component: () => import('./views/AlbumView.vue') },
   { path: '/artist/:name', name: 'artist', component: () => import('./views/ArtistView.vue') },

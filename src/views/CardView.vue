@@ -8,9 +8,11 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import Artwork from '../components/artwork/Artwork.vue'
 import SectionHeading from '../components/common/SectionHeading.vue'
+import CardTabs from '../components/card/CardTabs.vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
 import type { Album } from '../domain/album'
 import { cardSpace, formatBytes } from '../domain/device'
+import { relativeFolder } from '../domain/files'
 import { albumSpace, artistSpace, byFormat, cardUsage, duplicates, playsByPath, type FileFacts } from '../domain/space'
 import { locale, t } from '../i18n'
 import { connection } from '../stores/connection'
@@ -18,6 +20,7 @@ import { device, refreshDevice } from '../stores/device'
 import { albumCover, enrichment, forgetSizes, wantSizes } from '../stores/enrichment'
 import { history, loadHistory } from '../stores/history'
 import { albums, library, tracks } from '../stores/library'
+import UiIcon from '../ui/UiIcon.vue'
 import UiSkeleton from '../ui/UiSkeleton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { albumCardRoute, albumLines, artistRoute, leadArtist } from './captions'
@@ -120,6 +123,7 @@ watch(
   <CollectionGate :count="withPath.length" :searching="false" empty-key="search_empty_tracks">
     <template #heading="{ loading }">
       <ViewHeading :eyebrow="t('your_player')" :title="t('card_section')" :meta="loading ? null : meta" />
+      <CardTabs current="space" />
     </template>
     <template #skeleton>
       <UiSkeleton class="h-120 rounded-14" />
@@ -246,6 +250,22 @@ watch(
           :key="artist.name ?? ''"
           class="flex items-center gap-14 border-b border-line py-9 last:border-b-0"
         >
+          <RouterLink
+            v-if="artist.name"
+            :to="artistRoute(artist.name)"
+            tabindex="-1"
+            aria-hidden="true"
+            class="group size-44 shrink-0 overflow-hidden rounded-full"
+          >
+            <Artwork :title="artist.name" artist />
+          </RouterLink>
+          <span
+            v-else
+            class="grid size-44 shrink-0 place-items-center rounded-full bg-soft text-secondary"
+            aria-hidden="true"
+          >
+            <UiIcon name="artist" class="size-18" />
+          </span>
           <div class="min-w-0 flex-1">
             <RouterLink
               v-if="artist.name"
@@ -280,7 +300,12 @@ watch(
         >
           <p class="m-0 text-12 font-semibold">{{ t('duplicate_tracks', { count: pair.tracks }) }}</p>
           <p v-for="copy in pair.copies" :key="copy.folder" class="m-0 mt-5 flex items-center gap-8 text-12 text-muted">
-            <span class="min-w-0 flex-1 truncate" :title="copy.folder">{{ cardFolder(copy.folder) }}</span>
+            <RouterLink
+              :to="{ name: 'cardFiles', query: { folder: relativeFolder(copy.folder) } }"
+              class="min-w-0 flex-1 truncate hover:text-ink hover:underline"
+              :title="copy.folder"
+              >{{ cardFolder(copy.folder) }}</RouterLink
+            >
             <span v-if="copy.formats.length" class="shrink-0">{{ copy.formats.join(', ') }}</span>
             <span class="w-72 shrink-0 text-right font-semibold text-ink tabular-nums">{{
               copy.bytes ? bytes(copy.bytes) : '—'

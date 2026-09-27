@@ -376,6 +376,29 @@ test('marks only the playing track of a CUE image whose tracks share one file on
   await disconnect(page)
 })
 
+test('browses the card folders and creates one through the service on stock', async ({ page }) => {
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/card/files')
+  const list = page.getByTestId('files-list')
+  await list.getByRole('link', { name: 'Player Acceptance' }).click()
+  await list.getByRole('link', { name: 'Lumen - Night Lines' }).click()
+  // Stock's transfer browser lists the file; the library names its album.
+  const signal = list.getByRole('listitem').filter({ hasText: 'a Signal.flac' })
+  await expect(signal.getByRole('link', { name: 'Night Lines' })).toBeVisible({ timeout: 30_000 })
+  await page.getByTestId('files-path').getByRole('link', { name: 'Player Acceptance' }).click()
+  await page.getByRole('button', { name: 'New folder' }).click()
+  await page.getByRole('textbox', { name: 'Folder name' }).fill('Created Folder')
+  await page.getByRole('button', { name: 'Create', exact: true }).click()
+  // Confirmed by reading the parent again after stock's reply.
+  await expect(page.getByRole('status').filter({ hasText: 'Folder created and found on the card.' })).toBeVisible({
+    timeout: 30_000,
+  })
+  await expect(page.getByTestId('files-path')).toContainText('Created Folder')
+  await expect(page.getByTestId('files-empty')).toBeVisible()
+  await disconnect(page)
+})
+
 test('measures what takes space on the card through the media route on stock', async ({ page }) => {
   await english(page)
   await page.goto('/#/card')

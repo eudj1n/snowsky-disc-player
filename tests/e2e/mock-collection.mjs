@@ -271,6 +271,8 @@ const LYRICS = {
       '[00:03.00]<00:03.00>Counting <00:03.80>the <00:04.20>lights <00:05.00>outside',
       '[00:06.00]Kee<00:06.40>ping <00:06.80>time<00:07.60>',
       '[00:09.00]A line without word stamps',
+      // A pause before the next line: karaoke shows three filling dots.
+      '[00:10.20]',
       '[00:12.00]<00:12.00>Almost <00:12.80>morning<00:13.80>',
       '[00:15.00]Fifth line',
       '[00:18.00]Sixth line',

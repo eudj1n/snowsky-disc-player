@@ -753,13 +753,24 @@ recorded for later.
 5. [ ] Work mode (local, USB DAC, AirPlay) and the Bluetooth codec: records
        `0607`/`0657` and `06d4`/`06d3` are admitted but unused. Check on the
        emulator first what a mode switch does to playback and to the service.
-6. [ ] **A small file manager** (widened by the owner): browse the card's
+6. [x] **A small file manager** (widened by the owner): browse the card's
        folders (`/dir/`, paged), create a folder, upload or add music into the
        chosen folder (the upload route creates missing parents, refuses
        overwrites and admits media names only), then rescan. Limits of the
        current image: `/dir/` is stock's filtered media browser (not every file
        is listed; no sizes), and there is no delete, rename or move (delete is
        denied by the service; stock has no rename).
+       Done (2026-09-27) as the Card page's "Files" tab (`/card/files`, the
+       folder in `?folder=`): a path of links, folders first, each with the
+       library's tracks, measured size and the album they form, files with
+       their track and album links and cover; "New folder" (FAT-safe names;
+       `DISC_WEB…`, `www` and hidden names refused; confirmed by reading the
+       parent again) and "Add music here" (the import dialog takes the folder
+       as its destination; the top bar's button goes to the card root). The
+       duplicates on the Space tab link their folders here. Unit tests for
+       names, paths, stats, paging and the create confirmation; a mock test;
+       the emulator acceptance browses the guest card and creates a folder
+       through the MIPS service on stock (15 acceptance tests passed).
 7. [ ] Small items: export the history (CSV/JSON); battery voltage,
        temperature and cycles in a tooltip; a "not resampled" mark when the
        output rate matches the file; the upload bound (1 GiB in the catalog,
@@ -836,6 +847,26 @@ all with the same PATH (IS_CUE=1, TRACK, OFFSET), and a202 reports that path,
       `queue` query and its test checks four covers; the emulator acceptance
       checks the Harbor folder cover on all three queue rows (14 acceptance
       tests passed through the MIPS service).
+
+## Owner requests (2026-09-27): small fixes with the file manager
+
+- [x] The row heart as large as the play glyph on a cover (16 px, 12 px on
+      phones).
+- [x] The sidebar toggle sits next to the sidebar.
+- [x] Karaoke: lines fade and blur more with their distance from the sung
+      one, sung lines sooner; more space between lines; a pause (an empty
+      line, a note or dots in the LRC) and a long intro show three dots that
+      fill one after another until the next line, the filling one
+      twinkling; leaving the page closes karaoke.
+- [x] "Artists by size" shows the artists' pictures.
+- [x] Possible duplicates link their folders into the file manager.
+- [ ] Icon sizes (found on the way): UiIcon's default `size-20` comes after
+      every smaller `size-*` utility in the stylesheet, so an icon given a
+      size below 20 px is drawn at 20 px on desktop (phone variants do
+      apply). Moving the default into the base layer fixes it, but shrinks
+      about thirty icons at once (search, the language chevron, volume,
+      row play glyphs); a separate pass with before/after screenshots for the
+      owner. The heart uses an important size meanwhile.
 
 ## Requests for the next service build
 

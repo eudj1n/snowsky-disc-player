@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { activeLine, karaokeRange, lineProgress, parseLyrics, wordProgress } from '../../src/domain/lyrics'
+import {
+  activeLine,
+  dotsProgress,
+  karaokeRange,
+  lineProgress,
+  parseLyrics,
+  silentLine,
+  wordProgress,
+} from '../../src/domain/lyrics'
 import { decodeLyrics, mediaPath } from '../../src/gateway/media'
 
 describe('lyrics', () => {
@@ -79,6 +87,20 @@ describe('lyrics', () => {
     expect(lineProgress(plain, null, 30000)).toBe(0.5)
     expect(lineProgress(plain, 29000, 24000)).toBe(0)
     expect(lineProgress({ timeMs: null, text: '' }, null, 1)).toBe(0)
+  })
+
+  it('measures a pause to the next line in full and fills three dots in turn', () => {
+    const pause = { timeMs: 10_000, text: '' }
+    // A sung line sweeps over at most 10 s; a pause runs to the next line.
+    expect(lineProgress(pause, 40_000, 25_000)).toBe(1)
+    expect(lineProgress(pause, 40_000, 25_000, Infinity)).toBe(0.5)
+    expect(silentLine({ text: '' })).toBe(true)
+    expect(silentLine({ text: ' ♪ ♪ ' })).toBe(true)
+    expect(silentLine({ text: '...' })).toBe(true)
+    expect(silentLine({ text: 'Oh…' })).toBe(false)
+    expect(dotsProgress(0)).toEqual([0, 0, 0])
+    expect(dotsProgress(0.5)).toEqual([1, 0.5, 0])
+    expect(dotsProgress(1)).toEqual([1, 1, 1])
   })
 
   it('shows two sung lines, the current one and four to come', () => {

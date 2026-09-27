@@ -19,6 +19,7 @@ import {
   importFlow,
   imports,
   refreshCollection,
+  setImportDestination,
   setRefreshAfterScan,
   startScan,
   transferSelection,
@@ -105,6 +106,12 @@ function openNew(): void {
       {{ t('import_title_1') }} {{ t('import_title_2') }}
     </h2>
     <p class="m-0 text-12 leading-[1.7] text-muted">{{ t('import_description') }}</p>
+    <p v-if="imports.destination" class="mt-8 mb-0 text-12 text-secondary" data-testid="import-destination">
+      {{ t('import_into', { folder: imports.destination }) }}
+      <UiTextButton v-if="!locked && !counts.waiting" class="ml-8 text-12" @click="setImportDestination('')">{{
+        t('import_into_root')
+      }}</UiTextButton>
+    </p>
 
     <ol :aria-label="t('import_workflow')" class="my-18 grid list-none grid-cols-3 gap-8 p-0">
       <li
