@@ -42,6 +42,8 @@ const state = reactive({
   toast: null as Toast | null,
   trackMenu: null as TrackMenu | null,
   playlistDialog: null as PlaylistDialog | null,
+  /** Karaoke: the current lyrics full screen (round 16). */
+  karaoke: false,
 })
 export const ui = readonly(state)
 
@@ -54,6 +56,10 @@ export function setQuery(value: string): void {
 
 export function openDialog(name: DialogName): void {
   state.dialog = name
+}
+
+export function setKaraoke(open: boolean): void {
+  state.karaoke = open
 }
 
 export function closeDialog(): void {

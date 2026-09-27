@@ -14,6 +14,7 @@ import AppToast from './layout/AppToast.vue'
 import AppTopbar from './layout/AppTopbar.vue'
 import ConnectionDialog from './layout/ConnectionDialog.vue'
 import ImportDialog from './layout/ImportDialog.vue'
+import KaraokeMode from './layout/KaraokeMode.vue'
 import PlaylistDialog from './layout/PlaylistDialog.vue'
 import ListeningPanel from './layout/ListeningPanel.vue'
 import SoundDialog from './layout/SoundDialog.vue'
@@ -97,5 +98,6 @@ watchEffect(() => {
   <SoundDialog />
   <ImportDialog />
   <PlaylistDialog />
+  <KaraokeMode v-if="ui.karaoke" />
   <AppToast />
 </template>

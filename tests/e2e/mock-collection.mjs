@@ -257,6 +257,22 @@ const LYRICS = {
     text: '[00:00.00]Weightless, first line\n[00:05.00]Weightless, second line\n[00:10.00]Weightless, third line\n',
   },
   'Blue Hours': { source: 'embedded', text: 'Blue hours, plain line one\nBlue hours, plain line two\n' },
+  // Enhanced LRC for karaoke: word and syllable stamps on some lines, ten lines in all.
+  'Still Here': {
+    source: 'sidecar',
+    text: [
+      '[00:00.00]<00:00.00>Still <00:00.60>here, <00:01.20>still <00:01.80>awake<00:02.60>',
+      '[00:03.00]<00:03.00>Counting <00:03.80>the <00:04.20>lights <00:05.00>outside',
+      '[00:06.00]Kee<00:06.40>ping <00:06.80>time<00:07.60>',
+      '[00:09.00]A line without word stamps',
+      '[00:12.00]<00:12.00>Almost <00:12.80>morning<00:13.80>',
+      '[00:15.00]Fifth line',
+      '[00:18.00]Sixth line',
+      '[00:21.00]Seventh line',
+      '[00:24.00]Eighth line',
+      '[00:27.00]Ninth line',
+    ].join('\n'),
+  },
 }
 
 /** The gateway's media routes for the mock collection: { status, body, type, headers }. */

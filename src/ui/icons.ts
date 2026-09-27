@@ -34,6 +34,10 @@ export const ICON_PATHS = {
   /* A memory card: cut corner and contacts (card space, round 16). */
   card: 'M9 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7Z M10 7v3 M13 7v3 M16 7v3',
   folder: 'M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z',
+  /* Karaoke (round 16): a microphone, and full screen in and out. */
+  karaoke: 'M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3Z M5 11a7 7 0 0 0 14 0 M12 18v3 M9 21h6',
+  fullscreen: 'M4 9V4h5 M20 9V4h-5 M4 15v5h5 M20 15v5h-5',
+  'fullscreen-exit': 'M9 4v5H4 M15 4v5h5 M9 20v-5H4 M15 20v-5h5',
   'sidebar-collapse':
     'M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z M9.5 4v16 M16 9.5 13.5 12l2.5 2.5',
   'sidebar-expand':

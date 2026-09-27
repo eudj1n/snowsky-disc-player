@@ -1013,6 +1013,48 @@ test('offers the tones of the theme in effect and keeps the chosen palettes', as
   await expect(html).not.toHaveAttribute('data-light-palette', /.+/)
 })
 
+test('sings along in karaoke: word timings sweep the current line and at most seven lines show', async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  test.skip(!TOKEN, 'E2E_TOKEN is required against a real gateway')
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/album/Inner%20Space/Forma')
+  // The mock is shared by both projects: start the track from its beginning.
+  const title = page.getByTestId('track-title')
+  if ((await title.count()) && (await title.textContent())?.trim() === 'Still Here') {
+    await page.getByRole('button', { name: 'Play Orbit' }).click()
+    await expect(title).toHaveText('Orbit', { timeout: 15_000 })
+  }
+  await page.getByRole('button', { name: 'Play Still Here' }).click()
+  await expect(title).toHaveText('Still Here', { timeout: 15_000 })
+  await page.getByRole('button', { name: 'Lyrics' }).filter({ visible: true }).first().click()
+  const panel = page.getByRole('complementary', { name: 'Player view' })
+  await panel.getByTestId('karaoke-open').click()
+  const karaoke = page.getByTestId('karaoke')
+  await expect(karaoke).toBeVisible()
+  await expect(karaoke).toContainText('Still Here')
+  // The first line sweeps word by word as the position ticks.
+  const current = karaoke.locator('[aria-current=true]')
+  await expect(current).toHaveText('Still here, still awake', { timeout: 15_000 })
+  await expect(current.locator('span')).toHaveCount(4)
+  await expect(current.locator('span').first()).toHaveAttribute('data-progress', '1.00', { timeout: 10_000 })
+  // Later lines take over; never more than seven lines are shown.
+  await expect(current).toHaveText('Counting the lights outside', { timeout: 15_000 })
+  const shown = karaoke.getByTestId('karaoke-lines').locator('p:not([aria-hidden=true])')
+  expect(await shown.count()).toBeLessThanOrEqual(7)
+  // Escape leaves karaoke, not the listening panel under it.
+  await page.keyboard.press('Escape')
+  await expect(karaoke).toBeHidden()
+  await expect(panel).toBeVisible()
+  // K opens it again from anywhere and closes it.
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('k')
+  await expect(karaoke).toBeVisible()
+  await page.keyboard.press('k')
+  await expect(karaoke).toBeHidden()
+  await disconnect(page)
+})
+
 test('shows what takes space on the card by format, album and artist', async ({ page }) => {
   test.skip(external, 'Needs the mock collection')
   await english(page)

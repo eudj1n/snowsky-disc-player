@@ -1,12 +1,16 @@
 /**
  * Keyboard shortcuts (owner's decision, proposal 2): Space plays or pauses,
- * Left/Right select the previous/next track, "/" focuses search (reference).
+ * Left/Right select the previous/next track, "/" focuses search (reference),
+ * K opens or closes karaoke for the current track (round 16; the key, not
+ * the letter, so it works in any keyboard layout).
  * Ignored while typing, on focused controls (Space activates them) and while
  * a dialog is open.
  */
+import { closeKaraoke, openKaraoke } from '../layout/karaoke'
 import { connection } from '../stores/connection'
 import { transport } from '../stores/controls'
 import { playback } from '../stores/playback'
+import { ui } from '../stores/ui'
 
 const INTERACTIVE = 'input, textarea, select, button, a, [contenteditable], [role=menuitem], [role=slider]'
 
@@ -18,6 +22,14 @@ export function handleShortcut(event: KeyboardEvent): void {
     if (target?.closest('input, textarea, select, [contenteditable]')) return
     event.preventDefault()
     document.getElementById('search')?.focus()
+    return
+  }
+  if (event.code === 'KeyK' && !event.shiftKey) {
+    if (target?.closest('input, textarea, select, [contenteditable]')) return
+    if (!ui.karaoke && !playback.current.track) return
+    event.preventDefault()
+    if (ui.karaoke) closeKaraoke()
+    else openKaraoke()
     return
   }
   const action =

@@ -753,7 +753,7 @@ recorded for later.
        artists at hand, for example at the top of Home and of their lists.
        Where pins live (this browser, or the card so every browser shares
        them) to be decided.
-9. [ ] Karaoke mode (owner): the current track's LRC lyrics full screen in
+9. [x] Karaoke mode (owner): the current track's LRC lyrics full screen in
        a large font, no more than 6 to 8 lines on screen. Proposed: opened
        from the Lyrics tab (and a key), the current line centred with the
        previous and next lines dimmed around it, a fill sweeping the current
@@ -761,9 +761,18 @@ recorded for later.
        height, the cover's tone behind, and play/pause, previous, next and
        Esc to leave. Plain (unsynced) lyrics scroll without a highlight.
        Limits: the Fullscreen API works over the player's plain HTTP, but the
-       Screen Wake Lock needs a secure context, so the screen may still dim;
-       word timings (`<mm:ss.xx>`) are dropped today and could drive a
-       per-word sweep later.
+       Screen Wake Lock needs a secure context, so the screen may still dim.
+       Done (2026-09-27) with word timings, as the owner asked: enhanced LRC
+       `<mm:ss.xx>` stamps are kept per line (text before the first stamp
+       starts with the line, a stamp with nothing after it ends the last
+       word, repeated lines keep their word rhythm, `[offset]` applies) and
+       each word or syllable fills from its stamp to the next; lines without
+       them fill across to the next line (at most 10 s). The K key (any
+       layout) opens and closes it; Esc and leaving full screen close it
+       without closing the listening panel. Unit tests for the parser and the
+       sweep, a mock test on both projects (an enhanced LRC on "Still Here":
+       the words fill, the next line takes over, at most seven lines show),
+       screenshots on a desktop and a phone.
 
 ## Requests for the next service build
 

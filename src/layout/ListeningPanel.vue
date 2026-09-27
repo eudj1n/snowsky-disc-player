@@ -25,6 +25,7 @@ import { playerOptions } from '../stores/playerOptions'
 import { closePanel, showPanelSection, ui } from '../stores/ui'
 import UiIconButton from '../ui/UiIconButton.vue'
 import { usePlaybackContext } from './usePlaybackContext'
+import { openKaraoke } from './karaoke'
 import { usePlayerControls } from './usePlayerControls'
 
 const player = usePlayerControls()
@@ -78,7 +79,15 @@ const queueHint = computed(() => {
 })
 
 function onKeydown(event: KeyboardEvent): void {
-  if (event.key === 'Escape' && ui.panel && !document.querySelector('dialog[open]')) closePanel(true)
+  // Karaoke over the panel takes its own Escape.
+  if (
+    event.key === 'Escape' &&
+    ui.panel &&
+    !ui.karaoke &&
+    !event.defaultPrevented &&
+    !document.querySelector('dialog[open]')
+  )
+    closePanel(true)
 }
 
 function onNavigate(): void {
@@ -161,9 +170,18 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
     <template v-else-if="ui.panel === 'lyrics'">
       <!-- The tab already says Lyrics: the header names the track only (owner, round 14). -->
       <div class="shrink-0 px-24 pb-10">
-        <h2 class="mt-0 mb-0 truncate text-24 font-bold tracking-[-0.8px]">
-          {{ playback.current.track?.title ?? t('lyrics_tab') }}
-        </h2>
+        <div class="flex items-center gap-10">
+          <h2 class="mt-0 mb-0 min-w-0 flex-1 truncate text-24 font-bold tracking-[-0.8px]">
+            {{ playback.current.track?.title ?? t('lyrics_tab') }}
+          </h2>
+          <UiIconButton
+            v-if="playback.current.track"
+            icon="karaoke"
+            :label="t('karaoke_open')"
+            data-testid="karaoke-open"
+            @click="openKaraoke"
+          />
+        </div>
         <p
           v-if="playback.current.track?.artist"
           class="mt-2 mb-0 truncate text-11 text-muted"
