@@ -349,6 +349,15 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
   SHA-256 after the write. `6391eee7bbc8b7ac` stays for rollback;
   `9b8d2afdaeb8f018` removed (active plus previous kept).
 
+- 2026-09-27: `375d85bd5dbb6a57` (commit `36d97b0`: round 15's card space
+  bar and round 16's Card page with its album and artist links) published on
+  PLAY at the owner's request after `npm run check`, the full mock suite (95)
+  and the emulator acceptance of this exact release through the MIPS service
+  (all 13 acceptance tests passed, among them the new card measurement; the
+  Home featured-album test skipped itself); all 72 files matched by SHA-256
+  after the write and the card was ejected. `ccdaf06c54348329` stays for
+  rollback; `f4770f9935dc4a2b` and `4305f4bb03706477` are still on the card.
+
 - 2026-09-27: `ccdaf06c54348329` (commit `041d3b3`: rounds 13–14, the
   Recently played shelf by source, favoriting any row, device facts, MP3/AAC
   metadata and the volume read-back fix) published on PLAY at the owner's
