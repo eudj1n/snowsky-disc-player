@@ -349,6 +349,14 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
   SHA-256 after the write. `6391eee7bbc8b7ac` stays for rollback;
   `9b8d2afdaeb8f018` removed (active plus previous kept).
 
+- 2026-09-27: `74a2e216281b11ea` (commit `74301ed`: karaoke with word timings
+  and the CUE fix) published on PLAY at the owner's request after `npm run
+check`, the full mock suite (97) and the emulator acceptance of this exact
+  release through the MIPS service (all 14 acceptance tests, among them the
+  new CUE image); all 72 files matched by SHA-256 after the write and the
+  card was ejected. `375d85bd5dbb6a57` stays for rollback; older releases are
+  still on the card.
+
 - 2026-09-27: `375d85bd5dbb6a57` (commit `36d97b0`: round 15's card space
   bar and round 16's Card page with its album and artist links) published on
   PLAY at the owner's request after `npm run check`, the full mock suite (95)
