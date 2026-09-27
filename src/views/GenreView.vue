@@ -15,7 +15,7 @@ import DetailHeading from '../components/collection/DetailHeading.vue'
 import SectionHeading from '../components/common/SectionHeading.vue'
 import TrackTiles from '../components/track/TrackTiles.vue'
 import { albumScope, albumTracks, type Album } from '../domain/album'
-import { genreAlbums, genreArtists, genreTracks } from '../domain/genre'
+import { findGenre, genreAlbums, genreArtists, genreTracks, playableGenre, sameGenre } from '../domain/genre'
 import { filterBy } from '../domain/search'
 import { recentlyAdded, type Track } from '../domain/track'
 import type { SelectionTarget, TrackKey } from '../gateway/selection'
@@ -38,8 +38,13 @@ const LATEST = 12
 const route = useRoute()
 const router = useRouter()
 const name = computed(() => String(route.params.name ?? ''))
-const genre = computed(() => genres.value.find((item) => item.name === name.value) ?? null)
+/** The genre in any of its spellings; the page shows its main one. */
+const genre = computed(() => findGenre(genres.value, name.value))
+const shown = computed(() => genre.value?.name ?? name.value.trim())
 const tracks = computed(() => genreTracks(collection.value, name.value))
+/** Stock plays one spelling at a time: the one most of this genre's tracks carry. */
+const literal = computed(() => (genre.value ? playableGenre(tracks.value, genre.value) : name.value))
+const spellings = computed(() => (genre.value && genre.value.variants.length > 1 ? genre.value.variants : null))
 const searching = computed(() => ui.query.trim() !== '')
 const latest = computed(() =>
   filterBy(recentlyAdded(tracks.value, searching.value ? tracks.value.length : LATEST), ui.query, (track) => [
@@ -61,7 +66,7 @@ const count = computed(() => latest.value.length + shelf.value.length + artists.
 const current = computed(() => playback.current.track?.path ?? null)
 /** The album also holds tracks of other genres. */
 const mixed = (album: Album) =>
-  albumTracks(collection.value, album.title, albumScope(album)).some((track) => track.genre !== name.value)
+  albumTracks(collection.value, album.title, albumScope(album)).some((track) => !sameGenre(track.genre, name.value))
 const titleTo = (track: Track) =>
   track.album
     ? genre.value && mixed(album(track.album))
@@ -88,8 +93,10 @@ function album(title: string): Album {
 function genreAlbumLink(title: string) {
   return { name: 'album', params: { name: title }, query: { genre: name.value } }
 }
-function target(track?: TrackKey): SelectionTarget {
-  return { kind: 'genre', genre: name.value, ...(track ? { track } : {}) }
+/** A track plays in the stock genre of its own spelling; the whole genre in the main one. */
+function target(track?: TrackKey & { genre?: string | null }): SelectionTarget {
+  const own = track?.genre && sameGenre(track.genre, name.value) ? track.genre : literal.value
+  return { kind: 'genre', genre: own, ...(track ? { track: { title: track.title, artist: track.artist } } : {}) }
 }
 const heading = useHeadingAction({
   owns: (track) => tracks.value.some((item) => item.path === track.path),
@@ -101,7 +108,13 @@ function playAlbum(item: Album): void {
   const scope = albumScope(item)
   void playFrom(
     mixed(item)
-      ? { kind: 'genreAlbum', genre: name.value, album: item.title }
+      ? {
+          kind: 'genreAlbum',
+          genre: genre.value
+            ? playableGenre(albumTracks(collection.value, item.title, scope), genre.value)
+            : name.value,
+          album: item.title,
+        }
       : scope
         ? { kind: 'artistAlbum', artist: scope, album: item.title }
         : { kind: 'album', album: item.title },
@@ -113,7 +126,7 @@ function playAlbum(item: Album): void {
   <CollectionGate :count="count" :searching="searching" empty-key="search_empty_tracks">
     <template #heading="{ loading }">
       <UiTextButton class="text-12" @click="router.push('/genres')">← {{ t('back_to_genres') }}</UiTextButton>
-      <DetailHeading :title="name" :sticky-action="loading ? null : heading.action.value" @sticky="heading.run">
+      <DetailHeading :title="shown" :sticky-action="loading ? null : heading.action.value" @sticky="heading.run">
         <template #sticky
           >{{ t('album_count', { count: genre?.albums.length ?? 0 }) }} ·
           {{ t('track_count', { count: tracks.length }) }}</template
@@ -129,6 +142,13 @@ function playAlbum(item: Album): void {
           t('play_genre')
         }}</UiPillButton>
       </DetailHeading>
+      <p
+        v-if="!loading && spellings"
+        class="-mt-10 mb-18 text-11 leading-[1.6] text-muted"
+        data-testid="genre-spellings"
+      >
+        {{ t('genre_spellings', { spellings: spellings.map((item) => `“${item}”`).join(', '), main: `“${literal}”` }) }}
+      </p>
     </template>
     <template #skeleton>
       <SectionHeading :title="t('new_tracks')" class="mt-0!" />

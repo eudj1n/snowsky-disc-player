@@ -4,7 +4,7 @@ import ViewHeading from '../components/common/ViewHeading.vue'
 import GenreFilter from '../components/genre/GenreFilter.vue'
 import TrackList from '../components/track/TrackList.vue'
 import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
-import { genreTracks } from '../domain/genre'
+import { genreTracks, sameGenre } from '../domain/genre'
 import { sortTracks, TRACK_SORTS } from '../domain/history'
 import { filterBy } from '../domain/search'
 import type { SelectionTarget, TrackKey } from '../gateway/selection'
@@ -43,8 +43,15 @@ const sourceNoteOf = (track: { path: string | null }) => {
 }
 onMounted(() => void loadHistory())
 /** With a genre filter, playback stays in that stock genre (reference). */
-const target = (track: TrackKey): SelectionTarget =>
-  genre.value ? { kind: 'genre', genre: genre.value, track } : { kind: 'library', track }
+const target = (track: TrackKey & { genre?: string | null }): SelectionTarget =>
+  genre.value
+    ? {
+        kind: 'genre',
+        // Stock plays one spelling of a genre: the track's own.
+        genre: track.genre && sameGenre(track.genre, genre.value) ? track.genre : genre.value,
+        track: { title: track.title, artist: track.artist },
+      }
+    : { kind: 'library', track: { title: track.title, artist: track.artist } }
 const skeletonRows = computed(() => Math.max(1, Math.min(library.summary?.tracks ?? 10, 12)))
 const columns = computed(() => ({
   title: t('column_title'),

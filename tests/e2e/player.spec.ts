@@ -106,6 +106,10 @@ test('plays a track from an album page and shows it in Now Playing and Queue', a
   await expect(panel.getByRole('heading', { name: 'Window Seat' })).toBeVisible()
   await panel.getByRole('button', { name: 'Queue', exact: true }).click()
   await expect(panel.locator('[aria-current=true]')).toContainText('Window Seat')
+  // Queue rows show the album's cover (their paths come from the persisted queue), not the sleeve.
+  const rows = panel.getByRole('listitem')
+  await expect(rows).toHaveCount(4)
+  await expect(rows.locator('[data-cover=true] canvas')).toHaveCount(4, { timeout: 15_000 })
   await page.keyboard.press('Escape')
   await expect(panel).toBeHidden()
   await expect(page.getByRole('button', { name: 'Open Now Playing panel' })).toBeFocused()
@@ -255,6 +259,23 @@ test('lists same-titled albums apart, separates discs, shows years and joint cre
     await expect(page.getByRole('button', { name: 'Play Mira Sol' })).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Play Kite Lines' })).toHaveCount(1)
   }
+})
+
+test('shows genre spellings that differ only in case and spacing as one genre', async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  await page.goto('/#/genres')
+  await expect(page.getByRole('link', { name: /^\s*alternative/i })).toHaveCount(1)
+  await page.getByRole('link', { name: /^\s*Alternative/ }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Alternative' })).toBeVisible()
+  // Its albums come from every spelling; the note names them and the one stock plays.
+  await expect(page.getByRole('heading', { name: 'Two Rooms' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Daybreak' })).toBeVisible()
+  await expect(page.getByTestId('genre-spellings')).toContainText('“alternative ”')
+  await expect(page.getByTestId('genre-spellings')).toContainText('at a time: “Alternative” here')
+  // An older link with another spelling opens the same genre.
+  await page.goto('/#/genre/alternative%20')
+  await expect(page.getByRole('heading', { level: 1, name: 'Alternative' })).toBeVisible()
 })
 
 test('pairs with the player serial number when the card allows it', async ({ page }) => {

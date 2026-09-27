@@ -6,11 +6,15 @@
 import type { RouteLocationRaw } from 'vue-router'
 import { albumScope } from '../domain/album'
 import { creditLabel } from '../domain/artist'
+import { findGenre } from '../domain/genre'
 import type { PlaySource } from '../domain/history'
 import type { SelectionTarget } from '../gateway/selection'
 import { t } from '../i18n'
 import { albumCover, coverFor } from '../stores/enrichment'
-import { favorites, trackByPath } from '../stores/library'
+import { favorites, genres, trackByPath } from '../stores/library'
+
+/** A played genre (one stock spelling) under the name the page shows for it. */
+const genreName = (literal: string) => findGenre(genres.value, literal)?.name ?? literal.trim()
 import { albumCardRoute, artistRoute, genreRoute, leadArtist, playlistRoute } from './captions'
 
 export interface SourceTileModel {
@@ -56,9 +60,9 @@ export function sourceTile(source: PlaySource, path: string): SourceTileModel | 
     case 'genre':
       return {
         key: `genre:${source.genre}`,
-        title: source.genre,
+        title: genreName(source.genre),
         caption: t('kind_genre'),
-        to: genreRoute(source.genre),
+        to: genreRoute(genreName(source.genre)),
         cover: playedCover(path),
         play: { kind: 'genre', genre: source.genre },
       }
@@ -96,7 +100,7 @@ export function sourceNote(source: PlaySource | null): { text: string; to: Route
     case 'artist':
       return { text: `${t('kind_artist')} · ${creditLabel(source.artist)}`, to: artistRoute(source.artist) }
     case 'genre':
-      return { text: `${t('kind_genre')} · ${source.genre}`, to: genreRoute(source.genre) }
+      return { text: `${t('kind_genre')} · ${genreName(source.genre)}`, to: genreRoute(genreName(source.genre)) }
     case 'playlist':
       return { text: `${t('kind_playlist')} · ${source.playlist.name}`, to: playlistRoute(source.playlist.id) }
     case 'favorites':

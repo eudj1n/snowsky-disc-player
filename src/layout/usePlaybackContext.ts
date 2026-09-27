@@ -5,10 +5,11 @@
  * holds it. Unknown stays unnamed; nothing is guessed across candidates.
  */
 import { creditLabel } from '../domain/artist'
+import { findGenre } from '../domain/genre'
 import { computed, ref, watch, type ComputedRef } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 import { t } from '../i18n'
-import { library, loadPlaylistTracks, trackByPath } from '../stores/library'
+import { genres, library, loadPlaylistTracks, trackByPath } from '../stores/library'
 import { playback } from '../stores/playback'
 import { albumRoute, artistRoute, genreRoute, playlistRoute } from '../views/captions'
 
@@ -79,7 +80,8 @@ function createContext() {
             : null
       case 'genre':
       case 'genreTrack': {
-        const genre = track.path ? trackByPath.value.get(track.path)?.genre : null
+        const literal = track.path ? trackByPath.value.get(track.path)?.genre : null
+        const genre = literal ? (findGenre(genres.value, literal)?.name ?? literal.trim()) : null
         return genre
           ? { text: t('from_genre', { name: genre }), to: genreRoute(genre) }
           : { text: t('from_genre_unknown'), to: null }

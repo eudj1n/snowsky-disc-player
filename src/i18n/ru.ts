@@ -415,6 +415,7 @@ export const ru: Messages = {
   space_not_played: 'не играл',
   space_show_all: 'Показать все ({count})',
   space_show_fewer: 'Свернуть',
+  genre_spellings: 'В тегах: {spellings}. Плеер играет одно написание за раз, здесь — {main}.',
   karaoke: 'Караоке',
   karaoke_open: 'Караоке: текст на весь экран (K)',
   karaoke_close: 'Выйти из караоке (Esc)',

@@ -413,6 +413,7 @@ export const en = {
   space_not_played: 'not played',
   space_show_all: 'Show all ({count})',
   space_show_fewer: 'Show fewer',
+  genre_spellings: 'Tagged as {spellings}. The player plays one spelling at a time: {main} here.',
   karaoke: 'Karaoke',
   karaoke_open: 'Karaoke: lyrics full screen (K)',
   karaoke_close: 'Leave karaoke (Esc)',

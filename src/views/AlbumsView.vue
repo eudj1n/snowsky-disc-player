@@ -5,7 +5,7 @@ import CoverCardSkeleton from '../components/collection/CoverCardSkeleton.vue'
 import CoverGrid from '../components/collection/CoverGrid.vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
 import { ALBUM_SORTS, albumScope, albumTracks, sortAlbums, type Album } from '../domain/album'
-import { genreAlbums } from '../domain/genre'
+import { findGenre, genreAlbums } from '../domain/genre'
 import { filterBy } from '../domain/search'
 import { locale, t } from '../i18n'
 import { albumSort } from '../stores/preferences'
@@ -23,7 +23,7 @@ import UiTextButton from '../ui/UiTextButton.vue'
 
 const { genre, options } = useGenreFilter()
 const searching = computed(() => ui.query.trim() !== '')
-const current = computed(() => genres.value.find((item) => item.name === genre.value) ?? null)
+const current = computed(() => (genre.value ? findGenre(genres.value, genre.value) : null))
 const source = computed(() =>
   genre.value ? (current.value ? genreAlbums(albums.value, current.value) : []) : albums.value,
 )

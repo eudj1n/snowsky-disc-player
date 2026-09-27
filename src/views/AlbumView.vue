@@ -24,7 +24,8 @@ import { t } from '../i18n'
 import { albumCover, albumQuality, albumYear } from '../stores/enrichment'
 import { isHiRes, qualityLabel } from '../domain/quality'
 import { formatBadge } from '../domain/track'
-import { albums, artists, titleGroups, tracks as collection } from '../stores/library'
+import { findGenre, playableGenre, sameGenre } from '../domain/genre'
+import { albums, artists, genres, titleGroups, tracks as collection } from '../stores/library'
 import { selection } from '../stores/selection'
 import { openPlaylistDialog, openTrackMenu, ui } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
@@ -51,11 +52,19 @@ const genre = computed(() => {
   const value = route.query.genre
   return scope.value === null && typeof value === 'string' && value !== '' ? value : null
 })
+/** The genre as shown, and the spelling stock plays for this album (the one most of its tracks carry). */
+const genreShown = computed(() =>
+  genre.value ? (findGenre(genres.value, genre.value)?.name ?? genre.value.trim()) : null,
+)
+const genreLiteral = computed(() => {
+  const found = genre.value ? findGenre(genres.value, genre.value) : null
+  return found ? playableGenre(tracks.value, found) : null
+})
 const group = computed(() => titleGroups.value.find((item) => item.title === name.value) ?? null)
 const tracks = computed(() =>
   byTrackNumber(
     albumTracks(collection.value, name.value, scope.value).filter(
-      (track) => genre.value === null || track.genre === genre.value,
+      (track) => genre.value === null || sameGenre(track.genre, genre.value),
     ),
   ),
 )
@@ -130,7 +139,7 @@ const members = computed(() => {
 function target(track?: TrackKey): SelectionTarget {
   const one = track ? { track } : {}
   if (scope.value) return { kind: 'artistAlbum', artist: scope.value, album: name.value, ...one }
-  if (genre.value) return { kind: 'genreAlbum', genre: genre.value, album: name.value, ...one }
+  if (genre.value) return { kind: 'genreAlbum', genre: genreLiteral.value ?? genre.value, album: name.value, ...one }
   return { kind: 'album', album: name.value, ...one }
 }
 /** A shelf card opens the artist's own release when the artist is a literal track artist of it. */
@@ -223,9 +232,9 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
         :aria-label="t('genre_filter')"
         class="mb-24 flex flex-wrap items-center gap-6 rounded-12 border border-line bg-raised px-18 py-14"
       >
-        <span class="mr-6 text-12 text-secondary">{{ t('in_genre', { genre }) }}</span>
+        <span class="mr-6 text-12 text-secondary">{{ t('in_genre', { genre: genreShown ?? genre }) }}</span>
         <RouterLink :to="albumRoute(name)" :class="CHIP">{{ t('whole_album') }}</RouterLink>
-        <RouterLink :to="genreRoute(genre)" :class="CHIP">{{ genre }}</RouterLink>
+        <RouterLink :to="genreRoute(genreShown ?? genre)" :class="CHIP">{{ genreShown }}</RouterLink>
       </nav>
     </template>
     <template #skeleton>

@@ -76,6 +76,11 @@ test('scans the generated media, keeps same-titled albums apart and survives tra
   // Partial a202 records follow a switch on stock: the player must stay.
   await page.waitForTimeout(2_000)
   await expect(title).toBeVisible()
+  // Queue rows show the album's folder cover: their paths come from the persisted queue (LIST_SONG_0).
+  await page.getByRole('button', { name: 'Open queue' }).click()
+  const queue = page.getByRole('complementary', { name: 'Player view' })
+  await expect(queue.locator('[data-cover=true] canvas')).toHaveCount(3, { timeout: 30_000 })
+  await page.keyboard.press('Escape')
   await disconnect(page)
   // Busy answers (503) are retried by the page; the browser still logs the first one.
   expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])

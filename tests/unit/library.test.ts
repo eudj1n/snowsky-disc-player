@@ -255,6 +255,52 @@ describe('genres', () => {
     const jazz = genres[0]
     expect(jazz && genreAlbums(groupAlbums(rows), jazz).map((album) => album.title)).toEqual(['B', 'C', 'A'])
   })
+
+  it('shows spellings that differ only in case and spacing as one genre, keeping each for playback', async () => {
+    const { findGenre, genreAlbums, genreArtists, genreTracks, groupGenres, playableGenre, sameGenre } =
+      await import('../../src/domain/genre')
+    const rows = [
+      tagged(1, 'A', 'X', 'Alternative'),
+      tagged(2, 'A', 'X', 'Alternative'),
+      tagged(3, 'B', 'Y', 'alternative'),
+      tagged(4, 'C', 'Z', 'Alternative '),
+      tagged(5, 'C', 'Z', 'Alternative '),
+      tagged(6, 'C', 'Z', 'Alternative '),
+      tagged(7, 'D', 'Q', 'Jazz'),
+    ]
+    const genres = groupGenres(rows)
+    // Shown under the spelling most tracks carry, trimmed; every spelling kept, most tracks first.
+    expect(genres.map((genre) => [genre.name, genre.trackCount, genre.variants, genre.albums])).toEqual([
+      ['Alternative', 6, ['Alternative ', 'Alternative', 'alternative'], ['A', 'B', 'C']],
+      ['Jazz', 1, ['Jazz'], ['D']],
+    ])
+    const alternative = findGenre(genres, 'ALTERNATIVE')
+    expect(alternative?.name).toBe('Alternative')
+    expect(findGenre(genres, 'Alternative ')).toBe(alternative)
+    expect(findGenre(genres, 'Rock')).toBeNull()
+    expect(sameGenre('  alternative ', 'Alternative')).toBe(true)
+    expect(sameGenre(null, 'Alternative')).toBe(false)
+    expect(genreTracks(rows, 'alternative').map((row) => row.id)).toEqual([1, 2, 3, 4, 5, 6])
+    expect(genreArtists(rows, 'Alternative').map((artist) => artist.name)).toEqual(['Z', 'X', 'Y'])
+    if (!alternative) throw new Error('grouped genre')
+    expect(
+      genreAlbums(groupAlbums(rows), alternative)
+        .map((album) => album.title)
+        .sort(),
+    ).toEqual(['A', 'B', 'C'])
+    // Stock plays one spelling: the one most of the given tracks carry.
+    expect(playableGenre(rows, alternative)).toBe('Alternative ')
+    expect(
+      playableGenre(
+        rows.filter((row) => row.album === 'A'),
+        alternative,
+      ),
+    ).toBe('Alternative')
+    expect(playableGenre([], alternative)).toBe('Alternative ')
+    // A tie prefers the capitalised spelling.
+    const tie = groupGenres([tagged(1, 'A', 'X', 'rock'), tagged(2, 'B', 'Y', 'Rock')])
+    expect(tie.map((genre) => [genre.name, genre.variants])).toEqual([['Rock', ['Rock', 'rock']]])
+  })
 })
 
 describe('releases', () => {

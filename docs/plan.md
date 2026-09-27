@@ -808,6 +808,28 @@ all with the same PATH (IS_CUE=1, TRACK, OFFSET), and a202 reports that path,
 - Service note: the play observer counts plays per open file, so a CUE image
   played through records at most one play per file, not one per track.
 
+## Owner findings (2026-09-27): genre spellings and queue covers
+
+- [x] Genres that differ only in case and spacing ("alternative",
+      "Alternative", "Alternative ") are one genre on the page, shown under
+      the spelling most tracks carry, with its albums, tracks and artists
+      from every spelling; old links with another spelling open it. Stock
+      keeps each spelling as a genre of its own and plays one at a time, so
+      the whole genre plays its main spelling, a track plays in its own
+      spelling and a genre album in the spelling its tracks carry; the genre
+      page names the spellings and the one it plays. Unit tests for grouping,
+      lookup and the playable spelling; a mock test (the mock's Two Rooms is
+      now tagged "alternative ").
+- [x] Queue rows in the listening panel showed the placeholder sleeve:
+      stock's queue list carries only a title and an artist. Each row is now
+      matched to the persisted queue (LIST_SONG_0 through the `queue` data
+      query, taken position by position when every row agrees, else one
+      unique match in the queue or the library), which gives its path and so
+      its album cover. Unit tests for the matching; the mock serves the
+      `queue` query and its test checks four covers; the emulator acceptance
+      checks the Harbor folder cover on all three queue rows (14 acceptance
+      tests passed through the MIPS service).
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

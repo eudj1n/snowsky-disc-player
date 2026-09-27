@@ -1,10 +1,10 @@
 <script setup lang="ts">
-/** Queue rows (reference rows(queueItems, true)): select button, sleeve, title, artist. */
+/** Queue rows (reference rows(queueItems, true)): select button, cover (else the sleeve), title, artist. */
 import { creditLabel } from '../../domain/artist'
 import type { QueueItem } from '../../domain/queue'
 import UiIcon from '../../ui/UiIcon.vue'
 import UiNowPlaying from '../../ui/UiNowPlaying.vue'
-import ArtworkSleeve from '../artwork/ArtworkSleeve.vue'
+import Artwork from '../artwork/Artwork.vue'
 
 withDefaults(
   defineProps<{
@@ -41,7 +41,9 @@ const emit = defineEmits<{ select: [index: number] }>()
           <UiIcon name="play" class="size-15" />
         </button>
       </span>
-      <span class="size-36 overflow-hidden rounded-6"><ArtworkSleeve :title="item.title" /></span>
+      <span class="size-36 overflow-hidden rounded-6" :data-cover="item.cover ? 'true' : undefined"
+        ><Artwork :title="item.title" :cover="item.cover ?? null"
+      /></span>
       <span class="min-w-0">
         <strong class="block truncate font-[550]">{{ item.title }}</strong>
         <small class="mt-4 block truncate text-11 text-muted">{{ item.artist ? creditLabel(item.artist) : '—' }}</small>

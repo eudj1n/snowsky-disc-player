@@ -19,8 +19,9 @@ const ALBUMS = [
   // Northline's (the stock groups albums by title), and a second Northline one.
   ['Afterglow', 'Mira Sol', 'Jazz', ['Late Train', 'Afterglow (Reprise)'], 1_780_000_000],
   ['Night Drive', 'Northline', 'Electronic', ['Night Drive', 'City Glow', 'Last Exit'], 1_780_100_000],
-  // Two discs, and a joint credit that stock keeps as one artist string.
-  ['Two Rooms', 'Kite Lines', 'Alternative', ['Opening', 'Hallway', 'Closing', 'Encore'], 1_780_200_000],
+  // Two discs, and a joint credit that stock keeps as one artist string. Its genre
+  // is another spelling of Alternative (case and a trailing space), as tags vary.
+  ['Two Rooms', 'Kite Lines', 'alternative ', ['Opening', 'Hallway', 'Closing', 'Encore'], 1_780_200_000],
   // A joint album: every track credits both artists, as one stock artist string.
   ['Shared Light', 'Kite Lines; Mira Sol', 'Alternative', ['Two Voices', 'Common Ground'], 1_780_300_000],
   // A long album name, which stock's play state cuts short (mock-gateway.mjs).
@@ -94,7 +95,7 @@ function page(rows, params) {
 }
 
 /** Data-level queries: returns { status, body }. */
-export function dataQuery(name, params, language) {
+export function dataQuery(name, params, language, queue = []) {
   const tracks = (rows) => {
     const selected = page(rows, params)
     return selected ? { status: 200, body: table(selected, COLUMNS) } : { status: 400, body: 'Invalid parameters\n' }
@@ -127,6 +128,11 @@ export function dataQuery(name, params, language) {
     }))
     if (name === 'most_played') rows.sort((a, b) => b.PLAY_COUNT - a.PLAY_COUNT || b.LAST_PLAY_TIME - a.LAST_PLAY_TIME)
     return { status: 200, body: table(rows, [...COLUMNS, 'PLAY_COUNT', 'LAST_PLAY_TIME']) }
+  }
+  // The persisted queue (LIST_SONG_0) with paths, in queue order.
+  if (name === 'queue') {
+    const rows = queue.map((track, index) => ({ ...track, POS_ID: index + 1 }))
+    return { status: 200, body: table(rows, [...COLUMNS, 'POS_ID']) }
   }
   if (name === 'playlist_tracks') {
     // Like stock: the query addresses CUSTOM_PLAYLIST_INDEX.LIST_ID, not the row ID.

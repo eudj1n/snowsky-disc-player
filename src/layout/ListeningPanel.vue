@@ -30,7 +30,12 @@ import { usePlayerControls } from './usePlayerControls'
 
 const player = usePlayerControls()
 const close = ref<InstanceType<typeof UiIconButton> | null>(null)
-const items = computed(() => queue.items.map((row) => ({ title: row.name, artist: row.author })))
+const items = computed(() =>
+  queue.items.map((row, index) => {
+    const detail = queue.details[index]
+    return { title: row.name, artist: row.author, cover: detail ? coverFor(detail) : null }
+  }),
+)
 const status = computed(() =>
   connection.connection === 'connected' ? t(`playback_${playback.current.state}`) : t('disconnected'),
 )

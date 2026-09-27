@@ -218,7 +218,7 @@ const server = createServer((request, response) => {
   }
   if (url.pathname.startsWith('/api/data/')) {
     const query = url.pathname.slice(10)
-    const result = dataQuery(query, url.searchParams, LANGUAGE)
+    const result = dataQuery(query, url.searchParams, LANGUAGE, player.list)
     const json = typeof result.body !== 'string'
     const body = json
       ? JSON.stringify({ query, ...result.body, rows_returned: result.body.rows.length, truncated: false })
