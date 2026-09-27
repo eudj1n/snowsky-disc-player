@@ -689,6 +689,50 @@ separately.
       critical); the mock test reads the meter. Checked in light and dark and
       on a phone with screenshots of the three levels.
 
+## Owner requests (round 16): card space, files and more (2026-09-27)
+
+Proposals for the installed combined-007 image, all card-only (page and card
+catalogs). The owner chose 1 to start, widened 6 and added 8; the rest are
+recorded for later.
+
+1. [ ] **What takes space on the card** (in progress). A read-only view:
+       sizes by album, artist and format from the media route's `bytes`
+       (measured once per file and cached), music against the rest of the
+       used space, possible duplicates (one album in two folders, one track in
+       two formats) and plays per album from the service history (it began on
+       2026-09-27). Deleting stays with the owner in storage mode: the
+       service denies stock's `DELETE /file/` outright (built-in denylist), so
+       a delete action would need a reviewed image change.
+2. [ ] Smart playlists kept as managed stock playlists (the earlier "service
+       playlists"): by genre, decade (tag years), most played, not played for a
+       while, recently added; the page creates and refreshes them with the
+       admitted playlist routes and never touches the owner's own lists.
+       Naming, refresh and ownership to be agreed first.
+3. [ ] Listening statistics from the history on the card: top artists,
+       albums and genres per week, month and all time, hours listened, streaks,
+       later a year in review. Useful once history has accumulated.
+4. [ ] Collection check: albums without a cover or year, names stock cuts at
+       29 bytes, album artist spellings that split an album, mixed sample
+       rates within an album, tracks without lyrics; a report with fixes.
+5. [ ] Work mode (local, USB DAC, AirPlay) and the Bluetooth codec: records
+       `0607`/`0657` and `06d4`/`06d3` are admitted but unused. Check on the
+       emulator first what a mode switch does to playback and to the service.
+6. [ ] **A small file manager** (widened by the owner): browse the card's
+       folders (`/dir/`, paged), create a folder, upload or add music into the
+       chosen folder (the upload route creates missing parents, refuses
+       overwrites and admits media names only), then rescan. Limits of the
+       current image: `/dir/` is stock's filtered media browser (not every file
+       is listed; no sizes), and there is no delete, rename or move (delete is
+       denied by the service; stock has no rename).
+7. [ ] Small items: export the history (CSV/JSON); battery voltage,
+       temperature and cycles in a tooltip; a "not resampled" mark when the
+       output rate matches the file; the upload bound (1 GiB in the catalog,
+       stock allows 2 GiB − 1).
+8. [ ] Pinned albums and pinned artists (owner): keep chosen albums and
+       artists at hand, for example at the top of Home and of their lists.
+       Where pins live (this browser, or the card so every browser shares
+       them) to be decided.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
