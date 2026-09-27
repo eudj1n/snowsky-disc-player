@@ -107,6 +107,12 @@ const status = computed(() => {
           >
             <div class="h-full rounded-full" :class="LEVEL_FILL[card.level]" :style="{ width: `${card.percent}%` }" />
           </div>
+          <RouterLink
+            to="/card"
+            class="mt-8 inline-block text-11 text-muted hover:text-ink hover:underline"
+            @click="closeDialog"
+            >{{ t('card_details') }} →</RouterLink
+          >
         </dd>
       </div>
     </dl>

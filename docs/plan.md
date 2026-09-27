@@ -695,7 +695,7 @@ Proposals for the installed combined-007 image, all card-only (page and card
 catalogs). The owner chose 1 to start, widened 6 and added 8; the rest are
 recorded for later.
 
-1. [ ] **What takes space on the card** (in progress). A read-only view:
+1. [x] **What takes space on the card** (2026-09-27). A read-only view:
        sizes by album, artist and format from the media route's `bytes`
        (measured once per file and cached), music against the rest of the
        used space, possible duplicates (one album in two folders, one track in
@@ -703,6 +703,17 @@ recorded for later.
        2026-09-27). Deleting stays with the owner in storage mode: the
        service denies stock's `DELETE /file/` outright (built-in denylist), so
        a delete action would need a reviewed image change.
+       Done as the "Card" page under "Your player" in the sidebar, also
+       reached from the connection dialog's card bar: the used space as
+       music and other files, formats (hi-res and the two MP4 kinds apart),
+       the largest albums with their plays, artists by their albums' space
+       and possible duplicates by folder pair (same title and credit, lengths
+       within 2 s). Sizes are cached in IndexedDB until "Measure again".
+       Unit tests for the grouping and duplicates, a mock test (both
+       projects, the mock now sizes files by length and has a 24/96 album),
+       and the emulator acceptance through the MIPS service (21 desktop tests
+       passed, the new one measuring every guest file); screenshots in light,
+       dark and on a phone.
 2. [ ] Smart playlists kept as managed stock playlists (the earlier "service
        playlists"): by genre, decade (tag years), most played, not played for a
        while, recently added; the page creates and refreshes them with the

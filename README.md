@@ -17,6 +17,9 @@ playing on the DISC; nothing streams to the browser.
 > - adjust gain, balance, the DAC filter and DRE;
 > - add music: upload files or album folders, then let the player scan.
 >
+> - see what takes space on the player's card: music by format, the largest
+>   albums and artists, and possible duplicates in two folders.
+>
 > Covers and durations appear as tracks play: the player's library keeps
 > neither for most files.
 

@@ -16,6 +16,8 @@ export const SECTIONS = [
   { name: 'tracks', path: '/tracks', icon: 'music', title: 'tracks' },
   { name: 'favorites', path: '/favorites', icon: 'heart', title: 'favorites' },
   { name: 'playlists', path: '/playlists', icon: 'playlist', title: 'playlists' },
+  // The player's own card (round 16); on phones it opens from the connection dialog.
+  { name: 'card', path: '/card', icon: 'card', title: 'card_section', phone: false },
 ] as const satisfies readonly { name: string; path: string; icon: IconName; title: MessageKey; phone?: false }[]
 
 export type SectionName = (typeof SECTIONS)[number]['name']
@@ -39,6 +41,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/tracks', name: 'tracks', component: () => import('./views/TracksView.vue') },
   { path: '/favorites', name: 'favorites', component: () => import('./views/FavoritesView.vue') },
   { path: '/playlists', name: 'playlists', component: () => import('./views/PlaylistsView.vue') },
+  { path: '/card', name: 'card', component: () => import('./views/CardView.vue') },
   // The optional artist narrows a title group to one release (reference scope).
   { path: '/album/:name/:artist?', name: 'album', component: () => import('./views/AlbumView.vue') },
   { path: '/artist/:name', name: 'artist', component: () => import('./views/ArtistView.vue') },

@@ -10,8 +10,12 @@
  * album scope (its first member's embedded or folder cover), one metadata
  * read per track without a duration, two at a time in the background. Misses
  * are remembered for a week so they are not asked again on every load.
+ *
+ * The card space view asks for every file's size and format the same way
+ * (one metadata read per file, remembered until measured again).
  */
 import { reactive, readonly } from 'vue'
+import type { FileFacts } from '../domain/space'
 import type { Track } from '../domain/track'
 import { currentCover } from '../gateway/artwork'
 import { mediaCover, mediaInfo } from '../gateway/media'
@@ -33,6 +37,10 @@ interface EnrichmentModel {
   years: Record<string, number>
   /** Track path → sample rate and bit depth read from the file. */
   qualities: Record<string, { sampleRate: number; bitDepth: number | null; bitRate?: number | null }>
+  /** Track path → its size and format as measured (card space view). */
+  files: Record<string, FileFacts>
+  /** Metadata reads queued or under way. */
+  pending: number
 }
 
 const state = reactive<EnrichmentModel>({
@@ -42,6 +50,8 @@ const state = reactive<EnrichmentModel>({
   scopedCovers: {},
   years: {},
   qualities: {},
+  files: {},
+  pending: 0,
 })
 export const enrichment = readonly(state)
 
@@ -56,6 +66,7 @@ const YEARS = 'enrichment:years'
 const NO_YEAR = 'enrichment:no-year'
 const QUALITIES = 'enrichment:qualities'
 const NO_QUALITY = 'enrichment:no-quality'
+const FILES = 'enrichment:files'
 const RECHECK_MS = 7 * 86_400_000
 let noCover: Record<string, number> = {}
 let noDuration: Record<string, number> = {}
@@ -72,6 +83,7 @@ export async function loadEnrichment(): Promise<void> {
   noYear = (await cacheGet<Record<string, number>>(NO_YEAR)) ?? {}
   state.qualities = (await cacheGet<EnrichmentModel['qualities']>(QUALITIES)) ?? {}
   noQuality = (await cacheGet<Record<string, number>>(NO_QUALITY)) ?? {}
+  state.files = (await cacheGet<Record<string, FileFacts>>(FILES)) ?? {}
   for (const path of new Set([...Object.values(state.albumCovers), ...Object.values(state.scopedCovers)])) {
     const blob = await cacheGet<Blob>(coverKey(path))
     if (blob) state.covers[path] = blob
@@ -152,30 +164,43 @@ const pendingInfo = new Set<string>()
 let found: Record<string, number> = {}
 let foundYears: Record<string, number> = {}
 let foundQualities: EnrichmentModel['qualities'] = {}
+let foundFiles: Record<string, FileFacts> = {}
 let flush: ReturnType<typeof setTimeout> | undefined
 function saveInfo(): void {
   flush = undefined
   Object.assign(state.durations, found)
   Object.assign(state.years, foundYears)
   Object.assign(state.qualities, foundQualities)
+  Object.assign(state.files, foundFiles)
   found = {}
   foundYears = {}
   foundQualities = {}
+  foundFiles = {}
   void cacheSet(DURATIONS, { ...state.durations })
   void cacheSet(NO_DURATION, { ...noDuration })
   void cacheSet(YEARS, { ...state.years })
   void cacheSet(NO_YEAR, { ...noYear })
   void cacheSet(QUALITIES, { ...state.qualities })
   void cacheSet(NO_QUALITY, { ...noQuality })
+  void cacheSet(FILES, { ...state.files })
 }
 
 /** One metadata read of a file: its duration and the year of its tags, whichever are missing. */
 function wantInfo(path: string): void {
   if (pendingInfo.has(path)) return
   pendingInfo.add(path)
+  state.pending++
   durationTasks.push(async () => {
     try {
       const info = await mediaInfo(http, path)
+      if (info && info.bytes > 0)
+        foundFiles[path] = {
+          bytes: info.bytes,
+          format: info.format,
+          sampleRate: info.sampleRate,
+          bitDepth: info.bitDepth,
+          bitRate: info.bitRate,
+        }
       if (info?.durationMs) found[path] = info.durationMs
       else noDuration[path] = Date.now()
       if (info?.year) foundYears[path] = info.year
@@ -187,6 +212,7 @@ function wantInfo(path: string): void {
       // Asked again on a later load.
     } finally {
       pendingInfo.delete(path)
+      state.pending--
       // Batched, so lists re-render once per second, not once per track.
       flush ??= setTimeout(saveInfo, 1000)
     }
@@ -202,6 +228,18 @@ export function wantDurations(tracks: readonly Pick<Track, 'path' | 'durationMs'
     if (!path || track.durationMs !== null || state.durations[path] || recent(noDuration[path])) continue
     wantInfo(path)
   }
+}
+
+/** Queues a metadata read for every track whose file is not measured yet (card space). */
+export function wantSizes(tracks: readonly Pick<Track, 'path'>[]): void {
+  if (!connection.media) return
+  for (const track of tracks) if (track.path && !state.files[track.path]) wantInfo(track.path)
+}
+
+/** Forgets the measured files so the card space view reads them again. */
+export async function forgetSizes(): Promise<void> {
+  state.files = {}
+  await cacheSet(FILES, {})
 }
 
 /**

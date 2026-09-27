@@ -266,13 +266,16 @@ export function mediaRoute(kind, path) {
   const lyrics = LYRICS[track.TITLE]
   const cover = COVERED.has(track.ALBUM)
   if (kind === 'info') {
+    // Sizes follow the length (about 880 kbit/s); Blue Hours is a 24/96 release.
+    const hiRes = track.ALBUM === 'Blue Hours'
+    const seconds = (track.MEDIA_DURATION ?? track.DURATION ?? 180_000) / 1000 || 180
     const info = {
       path,
       format: 'flac',
-      bytes: 1_000_000,
+      bytes: Math.round(seconds * 110_000 * (hiRes ? 3.3 : 1)),
       durationMs: track.MEDIA_DURATION ?? (track.DURATION || null),
-      sampleRate: 44100,
-      bitDepth: 16,
+      sampleRate: hiRes ? 96000 : 44100,
+      bitDepth: hiRes ? 24 : 16,
       channels: 2,
       tags: {
         title: track.TITLE,

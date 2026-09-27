@@ -40,10 +40,10 @@ const label = () =>
     <nav class="slim:mt-35 phone:m-0 phone:flex phone:h-full phone:justify-around">
       <template v-for="section in SECTIONS" :key="section.name">
         <p
-          v-if="section.name === 'albums'"
+          v-if="section.name === 'albums' || section.name === 'card'"
           class="mx-14 mt-30 mb-13 text-10 font-bold tracking-[1.6px] text-muted slim:hidden phone:hidden"
         >
-          {{ t('my_collection') }}
+          {{ t(section.name === 'card' ? 'your_player' : 'my_collection') }}
         </p>
         <RouterLink
           :to="section.path"

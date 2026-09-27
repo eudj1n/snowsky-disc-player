@@ -1013,6 +1013,34 @@ test('offers the tones of the theme in effect and keeps the chosen palettes', as
   await expect(html).not.toHaveAttribute('data-light-palette', /.+/)
 })
 
+test('shows what takes space on the card by format, album and artist', async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  // The connection dialog's card bar leads to the view.
+  await openConnection(page)
+  await page
+    .getByRole('dialog')
+    .getByRole('link', { name: /What takes space/ })
+    .click()
+  await expect(page).toHaveURL(/#\/card$/)
+  await expect(page.getByRole('heading', { level: 1, name: 'Card' })).toBeVisible()
+  // Every library file is measured once through the media route.
+  await expect(page.getByText(/^Measured (\d+) of \1 files$/)).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByTestId('card-usage')).toContainText('used of 64 GB')
+  await expect(page.getByTestId('card-usage')).toContainText('18 GB free')
+  const formats = page.getByTestId('space-formats')
+  await expect(formats).toContainText('FLAC Hi-Res')
+  await expect(formats).toContainText('4 files')
+  // The mock's 24/96 release is the largest album and names its format.
+  const first = page.getByTestId('space-albums').getByRole('listitem').first()
+  await expect(first).toContainText('Blue Hours')
+  await expect(first).toContainText('FLAC Hi-Res')
+  await expect(page.getByTestId('space-artists').getByRole('listitem').first()).toContainText('Mira Sol')
+  await expect(page.getByRole('heading', { name: /Possible duplicates/ })).toBeVisible()
+  await first.getByRole('link', { name: 'Blue Hours' }).click()
+  await expect(page).toHaveURL(/#\/album\/Blue%20Hours/)
+})
+
 test('keeps the reference layout on a phone without horizontal scrolling', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 })
   await english(page)

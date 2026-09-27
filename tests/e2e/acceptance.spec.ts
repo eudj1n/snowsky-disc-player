@@ -355,6 +355,19 @@ test('keeps a play history with its source, favorites any row and reads the devi
   await disconnect(page)
 })
 
+test('measures what takes space on the card through the media route on stock', async ({ page }) => {
+  await english(page)
+  await page.goto('/#/card')
+  // Every library file on the guest card is measured by the MIPS service.
+  await expect(page.getByText(/^Measured (\d+) of \1 files$/)).toBeVisible({ timeout: 120_000 })
+  await expect(page.getByTestId('card-usage')).toContainText(/used of .+ free/)
+  // The generated guest media: FLAC and WAV tones.
+  const formats = page.getByTestId('space-formats')
+  await expect(formats).toContainText('FLAC')
+  await expect(formats).toContainText('WAV')
+  await expect(page.getByTestId('space-albums').getByRole('listitem').first()).toContainText(/\d+(\.\d)? [KMG]B$/)
+})
+
 test('shows card covers, file durations and both kinds of lyrics on stock', async ({ page }) => {
   const errors = watchErrors(page)
   await english(page)
