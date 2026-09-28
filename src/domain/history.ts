@@ -1,5 +1,5 @@
 import type { Album } from './album'
-import type { LibraryTrack } from './track'
+import { trackKey, type LibraryTrack } from './track'
 
 /**
  * Stock's play history (song.db RECORD_SONG through the reviewed
@@ -9,6 +9,8 @@ import type { LibraryTrack } from './track'
  */
 export interface PlayRecord {
   path: string
+  /** The CUE track a service play was of (combined-008); absent for a whole file. */
+  title?: string | null
   playCount: number
   /** LAST_PLAY_TIME as stock stores it; used for order only. */
   lastPlayedAt: number
@@ -58,16 +60,23 @@ export function sortTracks<T extends LibraryTrack>(
 ): T[] {
   if (sort === 'library') return [...tracks]
   if (sort === 'added') return [...tracks].sort((a, b) => (b.addedAt ?? 0) - (a.addedAt ?? 0))
-  const byPath = new Map(records.map((record) => [record.path, record]))
+  // A CUE track's plays are its own when the service named its title; older plays count for the file.
+  const byKey = new Map(
+    records.map((record) => [record.title ? `${record.path}\u0000${record.title.trim()}` : record.path, record]),
+  )
+  const recordOf = (track: T) => {
+    const key = trackKey(track)
+    return key ? (byKey.get(key) ?? (track.path ? byKey.get(track.path) : undefined)) : undefined
+  }
   if (sort === 'recent') {
     // Played tracks by their last play, newest first; the rest keep library order.
-    const last = (track: T) => (track.path ? (byPath.get(track.path)?.lastPlayedAt ?? 0) : 0)
+    const last = (track: T) => recordOf(track)?.lastPlayedAt ?? 0
     return tracks
       .map((track, index) => ({ track, index, last: last(track) }))
       .sort((a, b) => b.last - a.last || a.index - b.index)
       .map((entry) => entry.track)
   }
-  const played = (track: T) => (track.path ? byPath.get(track.path) : undefined)
+  const played = (track: T) => recordOf(track)
   return tracks
     .map((track, index) => ({ track, index, record: played(track) }))
     .sort((a, b) => {
@@ -100,6 +109,8 @@ export interface PlayContext {
 
 export interface ServicePlay {
   path: string
+  /** The CUE track's title (combined-008 counts a CUE image per track); null for a whole file. */
+  title: string | null
   at: number
   seconds: number
   context: PlayContext
@@ -121,6 +132,7 @@ export function servicePlays(value: unknown): ServicePlay[] {
     return [
       {
         path,
+        title: text(r.title),
         at: whole(r.t) ?? 0,
         seconds: whole(r.s) ?? 0,
         context: {
@@ -137,16 +149,17 @@ export function servicePlays(value: unknown): ServicePlay[] {
   })
 }
 
-/** Per-track counts from the service's plays, ordered by their last play (the list order). */
+/** Per-track counts from the service's plays (a CUE track by its title), ordered by their last play (the list order). */
 export function servicePlayRecords(plays: readonly ServicePlay[]): PlayRecord[] {
-  const byPath = new Map<string, PlayRecord>()
+  const byKey = new Map<string, PlayRecord>()
   plays.forEach((play, index) => {
-    const record = byPath.get(play.path) ?? { path: play.path, playCount: 0, lastPlayedAt: 0 }
+    const key = play.title ? `${play.path}\u0000${play.title}` : play.path
+    const record = byKey.get(key) ?? { path: play.path, title: play.title, playCount: 0, lastPlayedAt: 0 }
     record.playCount++
     record.lastPlayedAt = index + 1
-    byPath.set(play.path, record)
+    byKey.set(key, record)
   })
-  return [...byPath.values()]
+  return [...byKey.values()]
 }
 
 const MASK = 0xffffffffffffffffn

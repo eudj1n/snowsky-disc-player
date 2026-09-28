@@ -6,7 +6,7 @@ import {
   external,
   LANGUAGES,
   openConnection,
-  TOKEN,
+  SERIAL,
   watchErrors,
   PAIRING_FIELD,
 } from './helpers'
@@ -58,8 +58,8 @@ test('connects as the single owner and reads identity, then disconnects', async 
   expect(errors).toEqual([])
 })
 
-test('pairs with the card token and toggles playback there and back', async ({ page }) => {
-  test.skip(!TOKEN, 'E2E_TOKEN is required against a real gateway')
+test('pairs with the serial number and toggles playback there and back', async ({ page }) => {
+  test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
   const errors = watchErrors(page)
   await english(page)
   await connectAndPair(page)
@@ -75,7 +75,7 @@ test('pairs with the card token and toggles playback there and back', async ({ p
 })
 
 test('plays the featured album from Home with a verified result', async ({ page }) => {
-  test.skip(!TOKEN, 'E2E_TOKEN is required against a real gateway')
+  test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
   const errors = watchErrors(page)
   await english(page)
   const play = page.getByRole('button', { name: 'Play album' })
@@ -91,7 +91,7 @@ test('plays the featured album from Home with a verified result', async ({ page 
 })
 
 test('plays a track from an album page and shows it in Now Playing and Queue', async ({ page }) => {
-  test.skip(!TOKEN || external, 'Needs the mock collection and token')
+  test.skip(!SERIAL || external, 'Needs the mock collection and a serial number')
   const errors = watchErrors(page)
   await english(page)
   await connectAndPair(page)
@@ -278,13 +278,13 @@ test('shows genre spellings that differ only in case and spacing as one genre', 
   await expect(page.getByRole('heading', { level: 1, name: 'Alternative' })).toBeVisible()
 })
 
-test('pairs with the player serial number when the card allows it', async ({ page }) => {
+test('pairs with the player serial number, typed with spaces', async ({ page }) => {
   test.skip(external, 'Needs the mock collection')
   await english(page)
   await openConnection(page)
   const dialog = page.getByRole('dialog')
   await expect(dialog.getByText('SN under About device')).toBeVisible()
-  await dialog.getByLabel('Serial number or token').fill('0000 0000 0000 00')
+  await dialog.getByLabel('Serial number', { exact: true }).fill('0000 0000 0000 00')
   await dialog.getByRole('button', { name: 'Pair' }).click()
   await expect(dialog.getByTestId('paired')).toBeVisible()
   await page.keyboard.press('Escape')
@@ -299,20 +299,20 @@ test('forgets a credential the player refuses at once', async ({ page }) => {
   await english(page)
   await openConnection(page)
   const dialog = page.getByRole('dialog')
-  await dialog.getByLabel('Serial number or token').fill('1111 1111 1111 11')
+  await dialog.getByLabel('Serial number', { exact: true }).fill('1111 1111 1111 11')
   await dialog.getByRole('button', { name: 'Pair' }).click()
   await dialog.getByRole('button', { name: 'Connect', exact: true }).click()
-  await expect(dialog.getByText('did not accept the saved token or serial number')).toBeVisible()
-  await expect(dialog.getByLabel('Serial number or token')).toBeVisible()
+  await expect(dialog.getByText('did not accept the saved serial number')).toBeVisible()
+  await expect(dialog.getByLabel('Serial number', { exact: true })).toBeVisible()
 })
 
 test('connects on the first Play when paired, then follows keyboard shortcuts', async ({ page }) => {
-  test.skip(!TOKEN || external, 'Needs the mock collection and token')
+  test.skip(!SERIAL || external, 'Needs the mock collection and a serial number')
   const errors = watchErrors(page)
   await english(page)
   await openConnection(page)
   const dialog = page.getByRole('dialog')
-  await dialog.getByLabel(PAIRING_FIELD).fill(TOKEN ?? '')
+  await dialog.getByLabel(PAIRING_FIELD).fill(SERIAL ?? '')
   await dialog.getByRole('button', { name: 'Pair' }).click()
   await page.keyboard.press('Escape')
   await page.goto('/#/album/Inner%20Space')
@@ -348,7 +348,7 @@ test('sorts albums with chips and remembers the choice', async ({ page }) => {
 })
 
 test.describe('player controls on the mock', () => {
-  test.skip(() => !TOKEN || external, 'Needs the mock player and token')
+  test.skip(() => !SERIAL || external, 'Needs the mock player and a serial number')
 
   async function openPanel(page: Page, section: 'Open Now Playing panel' | 'Open queue') {
     await page.getByRole('button', { name: section }).click()
@@ -1036,7 +1036,7 @@ test('offers the tones of the theme in effect and keeps the chosen palettes', as
 
 test('sings along in karaoke: word timings sweep the current line and at most seven lines show', async ({ page }) => {
   test.skip(external, 'Needs the mock collection')
-  test.skip(!TOKEN, 'E2E_TOKEN is required against a real gateway')
+  test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
   await english(page)
   await connectAndPair(page)
   await page.goto('/#/album/Inner%20Space/Forma')
@@ -1082,7 +1082,7 @@ test('sings along in karaoke: word timings sweep the current line and at most se
 
 test('browses the card, creates a folder and adds music into it', async ({ page }, info) => {
   test.skip(external, 'Needs the mock collection')
-  test.skip(!TOKEN, 'E2E_TOKEN is required against a real gateway')
+  test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
   await english(page)
   await connectAndPair(page)
   await page.goto('/#/card/files')
@@ -1097,6 +1097,8 @@ test('browses the card, creates a folder and adds music into it', async ({ page 
   await expect(orbit.getByRole('link', { name: 'Inner Space' })).toBeVisible()
   await page.getByTestId('files-path').getByRole('link', { name: 'Card' }).click()
   await expect(list.getByRole('link', { name: 'Forma - Inner Space' })).toBeVisible()
+  // The service's .disc folder is not the owner's to browse.
+  await expect(list.getByText('.disc')).toHaveCount(0)
 
   const name = `Test folder ${info.project.name}`
   await page.getByRole('button', { name: 'New folder' }).click()
@@ -1119,7 +1121,7 @@ test('browses the card, creates a folder and adds music into it', async ({ page 
 
 test('plays a folder and a file from the file manager, and pauses the playing one', async ({ page }) => {
   test.skip(external, 'Needs the mock collection')
-  test.skip(!TOKEN, 'E2E_TOKEN is required against a real gateway')
+  test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
   await english(page)
   await connectAndPair(page)
   await page.goto('/#/card/files')
@@ -1146,7 +1148,7 @@ test('plays a folder and a file from the file manager, and pauses the playing on
 
 test('shows the track stock remembers when it reports nothing, and Play continues it', async ({ page }) => {
   test.skip(external, 'Needs the mock collection')
-  test.skip(!TOKEN, 'E2E_TOKEN is required against a real gateway')
+  test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
   await english(page)
   await connectAndPair(page)
   await page.goto('/#/album/Night%20Drive/Northline')

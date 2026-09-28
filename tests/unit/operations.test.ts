@@ -43,7 +43,7 @@ async function session(reply: (data: string) => string[]) {
     })
     return socket
   })
-  opened.pair('t'.repeat(43))
+  opened.pair('1234567890ABCD')
   return { socket, session: opened }
 }
 

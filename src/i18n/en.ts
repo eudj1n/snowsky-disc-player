@@ -263,7 +263,7 @@ export const en = {
   selection_unavailable: 'Connect and pair this browser to play from the collection.',
   please_wait_for_the_current_request: 'Please wait for the current request.',
   result_unconfirmed_the_command_was_not_retried: 'Result unconfirmed. The command was not retried.',
-  pair_to_control: 'Pair this browser with the card token to control playback.',
+  pair_to_control: "Pair this browser with the player's serial number to control playback.",
 
   already_set: 'Already set.',
   track_changed: 'The track changed. Choose the position again.',
@@ -461,22 +461,18 @@ export const en = {
   control_busy: 'Another client controls the player. Disconnect it first.',
   incompatible: 'This release was built for another firmware. Controls stay disabled.',
   closed_credential:
-    'The player did not accept the saved token or serial number, so this browser forgot it. Enter it again to enable controls. After five wrong attempts the player refuses pairing from this device for ten minutes.',
-  closed_not_admitted: 'The player refused the session (not admitted or wrong pairing token).',
+    'The player did not accept the saved serial number, so this browser forgot it. Enter it again to enable controls. After five wrong attempts the player refuses pairing from this device for ten minutes.',
+  closed_not_admitted: 'The player refused the session (not admitted or wrong serial number).',
   closed_network: 'The connection was lost.',
   closed_stock: 'The player ended the session.',
   gateway_unreachable: 'The DISC service does not answer.',
   pairing: 'Pairing',
-  pairing_hint: 'Paste the token from DISC_WEB_TOKEN on the memory card to enable controls.',
-  pairing_hint_serial:
-    "Enter the player's serial number (SN under About device) or paste the token from DISC_WEB_TOKEN on the memory card to enable controls.",
-  pairing_serial_or_token: 'Serial number or token',
-  serial_invalid: 'Enter the serial number (letters and digits) or a token of 32 to 64 characters.',
-  pairing_token: 'Pairing token',
+  pairing_hint: "Enter the player's serial number (SN under About device) to enable controls.",
+  pairing_serial: 'Serial number',
+  serial_invalid: 'The serial number has 6 to 32 letters and digits.',
+  forget_serial: 'Forget serial number',
   pair: 'Pair',
-  forget_token: 'Forget token',
   paired: 'This browser is paired.',
-  token_invalid: 'A token has 32 to 64 letters, digits, - or _.',
 } as const
 
 export type MessageKey = keyof typeof en

@@ -49,9 +49,10 @@ const INVALID = /[\u0000-\u001f\u007f/\\]/
 const encoder = new TextEncoder()
 
 /**
- * Why a new folder name cannot be used, or null when it can. The service
- * keeps its own markers and the page release (`DISC_WEB…`, `www`) and hidden
- * names out of reach; FAT forbids a trailing dot or space and some symbols.
+ * Why a new folder name cannot be used, or null when it can. Since
+ * combined-008 everything the service keeps lives in the hidden `.disc`
+ * folder and the service refuses any change below a hidden folder; FAT
+ * forbids a trailing dot or space and some symbols.
  */
 export function folderNameProblem(name: string, parent: string): 'empty' | 'reserved' | 'invalid' | null {
   if (name.trim() === '') return 'empty'
@@ -66,10 +67,13 @@ export function folderNameProblem(name: string, parent: string): 'empty' | 'rese
     encoder.encode(cardFolder(joinFolder(parent, name))).length > 1000
   )
     return 'invalid'
-  const top = folderParts(parent)[0] ?? name
-  if (name.startsWith('.') || /^disc_web/i.test(name) || /^disc_web/i.test(top) || top.toLowerCase() === 'www')
-    return 'reserved'
+  if ([...folderParts(parent), name].some((part) => part.startsWith('.'))) return 'reserved'
   return null
+}
+
+/** Hidden entries (the service's `.disc`, what macOS leaves) are not the owner's files to browse. */
+export function visibleEntries(entries: readonly FolderEntry[]): FolderEntry[] {
+  return entries.filter((entry) => !entry.name.startsWith('.'))
 }
 
 /** Stock's listing sorted as a file manager does: folders first, then by name in the locale's order. */

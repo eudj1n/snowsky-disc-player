@@ -7,6 +7,7 @@ import {
   joinFolder,
   relativeFolder,
   sortEntries,
+  visibleEntries,
   type FolderEntry,
 } from '../../src/domain/files'
 import type { LibraryTrack } from '../../src/domain/track'
@@ -61,11 +62,16 @@ describe('card folders', () => {
     for (const name of ['a/b', 'a\\b', 'x:y', 'what?', 'trailing.', ' lead', 'tab\tname', '..'])
       expect(folderNameProblem(name, '')).toBe('invalid')
     expect(folderNameProblem('.hidden', '')).toBe('reserved')
-    expect(folderNameProblem('DISC_WEB_X', '')).toBe('reserved')
-    expect(folderNameProblem('www', '')).toBe('reserved')
+    expect(visibleEntries([entry('.disc', true), entry('Music', true), entry('._a.flac')]).map((e) => e.name)).toEqual([
+      'Music',
+    ])
+    // combined-008: only hidden names are the service's; DISC_WEB… and www are ordinary names now.
+    expect(folderNameProblem('DISC_WEB_X', '')).toBeNull()
+    expect(folderNameProblem('www', '')).toBeNull()
+    expect(folderNameProblem('www', '.disc')).toBe('reserved')
     // Nothing is created inside the page release or the service's folders either.
-    expect(folderNameProblem('assets', 'www')).toBe('reserved')
-    expect(folderNameProblem('x', 'DISC_WEB_HISTORY')).toBe('reserved')
+    expect(folderNameProblem('assets', 'www')).toBeNull()
+    expect(folderNameProblem('x', 'DISC_WEB_HISTORY')).toBeNull()
     expect(folderNameProblem('www', 'Music')).toBeNull()
   })
 

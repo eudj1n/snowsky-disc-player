@@ -93,7 +93,7 @@ describe('the service play history (next image)', () => {
       [10, null],
       [30, '0123456789abcdef'],
     ])
-    expect(servicePlayRecords(plays)).toEqual([{ path: tracks[0]?.path, playCount: 2, lastPlayedAt: 2 }])
+    expect(servicePlayRecords(plays)).toEqual([{ path: tracks[0]?.path, title: null, playCount: 2, lastPlayedAt: 2 }])
   })
 
   it('names the source of a play by its queue, then by the fields its rows shared', () => {
@@ -138,6 +138,38 @@ describe('the service play history (next image)', () => {
     const recent = recentSources(plays, (ctx) => playSource(ctx, index, albums), 8)
     expect(recent.map(({ source }) => source.kind)).toEqual(['album', 'genre'])
     expect(recent[0]?.path).toBe(tracks[1]?.path)
+  })
+
+  it('counts a CUE image per track by the title the service recorded', () => {
+    const image = '/tmp/sdcard/Live/Image.flac'
+    const cue = (id: number, title: string): LibraryTrack => ({
+      ...track(id, 'Live', 'Band'),
+      path: image,
+      title,
+      cue: true,
+    })
+    const parts = [cue(11, 'Part One'), cue(12, 'Part Two'), cue(13, 'Part Three')]
+    const plays = servicePlays({
+      records: [
+        { v: 1, t: 1, path: image, title: 'Part Two', s: 40, ctx: {} },
+        { v: 1, t: 2, path: image, title: 'Part Two', s: 40, ctx: {} },
+        { v: 1, t: 3, path: image, title: 'Part One', s: 40, ctx: {} },
+      ],
+    })
+    expect(plays.map((play) => play.title)).toEqual(['Part Two', 'Part Two', 'Part One'])
+    const records = servicePlayRecords(plays)
+    expect(records.map((record) => [record.title, record.playCount])).toEqual([
+      ['Part Two', 2],
+      ['Part One', 1],
+    ])
+    expect(sortTracks(parts, 'played', records).map((item) => item.title)).toEqual([
+      'Part Two',
+      'Part One',
+      'Part Three',
+    ])
+    // A play recorded before the service named CUE tracks counts for each track of the file.
+    const older = servicePlayRecords(servicePlays({ records: [{ v: 1, t: 1, path: image, s: 40, ctx: {} }] }))
+    expect(sortTracks(parts, 'played', older).map((item) => item.title)).toEqual(['Part One', 'Part Two', 'Part Three'])
   })
 
   it('orders tracks by their last play for the history sort', () => {

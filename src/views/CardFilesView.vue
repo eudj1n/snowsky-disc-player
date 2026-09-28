@@ -13,7 +13,15 @@ import Artwork from '../components/artwork/Artwork.vue'
 import CardTabs from '../components/card/CardTabs.vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
 import { formatBytes } from '../domain/device'
-import { breadcrumbs, folderNameProblem, folderParts, folderStats, joinFolder, sortEntries } from '../domain/files'
+import {
+  breadcrumbs,
+  folderNameProblem,
+  folderParts,
+  folderStats,
+  joinFolder,
+  sortEntries,
+  visibleEntries,
+} from '../domain/files'
 import { CARD_ROOT } from '../domain/imports'
 import type { LibraryTrack } from '../domain/track'
 import { createFolder, listFolder, MAX_ENTRIES, type FolderListing } from '../gateway/files'
@@ -66,7 +74,7 @@ const byPath = computed(() => {
 })
 const bytes = (value: number) => formatBytes(value, locale.value)
 const rows = computed(() =>
-  sortEntries(listing.value?.entries ?? [], locale.value).map((entry) => {
+  sortEntries(visibleEntries(listing.value?.entries ?? []), locale.value).map((entry) => {
     const path = joinFolder(folder.value, entry.name)
     if (entry.folder) return { entry, path, stats: folderStats(tracks.value, enrichment.files, path), track: null }
     const card = CARD_ROOT + path

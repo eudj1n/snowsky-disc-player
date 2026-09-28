@@ -926,19 +926,27 @@ all with the same PATH (IS_CUE=1, TRACK, OFFSET), and a202 reports that path,
 - [x] The sidebar's "Good music. Always within reach." note is gone, so the
       sidebar does not scroll.
 
-## Disc Player release with combined-008 (agreed 2026-09-28, not started)
+## Disc Player release with combined-008 (in progress)
 
 The owner's plan for a public release under the name **Disc Player**; the
 whole scope, the image items and the installer track are kept in the service
-plan (snowsky-disc-service `docs/plan.md`, "Combined-008"). Discussed in
-full; waiting for the owner's go-ahead. The page's part:
+plan (snowsky-disc-service `docs/plan.md`, "Combined-008"). The service's
+stages 1 to 7 are done. Scope of this round (owner, 2026-09-28): the
+visualizer and the enrichment providers go to sessions of their own; the
+compatibility message and the name Disc Player wait; the rest goes ahead,
+plus macOS leftovers on the Card page. The page's part:
 
-- [ ] Pairing by the player's serial number only (no token file, no SN
-      marker): the connection dialog asks for the SN once and keeps it.
-- [ ] Everything the service keeps lives in `.disc/` on the card: the page
+- [x] Pairing by the player's serial number only (no token file, no SN
+      marker): the connection dialog asks for the SN once and keeps it
+      (a new storage key, so an old token is never sent). Unit, component
+      and mock browser tests (105 passed).
+- [x] Everything the service keeps lives in `.disc/` on the card: the page
       releases (`.disc/www`), the database; the file manager hides `.disc`
-      and uploads nothing there.
-- [ ] Play history from the service's database; pinned artists and albums
+      (every hidden entry) and creates nothing below a hidden folder;
+      `DISC_WEB…` and `www` are ordinary names now.
+- [ ] Play history from the service's database (same route; a CUE track's
+      plays now count on their own by the title the service records: done,
+      unit tests); pinned artists and albums
       (round 16, item 8) and smart playlist definitions (item 2) on its
       card-catalog collections.
 - [ ] Disliked tracks, the store's acceptance case (owner, 2026-09-28): a

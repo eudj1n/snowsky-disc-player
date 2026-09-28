@@ -39,10 +39,16 @@ page records how the app uses it; `src/gateway/` is the only code that does.
 
 ## Pairing
 
-The card holds `DISC_WEB_TOKEN` (32–64 URL-safe characters). The user pastes
-it once; the app keeps it in `localStorage` for this browser. Rotating or
-deleting the file on the card revokes it at the gateway, which re-reads the
-file at every mutation. Reads and static files work without a token.
+Since combined-008 the player's serial number (About device → SN) is the only
+credential: pairing needs the player on Wi-Fi, which is set up on the device
+itself, so there is no card token to provision. The user types it once
+(spaces are dropped); the app keeps it in `localStorage` for this browser
+(`disc-player.serial`; a token kept by an earlier page is never sent) and
+sends it as `X-Disc-Token` and in the WebSocket `token:` frame. The gateway
+compares it with the player's own at every change and locks an address out
+after five wrong attempts, so a refused SN is forgotten at once. Reads and
+static files work without it. The file manager hides hidden entries (the
+service's `.disc`, what macOS leaves) and creates nothing below them.
 
 ## Language
 

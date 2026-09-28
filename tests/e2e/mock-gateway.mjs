@@ -35,10 +35,9 @@ const BUNDLE = '0123456789abcdef'
 const LANGUAGE = Number(process.env.MOCK_GATEWAY_LANGUAGE ?? 9)
 // Optional latency for data reads, to see loading skeletons in development.
 const DELAY = Number(process.env.MOCK_GATEWAY_DELAY ?? 0)
-const TOKEN = process.env.MOCK_GATEWAY_TOKEN ?? 'mock-token-0123456789-abcdefghijklmnop'
-// The card of this mock enables SN pairing; the emulator's all-zero SN stands in.
-const SERIAL = '00000000000000'
-const credential = (value) => value === TOKEN || value === SERIAL
+// Since combined-008 the player's serial number is the only credential; the emulator's all-zero SN stands in.
+const SERIAL = process.env.MOCK_GATEWAY_SERIAL ?? '00000000000000'
+const credential = (value) => value === SERIAL
 const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'"
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -81,6 +80,8 @@ function folderTracks(path) {
 function folderEntries(folder) {
   const prefix = folder ? `/tmp/sdcard/${folder}/` : '/tmp/sdcard/'
   const paths = [
+    // Like a combined-008 card: the service's own hidden folder at the root (stock's listing shows it here).
+    '/tmp/sdcard/.disc/www/',
     ...TRACKS.map((track) => track.PATH),
     ...player.uploads.map((upload) => upload.path),
     ...[...player.folders].map((created) => `/tmp/sdcard/${created}/`),

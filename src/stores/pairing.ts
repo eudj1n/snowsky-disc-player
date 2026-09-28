@@ -1,15 +1,16 @@
-/** The card pairing token (or the player's serial number where the card
- * allows it), kept in this browser only. Rotating or deleting DISC_WEB_TOKEN,
- * or removing DISC_WEB_SN_PAIRING, on the card revokes it at the gateway. */
+/** The player's serial number, the pairing credential since combined-008,
+ * kept in this browser only and sent as the gateway's X-Disc-Token. The
+ * gateway compares it with the player's own at every change. */
 import { reactive, readonly } from 'vue'
-import { normalizeCredential } from '../domain/pairing'
+import { normalizeSerial } from '../domain/pairing'
 import type { GatewaySession } from '../gateway/session'
 import { readPreference, writePreference } from '../lib/storage'
 import { activeSession, connection, onSessionOpened } from './connection'
 
-const KEY = 'disc-player.token'
-/** The form admits a serial number only when the gateway reports SN pairing. */
-const stored = (): string | null => normalizeCredential(readPreference(KEY) ?? '', true)
+// A new key: a card token kept by an earlier page is never sent to a gateway
+// that only knows the SN (every refusal counts against the attempt limit).
+const KEY = 'disc-player.serial'
+const stored = (): string | null => normalizeSerial(readPreference(KEY) ?? '')
 const state = reactive({ stored: stored() !== null, paired: false })
 export const pairing = readonly(state)
 
@@ -30,7 +31,7 @@ function pair(session: GatewaySession): void {
 onSessionOpened(pair)
 
 export function saveToken(value: string): boolean {
-  const token = normalizeCredential(value, true)
+  const token = normalizeSerial(value)
   if (!token) return false
   writePreference(KEY, token)
   state.stored = true

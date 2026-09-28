@@ -10,7 +10,7 @@
  */
 import { decodeRecord, encodeRecord, type DiscRecord } from './record'
 import { requestId as newRequestId } from './ids'
-import { SERIAL, TOKEN } from '../domain/pairing'
+import { SERIAL } from '../domain/pairing'
 
 export type CloseReason =
   | 'client'
@@ -138,8 +138,7 @@ export class GatewaySession {
    * credential, so a 1008 before any later request is answered closes the
    * session as 'credential'. */
   pair(token: string): void {
-    if (!TOKEN.test(token) && !SERIAL.test(token))
-      throw new RangeError('Pairing needs a 32..64 character token or a serial number')
+    if (!SERIAL.test(token)) throw new RangeError('Pairing needs the player serial number')
     this.assertOpen()
     this.socket.send(`token:${token}`)
     this.paired = true

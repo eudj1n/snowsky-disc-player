@@ -62,7 +62,7 @@ async function open(onRecord: (data: string) => string[]) {
     })
     return socket
   })
-  session.pair('t'.repeat(43))
+  session.pair('1234567890ABCD')
   return { socket, session }
 }
 

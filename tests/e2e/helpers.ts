@@ -2,7 +2,8 @@
 import { expect, type Page } from '@playwright/test'
 
 export const external = Boolean(process.env.E2E_BASE_URL)
-export const TOKEN = process.env.E2E_TOKEN ?? (external ? undefined : 'mock-token-0123456789-abcdefghijklmnop')
+/** The player's serial number (combined-008 pairs by SN only); the mock and the emulator guest use all zeros. */
+export const SERIAL = process.env.E2E_SERIAL ?? (external ? undefined : '00000000000000')
 export const LANGUAGES = ['zh-Hans', 'zh-Hant', 'en', 'ja', 'ko', 'es', 'it', 'de', 'fr', 'ru']
 
 /** Collects console errors and CSP violations: the gateway CSP is 'self' only. */
@@ -26,15 +27,15 @@ export async function openConnection(page: Page): Promise<void> {
   await expect(page.getByRole('dialog')).toBeVisible()
 }
 
-/** The pairing field; its label names the SN when the card enables SN pairing. */
-export const PAIRING_FIELD = /Pairing token|Serial number or token/
+/** The pairing field's label. */
+export const PAIRING_FIELD = 'Serial number'
 
 export async function connectAndPair(page: Page): Promise<void> {
   await openConnection(page)
   const dialog = page.getByRole('dialog')
   const field = dialog.getByLabel(PAIRING_FIELD)
-  if (TOKEN && (await field.count())) {
-    await field.fill(TOKEN)
+  if (SERIAL && (await field.count())) {
+    await field.fill(SERIAL)
     await dialog.getByRole('button', { name: 'Pair' }).click()
   }
   await dialog.getByRole('button', { name: 'Connect', exact: true }).click()

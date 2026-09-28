@@ -93,11 +93,11 @@ describe('gateway session', () => {
   it('refuses mutations before pairing and sends token, request ID and record in order', async () => {
     const { session, socket } = await openSession({ '0201000C0000': [encodeRecord('a202', '{"state":0}')] })
     expect(await session.mutate('0201', '0000', 'a202')).toEqual({ status: 'unsent', reason: 'not paired' })
-    session.pair('t'.repeat(43))
+    session.pair('1234567890ABCD')
     const outcome = await session.mutate('0201', '0000', 'a202')
     expect(outcome.status).toBe('replied')
     const tail = socket.sent.slice(-3)
-    expect(tail[0]).toBe(`token:${'t'.repeat(43)}`)
+    expect(tail[0]).toBe('token:1234567890ABCD')
     expect(tail[1]).toMatch(/^request:[A-Za-z0-9_-]{32}$/)
     expect(tail[2]).toBe('0201000C0000')
     const second = await session.mutate('0201', '0000', 'a202')
@@ -108,7 +108,7 @@ describe('gateway session', () => {
 
   it('reports an unanswered mutation as uncertain and never resends it', async () => {
     const { session, socket } = await openSession()
-    session.pair('t'.repeat(43))
+    session.pair('1234567890ABCD')
     const mutation = session.mutate('0201', '0000', 'a202', 4000)
     await vi.advanceTimersByTimeAsync(4000)
     expect(await mutation).toMatchObject({ status: 'uncertain', reason: 'timeout' })
@@ -137,7 +137,7 @@ describe('gateway session', () => {
 
     const accepted = await openSession({ '05010008': [encodeRecord('a501', '{}')] })
     accepted.session.onClose((reason) => reasons.push(reason))
-    accepted.session.pair('t'.repeat(43))
+    accepted.session.pair('1234567890ABCD')
     await accepted.session.read('0501', 'a501')
     accepted.socket.serverClose(1008)
     expect(reasons).toEqual(['credential', 'not-admitted'])
