@@ -1035,7 +1035,8 @@ Without a new image (card-only, can come first):
       favorites and playlist entries whose file is gone stay in place,
       dimmed and not playable, as in Apple Music and Yandex Music, their
       heart and menu (only what needs no file) still working. Unit tests and
-      mock browser tests (119 passed).
+      mock browser tests (119 passed); published on the owner's card as release
+      `95a93be3653aac77` (the previous `784edefa1737c1cd` kept).
 - [x] Owner's review of the layout (2026-09-28): the sidebar toggle is a
       round button on the sidebar's edge, after Reddit, that stays in place
       while the page scrolls; the search takes the whole free width of the
