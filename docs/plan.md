@@ -930,8 +930,8 @@ all with the same PATH (IS_CUE=1, TRACK, OFFSET), and a202 reports that path,
 
 The owner's plan for a public release under the name **Disc Player**; the
 whole scope, the image items and the installer track are kept in the service
-plan (snowsky-disc-service `docs/plan.md`, "Combined-008"). The owner wants
-to discuss a few more points before work begins. The page's part:
+plan (snowsky-disc-service `docs/plan.md`, "Combined-008"). Discussed in
+full; waiting for the owner's go-ahead. The page's part:
 
 - [ ] Pairing by the player's serial number only (no token file, no SN
       marker): the connection dialog asks for the SN once and keeps it.
