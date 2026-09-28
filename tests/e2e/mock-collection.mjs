@@ -386,14 +386,23 @@ function queueContext(type, rows) {
   }
 }
 const byAlbum = (album, artist) => TRACKS.filter((t) => t.ALBUM === album && (!artist || t.ARTIST === artist))
+/** An album deleted from the card since it was played: neither it nor its artist is in the library. */
+const GONE = [1, 2].map((n) => ({
+  PATH: `/tmp/sdcard/Vanished - Gone Album/0${String(n)} Gone.flac`,
+  ALBUM: 'Gone Album',
+  ARTIST: 'Vanished',
+  GENRE: 'Ambient',
+}))
 export const HISTORY = [
-  // Oldest first: an album, a genre, an artist, all tracks, a playlist, and the album again.
+  // Oldest first: an album, a genre, an artist, all tracks, a playlist, the album again,
+  // and last an album deleted since (it names nothing on the shelf).
   [byAlbum('Inner Space', 'Forma'), 3, 0],
   [TRACKS.filter((t) => t.GENRE === 'Jazz'), 2, 1],
   [TRACKS.filter((t) => t.ARTIST === 'Northline'), 2, 0],
   [TRACKS, 1, 7],
   [PLAYLISTS[0].members, 5, 0],
   [byAlbum('Inner Space', 'Forma'), 3, 1],
+  [GONE, 3, 0],
 ].map(([rows, type, index], n) => ({
   v: 1,
   t: 1790500000 + n * 600,

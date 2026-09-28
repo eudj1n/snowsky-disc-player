@@ -3,6 +3,7 @@ import { groupReleases } from '../../src/domain/album'
 import {
   pathsHash,
   playRecords,
+  libraryNames,
   playSource,
   recentlyPlayedAlbums,
   recentSources,
@@ -99,7 +100,7 @@ describe('the service play history (next image)', () => {
   it('names the source of a play by its queue, then by the fields its rows shared', () => {
     const loved = [tracks[0], tracks[3]] as LibraryTrack[]
     const index = sourceIndex({ albums, tracks: library, favorites: loved })
-    const source = (ctx: PlayContext) => playSource(ctx, index, albums)
+    const source = (ctx: PlayContext) => playSource(ctx, index, albums, libraryNames(library))
     expect(source(context(paths(library.filter((t) => t.album === 'A')), 3))).toMatchObject({
       kind: 'album',
       scope: 'X',
@@ -116,7 +117,13 @@ describe('the service play history (next image)', () => {
       scope: 'Y',
     })
     expect(source({ ...context(['/gone.flac'], 2), genre: 'Jazz' })).toEqual({ kind: 'genre', genre: 'Jazz' })
+    expect(source({ ...context(['/gone.flac'], 2), artist: 'X' })).toEqual({ kind: 'artist', artist: 'X' })
     expect(source(context(['/gone.flac'], 2))).toBeNull()
+    // Deleted from the card: an album queue whose album is gone is not its artist or genre, and an
+    // artist or genre with no track left names nothing.
+    expect(source({ ...context(['/gone.flac'], 3), album: 'Gone', artist: 'X', genre: 'Jazz' })).toBeNull()
+    expect(source({ ...context(['/gone.flac'], 2), artist: 'Nobody' })).toBeNull()
+    expect(source({ ...context(['/gone.flac'], 2), genre: 'Polka' })).toBeNull()
   })
 
   it('lists the sources the listener started, newest first, each once, without all tracks', () => {
@@ -135,7 +142,7 @@ describe('the service play history (next image)', () => {
         { v: 1, t: 4, path: tracks[2]?.path, s: 40, ctx: context(paths(library), 1) },
       ],
     })
-    const recent = recentSources(plays, (ctx) => playSource(ctx, index, albums), 8)
+    const recent = recentSources(plays, (ctx) => playSource(ctx, index, albums, libraryNames(library)), 8)
     expect(recent.map(({ source }) => source.kind)).toEqual(['album', 'genre'])
     expect(recent[0]?.path).toBe(tracks[1]?.path)
   })

@@ -7,6 +7,7 @@
  */
 import { computed, reactive, readonly, watch } from 'vue'
 import {
+  libraryNames,
   pathsHash,
   playRecords,
   playSource,
@@ -48,19 +49,22 @@ const index = computed(() => {
   return map
 })
 
+/** The artists and genres the library still has (a play names only those). */
+const names = computed(() => libraryNames(tracks.value))
+
 /** The sources the listener started, newest first (the home shelf). */
 export const recentSourcesShown = computed(() =>
-  recentSources(state.plays, (context) => playSource(context, index.value, albums.value), 8),
+  recentSources(state.plays, (context) => playSource(context, index.value, albums.value, names.value), 8),
 )
 
 /** Where one play came from, for the track history. */
 export function sourceOf(play: ServicePlay): PlaySource | null {
-  return playSource(play.context, index.value, albums.value)
+  return playSource(play.context, index.value, albums.value, names.value)
 }
 
 /** The source a queue came from, from its description (a remembered queue, for instance). */
 export function sourceOfContext(context: PlayContext): PlaySource | null {
-  return playSource(context, index.value, albums.value)
+  return playSource(context, index.value, albums.value, names.value)
 }
 
 /** Plays whose queue matches no known source may be playlists of the same size: read those. */

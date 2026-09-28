@@ -869,7 +869,8 @@ test('shows what was played last as uniform tiles and a track history with its s
   test.skip(external, 'Needs the mock collection')
   await english(page)
   const shelf = page.getByRole('region', { name: 'Recently played' })
-  // Newest first, each source once; the all-tracks play stays off the shelf.
+  // Newest first, each source once; the all-tracks play stays off the shelf, and so does the
+  // newest play, from an album deleted since (it is not its artist's either).
   const tiles = shelf.getByRole('listitem')
   await expect(tiles.locator('strong')).toHaveText(['Inner Space', 'Evening', 'Northline', 'Jazz'])
   await expect(tiles.locator('small')).toHaveText(['Album · Forma', 'Playlist · 12 tracks', 'Artist', 'Genre'])

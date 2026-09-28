@@ -255,15 +255,35 @@ export function sourceIndex(library: SourceLibrary): Map<string, PlaySource> {
   return index
 }
 
+/** The artists and genres the library still has, as stock spells them in its queue. */
+export interface LibraryNames {
+  artists: ReadonlySet<string>
+  genres: ReadonlySet<string>
+}
+
+export function libraryNames(tracks: readonly LibraryTrack[]): LibraryNames {
+  const artists = new Set<string>()
+  const genres = new Set<string>()
+  for (const track of tracks) {
+    if (track.artist) artists.add(track.artist)
+    if (track.genre) genres.add(track.genre)
+  }
+  return { artists, genres }
+}
+
 /**
  * The source of one play: its queue's hash first; when the library changed
- * since, the fields every queue row shared (an album of type 3, a genre whose
- * artists differ, an artist), else nothing.
+ * since, the fields every queue row shared (the album, a genre whose artists
+ * differ, an artist), else nothing. Only what the library still has is named:
+ * an album queue whose album is gone names nothing (owner, 2026-09-28: a
+ * deleted album stayed on the shelf as its artist), and neither does an
+ * artist or genre with no track left.
  */
 export function playSource(
   context: PlayContext,
   index: ReadonlyMap<string, PlaySource>,
   albums: readonly Album[],
+  names: LibraryNames,
 ): PlaySource | null {
   const found = context.hash ? index.get(context.hash) : undefined
   if (found) return found
@@ -274,8 +294,11 @@ export function playSource(
     )
     if (album) return { kind: 'album', album, scope: context.artist }
   }
-  if (context.genre && !context.artist) return { kind: 'genre', genre: context.genre }
-  if (context.artist) return { kind: 'artist', artist: context.artist }
+  // An album queue began at its album, not at the artist or genre it shared.
+  if (context.type === 3) return null
+  if (context.genre && !context.artist)
+    return names.genres.has(context.genre) ? { kind: 'genre', genre: context.genre } : null
+  if (context.artist) return names.artists.has(context.artist) ? { kind: 'artist', artist: context.artist } : null
   return null
 }
 
