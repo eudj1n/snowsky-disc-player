@@ -953,6 +953,39 @@ to discuss a few more points before work begins. The page's part:
 - [ ] The name Disc Player in the page and the guide, marked unofficial and
       not affiliated with FiiO or SNOWSKY; a user guide with real
       screenshots, the risks and the way back to stock, licenses.
+- [ ] The trash (owner, 2026-09-28), on the service's reversible trash in
+      `.disc/trash`: "Move to trash" for a file or a folder in the file
+      manager (with a confirmation naming what moves; not offered for what
+      is playing), and a third Card tab, **Trash**: what was moved, from where,
+      when and its size; Restore (back to its folder), Delete permanently,
+      Empty trash; the trash's size also on the Space tab. After moving or
+      restoring music the page offers to update the library (a scan), since
+      stock drops or finds the tracks only then. Replacing a cover or an LRC
+      moves the old one to the trash too.
+- [ ] Play in this browser (owner, 2026-09-28), on the service's read-only
+      audio route: a track or an album plays in the browser (a phone, a TV)
+      while the player rests; FLAC, MP3 and AAC play everywhere, ALAC only in
+      Safari, DSD and APE not at all.
+- [ ] A visualizer next to karaoke (owner's question about Visicality): with
+      the audio file in the browser, its spectrum is computed ahead and drawn
+      synced to the player's position, full screen for a TV. Our own canvas
+      code: Visicality has no license, so only its ideas are used.
+- [ ] Enrichment providers once the card catalog allows their origins:
+      MusicBrainz with Cover Art Archive (tags, years, album artists,
+      covers) and LRCLIB (synced lyrics for karaoke), each off by default
+      (track names leave the network), results offered, not applied
+      silently; applying writes covers and LRC to the card (tags later, with
+      the tag editor). Spotify and Apple Music need secrets a static page
+      cannot keep; no third-party code plugins.
+
+Without a new image (card-only, can come first):
+
+- [ ] Interface size in the appearance settings (owner, 2026-09-28): 100 %
+      (today's, the smallest), 115 % and 130 %, scaling the whole interface
+      (CSS `zoom`, sizes are in pixels), for TV browsers with a remote; check
+      arrow-key navigation and a clearly visible focus ring there.
+- [ ] Add a cover or an LRC where a track or an album has none, through the
+      existing upload route (it admits those names and never overwrites).
 
 ## Requests for the next service build
 
