@@ -349,6 +349,15 @@ dialogs, keyboard, states), expressed as Tailwind tokens and variants.
   SHA-256 after the write. `6391eee7bbc8b7ac` stays for rollback;
   `9b8d2afdaeb8f018` removed (active plus previous kept).
 
+- 2026-09-28: `b85fcfce87b85f0a` (commit `f0a0ba6`: folder play, the
+  remembered track after a reconnect, the Card tabs by the heading, the
+  sidebar without its note) published on PLAY at the owner's request after
+  `npm run check`, the full mock suite (105) and the emulator acceptance of
+  this exact release through the MIPS service (all 17 acceptance tests); all
+  72 files matched by SHA-256 after the write. `c0c96a7a7f0faa30` stays for
+  rollback; `77e5722c6c3101a7` removed (active plus previous kept). The card
+  was ejected.
+
 - 2026-09-27: `c0c96a7a7f0faa30` (commit `51d945d`: the file manager, the
   row heart, the sidebar toggle, karaoke fade, spacing and pause dots,
   artist pictures and duplicate folder links) published on PLAY at the
