@@ -1049,7 +1049,8 @@ Without a new image (card-only, can come first):
       the play history (the album under the artist's own ones); pinned albums
       and artists carry a mark on the cover; album captions and the album
       heading no longer count tracks (the year is a line of its own). Unit
-      and mock browser tests (125 passed).
+      and mock browser tests (125 passed); published on the owner's card as
+      release `42d6711790fcb1e1`.
 - [x] Owner's testing on the combined-008 player (2026-09-28), card-only:
       a deleted album no longer stays on the Recently played shelf as its
       artist or genre; the detail heading is as tall as its sleeve (the kind
