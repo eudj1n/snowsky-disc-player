@@ -94,6 +94,8 @@ const WAV = (() => {
 
 // The scripted player: its current list (the stock queue), position, source flag.
 const player = {
+  /** library_summary answers busy this many more times (/__mock/summary-busy). */
+  summaryBusy: 0,
   state: 1,
   list: TRACKS.filter((track) => track.ALBUM === 'Afterglow'),
   index: 0,
@@ -472,6 +474,10 @@ const server = createServer((request, response) => {
       'Content-Range': `bytes ${first}-${last}/${WAV.length}`,
     })
   }
+  if (url.pathname === '/api/data/library_summary' && player.summaryBusy > 0) {
+    player.summaryBusy--
+    return send(response, 503, 'Database busy\n')
+  }
   if (url.pathname.startsWith('/api/data/')) {
     const query = url.pathname.slice(10)
     const memory = { row: player.index + 1, type: player.flag === 3 ? 3 : player.flag === 1 ? 1 : 2 }
@@ -484,6 +490,11 @@ const server = createServer((request, response) => {
     return DELAY ? void setTimeout(reply, DELAY) : reply()
   }
   // Test hook: stock falls silent (its queue ended, or USB storage mode handed the card back).
+  // The counts answer busy this many times, as while stock scans after USB storage mode.
+  if (url.pathname === '/__mock/summary-busy' && request.method === 'POST') {
+    player.summaryBusy = Number(url.searchParams.get('times') ?? 0)
+    return send(response, 204, '')
+  }
   if (url.pathname === '/__mock/silent' && request.method === 'POST') {
     player.silent = true
     player.state = 1

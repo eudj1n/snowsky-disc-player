@@ -31,6 +31,7 @@ import { connection } from '../stores/connection'
 import { isPinnedAlbum, pins, togglePinAlbum } from '../stores/pins'
 import { selection } from '../stores/selection'
 import { openPlaylistDialog, openTrackMenu, ui } from '../stores/ui'
+import UiCircleButton from '../ui/UiCircleButton.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { albumCardRoute, albumRoute, artistRoute, genreRoute } from './captions'
@@ -172,6 +173,7 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
       >
       <DetailHeading
         :title="name"
+        :kind="t('kind_album')"
         :cover="group ? albumCover(group, scope) : null"
         :sticky-action="loading ? null : heading.action.value"
         @sticky="heading.run"
@@ -206,32 +208,29 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
         <UiPillButton icon="play" :disabled="loading || !tracks.length || selection.busy" @click="playFrom(target())">{{
           t('play_album')
         }}</UiPillButton>
-        <UiPillButton
+        <UiCircleButton
           icon="playlist"
-          variant="secondary"
+          :label="t('add_to_playlist')"
           :disabled="loading || !tracks.length"
           @click="openPlaylistDialog({ mode: 'add', tracks: tracks.map((track) => ({ ...track })), title: name })"
-          >{{ t('add_to_playlist') }}</UiPillButton
-        >
-        <UiPillButton
+        />
+        <UiCircleButton
           v-if="connection.media"
           icon="headphones"
-          variant="secondary"
+          :label="t('play_in_browser')"
           data-testid="album-browser"
           :disabled="loading || !tracks.length"
           @click="playInBrowser(tracks)"
-          >{{ t('play_in_browser') }}</UiPillButton
-        >
-        <UiPillButton
+        />
+        <UiCircleButton
           v-if="pins.available && pinTarget"
           icon="pin"
-          variant="secondary"
+          :label="t(isPinnedAlbum(pinTarget) ? 'unpin' : 'pin')"
           data-testid="pin-album"
-          :aria-pressed="isPinnedAlbum(pinTarget)"
+          :pressed="isPinnedAlbum(pinTarget)"
           :disabled="pins.busy"
           @click="pinTarget && togglePinAlbum(pinTarget)"
-          >{{ t(isPinnedAlbum(pinTarget) ? 'unpin' : 'pin') }}</UiPillButton
-        >
+        />
       </DetailHeading>
       <nav
         v-if="!loading && choices.length"
@@ -272,6 +271,7 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
       v-bind="trackRowProps"
       lead="number"
       :tracks="items"
+      :own-credit="credits.length ? credits.join(';') : null"
       :show-album="false"
       :disc-of="discOf"
       :disc-label="(disc: number) => t('disc_number', { number: disc })"

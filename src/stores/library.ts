@@ -122,6 +122,19 @@ export async function loadLibraryFacts(): Promise<void> {
   if (summary.status === 'fulfilled') state.summary = librarySummary(summary.value)
 }
 
+/**
+ * The counts alone, again: a summary that failed while stock was busy (a
+ * scan after USB storage mode outlasts the busy retries) left the player
+ * card without its track count and the collection without its signature.
+ */
+export async function refreshSummary(): Promise<void> {
+  try {
+    state.summary = librarySummary(await http.data('library_summary'))
+  } catch {
+    // Still busy or unreachable: the next look tries again.
+  }
+}
+
 function apply(snapshot: Omit<Snapshot, 'signature'>, source: 'player' | 'saved' = 'player'): void {
   state.source = source
   state.savedAt = snapshot.savedAt ?? null
@@ -160,6 +173,7 @@ export async function loadCollection(force = false): Promise<void> {
     const snapshot = { savedAt: Date.now(), tracks: trackRows, favorites: favoriteRows, playlists: playlistRows(lists) }
     apply(snapshot)
     if (signature) await cacheSet(SNAPSHOT, { signature, ...snapshot })
+    else void refreshSummary()
   } catch {
     state.status = state.tracks.length ? 'ready' : 'failed'
   }

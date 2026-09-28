@@ -1,4 +1,10 @@
 <script setup lang="ts">
+/**
+ * The player's favorites. Stock keeps a favorite in MY_LOVE after its file
+ * is deleted and the card rescanned; like Apple Music and Yandex Music the
+ * row stays in place, dimmed and not playable, since the file may come back
+ * (owner, 2026-09-28). Its heart still removes it.
+ */
 import { computed } from 'vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
 import TrackList from '../components/track/TrackList.vue'
@@ -6,7 +12,7 @@ import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
 import { disliked } from '../stores/disliked'
-import { favorites, library } from '../stores/library'
+import { favorites, library, trackByPath } from '../stores/library'
 import { openTrackMenu, ui } from '../stores/ui'
 import { countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
@@ -15,6 +21,9 @@ import { playFrom } from './playAlbum'
 
 const searching = computed(() => ui.query.trim() !== '')
 const items = computed(() => filterBy(favorites.value, ui.query, (track) => [track.title, track.artist, track.album]))
+/** Not on the card: the library, read with the favorites, has no such file. */
+const unavailable = (track: { path: string | null }) =>
+  library.status === 'ready' && (track.path === null || !trackByPath.value.has(track.path))
 const skeletonRows = computed(() => Math.max(1, Math.min(library.summary?.favorites ?? 6, 12)))
 const columns = computed(() => ({
   title: t('column_title'),
@@ -47,6 +56,8 @@ const columns = computed(() => ({
       v-bind="trackRowProps"
       :tracks="items"
       :header="columns"
+      :unavailable-of="unavailable"
+      :unavailable-label="t('track_unavailable')"
       @menu="
         (index, anchor) =>
           items[index] && openTrackMenu(items[index], { kind: 'favorites', track: items[index] }, anchor)

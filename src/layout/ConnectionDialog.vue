@@ -13,7 +13,7 @@ import { locale, t } from '../i18n'
 import { about, loadAbout } from '../stores/about'
 import { connect, connection, disconnect } from '../stores/connection'
 import { device, refreshDevice } from '../stores/device'
-import { albums, library, refreshPlayerFacts } from '../stores/library'
+import { albums, library, refreshPlayerFacts, refreshSummary, tracks } from '../stores/library'
 import { playerOptions } from '../stores/playerOptions'
 import { forgetToken, pairing, saveToken } from '../stores/pairing'
 import { closeDialog, ui } from '../stores/ui'
@@ -30,7 +30,10 @@ const battery = computed(() => device.facts?.battery?.capacity ?? playerOptions.
 const facts = computed(() =>
   [
     library.status === 'ready' ? { key: 'albums', label: t('stat_albums'), value: String(albums.value.length) } : null,
-    library.summary ? { key: 'tracks', label: t('stat_tracks'), value: String(library.summary.tracks) } : null,
+    // The summary counts every track (a very large library is cut); without it, the tracks loaded.
+    library.summary || library.status === 'ready'
+      ? { key: 'tracks', label: t('stat_tracks'), value: String(library.summary?.tracks ?? tracks.value.length) }
+      : null,
     battery.value !== null ? { key: 'battery', label: t('stat_battery'), value: `${String(battery.value)}%` } : null,
   ].filter((fact) => fact !== null),
 )
@@ -55,6 +58,7 @@ watch(
     if (open && connection.gateway !== false) {
       void refreshPlayerFacts()
       void refreshDevice()
+      if (!library.summary) void refreshSummary()
     }
   },
 )

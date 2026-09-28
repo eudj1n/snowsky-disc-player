@@ -243,6 +243,9 @@ test('lists same-titled albums apart, separates discs, shows years and joint cre
   await expect(page.getByRole('main')).toContainText('2021', { timeout: 15_000 })
   const hallway = page.getByRole('row').filter({ hasText: 'Hallway' })
   await expect(hallway.getByRole('link', { name: 'Kite Lines' })).toBeVisible()
+  // Only the guest's row names who plays; the album artist's own rows leave it out.
+  await expect(page.getByRole('row').filter({ hasText: 'Opening' }).getByRole('link')).toHaveCount(0)
+  await expect(page.getByRole('row').filter({ hasText: 'Encore' })).not.toContainText('Kite Lines')
   await hallway.getByRole('link', { name: 'Mira Sol' }).click()
   await expect(page).toHaveURL(/#\/artist\/Mira%20Sol$/)
   await expect(
@@ -893,6 +896,31 @@ test('shows what was played last as uniform tiles and a track history with its s
   await expect(rows.nth(1)).toContainText('First Light')
 })
 
+test('keeps a favorite whose file was deleted in place, dimmed and not playable', async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  await page.goto('/#/favorites')
+  const gone = page.getByRole('row').filter({ hasText: 'Gone Song' })
+  // Marked for the eye and the screen reader, but not disabled: its heart and menu still work.
+  await expect(gone).toHaveAttribute('data-unavailable', 'true')
+  await expect(gone).toContainText('Not on the card')
+  await expect(gone).toHaveAttribute('title', 'Not on the card')
+  await expect(gone.getByRole('button', { name: /^Play / })).toHaveCount(0)
+  // The favorites on the card keep their play buttons.
+  await expect(
+    page
+      .getByRole('main')
+      .getByRole('button', { name: /^Play / })
+      .first(),
+  ).toBeVisible()
+  // Its menu offers only what needs no file.
+  await gone.getByRole('button', { name: 'Track actions: Gone Song' }).click()
+  const menu = page.getByRole('dialog', { name: 'Track actions' })
+  await expect(menu.getByRole('menuitem', { name: 'Play', exact: true })).toBeDisabled()
+  await expect(menu.getByRole('menuitem', { name: 'Add to playlist' })).toBeDisabled()
+  await page.keyboard.press('Escape')
+})
+
 test('shows a joint album as "A & B", with its first artist\'s albums and its artists', async ({ page }) => {
   test.skip(external, 'Needs the mock collection')
   await english(page)
@@ -1203,6 +1231,34 @@ test('shows what takes space on the card by format, album and artist', async ({ 
   await page.goBack()
   await page.getByTestId('space-albums').getByRole('listitem').first().getByRole('link', { name: 'Blue Hours' }).click()
   await expect(page).toHaveURL(/#\/album\/Blue%20Hours/)
+})
+
+test('counts the tracks while the summary answers busy, and reads the summary again on opening', async ({
+  page,
+  request,
+}) => {
+  test.skip(external, 'Needs the mock gateway')
+  test.setTimeout(90_000)
+  // As while stock scans after USB storage mode: every read of the counts is busy.
+  await request.post('/__mock/summary-busy?times=1000')
+  try {
+    await english(page)
+    await expect(page.getByRole('navigation').getByRole('link', { name: 'Albums' }).first()).toBeVisible()
+    await openConnection(page)
+    const tracksFact = page.getByRole('dialog').getByTestId('player-facts').locator('div').filter({ hasText: 'Tracks' })
+    await expect(tracksFact).toContainText(/\d+/, { timeout: 30_000 })
+    const shown = (await tracksFact.locator('dd').textContent())?.trim()
+    await page.keyboard.press('Escape')
+    // The counts answer again: opening the dialog reads them, and they agree with the loaded tracks.
+    await request.post('/__mock/summary-busy?times=0')
+    const summary = (await (await request.get('/api/data/library_summary')).json()) as { rows: number[][] }
+    expect(shown).toBe(String(summary.rows[0]?.[0]))
+    await openConnection(page)
+    await expect(tracksFact.locator('dd')).toHaveText(String(summary.rows[0]?.[0]))
+    await page.keyboard.press('Escape')
+  } finally {
+    await request.post('/__mock/summary-busy?times=0')
+  }
 })
 
 test('keeps the reference layout on a phone without horizontal scrolling', async ({ page }) => {

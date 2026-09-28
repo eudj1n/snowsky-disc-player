@@ -11,7 +11,7 @@
  * actions button. Album and duration
  * columns disappear when no row knows them (stock rows often lack both).
  */
-import { creditLabel } from '../../domain/artist'
+import { creditLabel, sameCredit } from '../../domain/artist'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 import { formatDuration, sameTrack, type LibraryTrack, type Track } from '../../domain/track'
@@ -72,6 +72,15 @@ const props = withDefaults(
     favoriteLabels?: FavoriteLabels | null
     /** The current track's favorite cannot be changed right now. */
     favoriteDisabled?: boolean
+    /**
+     * A row whose file the library no longer has (stock keeps favorites and playlist entries after a
+     * deletion): dimmed in place and not playable; its heart and its menu (which offers only what
+     * needs no file) still work.
+     */
+    unavailableOf?: ((track: Track) => boolean) | null
+    unavailableLabel?: string | null
+    /** The album's own credit: rows credited exactly so leave the artist out, a guest's rows keep it. */
+    ownCredit?: string | null
     /** Favorites that are not playing can be removed (catalog admits love/song). */
     favoriteRemovable?: boolean
     /** Rows that are not favorites can be added (the service and the catalog admit it). */
@@ -101,6 +110,9 @@ const props = withDefaults(
     favoriteDisabled: true,
     favoriteRemovable: false,
     favoriteAddable: false,
+    ownCredit: null,
+    unavailableOf: null,
+    unavailableLabel: null,
   },
 )
 const emit = defineEmits<{
@@ -131,10 +143,18 @@ function activate(track: Track, index: number): void {
 const album = computed(() => props.showAlbum && props.tracks.some((track) => track.album))
 const duration = computed(() => props.tracks.some((track) => formatDuration(track.durationMs)))
 const columns = computed(() => trackColumns(props.lead, album.value, duration.value, props.menuLabel !== null))
-/** Numbered album rows by one artist leave the artist out (owner's reference): shorter rows. */
+/**
+ * Album rows leave out the artist the heading already names (owner's reference, and 2026-09-28:
+ * only a guest's rows say who plays). With no row naming anyone the rows are shorter.
+ */
+const ownRow = (track: Track) =>
+  props.ownCredit !== null && track.artist !== null && sameCredit(track.artist, props.ownCredit)
 const soloArtist = computed(
-  () => props.lead === 'number' && new Set(props.tracks.map((track) => track.artist ?? '')).size <= 1,
+  () =>
+    props.lead === 'number' &&
+    (new Set(props.tracks.map((track) => track.artist ?? '')).size <= 1 || props.tracks.every(ownRow)),
 )
+const hidesArtist = (track: Track) => soloArtist.value || (props.lead === 'number' && ownRow(track))
 /** Row index → disc heading, when the rows span more than one disc. */
 const discHeadings = computed(() => {
   const headings = new Map<number, string>()
@@ -187,6 +207,9 @@ const numberOf = (track: Track, index: number) => {
   return typeof number === 'number' && number > 0 ? number : index + 1
 }
 
+const unavailable = (track: Track) => props.unavailableOf?.(track) === true
+/** Cells of an unavailable row fade; the heart stays as it is. No cover is asked for a file that is gone. */
+const dim = (track: Track) => (unavailable(track) ? 'opacity-40' : '')
 function contextMenu(event: MouseEvent, index: number): void {
   if (props.menuLabel === null) return
   const row = event.currentTarget as HTMLElement
@@ -219,6 +242,8 @@ function contextMenu(event: MouseEvent, index: number): void {
         class="group/row hover:bg-soft"
         :data-solo="soloArtist"
         :aria-current="isCurrent(track) ? 'true' : undefined"
+        :data-unavailable="unavailable(track) ? 'true' : undefined"
+        :title="unavailable(track) ? (unavailableLabel ?? undefined) : undefined"
         :class="[
           TRACK_ROW,
           ROW_DIVIDER,
@@ -283,14 +308,14 @@ function contextMenu(event: MouseEvent, index: number): void {
           </template>
           <template v-if="lead === 'cover'">
             <button
-              v-if="playLabel"
+              v-if="playLabel && !unavailable(track)"
               type="button"
               :aria-label="leadLabel(track)"
               :disabled="disabled"
               class="relative size-40 overflow-hidden rounded-6 p-0 phone:size-34"
               @click="activate(track, index)"
             >
-              <Artwork :title="track.title" :cover="coverOf(track)" />
+              <Artwork :title="track.title" :cover="unavailable(track) ? null : coverOf(track)" />
               <span
                 class="absolute inset-0 grid place-items-center bg-[#0006] text-white transition-opacity duration-200"
                 :class="isCurrent(track) ? 'bg-[#0004] opacity-100' : REVEAL"
@@ -307,12 +332,12 @@ function contextMenu(event: MouseEvent, index: number): void {
                 <UiIcon v-else filled name="play" class="size-14" />
               </span>
             </button>
-            <span v-else class="size-40 overflow-hidden rounded-6 phone:size-34"
-              ><Artwork :title="track.title" :cover="coverOf(track)"
+            <span v-else class="size-40 overflow-hidden rounded-6 phone:size-34" :class="dim(track)"
+              ><Artwork :title="track.title" :cover="unavailable(track) ? null : coverOf(track)"
             /></span>
           </template>
           <button
-            v-else-if="playLabel"
+            v-else-if="playLabel && !unavailable(track)"
             type="button"
             :aria-label="leadLabel(track)"
             :disabled="disabled"
@@ -334,11 +359,16 @@ function contextMenu(event: MouseEvent, index: number): void {
               :class="{ '!stroke-[2.6]': pauses(track) }"
             />
           </button>
-          <span v-else class="text-11 text-muted tabular-nums">{{ numberOf(track, index) }}</span>
+          <span v-else class="text-11 text-muted tabular-nums" :class="dim(track)">{{ numberOf(track, index) }}</span>
         </span>
-        <div role="cell" class="min-w-0">
-          <strong class="block truncate font-[550]">{{ track.title }}</strong>
-          <template v-if="soloArtist" />
+        <div role="cell" class="min-w-0" :class="dim(track)">
+          <strong class="block truncate font-[550]"
+            >{{ track.title
+            }}<span v-if="unavailable(track) && unavailableLabel" class="sr-only"
+              >, {{ unavailableLabel }}</span
+            ></strong
+          >
+          <template v-if="hidesArtist(track)" />
           <span
             v-else-if="track.artist && artistTo(track.artist)"
             class="mt-5 block max-w-full truncate text-11 text-muted"
@@ -349,7 +379,7 @@ function contextMenu(event: MouseEvent, index: number): void {
             track.artist ? creditLabel(track.artist) : '—'
           }}</small>
         </div>
-        <span v-if="album" role="cell" class="min-w-0 truncate text-11 text-muted phone:hidden">
+        <span v-if="album" role="cell" class="min-w-0 truncate text-11 text-muted phone:hidden" :class="dim(track)">
           <template v-if="albumNote && albumNote(track)">
             <RouterLink
               v-if="albumNote(track)?.to"
@@ -370,7 +400,7 @@ function contextMenu(event: MouseEvent, index: number): void {
           >
           <template v-else>{{ track.album || '—' }}</template>
         </span>
-        <span v-if="duration" role="cell" class="text-right text-11 text-muted tabular-nums">{{
+        <span v-if="duration" role="cell" class="text-right text-11 text-muted tabular-nums" :class="dim(track)">{{
           formatDuration(track.durationMs) ?? '—:—'
         }}</span>
         <span v-if="menuLabel !== null" role="cell" class="flex justify-end">

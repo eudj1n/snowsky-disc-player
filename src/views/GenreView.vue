@@ -126,7 +126,12 @@ function playAlbum(item: Album): void {
   <CollectionGate :count="count" :searching="searching" empty-key="search_empty_tracks">
     <template #heading="{ loading }">
       <UiTextButton class="text-12" @click="router.push('/genres')">← {{ t('back_to_genres') }}</UiTextButton>
-      <DetailHeading :title="shown" :sticky-action="loading ? null : heading.action.value" @sticky="heading.run">
+      <DetailHeading
+        :title="shown"
+        :kind="t('kind_genre')"
+        :sticky-action="loading ? null : heading.action.value"
+        @sticky="heading.run"
+      >
         <template #sticky
           >{{ t('album_count', { count: genre?.albums.length ?? 0 }) }} ·
           {{ t('track_count', { count: tracks.length }) }}</template

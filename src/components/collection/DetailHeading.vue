@@ -1,6 +1,8 @@
 <script setup lang="ts">
-/** Reference detail header: 220px sleeve, name, meta line, actions. The
- * entity type is left out: the sidebar marks the section. A soft
+/** Reference detail header: 220px sleeve beside a column of the same height
+ * (owner, 2026-09-28, after the Yandex Music album header): the kind of page
+ * at its top edge, the name sized by its length and the meta line, the
+ * actions on its bottom edge; a longer column grows past the sleeve. A soft
  * glow in the artwork's tone (the observed cover's average color, else the
  * sleeve palette) sits behind it, and a quiet rule separates it from the
  * content below. Once the header has scrolled away, a compact bar keeps the
@@ -13,13 +15,28 @@ import Artwork from '../artwork/Artwork.vue'
 import type { HeadingAction } from './headingAction'
 
 const props = withDefaults(
-  defineProps<{ title: string; artist?: boolean; cover?: Blob | null; stickyAction?: HeadingAction | null }>(),
+  defineProps<{
+    title: string
+    /** What the page shows ("Album", "Artist"...), above the name. */
+    kind?: string | null
+    artist?: boolean
+    cover?: Blob | null
+    stickyAction?: HeadingAction | null
+  }>(),
   {
+    kind: null,
     artist: false,
     cover: null,
     stickyAction: null,
   },
 )
+/** Longer names step down so the column keeps the sleeve's height in the usual cases. */
+const titleSize = computed(() => {
+  const length = props.title.length
+  if (length <= 20) return 'text-48 tracking-[-1.8px] rail:text-38 phone:text-32'
+  if (length <= 36) return 'text-38 tracking-[-1.3px] rail:text-30 phone:text-28'
+  return 'text-30 tracking-[-0.9px] rail:text-26 phone:text-24'
+})
 const emit = defineEmits<{ sticky: [] }>()
 const observed = ref<string | null>(null)
 watch(
@@ -62,7 +79,7 @@ function toTop(): void {
 <template>
   <div
     ref="heading"
-    class="relative isolate mt-25 mb-26 flex items-end gap-30 border-b border-line pb-30 rail:gap-22 phone:mt-23 phone:mb-20 phone:block phone:pb-23 phone:text-center"
+    class="relative isolate mt-25 mb-26 flex items-start gap-30 border-b border-line pb-30 rail:gap-22 phone:mt-23 phone:mb-20 phone:block phone:pb-23 phone:text-center"
     :style="{ '--tint': tint }"
   >
     <span
@@ -75,16 +92,22 @@ function toTop(): void {
     >
       <Artwork :title="title" :artist="artist" :cover="cover" tone @tone="(color) => (observed = color)" />
     </div>
-    <div class="min-w-0">
-      <h1
-        class="mt-0 mb-14 text-42 leading-[1.08] font-bold tracking-[-1.5px] [overflow-wrap:anywhere] rail:text-34 phone:text-32"
+    <!-- As tall as the sleeve: the kind on its top edge, the actions on its bottom edge. -->
+    <div class="flex min-h-220 min-w-0 flex-1 flex-col rail:min-h-165 phone:min-h-0">
+      <p
+        v-if="kind"
+        class="m-0 mb-10 text-13 leading-none font-medium text-secondary phone:mb-10 phone:text-11"
+        data-testid="heading-kind"
       >
+        {{ kind }}
+      </p>
+      <h1 class="mt-0 mb-12 leading-[1.08] font-bold [overflow-wrap:anywhere]" :class="titleSize">
         {{ title }}
       </h1>
-      <p class="m-0 text-12 text-muted phone:text-11"><slot name="meta" /></p>
+      <p class="m-0 text-13 text-muted phone:text-11"><slot name="meta" /></p>
       <!-- Actions wrap to a new line on narrow screens rather than widen the page. -->
       <div
-        class="mt-25 flex flex-wrap items-center gap-10 empty:hidden phone:mt-20 phone:justify-center [&>*]:whitespace-nowrap"
+        class="mt-auto flex flex-wrap items-center gap-10 pt-20 empty:hidden phone:mt-0 phone:justify-center [&>*]:whitespace-nowrap"
       >
         <slot />
       </div>

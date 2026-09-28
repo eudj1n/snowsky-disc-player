@@ -20,7 +20,7 @@ import { albums, artists, tracks } from '../stores/library'
 import { isPinnedArtist, pins, togglePinArtist } from '../stores/pins'
 import { selection } from '../stores/selection'
 import { ui } from '../stores/ui'
-import UiPillButton from '../ui/UiPillButton.vue'
+import UiCircleButton from '../ui/UiCircleButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { albumCardRoute, albumLines, withYear } from './captions'
 import CollectionGate from './CollectionGate.vue'
@@ -75,6 +75,7 @@ function lines(album: Album) {
       <UiTextButton class="text-12" @click="router.push('/artists')">← {{ t('back_to_collection') }}</UiTextButton>
       <DetailHeading
         :title="creditLabel(name)"
+        :kind="t('kind_artist')"
         artist
         :sticky-action="loading || !playable ? null : heading.action.value"
         @sticky="heading.run"
@@ -84,16 +85,15 @@ function lines(album: Album) {
           <span v-if="loading" class="inline-block h-10 w-90 animate-pulse rounded-4 bg-soft align-middle" />
           <template v-else>{{ t('album_count', { count: own.length }) }}</template>
         </template>
-        <UiPillButton
+        <UiCircleButton
           v-if="pins.available && name"
           icon="pin"
-          variant="secondary"
+          :label="t(isPinnedArtist(name) ? 'unpin' : 'pin')"
           data-testid="pin-artist"
-          :aria-pressed="isPinnedArtist(name)"
+          :pressed="isPinnedArtist(name)"
           :disabled="pins.busy"
           @click="togglePinArtist(name)"
-          >{{ t(isPinnedArtist(name) ? 'unpin' : 'pin') }}</UiPillButton
-        >
+        />
       </DetailHeading>
     </template>
     <template #skeleton>

@@ -13,6 +13,7 @@ import { coverFor } from '../stores/enrichment'
 import { t } from '../i18n'
 import { playInBrowser } from '../stores/browser'
 import { connection } from '../stores/connection'
+import { library, trackByPath } from '../stores/library'
 import { disliked, isDisliked, toggleDislike } from '../stores/disliked'
 import { selection } from '../stores/selection'
 import { closeTrackMenu, openPlaylistDialog, ui } from '../stores/ui'
@@ -25,9 +26,28 @@ import { playFrom } from '../views/playAlbum'
 const router = useRouter()
 const dialog = ref<HTMLDialogElement | null>(null)
 const menu = computed(() => ui.trackMenu)
+/**
+ * The row's file is on the card. A favorite or playlist entry whose file was deleted stays
+ * listed (stock keeps it); its menu can still go to the album or leave the playlist, but
+ * nothing that needs the file (owner, 2026-09-28).
+ */
+const onCard = computed(() => {
+  const path = menu.value?.track.path
+  return library.status !== 'ready' || (path != null && trackByPath.value.has(path))
+})
 const items = computed<{ id: string; icon: IconName; label: string; enabled: boolean }[]>(() => [
-  { id: 'play', icon: 'play', label: t('play_label'), enabled: menu.value?.play != null && !selection.busy },
-  { id: 'add', icon: 'playlist', label: t('add_to_playlist'), enabled: Boolean(menu.value?.track.title) },
+  {
+    id: 'play',
+    icon: 'play',
+    label: t('play_label'),
+    enabled: menu.value?.play != null && !selection.busy && onCard.value,
+  },
+  {
+    id: 'add',
+    icon: 'playlist',
+    label: t('add_to_playlist'),
+    enabled: Boolean(menu.value?.track.title) && onCard.value,
+  },
   { id: 'album', icon: 'album', label: t('go_to_album'), enabled: Boolean(menu.value?.track.album) },
   { id: 'artist', icon: 'artist', label: t('go_to_artist'), enabled: Boolean(menu.value?.track.artist) },
   // combined-008: the service's store and audio route.
@@ -37,12 +57,12 @@ const items = computed<{ id: string; icon: IconName; label: string; enabled: boo
           id: 'dislike',
           icon: 'ban' as const,
           label: t(isDisliked(menu.value.track) ? 'undislike' : 'dislike'),
-          enabled: !disliked.busy,
+          enabled: !disliked.busy && onCard.value,
         },
       ]
     : []),
   ...(connection.media && menu.value?.track.path
-    ? [{ id: 'browser', icon: 'headphones' as const, label: t('play_in_browser'), enabled: true }]
+    ? [{ id: 'browser', icon: 'headphones' as const, label: t('play_in_browser'), enabled: onCard.value }]
     : []),
   // Only rows opened from a playlist page can leave it.
   ...(menu.value?.playlist

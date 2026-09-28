@@ -8,7 +8,7 @@ import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
 import { filterBy } from '../domain/search'
 import type { LibraryTrack } from '../domain/track'
 import { t } from '../i18n'
-import { library, loadPlaylistTracks } from '../stores/library'
+import { library, loadPlaylistTracks, trackByPath } from '../stores/library'
 import { openPlaylistDialog, openTrackMenu, ui } from '../stores/ui'
 import { playlistEdits } from '../stores/playlistEdits'
 import UiPillButton from '../ui/UiPillButton.vue'
@@ -53,6 +53,9 @@ const heading = useHeadingAction({
 const items = computed(() =>
   filterBy(tracks.value ?? [], ui.query, (track) => [track.title, track.artist, track.album]),
 )
+/** An entry whose file was deleted stays in place, dimmed (stock keeps it; the file may come back). */
+const unavailable = (track: { path: string | null }) =>
+  library.status === 'ready' && (track.path === null || !trackByPath.value.has(track.path))
 </script>
 
 <template>
@@ -61,6 +64,7 @@ const items = computed(() =>
       <UiTextButton class="text-12" @click="router.push('/playlists')">← {{ t('back_to_collection') }}</UiTextButton>
       <DetailHeading
         :title="playlist?.name ?? ''"
+        :kind="t('kind_playlist')"
         :sticky-action="loading ? null : heading.action.value"
         @sticky="heading.run"
       >
@@ -94,6 +98,8 @@ const items = computed(() =>
     <TrackList
       v-bind="trackRowProps"
       :tracks="items"
+      :unavailable-of="unavailable"
+      :unavailable-label="t('track_unavailable')"
       @play="
         (index) => playlist && items[index] && playFrom({ kind: 'playlist', name: playlist.name, track: items[index] })
       "

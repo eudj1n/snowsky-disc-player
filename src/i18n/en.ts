@@ -470,6 +470,7 @@ export const en = {
   // combined-008: disliked tracks, pins, the trash, macOS leftovers, the browser player, diagnostics.
   dislike: 'Dislike',
   undislike: 'Remove dislike',
+  track_unavailable: 'Not on the card',
   disliked_section: 'Disliked',
   disliked_hint: 'Hidden from the shelves and skipped when they start to play.',
   disliked_empty: 'No disliked tracks. Mark one in its menu to hide it and have it skipped.',

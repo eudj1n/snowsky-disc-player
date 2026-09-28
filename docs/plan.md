@@ -1023,6 +1023,19 @@ plus macOS leftovers on the Card page. The page's part:
 
 Without a new image (card-only, can come first):
 
+- [x] Owner's testing on the combined-008 player (2026-09-28), card-only:
+      a deleted album no longer stays on the Recently played shelf as its
+      artist or genre; the detail heading is as tall as its sleeve (the kind
+      of page on its top edge, the name sized by its length, the actions on
+      its bottom edge, secondary actions as round icon buttons), after the
+      Yandex Music album header; album rows name the artist only where it
+      differs from the album's (a guest); the player card counts the tracks
+      even when the counts answered busy (stock scanning after USB storage
+      mode; reads now retry for about 7 s and the counts are read again);
+      favorites and playlist entries whose file is gone stay in place,
+      dimmed and not playable, as in Apple Music and Yandex Music, their
+      heart and menu (only what needs no file) still working. Unit tests and
+      mock browser tests (119 passed).
 - [x] Owner's review of the layout (2026-09-28): the sidebar toggle is a
       round button on the sidebar's edge, after Reddit, that stays in place
       while the page scrolls; the search takes the whole free width of the

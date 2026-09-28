@@ -75,6 +75,17 @@ const golden = TRACKS.find((track) => track.TITLE === 'Golden')
 if (golden) golden.GENRE = 'Jazz'
 
 export const FAVORITES = TRACKS.filter((track) => [2, 21, 43, 62].includes(track.ID))
+// A favorite whose file was deleted from the card since: stock keeps it in MY_LOVE.
+FAVORITES.push({
+  ...TRACKS[0],
+  ID: 9001,
+  PATH: '/tmp/sdcard/Vanished - Gone Album/01 Gone Song.flac',
+  NAME: '01 Gone Song.flac',
+  TITLE: 'Gone Song',
+  ALBUM: 'Gone Album',
+  ARTIST: 'Vanished',
+  GENRE: 'Ambient',
+})
 
 export const PLAYLISTS = [
   { ID: 1, LIST_ID: 0, LIST_NAME: 'Evening', M3U_PATH: null, members: TRACKS.filter((_, i) => i % 4 === 0) },

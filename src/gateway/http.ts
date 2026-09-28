@@ -40,8 +40,13 @@ export class HttpError extends Error {
 
 export type Fetch = typeof fetch
 
-/** Pauses before retrying a read the gateway answered 503 (database busy, stock reservation taken). */
-const BUSY_RETRIES_MS = [400, 900]
+/**
+ * Pauses before retrying a read the gateway answered 503 (database busy, stock
+ * reservation taken): about 7 s in all, since stock's scan after USB storage
+ * mode kept the database busy longer than the earlier 1.3 s (2026-09-28).
+ * Only reads are retried.
+ */
+const BUSY_RETRIES_MS = [400, 900, 2000, 4000]
 
 export class GatewayHttp {
   /** The gateway holds one stock HTTP reservation: stock requests from this page go one at a time. */

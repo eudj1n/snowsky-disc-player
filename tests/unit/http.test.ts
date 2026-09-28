@@ -98,26 +98,36 @@ describe('release and settings', () => {
 })
 
 describe('gateway busy answers', () => {
-  it('retries a data read after 503 and gives up after two more tries', async () => {
+  it('retries a data read after 503 and gives up after four more tries', async () => {
     let calls = 0
+    const pauses: number[] = []
     const http = new GatewayHttp(
       () => {
         calls++
         return Promise.resolve(
-          calls < 3
+          calls < 5
             ? new Response('busy', { status: 503 })
             : new Response(JSON.stringify({ query: 'q', columns: [], rows: [], rows_returned: 0, truncated: false })),
         )
       },
-      () => Promise.resolve(),
+      (ms) => {
+        pauses.push(ms)
+        return Promise.resolve()
+      },
     )
     await expect(http.data('tracks')).resolves.toMatchObject({ rows_returned: 0 })
-    expect(calls).toBe(3)
+    expect(calls).toBe(5)
+    expect(pauses).toEqual([400, 900, 2000, 4000])
+    let tries = 0
     const always = new GatewayHttp(
-      () => Promise.resolve(new Response('busy', { status: 503 })),
+      () => {
+        tries++
+        return Promise.resolve(new Response('busy', { status: 503 }))
+      },
       () => Promise.resolve(),
     )
     await expect(always.data('tracks')).rejects.toThrow('HTTP 503')
+    expect(tries).toBe(5)
   })
 
   it('sends stock requests one at a time and never retries a mutation', async () => {
