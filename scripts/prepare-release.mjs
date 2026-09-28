@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Turns the checked dist/ into an immutable SD release with the DISC service
 // publisher (snowsky-disc-service scripts/webroot_bundle.py prepare), which
-// adds the reviewed compatibility.json, commands.json and queries.json for the
+// adds the reviewed compatibility.json, commands.json, queries.json and (since
+// combined-008) store.json for the
 // selected firmware profile. Nothing is written to a card here; publishing is
 // a separate operator step documented in docs/release.md.
 import { existsSync } from 'node:fs'

@@ -24,7 +24,7 @@ const ALLOWED = new Set([
 const COMPONENT = /^[A-Za-z0-9_.-]{1,80}$/
 const MAX_FILE = 4 * 1024 * 1024
 const MAX_TOTAL = 16 * 1024 * 1024
-const GENERATED = new Set(['compatibility.json', 'commands.json', 'queries.json', 'READY'])
+const GENERATED = new Set(['compatibility.json', 'commands.json', 'queries.json', 'store.json', 'READY'])
 const MAX_FILES = 128 - GENERATED.size
 const INLINE_SCRIPT = /<script\b(?![^>]*\bsrc=)[^>]*>\s*\S/is
 const INLINE_STYLE = /<style\b[^>]*>\s*\S|\bstyle\s*=\s*["']/is

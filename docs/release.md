@@ -16,8 +16,8 @@ npm run release               # uses ../snowsky-disc-service, or DISC_SERVICE_DI
 
 `npm run release` runs the service publisher
 (`scripts/webroot_bundle.py prepare`) on `dist/`. The publisher validates the
-bundle again, adds `compatibility.json`, `commands.json` and `queries.json`
-for the selected reviewed firmware profile, computes the release id and
+bundle again, adds `compatibility.json`, `commands.json`, `queries.json` and
+(since combined-008) `store.json` for the selected reviewed firmware profile, computes the release id and
 rewrites root-absolute references in `index.html` to `/releases/<id>/`. The
 output lands in `work/release-<timestamp>/www` and the script prints the
 publish command.
