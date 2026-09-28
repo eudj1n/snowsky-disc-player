@@ -73,8 +73,7 @@ const allArtists = ref(false)
 const allDuplicates = ref(false)
 /** The album's credit as its cards show it: the artist (or pair) with a link, or "Various artists". */
 function creditOf(album: Album) {
-  const lines = albumLines(album)
-  return lines.length > 1 ? (lines[0] ?? null) : null
+  return albumLines(album)[0] ?? null
 }
 const shownAlbums = computed(() =>
   (allAlbums.value ? albumRows.value : albumRows.value.slice(0, ALBUM_ROWS)).map((entry) => ({
@@ -234,12 +233,12 @@ watch(
                   entry.credit.text
                 }}</RouterLink>
                 <template v-else>{{ entry.credit.text }}</template>
-                ·
               </template>
-              {{ t('track_count', { count: entry.album.trackCount }) }}
-              <template v-if="entry.formats.length"> · {{ entry.formats.join(', ') }}</template>
+              <template v-if="entry.formats.length"
+                ><template v-if="entry.credit"> · </template>{{ entry.formats.join(', ') }}</template
+              >
               <template v-if="playsShown">
-                ·
+                <template v-if="entry.credit || entry.formats.length">·</template>
                 {{ entry.plays ? t('play_times', { count: entry.plays }) : t('space_not_played') }}
               </template>
             </p>

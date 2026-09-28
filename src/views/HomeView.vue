@@ -28,7 +28,7 @@ import { albumCover } from '../stores/enrichment'
 import { history, loadHistory, recentSourcesShown } from '../stores/history'
 import { isDisliked } from '../stores/disliked'
 import { albums, featuredAlbum, tracks } from '../stores/library'
-import { pins } from '../stores/pins'
+import { isPinnedAlbum, pins } from '../stores/pins'
 import { selection } from '../stores/selection'
 import { openTrackMenu, ui } from '../stores/ui'
 import UiTextButton from '../ui/UiTextButton.vue'
@@ -97,6 +97,7 @@ const heroLines = computed<[string, string]>(() =>
         v-for="album in found"
         :key="album.key"
         :title="album.title"
+        :pinned-label="isPinnedAlbum(album) ? t('pinned_mark') : null"
         :to="albumCardRoute(album)"
         :cover="albumCover(album, albumScope(album))"
         :lines="albumLines(album)"
@@ -197,6 +198,7 @@ const heroLines = computed<[string, string]>(() =>
           :key="album.key"
           role="listitem"
           :title="album.title"
+          :pinned-label="isPinnedAlbum(album) ? t('pinned_mark') : null"
           :to="albumCardRoute(album)"
           :cover="albumCover(album, albumScope(album))"
           :lines="albumLines(album)"
@@ -215,6 +217,7 @@ const heroLines = computed<[string, string]>(() =>
         v-for="album in recent"
         :key="album.key"
         :title="album.title"
+        :pinned-label="isPinnedAlbum(album) ? t('pinned_mark') : null"
         :to="albumCardRoute(album)"
         :cover="albumCover(album, albumScope(album))"
         :lines="albumLines(album)"

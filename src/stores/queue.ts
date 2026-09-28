@@ -5,7 +5,7 @@ import { alignQueue } from '../domain/queue'
 import type { LibraryTrack } from '../domain/track'
 import { readQueue } from '../gateway/queue'
 import type { CatalogRow } from '../gateway/catalog'
-import { libraryTracks } from '../gateway/library'
+import { libraryTracks, queueData } from '../gateway/library'
 import { http, onSessionOpened } from './connection'
 import { tracks } from './library'
 
@@ -19,10 +19,11 @@ interface QueueModel {
 
 const state = reactive<QueueModel>({ items: [], details: [], current: null, status: 'idle' })
 
-/** The persisted queue with paths (data level); an older card catalog or a failed read gives none. */
+/** The persisted queue with paths (data level); none when stock has none, an older card catalog or a failed read. */
 async function persistedQueue(): Promise<LibraryTrack[]> {
   try {
-    return libraryTracks(await http.data('queue'))
+    const data = await queueData(http)
+    return data ? libraryTracks(data) : []
   } catch {
     return []
   }

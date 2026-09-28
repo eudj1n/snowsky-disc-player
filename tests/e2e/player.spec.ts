@@ -435,6 +435,18 @@ test.describe('player controls on the mock', () => {
     await disconnect(page)
   })
 
+  test('plays a whole artist from its page', async ({ page }) => {
+    await english(page)
+    await connectAndPair(page)
+    await page.goto('/#/artist/Northline')
+    await page.getByTestId('play-artist').click()
+    await expect(page.getByRole('status').filter({ hasText: 'Done. Verified on DISC.' })).toBeVisible({
+      timeout: 15_000,
+    })
+    await expect(page.getByRole('region', { name: 'Player' }).getByRole('link', { name: 'Northline' })).toBeVisible()
+    await disconnect(page)
+  })
+
   test('plays an album from its cover and a whole genre', async ({ page }, info) => {
     await english(page)
     await connectAndPair(page)
@@ -896,6 +908,23 @@ test('shows what was played last as uniform tiles and a track history with its s
   await expect(rows.nth(1)).toContainText('First Light')
 })
 
+test("shows an artist's most played tracks from the play history, and none before any play", async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  await page.goto('/#/artist/Forma')
+  const hot = page.getByTestId('hot-tracks')
+  // The mock history played Inner Space from Orbit, then from Weightless (the later play first).
+  await expect(hot.getByRole('heading', { name: 'Most played' })).toBeVisible()
+  await expect(hot).toContainText('Weightless')
+  await expect(hot).toContainText('Orbit')
+  await expect(hot).not.toContainText('Still Here')
+  // On the artist's own page a tile names the album, not the artist again.
+  await expect(hot.getByRole('link', { name: 'Inner Space' }).first()).toBeVisible()
+  await page.goto('/#/artist/Sundial')
+  await expect(page.getByRole('heading', { level: 1, name: 'Sundial' })).toBeVisible()
+  await expect(page.getByTestId('hot-tracks')).toHaveCount(0)
+})
+
 test('keeps a favorite whose file was deleted in place, dimmed and not playable', async ({ page }) => {
   test.skip(external, 'Needs the mock collection')
   await english(page)
@@ -1258,6 +1287,32 @@ test('counts the tracks while the summary answers busy, and reads the summary ag
     await page.keyboard.press('Escape')
   } finally {
     await request.post('/__mock/summary-busy?times=0')
+  }
+})
+
+test('reads no queue while stock has dropped its queue table, and shows none', async ({ page, request }) => {
+  test.skip(!SERIAL || external, 'Needs the mock gateway and a serial number')
+  await request.post('/__mock/queue-dropped?on=1')
+  try {
+    const errors = watchErrors(page)
+    const reads: string[] = []
+    page.on('request', (sent) => {
+      const path = new URL(sent.url()).pathname
+      if (path.startsWith('/api/data/queue')) reads.push(path)
+    })
+    await english(page)
+    await connectAndPair(page)
+    await page.getByRole('button', { name: 'Open queue' }).click()
+    const panel = page.getByRole('complementary', { name: 'Player view' })
+    await expect(panel).toBeVisible()
+    await expect.poll(() => reads.length).toBeGreaterThan(0)
+    // Only the cheap check: the queue itself, which would answer busy, is never asked for.
+    expect(reads.every((path) => path === '/api/data/queue_state')).toBe(true)
+    await page.keyboard.press('Escape')
+    await disconnect(page)
+    expect(errors).toEqual([])
+  } finally {
+    await request.post('/__mock/queue-dropped?on=0')
   }
 })
 

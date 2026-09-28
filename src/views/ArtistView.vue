@@ -3,29 +3,39 @@
  * Artist detail: the albums this artist is credited on, their own first and
  * then the ones they appear on through a joint credit ("A; B", kept by stock
  * as one artist). Years come from the files' tags where known, newest first.
+ * Above them, the artist's most played tracks from the service's play history
+ * (owner, 2026-09-29), each played within its album.
  */
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import CoverCard from '../components/collection/CoverCard.vue'
 import CoverCardSkeleton from '../components/collection/CoverCardSkeleton.vue'
 import CoverGrid from '../components/collection/CoverGrid.vue'
 import DetailHeading from '../components/collection/DetailHeading.vue'
 import SectionHeading from '../components/common/SectionHeading.vue'
-import { albumScope, albumTracks, recentAlbums, type Album } from '../domain/album'
+import TrackTiles from '../components/track/TrackTiles.vue'
+import { albumScope, recentAlbums, type Album } from '../domain/album'
 import { creditLabel, credits } from '../domain/artist'
+import { mostPlayed } from '../domain/history'
+import type { Track } from '../domain/track'
+import type { SelectionTarget } from '../gateway/selection'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
-import { albumCover, albumYear } from '../stores/enrichment'
+import { albumCover, albumYear, coverFor } from '../stores/enrichment'
+import { history, loadHistory } from '../stores/history'
 import { albums, artists, tracks } from '../stores/library'
 import { isPinnedArtist, pins, togglePinArtist } from '../stores/pins'
+import { isPlaying, playback } from '../stores/playback'
 import { selection } from '../stores/selection'
-import { ui } from '../stores/ui'
+import { openTrackMenu, ui } from '../stores/ui'
 import UiCircleButton from '../ui/UiCircleButton.vue'
+import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumCardRoute, albumLines, withYear } from './captions'
+import { albumCardRoute, albumRoute, artistAlbumLines, artistRoute, withYear } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { useHeadingAction } from './headingAction'
 import { playAlbumCard, playFrom } from './playAlbum'
+import { toggleCurrent } from './trackRows'
 
 const route = useRoute()
 const router = useRouter()
@@ -62,10 +72,37 @@ const heading = useHeadingAction({
   disabled: () => selection.busy,
   play: () => void playFrom({ kind: 'artist', artist: name.value }),
 })
+/** The artist's most played tracks (each at most once), from the service's play history. */
+const HOT = 6
+const hot = computed(() =>
+  filterBy(
+    mostPlayed(
+      tracks.value.filter((track) => credits(track.artist, name.value)),
+      history.most,
+      HOT,
+    ),
+    ui.query,
+    (track) => [track.title, track.album],
+  ),
+)
+onMounted(() => {
+  if (!history.loaded) void loadHistory()
+})
+/** A hot track plays within its album, from itself (stock cannot start an artist at one track). */
+function hotTarget(track: Track): SelectionTarget {
+  const key = { title: track.title, artist: track.artist }
+  if (track.album && track.artist) return { kind: 'artistAlbum', artist: track.artist, album: track.album, track: key }
+  if (track.album) return { kind: 'album', album: track.album, track: key }
+  return { kind: 'library', track: key }
+}
+const current = computed(() => playback.current.track?.path ?? null)
+const hotTitleTo = (track: Track) => (track.album ? albumRoute(track.album, track.artist || null) : null)
+/** Under a hot track: its album when the track is this artist's alone, the credit when shared. */
+const hotSubtitle = (track: Track) =>
+  track.artist === name.value && track.album ? { text: track.album, to: hotTitleTo(track) } : null
+
 function lines(album: Album) {
-  const count = albumTracks(tracks.value, album.title, name.value).length
-  const base = album.trackArtists.includes(name.value) ? [{ text: t('track_count', { count }) }] : albumLines(album)
-  return withYear(base, albumYear(album, scopeOf(album)))
+  return withYear(artistAlbumLines(album, name.value), albumYear(album, scopeOf(album)))
 }
 </script>
 
@@ -85,6 +122,14 @@ function lines(album: Album) {
           <span v-if="loading" class="inline-block h-10 w-90 animate-pulse rounded-4 bg-soft align-middle" />
           <template v-else>{{ t('album_count', { count: own.length }) }}</template>
         </template>
+        <UiPillButton
+          v-if="playable"
+          icon="play"
+          data-testid="play-artist"
+          :disabled="loading || selection.busy"
+          @click="playFrom({ kind: 'artist', artist: name })"
+          >{{ t('play_artist') }}</UiPillButton
+        >
         <UiCircleButton
           v-if="pins.available && name"
           icon="pin"
@@ -99,6 +144,25 @@ function lines(album: Album) {
     <template #skeleton>
       <CoverGrid><CoverCardSkeleton v-for="n in 4" :key="n" /></CoverGrid>
     </template>
+    <section v-if="hot.length" :aria-label="t('hot_tracks')" data-testid="hot-tracks">
+      <SectionHeading :title="t('hot_tracks')" class="mt-0!" />
+      <TrackTiles
+        :tracks="hot"
+        :play-label="t('play_label')"
+        :menu-label="t('track_actions')"
+        :cover-of="coverFor"
+        :current-path="current"
+        :playing="isPlaying"
+        :toggle-current="toggleCurrent"
+        :pause-label="t('pause')"
+        :title-to="hotTitleTo"
+        :subtitle-of="hotSubtitle"
+        :artist-to="artistRoute"
+        :disabled="selection.busy"
+        @play="(index) => hot[index] && playFrom(hotTarget(hot[index]))"
+        @menu="(index, anchor) => hot[index] && openTrackMenu(hot[index], hotTarget(hot[index]), anchor)"
+      />
+    </section>
     <template
       v-for="(section, index) in [
         { title: t('albums'), list: items },
@@ -107,7 +171,7 @@ function lines(album: Album) {
       :key="section.title"
     >
       <section v-if="section.list.length" :aria-label="section.title">
-        <SectionHeading :title="section.title" :class="{ 'mt-0!': index === 0 || !items.length }" />
+        <SectionHeading :title="section.title" :class="{ 'mt-0!': !hot.length && (index === 0 || !items.length) }" />
         <CoverGrid>
           <CoverCard
             v-for="album in section.list"

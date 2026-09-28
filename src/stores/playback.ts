@@ -4,7 +4,7 @@ import { UNKNOWN_PLAYBACK, withLibraryNames, type Playback } from '../domain/pla
 import { remembered as rememberedFrom, type Remembered } from '../domain/resume'
 import { trackKey, type Track } from '../domain/track'
 import { rowsOf } from '../gateway/http'
-import { libraryTracks } from '../gateway/library'
+import { libraryTracks, queueData } from '../gateway/library'
 import { currentPlayback, readPlayback } from '../gateway/playback'
 import { NoObservation, type GatewaySession } from '../gateway/session'
 import { activeSession, http, onSessionOpened } from './connection'
@@ -53,7 +53,11 @@ export const playerVisible = computed(
 /** Reads what stock remembers (MEMORY_PLAY and LIST_SONG_0); nothing when either is missing. */
 async function loadRemembered(): Promise<void> {
   try {
-    const [memoryResult, queueResult] = await Promise.all([http.data('resume_point'), http.data('queue')])
+    const [memoryResult, queueResult] = await Promise.all([http.data('resume_point'), queueData(http)])
+    if (!queueResult) {
+      memory.remembered = null
+      return
+    }
     memory.remembered = rememberedFrom(rowsOf(memoryResult), rowsOf(queueResult), libraryTracks(queueResult))
   } catch {
     memory.remembered = null

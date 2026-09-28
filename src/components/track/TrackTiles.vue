@@ -32,6 +32,8 @@ const props = withDefaults(
     artistTo?: (name: string) => RouteLocationRaw | null
     toggleCurrent?: (() => void) | null
     pauseLabel?: string | null
+    /** A line under the title instead of the artist (the album on the artist's own page), or null for the artist. */
+    subtitleOf?: ((track: Track) => { text: string; to: RouteLocationRaw | null } | null) | null
   }>(),
   {
     coverOf: () => null,
@@ -42,6 +44,7 @@ const props = withDefaults(
     disabled: false,
     titleTo: () => null,
     artistTo: () => null,
+    subtitleOf: null,
     toggleCurrent: null,
     pauseLabel: null,
   },
@@ -107,7 +110,19 @@ const LINK = 'hover:underline hover:underline-offset-3 focus-visible:underline'
           >{{ track.title }}</RouterLink
         >
         <strong v-else class="block truncate text-12 font-[550]">{{ track.title }}</strong>
-        <span v-if="track.artist && artistTo(track.artist)" class="mt-3 block max-w-full truncate text-11 text-muted">
+        <span v-if="subtitleOf?.(track)" class="mt-3 block max-w-full truncate text-11 text-muted">
+          <RouterLink
+            v-if="subtitleOf(track)?.to"
+            :to="subtitleOf(track)?.to ?? ''"
+            :class="`hover:text-ink ${LINK}`"
+            >{{ subtitleOf(track)?.text }}</RouterLink
+          >
+          <template v-else>{{ subtitleOf(track)?.text }}</template>
+        </span>
+        <span
+          v-else-if="track.artist && artistTo(track.artist)"
+          class="mt-3 block max-w-full truncate text-11 text-muted"
+        >
           <ArtistCredit :credit="track.artist" :to="artistTo" :link-class="`hover:text-ink ${LINK}`" />
         </span>
         <small v-else class="mt-3 block truncate text-11 text-muted">{{

@@ -7,7 +7,7 @@ import ViewHeading from '../components/common/ViewHeading.vue'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
 import { artists } from '../stores/library'
-import { artistPinnedAt, pinnedFirst } from '../stores/pins'
+import { artistPinnedAt, isPinnedArtist, pinnedFirst } from '../stores/pins'
 import { ui } from '../stores/ui'
 import { artistRoute, countLine } from './captions'
 import { playFrom } from './playAlbum'
@@ -43,6 +43,7 @@ const items = computed(() =>
         :title="artist.name"
         :to="artistRoute(artist.name)"
         artist
+        :pinned-label="isPinnedArtist(artist.name) ? t('pinned_mark') : null"
         :open-label="t('open_item', { name: artist.name })"
         :play-label="artist.literal ? t('play_item', { name: artist.name }) : null"
         :play-disabled="selection.busy"

@@ -951,7 +951,24 @@ plus macOS leftovers on the Card page. The page's part:
       first in Albums and Artists, a Pinned section on Home. Unit tests
       (`pinnedFirst`, the store client) and a mock browser test.
 - [ ] Smart playlist definitions (round 16, item 2) on a card-catalog
-      collection.
+      collection. First candidate (owner, 2026-09-29): an artist's most
+      played tracks, the artist page's "Most played" as a playable list.
+      Stock plays only its own lists, so an auto-playlist lives as a managed
+      stock playlist (like the service playlists above, e.g. "Most played ·
+      P!nk"), visible on the device too; the page brings its members up to
+      date through the guarded playlist edits (only the difference, confirmed
+      by reading back) when it is played or refreshed, and its definition
+      (kind, artist or genre, size) sits in a store collection, so every
+      browser knows which stock lists are automatic and never edits them by
+      hand. Disliked tracks stay out. Further candidates: most played overall,
+      recently added, long not played, a genre's favorites. Better base, found
+      on the guest (2026-09-29, the owner's idea): an M3U file of our own in
+      `.disc/playlists/`, which stock plays by path through folder play and
+      reads at play time, so an update is a file write, not a series of
+      guarded position edits, and needs no scan; entries relative to the card
+      root. It needs a service route that writes the lists (next image, see
+      the service plan); such lists do not appear in the device's playlist
+      list.
 - [x] Disliked tracks, the store's acceptance case (owner, 2026-09-28): the
       `disliked` collection of the card catalog (a CUE track by its path and
       title), Dislike in every track menu and in Now Playing, the Disliked
@@ -1023,6 +1040,16 @@ plus macOS leftovers on the Card page. The page's part:
 
 Without a new image (card-only, can come first):
 
+- [x] Owner's second testing round (2026-09-29), card-only: after a sync
+      that removes a file of the current queue stock drops `LIST_SONG_0`
+      until the next play, and the counts and the queue answered 503; the
+      counts now only say whether the table exists and the page reads the
+      new `queue_state` before the queue (an empty queue when it is gone);
+      the artist page plays the artist and shows its most played tracks from
+      the play history (the album under the artist's own ones); pinned albums
+      and artists carry a mark on the cover; album captions and the album
+      heading no longer count tracks (the year is a line of its own). Unit
+      and mock browser tests (125 passed).
 - [x] Owner's testing on the combined-008 player (2026-09-28), card-only:
       a deleted album no longer stays on the Recently played shelf as its
       artist or genre; the detail heading is as tall as its sleeve (the kind

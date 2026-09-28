@@ -12,7 +12,7 @@ import { albumSort } from '../stores/preferences'
 import UiChips from '../ui/UiChips.vue'
 import { albumCover } from '../stores/enrichment'
 import { albums, genres, tracks } from '../stores/library'
-import { albumPinnedAt, pinnedFirst } from '../stores/pins'
+import { albumPinnedAt, isPinnedAlbum, pinnedFirst } from '../stores/pins'
 import { ui } from '../stores/ui'
 import { albumCardRoute, albumLines, countLine, genreAlbumRoute } from './captions'
 import { playAlbumCard, playFrom } from './playAlbum'
@@ -77,6 +77,7 @@ const sorts = computed(() => ALBUM_SORTS.map((value) => ({ value, text: t(`sort_
         v-for="album in items"
         :key="album.key"
         :title="album.title"
+        :pinned-label="isPinnedAlbum(album) ? t('pinned_mark') : null"
         :to="genre ? genreAlbumRoute(album, genre, mixed(album)) : albumCardRoute(album)"
         :cover="albumCover(album, albumScope(album))"
         :lines="albumLines(album)"

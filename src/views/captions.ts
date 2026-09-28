@@ -38,7 +38,7 @@ export function albumLines(album: Album): CardLine[] {
     lines.push({ text: creditLabel(only), to: artistRoute(only) })
   else if (lead) lines.push({ text: lead, to: artistRoute(lead) })
   else if (album.artists.length > 1) lines.push({ text: t('various_artists') })
-  lines.push({ text: t('track_count', { count: album.trackCount }) })
+  // No track count: the album page numbers its tracks (owner, 2026-09-29).
   return lines
 }
 
@@ -46,16 +46,14 @@ export function albumLines(album: Album): CardLine[] {
 export const albumCardRoute = (album: Album, artist: string | null = null) =>
   albumRoute(album.title, artist ?? albumScope(album))
 
-/** A card on an artist page counts this artist's tracks (the page already names them). */
-export function artistAlbumLines(album: Album, artist: string, scopedCount: number): CardLine[] {
-  if (album.trackArtists.includes(artist)) return [{ text: t('track_count', { count: scopedCount }) }]
-  return albumLines(album)
+/** A card on an artist page names nobody for the artist's own albums (the page already does). */
+export function artistAlbumLines(album: Album, artist: string): CardLine[] {
+  return album.trackArtists.includes(artist) ? [] : albumLines(album)
 }
 
-/** Puts a year before the last line (the track count): "2004 · 3 tracks". */
+/** The year as a line of its own, under the credit. */
 export function withYear(lines: CardLine[], year: number | null): CardLine[] {
-  if (!year) return lines
-  return lines.map((line, index) => (index === lines.length - 1 ? { ...line, text: `${year} · ${line.text}` } : line))
+  return year ? [...lines, { text: String(year) }] : lines
 }
 
 export function playlistLines(playlist: Playlist): CardLine[] {

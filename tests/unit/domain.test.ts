@@ -28,7 +28,7 @@ describe('library mapping', () => {
   it('maps library_summary into the domain object', () => {
     const result = {
       query: 'library_summary',
-      columns: ['tracks', 'favorites', 'playlists', 'queue', 'last_added', 'last_id'],
+      columns: ['tracks', 'favorites', 'playlists', 'queue_table', 'last_added', 'last_id'],
       rows: [[779, 1, 3, 1, 0, 785]],
       rows_returned: 1,
       truncated: false,
@@ -37,7 +37,6 @@ describe('library mapping', () => {
       tracks: 779,
       favorites: 1,
       playlists: 3,
-      queue: 1,
       lastAdded: 0,
       lastId: 785,
     })

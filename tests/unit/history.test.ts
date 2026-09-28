@@ -4,6 +4,7 @@ import {
   pathsHash,
   playRecords,
   libraryNames,
+  mostPlayed,
   playSource,
   recentlyPlayedAlbums,
   recentSources,
@@ -145,6 +146,18 @@ describe('the service play history (next image)', () => {
     const recent = recentSources(plays, (ctx) => playSource(ctx, index, albums, libraryNames(library)), 8)
     expect(recent.map(({ source }) => source.kind)).toEqual(['album', 'genre'])
     expect(recent[0]?.path).toBe(tracks[1]?.path)
+  })
+
+  it('picks the most played tracks, most first, only those played at all', () => {
+    const list = tracks.slice(0, 4)
+    const records = [
+      { path: list[1]?.path ?? '', playCount: 2, lastPlayedAt: 10 },
+      { path: list[3]?.path ?? '', playCount: 5, lastPlayedAt: 5 },
+      { path: list[0]?.path ?? '', playCount: 2, lastPlayedAt: 20 },
+    ]
+    expect(mostPlayed(list, records, 6).map((track) => track.id)).toEqual([list[3]?.id, list[0]?.id, list[1]?.id])
+    expect(mostPlayed(list, records, 1).map((track) => track.id)).toEqual([list[3]?.id])
+    expect(mostPlayed(list, [], 6)).toEqual([])
   })
 
   it('counts a CUE image per track by the title the service recorded', () => {

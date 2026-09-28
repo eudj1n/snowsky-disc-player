@@ -25,8 +25,7 @@ describe('current cover', () => {
 
 describe('library signature', () => {
   it('changes with counts, the latest addition or the highest ID', () => {
-    const base = { tracks: 779, favorites: 1, playlists: 3, queue: 1, lastAdded: 1790017458, lastId: 785 }
-    expect(librarySignature(base)).toBe(librarySignature({ ...base, queue: 9 }))
+    const base = { tracks: 779, favorites: 1, playlists: 3, lastAdded: 1790017458, lastId: 785 }
     expect(librarySignature(base)).not.toBe(librarySignature({ ...base, lastId: 786 }))
     expect(librarySignature(base)).not.toBe(librarySignature({ ...base, lastAdded: 1 }))
   })

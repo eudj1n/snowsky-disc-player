@@ -70,6 +70,14 @@ test('pins an album and an artist, which lead Home and the lists', async ({ page
   await expect(pinned.getByTestId('pinned-artists').getByRole('link', { name: 'Mira Sol' })).toBeVisible()
   await page.goto('/#/albums')
   await expect(page.getByRole('main').getByRole('heading', { level: 3 }).first()).toHaveText('Blue Hours')
+  // A pinned card carries its mark on the cover, always shown; the others none.
+  const cards = page.getByRole('main').getByRole('article')
+  await expect(cards.first().getByTestId('pinned-mark')).toBeVisible()
+  await expect(cards.nth(1).getByTestId('pinned-mark')).toHaveCount(0)
+  await page.goto('/#/artists')
+  await expect(
+    page.getByRole('main').getByRole('article').filter({ hasText: 'Mira Sol' }).first().getByTestId('pinned-mark'),
+  ).toBeVisible()
 
   await page.goto('/#/album/Blue%20Hours/Mira%20Sol')
   await album.click()
@@ -80,6 +88,9 @@ test('pins an album and an artist, which lead Home and the lists', async ({ page
   await expect(artist).toHaveAttribute('aria-pressed', 'false')
   await page.goto('/#/')
   await expect(page.getByTestId('pinned')).toHaveCount(0)
+  await page.goto('/#/albums')
+  await expect(page.getByRole('main').getByRole('heading', { level: 3 }).first()).toBeVisible()
+  await expect(page.getByTestId('pinned-mark')).toHaveCount(0)
   await disconnect(page)
 })
 

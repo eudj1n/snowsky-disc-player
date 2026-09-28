@@ -3,6 +3,7 @@ import { parseAbout } from '../../src/domain/about'
 import { dislikedKey, dislikedKeyFields, dislikedRecord, isDislikedKey } from '../../src/domain/disliked'
 import { entryFolder, entryName, parseLeftovers, parseTrash } from '../../src/domain/trash'
 import { listFolder } from '../../src/gateway/files'
+import { queueData } from '../../src/gateway/library'
 import { GatewayHttp } from '../../src/gateway/http'
 import { audioUrl } from '../../src/gateway/media'
 import { deleteRecord, putRecord, readCollection } from '../../src/gateway/store'
@@ -133,6 +134,26 @@ describe("stock's folder listing after the service changed the card", () => {
       '/api/stock/dir/tmp/sdcard/Music/',
       '/api/stock/dir/tmp/sdcard/Music/',
     ])
+  })
+})
+
+describe("stock's queue when a scan dropped it", () => {
+  const result = (columns: string[], rows: unknown[][]) => ({
+    status: 200,
+    body: { query: 'q', columns, rows, rows_returned: rows.length, truncated: false },
+  })
+  it('reads the queue only while stock has its table, and directly with an older catalog', async () => {
+    const gone = scripted([result(['present'], [[0]])])
+    expect(await queueData(gone.http)).toBeNull()
+    expect(gone.calls.map((call) => call.url)).toEqual(['/api/data/queue_state'])
+    const there = scripted([result(['present'], [[1]]), result(['ID', 'PATH'], [[1, '/tmp/sdcard/a.flac']])])
+    expect((await queueData(there.http))?.rows).toEqual([[1, '/tmp/sdcard/a.flac']])
+    const older = scripted([
+      { status: 404, body: 'Unknown query\n' },
+      result(['ID', 'PATH'], [[1, '/tmp/sdcard/a.flac']]),
+    ])
+    expect((await queueData(older.http))?.rows_returned).toBe(1)
+    expect(older.calls.map((call) => call.url)).toEqual(['/api/data/queue_state', '/api/data/queue'])
   })
 })
 

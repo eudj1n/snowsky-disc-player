@@ -118,7 +118,7 @@ export function dataQuery(name, params, language, queue = [], memory = null) {
       tracks: TRACKS.length,
       favorites: FAVORITES.length,
       playlists: PLAYLISTS.length,
-      queue: 5,
+      queue_table: 1,
       last_added: 0,
       last_id: TRACKS.length,
     }

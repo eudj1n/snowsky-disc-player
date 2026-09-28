@@ -53,6 +53,40 @@ export const TRACK_SORTS: readonly TrackSort[] = ['library', 'added', 'played', 
  * Library order (stock's), most recently added, or most played: tracks with
  * recorded plays first by count, then by last play; the rest keep library order.
  */
+/**
+ * The play record of a track: a CUE track's plays are its own when the service
+ * named its title; older plays count for the file.
+ */
+function recordFinder(records: readonly PlayRecord[]): (track: LibraryTrack) => PlayRecord | undefined {
+  const byKey = new Map(
+    records.map((record) => [record.title ? `${record.path}\u0000${record.title.trim()}` : record.path, record]),
+  )
+  return (track) => {
+    const key = trackKey(track)
+    return key ? (byKey.get(key) ?? (track.path ? byKey.get(track.path) : undefined)) : undefined
+  }
+}
+
+/** The most played of these tracks, most first (then the latest played), only those played at all. */
+export function mostPlayed<T extends LibraryTrack>(
+  tracks: readonly T[],
+  records: readonly PlayRecord[],
+  count: number,
+): T[] {
+  const recordOf = recordFinder(records)
+  return tracks
+    .flatMap((track, index) => {
+      const record = recordOf(track)
+      return record && record.playCount > 0 ? [{ track, index, record }] : []
+    })
+    .sort(
+      (a, b) =>
+        b.record.playCount - a.record.playCount || b.record.lastPlayedAt - a.record.lastPlayedAt || a.index - b.index,
+    )
+    .slice(0, count)
+    .map((entry) => entry.track)
+}
+
 export function sortTracks<T extends LibraryTrack>(
   tracks: readonly T[],
   sort: TrackSort,
@@ -60,14 +94,7 @@ export function sortTracks<T extends LibraryTrack>(
 ): T[] {
   if (sort === 'library') return [...tracks]
   if (sort === 'added') return [...tracks].sort((a, b) => (b.addedAt ?? 0) - (a.addedAt ?? 0))
-  // A CUE track's plays are its own when the service named its title; older plays count for the file.
-  const byKey = new Map(
-    records.map((record) => [record.title ? `${record.path}\u0000${record.title.trim()}` : record.path, record]),
-  )
-  const recordOf = (track: T) => {
-    const key = trackKey(track)
-    return key ? (byKey.get(key) ?? (track.path ? byKey.get(track.path) : undefined)) : undefined
-  }
+  const recordOf = recordFinder(records)
   if (sort === 'recent') {
     // Played tracks by their last play, newest first; the rest keep library order.
     const last = (track: T) => recordOf(track)?.lastPlayedAt ?? 0

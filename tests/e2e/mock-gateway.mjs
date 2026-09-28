@@ -96,6 +96,8 @@ const WAV = (() => {
 const player = {
   /** library_summary answers busy this many more times (/__mock/summary-busy). */
   summaryBusy: 0,
+  /** Stock has no queue table (/__mock/queue-dropped): the queue read fails like a busy database. */
+  queueDropped: false,
   state: 1,
   list: TRACKS.filter((track) => track.ALBUM === 'Afterglow'),
   index: 0,
@@ -474,6 +476,18 @@ const server = createServer((request, response) => {
       'Content-Range': `bytes ${first}-${last}/${WAV.length}`,
     })
   }
+  if (url.pathname === '/api/data/queue_state') {
+    const body = {
+      query: 'queue_state',
+      columns: ['present'],
+      rows: [[player.queueDropped ? 0 : 1]],
+      rows_returned: 1,
+      truncated: false,
+    }
+    return send(response, 200, JSON.stringify(body), 'application/json')
+  }
+  if (url.pathname === '/api/data/queue' && player.queueDropped)
+    return send(response, 503, 'Database busy or unavailable\n')
   if (url.pathname === '/api/data/library_summary' && player.summaryBusy > 0) {
     player.summaryBusy--
     return send(response, 503, 'Database busy\n')
@@ -490,6 +504,11 @@ const server = createServer((request, response) => {
     return DELAY ? void setTimeout(reply, DELAY) : reply()
   }
   // Test hook: stock falls silent (its queue ended, or USB storage mode handed the card back).
+  // Stock dropped its queue table: a scan removed a file of the current queue (V2.57).
+  if (url.pathname === '/__mock/queue-dropped' && request.method === 'POST') {
+    player.queueDropped = url.searchParams.get('on') === '1'
+    return send(response, 204, '')
+  }
   // The counts answer busy this many times, as while stock scans after USB storage mode.
   if (url.pathname === '/__mock/summary-busy' && request.method === 'POST') {
     player.summaryBusy = Number(url.searchParams.get('times') ?? 0)

@@ -23,8 +23,10 @@ withDefaults(
     openLabel: string
     playLabel?: string | null
     playDisabled?: boolean
+    /** Pinned (owner, 2026-09-29): a mark on the cover, always shown, across from the play button. */
+    pinnedLabel?: string | null
   }>(),
-  { lines: () => [], artist: false, cover: null, playLabel: null, playDisabled: false },
+  { lines: () => [], artist: false, cover: null, playLabel: null, playDisabled: false, pinnedLabel: null },
 )
 const emit = defineEmits<{ play: [] }>()
 </script>
@@ -40,6 +42,14 @@ const emit = defineEmits<{ play: [] }>()
       >
         <Artwork :title="title" :artist="artist" :cover="cover" />
       </RouterLink>
+      <span
+        v-if="pinnedLabel"
+        class="pointer-events-none absolute grid size-26 place-items-center rounded-full border border-[#ffffff40] bg-[#0000004d] text-white shadow-[0_4px_12px_#0003] backdrop-blur-[10px]"
+        :class="artist ? 'top-8 left-[calc(50%-13px)]' : 'top-10 left-10'"
+        data-testid="pinned-mark"
+      >
+        <UiIcon name="pin" class="size-13" /><span class="sr-only">{{ pinnedLabel }}</span>
+      </span>
       <button
         v-if="playLabel"
         type="button"

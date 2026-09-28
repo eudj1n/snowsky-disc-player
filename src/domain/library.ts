@@ -3,7 +3,6 @@ export interface LibrarySummary {
   tracks: number
   favorites: number
   playlists: number
-  queue: number
   /** Latest ADD_TIME and highest SONG.ID: with the counts, a cheap signature
    * of the library for cache validation. */
   lastAdded: number

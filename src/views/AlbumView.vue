@@ -34,7 +34,7 @@ import { openPlaylistDialog, openTrackMenu, ui } from '../stores/ui'
 import UiCircleButton from '../ui/UiCircleButton.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumCardRoute, albumRoute, artistRoute, genreRoute } from './captions'
+import { albumCardRoute, albumRoute, artistRoute, genreRoute, withYear } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
 import { useHeadingAction } from './headingAction'
@@ -193,10 +193,9 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
               >{{ creditSeparator(index, credits.length)
               }}<RouterLink :to="artistRoute(artist)" :class="LINK">{{ artist }}</RouterLink></template
             >
-            <span v-if="credits.length"> · </span><template v-if="year">{{ year }} · </template
-            >{{ t('track_count', { count: tracks.length }) }}
+            <template v-if="year"><span v-if="credits.length"> · </span>{{ year }}</template>
             <template v-if="quality">
-              · <span data-testid="album-quality">{{ quality.text }}</span>
+              <span v-if="credits.length || year"> · </span><span data-testid="album-quality">{{ quality.text }}</span>
               <span
                 v-if="quality.hiRes"
                 class="ml-4 rounded-5 bg-accent px-6 py-2 align-middle text-10 font-semibold tracking-[1px] text-white"
@@ -296,7 +295,7 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
           :title="album.title"
           :to="albumCardRoute(album, shelfScope(album, shelf.artist))"
           :cover="albumCover(album, shelfScope(album, shelf.artist))"
-          :lines="[{ text: t('track_count', { count: album.trackCount }) }]"
+          :lines="withYear([], albumYear(album, shelfScope(album, shelf.artist)))"
           :open-label="t('open_item', { name: album.title })"
           :play-label="t('play_item', { name: album.title })"
           :play-disabled="selection.busy"

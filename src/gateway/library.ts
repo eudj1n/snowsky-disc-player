@@ -2,10 +2,26 @@
 import type { LibrarySummary } from '../domain/library'
 import type { Playlist } from '../domain/playlist'
 import type { LibraryTrack } from '../domain/track'
-import { rowsOf, type DataResult } from './http'
+import { HttpError, rowsOf, type DataResult, type GatewayHttp } from './http'
 
 function count(value: unknown): number {
   return typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : 0
+}
+
+/**
+ * The queue stock persisted, or null when it has none: a scan that removes a
+ * file of the current queue drops LIST_SONG_0 until the next play (V2.57,
+ * 2026-09-29), and reading it then fails like a busy database. The catalog's
+ * queue_state says so first; a catalog without it reads the queue directly.
+ */
+export async function queueData(http: GatewayHttp): Promise<DataResult | null> {
+  try {
+    const present = rowsOf(await http.data('queue_state'))[0]?.present
+    if (present === 0) return null
+  } catch (error) {
+    if (!(error instanceof HttpError && error.status === 404)) throw error
+  }
+  return http.data('queue')
 }
 
 export function librarySummary(result: DataResult): LibrarySummary | null {
@@ -15,7 +31,6 @@ export function librarySummary(result: DataResult): LibrarySummary | null {
     tracks: count(row.tracks),
     favorites: count(row.favorites),
     playlists: count(row.playlists),
-    queue: count(row.queue),
     lastAdded: count(row.last_added),
     lastId: count(row.last_id),
   }
