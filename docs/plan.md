@@ -926,6 +926,34 @@ all with the same PATH (IS_CUE=1, TRACK, OFFSET), and a202 reports that path,
 - [x] The sidebar's "Good music. Always within reach." note is gone, so the
       sidebar does not scroll.
 
+## Disc Player release with combined-008 (agreed 2026-09-28, not started)
+
+The owner's plan for a public release under the name **Disc Player**; the
+whole scope, the image items and the installer track are kept in the service
+plan (snowsky-disc-service `docs/plan.md`, "Combined-008"). The owner wants
+to discuss a few more points before work begins. The page's part:
+
+- [ ] Pairing by the player's serial number only (no token file, no SN
+      marker): the connection dialog asks for the SN once and keeps it.
+- [ ] Everything the service keeps lives in `.disc/` on the card: the page
+      releases (`.disc/www`), the database; the file manager hides `.disc`
+      and uploads nothing there.
+- [ ] Play history from the service's database; pinned artists and albums
+      (round 16, item 8) and smart playlist definitions (item 2) on its
+      card-catalog collections.
+- [ ] The page updates itself: fetch a new release (GitHub Releases) and
+      upload it through the service into `.disc/www`, without USB storage
+      mode.
+- [ ] Compatibility with older images: say "update the firmware" and hide
+      what the image cannot do, instead of failing on unknown routes.
+- [ ] An "About" view from the service's diagnostics document (versions,
+      card and database state, recent service errors).
+- [ ] The page stays at `IP:7870` for now; a simpler address (`disc.local`)
+      is recorded and deferred.
+- [ ] The name Disc Player in the page and the guide, marked unofficial and
+      not affiliated with FiiO or SNOWSKY; a user guide with real
+      screenshots, the risks and the way back to stock, licenses.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
