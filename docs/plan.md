@@ -941,6 +941,11 @@ to discuss a few more points before work begins. The page's part:
 - [ ] Play history from the service's database; pinned artists and albums
       (round 16, item 8) and smart playlist definitions (item 2) on its
       card-catalog collections.
+- [ ] Disliked tracks, the store's acceptance case (owner, 2026-09-28): a
+      collection declared in the card catalog, a "dislike" action in lists and
+      Now Playing, the list of disliked tracks, hiding them from shelves and
+      smart playlists; the service skips a disliked track on its own through
+      the catalog's skip rule. All of it a card release, no image.
 - [ ] The page updates itself: fetch a new release (GitHub Releases) and
       upload it through the service into `.disc/www`, without USB storage
       mode.
