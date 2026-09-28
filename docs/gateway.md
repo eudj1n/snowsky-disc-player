@@ -76,6 +76,11 @@ each change. Reads work without pairing.
   restores, deletes for good or empties, and moves macOS leftovers as one
   entry. After music moves either way the page offers a scan, since stock
   finds or drops tracks only then.
+- **Stock's folder listing** (`/dir`) keeps the folder it listed last and
+  answers the same listing again from memory (V2.57, emulator, 2026-09-28);
+  its own changes (a new folder, an upload) refresh it, the service's do not.
+  After a confirmed trash change the next listing first reads the service's
+  `.disc/` folder, which makes stock read the card again.
 
 ## Language
 

@@ -7,6 +7,7 @@
  * stock's 200 is no confirmation, so the parent is read again.
  */
 import { cardFolder, type FolderEntry } from '../domain/files'
+import { CARD_ROOT } from '../domain/imports'
 import type { GatewayHttp } from './http'
 
 const PAGE = 200
@@ -33,7 +34,17 @@ function entry(value: unknown): FolderEntry | null {
   }
 }
 
-export async function listFolder(http: GatewayHttp, folder: string): Promise<FolderListing> {
+/**
+ * Stock keeps the folder it listed last and answers the same listing again
+ * from memory (V2.57, emulator, 2026-09-28): a folder the service moved to or
+ * from its trash still showed. Listing another folder first makes stock read
+ * the card again; the service's `.disc` folder is always there. `fresh` asks
+ * for that after the service changed the card behind stock's back.
+ */
+export async function listFolder(http: GatewayHttp, folder: string, fresh = false): Promise<FolderListing> {
+  if (fresh) {
+    await http.stockRead(`/dir${CARD_ROOT}.disc/`, { 'start-pos': '0', 'num-max': '1' }).catch(() => undefined)
+  }
   const route = `/dir${cardFolder(folder)}`
   const entries: FolderEntry[] = []
   let total: number | null = null

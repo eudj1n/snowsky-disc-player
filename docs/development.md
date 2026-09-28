@@ -76,7 +76,11 @@ stock of the disposable V2.57 guest: scan, same-titled albums and tag order,
 scoped, genre and artist playback, transport, seek, volume and mute, modes,
 favorite, queue, playlist editing, sound and EQ (restored afterwards), card
 covers, file durations, sidecar and embedded lyrics, favorite removal from a
-row, pairing with the emulator's all-zero SN, and an upload with a scan. It changes device state, so it runs only with
+row, pairing with the emulator's all-zero SN, the service's own state
+(disliked tracks with the page's skip rule and a CUE track alone, pins read
+back after a reload, the trash with a folder and macOS leftovers, card files
+and a CUE track played in the browser, the diagnostics) and an upload with a
+scan. It changes device state, so it runs only with
 `E2E_ACCEPTANCE=emulator` and never against a player. Steps, with the
 emulator from snowsky-disc-service booted and USB power emulated:
 

@@ -13,6 +13,7 @@ import { deleteRecord, putRecord, readCollection } from '../gateway/store'
 import { connection, http } from './connection'
 import { transport } from './controls'
 import { tracks } from './library'
+import { operation } from './operation'
 import { pairing, pairingToken } from './pairing'
 import { playback } from './playback'
 import { toast } from './ui'
@@ -91,19 +92,25 @@ export async function toggleDislike(track: Pick<Track, 'path' | 'title' | 'cue' 
   }
 }
 
-// The skip rule while this page holds control.
+// The skip rule while this page holds control: once per start of a disliked
+// track, after a running operation (a selection being confirmed) ends, so
+// Next is never refused as busy. Pausing and resuming it does not skip again.
 let streak = 0
+let handled: string | null = null
 watch(
-  () => [playback.current.track ? trackKey(playback.current.track) : null, playback.current.state] as const,
-  ([key, playing], previous) => {
-    if (!key || playing !== 'playing' || !pairing.paired || connection.connection !== 'connected') return
+  () =>
+    [playback.current.track ? trackKey(playback.current.track) : null, playback.current.state, operation.busy] as const,
+  ([key, playing, busy]) => {
+    if (key !== handled) handled = null
     const track = playback.current.track
-    if (!track || !isDisliked(track)) {
-      if (key !== previous[0]) streak = 0
+    if (!key || !track || !isDisliked(track)) {
+      // A track that is not disliked ends a run of skips.
+      if (key) streak = 0
       return
     }
-    if (key === previous[0] && previous[1] === 'playing') return
-    if (streak >= SKIPS_IN_A_ROW) return
+    if (playing !== 'playing' || busy || handled === key) return
+    if (!pairing.paired || connection.connection !== 'connected' || streak >= SKIPS_IN_A_ROW) return
+    handled = key
     streak++
     void transport('next')
   },

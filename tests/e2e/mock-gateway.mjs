@@ -121,6 +121,9 @@ function folderTracks(path) {
   )
 }
 
+/** The folder stock listed last, answered again from memory. */
+let listed = null
+
 /** Stock's transfer browser for one card folder: its subfolders and files, from every known path. */
 function folderEntries(folder) {
   const prefix = folder ? `/tmp/sdcard/${folder}/` : '/tmp/sdcard/'
@@ -510,7 +513,11 @@ const server = createServer((request, response) => {
   if (url.pathname.startsWith('/api/stock/dir/tmp/sdcard/')) {
     const relative = decodeURIComponent(url.pathname.slice('/api/stock/dir/tmp/sdcard/'.length))
     if (request.method === 'GET') {
-      const entries = folderEntries(relative.replace(/\/$/, ''))
+      // Like stock (V2.57): the folder listed last is answered from memory until another
+      // one is listed or stock itself changes the card; the service's trash moves do not.
+      const folder = relative.replace(/\/$/, '')
+      const entries = listed?.folder === folder ? listed.entries : folderEntries(folder)
+      listed = { folder, entries }
       if (!entries.length) return send(response, 200, '')
       const start = Number(request.headers['start-pos'] ?? 0)
       const max = Math.min(Number(request.headers['num-max'] ?? 200), 200)
@@ -534,6 +541,7 @@ const server = createServer((request, response) => {
       const name = created.slice(parent ? parent.length + 1 : 0)
       const exists = folderEntries(parent).some((entry) => entry.dir && entry.name === name)
       if (!exists) player.folders.add(created)
+      listed = null
       return send(response, 200, '', 'text/plain', { 'is-exist': exists ? '1' : '0' })
     }
     return send(response, 405, 'Folder routes are GET or POST\n')
@@ -558,6 +566,7 @@ const server = createServer((request, response) => {
         return send(response, 409, 'File already exists; no overwrite\n')
       }
       player.uploads.push({ path, bytes })
+      listed = null
       send(response, 201, JSON.stringify({ path, bytes, indexed: false }), 'application/json')
     })
     return

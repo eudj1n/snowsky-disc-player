@@ -7,8 +7,9 @@
  *     npx playwright test --project=desktop
  *   tests/e2e/emulator/media.sh <container> remove
  *
- * It changes playlists, sound and EQ and uploads a file, so it refuses to run
- * without E2E_ACCEPTANCE=emulator: never point it at a real player.
+ * It changes playlists, sound and EQ, the service's store and trash, and
+ * uploads a file, so it refuses to run without E2E_ACCEPTANCE=emulator: never
+ * point it at a real player.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { connectAndPair, disconnect, english, external, openConnection, SERIAL, watchErrors } from './helpers'
@@ -518,6 +519,135 @@ test("pairs with the emulator's all-zero serial number, the only credential", as
   await page.goto('/#/album/Night%20Lines/Lumen')
   await verified(page, () => page.getByRole('button', { name: 'Play Signal' }).click())
   await disconnect(page)
+})
+
+async function trackAction(page: Page, track: string, action: string): Promise<void> {
+  await page.getByRole('button', { name: `Track actions: ${track}` }).click()
+  await page.getByRole('dialog', { name: 'Track actions' }).getByRole('menuitem', { name: action }).click()
+}
+
+test('dislikes tracks on the store, skips one when it starts and a CUE track alone, on stock', async ({ page }) => {
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/album/Harbor/Lumen')
+  await expect(page.getByRole('row')).toHaveText([/Harbor Light/, /Low Tide/, /Pier/], { timeout: 30_000 })
+  expect(await outcome(page, () => trackAction(page, 'Harbor Light', 'Dislike'))).toBe(
+    'Disliked: hidden and skipped from now on.',
+  )
+  // The album starts with it; the page holds control and skips it with Next.
+  await verified(page, () => page.getByRole('button', { name: 'Play album' }).click())
+  await expect(page.getByTestId('track-title')).toHaveText('Low Tide', { timeout: 30_000 })
+  await page.getByTestId('toggle').click()
+  await expect(page.getByTestId('toggle')).toHaveAttribute('aria-label', 'Play', { timeout: 30_000 })
+  // A CUE track is disliked by its title: the image's other tracks stay.
+  await page.goto('/#/album/Image%20Sessions')
+  expect(await outcome(page, () => trackAction(page, 'Second Frame', 'Dislike'))).toBe(
+    'Disliked: hidden and skipped from now on.',
+  )
+  await page.goto('/#/disliked')
+  const list = page.getByTestId('disliked-list')
+  // The header row first, then the newest dislike.
+  await expect(list.getByRole('row')).toHaveText([/Title/, /Second Frame/, /Harbor Light/])
+  expect(await outcome(page, () => trackAction(page, 'Second Frame', 'Remove dislike'))).toBe('No longer disliked.')
+  expect(await outcome(page, () => trackAction(page, 'Harbor Light', 'Remove dislike'))).toBe('No longer disliked.')
+  await expect(page.getByTestId('disliked-empty')).toBeVisible()
+  await disconnect(page)
+})
+
+test('pins an album and an artist on the store, kept after a reload, on stock', async ({ page }) => {
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/album/Night%20Lines')
+  const album = page.getByTestId('pin-album')
+  expect(await outcome(page, () => album.click())).toBe('Pinned.')
+  await expect(album).toHaveAttribute('aria-pressed', 'true')
+  await page.goto('/#/artist/Kestrel')
+  const artist = page.getByTestId('pin-artist')
+  expect(await outcome(page, () => artist.click())).toBe('Pinned.')
+  // Read back from the service's database, not from this browser.
+  await page.goto('/#/')
+  await page.reload()
+  const pinned = page.getByTestId('pinned')
+  await expect(pinned.getByRole('link', { name: 'Open Night Lines' })).toBeVisible({ timeout: 30_000 })
+  await expect(pinned.getByTestId('pinned-artists').getByRole('link', { name: 'Kestrel' })).toBeVisible()
+  await page.goto('/#/album/Night%20Lines')
+  expect(await outcome(page, () => album.click())).toBe('Unpinned.')
+  await page.goto('/#/artist/Kestrel')
+  expect(await outcome(page, () => artist.click())).toBe('Unpinned.')
+  await page.goto('/#/')
+  await expect(page.getByTestId('pinned')).toHaveCount(0)
+  await disconnect(page)
+})
+
+test('moves a folder to the trash and back, and macOS leftovers too, on stock', async ({ page }) => {
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/card/files?folder=Player%20Acceptance')
+  const row = page.getByTestId('files-list').getByRole('listitem').filter({ hasText: 'Created Folder' })
+  await row.hover()
+  page.once('dialog', (dialog) => void dialog.accept())
+  expect(await outcome(page, () => row.getByRole('button', { name: 'Move to trash: Created Folder' }).click())).toBe(
+    'Moved to the trash.',
+  )
+  await expect(row).toHaveCount(0)
+  await page.goto('/#/card/trash')
+  const entries = page.getByTestId('trash-list')
+  const entry = entries.getByRole('listitem').filter({ hasText: 'Created Folder' })
+  await expect(entry).toContainText('From Player Acceptance')
+  expect(await outcome(page, () => entry.getByRole('button', { name: 'Restore' }).click())).toBe('Restored.')
+  await expect(entry).toHaveCount(0)
+
+  // media.sh left an AppleDouble twin and a .DS_Store.
+  const leftovers = page.getByTestId('leftovers')
+  await expect(leftovers).toContainText(/\d+ files?, /)
+  expect(await outcome(page, () => leftovers.getByRole('button', { name: 'Move to trash' }).click())).toBe(
+    'macOS leftovers moved to the trash.',
+  )
+  await expect(leftovers).toContainText('None on the card.')
+  const mac = entries.getByRole('listitem').filter({ hasText: 'macOS leftovers' })
+  expect(await outcome(page, () => mac.getByRole('button', { name: 'Restore' }).click())).toBe('Restored.')
+  await expect(leftovers).toContainText(/\d+ files?, /)
+
+  await page.goto('/#/card/files?folder=Player%20Acceptance')
+  await expect(row).toBeVisible()
+  await disconnect(page)
+})
+
+test('plays card files in this browser through the audio route, a CUE track from its offset, on stock', async ({
+  page,
+}) => {
+  const errors = watchErrors(page)
+  await english(page)
+  await page.goto('/#/album/Night%20Lines')
+  await page.getByTestId('album-browser').click()
+  const bar = page.getByTestId('browser-player')
+  await expect(bar).toContainText('Signal')
+  await expect(bar.getByTestId('browser-toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 30_000 })
+  // The position moves: the browser decodes the FLAC from byte ranges of the card file.
+  await expect(bar).toContainText(/· 0:0[2-9]/, { timeout: 20_000 })
+  await bar.getByTestId('browser-stop').click()
+  await expect(bar).toBeHidden()
+
+  await page.goto('/#/album/Image%20Sessions')
+  await trackAction(page, 'Second Frame', 'Play in this browser')
+  await expect(bar).toContainText('Second Frame')
+  await expect(bar.getByTestId('browser-toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 30_000 })
+  // Counted from the track's start at 0:20 in the image, not from the file's.
+  await expect(bar).toContainText(/· 0:0[1-9]/, { timeout: 20_000 })
+  await bar.getByTestId('browser-stop').click()
+  await expect(bar).toBeHidden()
+  expect(errors).toEqual([])
+})
+
+test("shows the running service's diagnostics on stock", async ({ page }) => {
+  await english(page)
+  await openConnection(page)
+  const diagnostics = page.getByRole('dialog').getByTestId('diagnostics')
+  await diagnostics.getByText('Diagnostics', { exact: true }).click()
+  await expect(diagnostics).toContainText(/0\.8\.0 · build [0-9a-f]{12}/, { timeout: 15_000 })
+  await expect(diagnostics).toContainText('from the card')
+  await expect(diagnostics).toContainText(/ok, schema 4/)
+  await page.keyboard.press('Escape')
 })
 
 test('uploads a file, scans once and shows it in New on stock', async ({ page }) => {

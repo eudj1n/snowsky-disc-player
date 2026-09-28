@@ -20,6 +20,12 @@ test('dislikes a track from its menu and Now Playing, lists it and takes it back
   await page.getByRole('button', { name: 'Track actions: Window Seat' }).click()
   await page.getByRole('dialog', { name: 'Track actions' }).getByRole('menuitem', { name: 'Dislike' }).click()
   await expect(status(page, 'Disliked: hidden and skipped from now on.')).toBeVisible()
+  // Started from the page that holds control, it is skipped with Next once the selection is confirmed.
+  await page.getByRole('button', { name: 'Play Window Seat' }).click()
+  await expect(status(page, 'Done. Verified on DISC.')).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByTestId('track-title')).toHaveText('An Open Door', { timeout: 15_000 })
+  await page.getByTestId('toggle').click()
+  await expect(page.getByTestId('toggle')).toHaveAttribute('aria-label', 'Play', { timeout: 15_000 })
 
   await page.goto('/#/favorites')
   await page.getByTestId('disliked-link').click()

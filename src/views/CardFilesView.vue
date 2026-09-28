@@ -27,7 +27,7 @@ import type { LibraryTrack } from '../domain/track'
 import { createFolder, listFolder, MAX_ENTRIES, type FolderListing } from '../gateway/files'
 import { locale, t, type MessageKey } from '../i18n'
 import { connection, http } from '../stores/connection'
-import { trash, trashPath } from '../stores/trash'
+import { cardChangedSinceListing, trash, trashPath } from '../stores/trash'
 import { coverFor, enrichment, wantSizes } from '../stores/enrichment'
 import { setImportDestination } from '../stores/imports'
 import { tracks } from '../stores/library'
@@ -60,7 +60,7 @@ async function load(): Promise<void> {
   const current = ++request
   status.value = 'loading'
   try {
-    const result = await listFolder(http, folder.value)
+    const result = await listFolder(http, folder.value, cardChangedSinceListing())
     if (current !== request) return
     listing.value = result
     status.value = 'ready'

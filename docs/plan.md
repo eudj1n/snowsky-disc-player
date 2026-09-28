@@ -960,6 +960,16 @@ plus macOS leftovers on the Card page. The page's part:
       the page holds control it skips with Next itself (at most ten in a
       row). Unit tests and a mock browser test; smart playlists will leave
       them out when they come.
+- [x] Emulator acceptance against stock (2026-09-28): release
+      `784edefa1737c1cd` published to the guest's `.disc/www` on the service
+      build `d71ae7b16031`; all 22 cases passed, the new ones being disliked
+      tracks with the page's skip rule (which now waits for a running
+      selection, so Next is never refused as busy) and a CUE track disliked
+      alone, pins read back after a reload, a folder and macOS leftovers to
+      the trash and back, a FLAC and a CUE track played in the browser, and
+      the diagnostics. Found there: stock's folder listing answers the folder
+      it listed last from memory, so after a trash change the page lists
+      `.disc/` first (`docs/gateway.md`); the mock now behaves the same.
 - [ ] The page updates itself: fetch a new release (GitHub Releases) and
       upload it through the service into `.disc/www`, without USB storage
       mode.

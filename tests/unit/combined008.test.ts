@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { parseAbout } from '../../src/domain/about'
 import { dislikedKey, dislikedKeyFields, dislikedRecord, isDislikedKey } from '../../src/domain/disliked'
 import { entryFolder, entryName, parseLeftovers, parseTrash } from '../../src/domain/trash'
+import { listFolder } from '../../src/gateway/files'
 import { GatewayHttp } from '../../src/gateway/http'
 import { audioUrl } from '../../src/gateway/media'
 import { deleteRecord, putRecord, readCollection } from '../../src/gateway/store'
@@ -114,6 +115,24 @@ describe('the trash and macOS leftovers', () => {
     expect([reply.status, reply.problem]).toEqual([409, 'The player has it open'])
     expect(JSON.parse(calls[0]?.init?.body as string)).toEqual({ path: '/tmp/sdcard/Album' })
     expect((await readTrash(http))?.count).toBe(0)
+  })
+})
+
+describe("stock's folder listing after the service changed the card", () => {
+  it('lists the service folder first when asked for a fresh listing, so stock reads the card again', async () => {
+    const { http, calls } = scripted([
+      { status: 200, body: [{ pos: 0, is_dir: true, name: 'trash' }] },
+      { status: 200, body: [{ pos: 0, is_dir: true, name: 'Album', is_cue: false, is_m3u: false, is_image: false }] },
+      { status: 200, body: [{ pos: 0, is_dir: true, name: 'Album', is_cue: false, is_m3u: false, is_image: false }] },
+    ])
+    const fresh = await listFolder(http, 'Music', true)
+    expect(fresh.entries.map((entry) => entry.name)).toEqual(['Album'])
+    await listFolder(http, 'Music')
+    expect(calls.map((call) => call.url)).toEqual([
+      '/api/stock/dir/tmp/sdcard/.disc/',
+      '/api/stock/dir/tmp/sdcard/Music/',
+      '/api/stock/dir/tmp/sdcard/Music/',
+    ])
   })
 })
 

@@ -30,6 +30,9 @@ const state = reactive({
   /** Music moved or restored since the last scan: the library is out of date. */
   rescan: false,
 })
+/** Confirmed changes to the card, which stock's folder listing does not see by itself. */
+let cardChanges = 0
+let listedChanges = 0
 export const trash = readonly(state)
 
 export async function loadTrash(): Promise<void> {
@@ -73,6 +76,7 @@ async function change(
   try {
     const reply = await task(token)
     if (reply.status === 200) {
+      cardChanges++
       if (music) state.rescan = true
       toast(done)
       return true
@@ -98,6 +102,16 @@ export const purgeEntry = (id: number): Promise<boolean> =>
 export const emptyAll = (): Promise<boolean> => change((token) => emptyTrash(http, token), 'trash_emptied', false)
 export const moveLeftovers = (): Promise<boolean> =>
   change((token) => trashLeftovers(http, token), 'leftovers_moved', false)
+
+/**
+ * True once after the service changed the card: the next folder listing asks
+ * stock to read the card again (see listFolder), in whichever view it comes.
+ */
+export function cardChangedSinceListing(): boolean {
+  const changed = cardChanges !== listedChanges
+  listedChanges = cardChanges
+  return changed
+}
 
 /** The library was scanned again: nothing moved is waiting for it. */
 export function libraryRescanned(): void {

@@ -2,15 +2,16 @@
 # Generates the acceptance media on the disposable emulator card (never on a
 # player): two albums titled "Harbor" by different artists and genres, a second
 # Lumen album, a two-disc Lumen album with a year and a joint credit, an album
-# and a track with long names, a CUE image of three tracks, and track numbers
-# that differ from file order. Tagged FLAC
+# and a track with long names, a CUE image of three tracks, track numbers
+# that differ from file order, and files a Mac leaves. Tagged FLAC
 # tones made with sox inside the emulator container; nothing is copied from a
 # real library. Usage: tests/e2e/emulator/media.sh <container> [remove]
 set -eu
 container=$1
 root='/tmp/sdcard/Player Acceptance'
 if [ "${2:-}" = remove ]; then
-  docker exec "$container" rm -rf "$root"
+  # The upload case puts its file at the card root; the service fixture expects only its own there.
+  docker exec "$container" sh -c 'rm -rf "$1" && rm -f /tmp/sdcard/Player\ Acceptance\ Upload\ *.wav' sh "$root"
   exit 0
 fi
 docker exec -i "$container" sh -eu -s "$root" <<'GUEST'
@@ -74,6 +75,10 @@ CUE
 # Long names, as on anniversary editions: stock cuts them short in its play state.
 tone 'Lumen - Anniversary' 'a Long.flac' 'An Unusually Long Track Title for the Play State' 1 \
   'Quiet Meridian (The Complete Anniversary Recordings)' Lumen Ambient 311
+# What a Mac leaves (combined-008): an AppleDouble twin and a .DS_Store, which
+# the Card page's Trash tab moves as one entry and restores.
+printf 'mac' > "$root/Lumen - Harbor/._a Pier.flac"
+printf 'mac' > "$root/.DS_Store"
 find "$root" -type f | sort
 GUEST
 # Covers need Python inside the container (a folder PNG, an embedded PICTURE).
