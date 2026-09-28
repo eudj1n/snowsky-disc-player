@@ -82,7 +82,12 @@ function toTop(): void {
         {{ title }}
       </h1>
       <p class="m-0 text-12 text-muted phone:text-11"><slot name="meta" /></p>
-      <div class="mt-25 flex items-center gap-10 empty:hidden phone:mt-20 phone:justify-center"><slot /></div>
+      <!-- Actions wrap to a new line on narrow screens rather than widen the page. -->
+      <div
+        class="mt-25 flex flex-wrap items-center gap-10 empty:hidden phone:mt-20 phone:justify-center [&>*]:whitespace-nowrap"
+      >
+        <slot />
+      </div>
     </div>
     <!-- In the workspace, so it follows the sidebar and an open listening panel. -->
     <Teleport defer to="#workspace">

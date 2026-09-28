@@ -27,6 +27,7 @@ import type { LibraryTrack } from '../domain/track'
 import { createFolder, listFolder, MAX_ENTRIES, type FolderListing } from '../gateway/files'
 import { locale, t, type MessageKey } from '../i18n'
 import { connection, http } from '../stores/connection'
+import { trash, trashPath } from '../stores/trash'
 import { coverFor, enrichment, wantSizes } from '../stores/enrichment'
 import { setImportDestination } from '../stores/imports'
 import { tracks } from '../stores/library'
@@ -36,11 +37,14 @@ import { pairing, pairingToken } from '../stores/pairing'
 import { openDialog, toast } from '../stores/ui'
 import UiIcon from '../ui/UiIcon.vue'
 import UiNowPlaying from '../ui/UiNowPlaying.vue'
+import UiIconButton from '../ui/UiIconButton.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiSkeleton from '../ui/UiSkeleton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { playable } from '../gateway/folderSelection'
 import { albumRoute } from './captions'
+import { CARD_ROW, CARD_ROW_CURRENT } from './cardRows'
+import RescanNote from './RescanNote.vue'
 import { playFrom } from './playAlbum'
 import { toggleCurrent } from './trackRows'
 
@@ -92,6 +96,8 @@ const here = computed(() => folderStats(tracks.value, enrichment.files, folder.v
 type Row = (typeof rows.value)[number]
 const playingPath = computed(() => playback.current.track?.path ?? null)
 const canPlay = (row: Row) => (row.entry.folder ? true : playable(row.entry))
+/** A track file shows its cover; the play layer darkens it instead of hiding it. */
+const hasCover = (row: Row) => !row.entry.folder && Boolean(row.track)
 function isCurrent(row: Row): boolean {
   const path = playingPath.value
   if (!path) return false
@@ -181,6 +187,11 @@ async function create(): Promise<void> {
     await router.push(folderTo(joinFolder(parent, wanted)))
   }
 }
+/** Moves a file or folder into the service's trash after a confirmation naming it (combined-008). */
+async function toTrash(row: Row): Promise<void> {
+  if (!confirm(t('move_to_trash_confirm', { name: row.entry.name }))) return
+  if (await trashPath(CARD_ROOT + row.path)) await load()
+}
 function addHere(): void {
   if (!setImportDestination(folder.value)) {
     toast('import_flow_selected')
@@ -192,9 +203,10 @@ function addHere(): void {
 
 <template>
   <ViewHeading :eyebrow="t('your_player')" :title="t('card_section')" :meta="meta">
-    <CardTabs current="files" />
+    <CardTabs current="files" :trash="connection.trash" />
   </ViewHeading>
 
+  <RescanNote />
   <nav
     :aria-label="t('files_breadcrumbs')"
     class="mb-14 flex flex-wrap items-center gap-4 text-13"
@@ -262,8 +274,8 @@ function addHere(): void {
     <li
       v-for="row in rows"
       :key="row.entry.name"
-      class="group/row flex items-center gap-14 rounded-8 border-b border-line py-9 last:border-b-0"
-      :class="{ 'bg-selected': isCurrent(row) }"
+      class="group/row flex items-center gap-14 border-b border-line py-9 last:border-b-0"
+      :class="[CARD_ROW, { [CARD_ROW_CURRENT]: isCurrent(row) }]"
       :data-folder="row.entry.folder ? 'true' : undefined"
       :aria-current="isCurrent(row) ? 'true' : undefined"
     >
@@ -282,12 +294,11 @@ function addHere(): void {
         <span
           v-if="canPlay(row)"
           aria-hidden="true"
-          class="absolute inset-0 grid place-items-center bg-[#0006] text-white transition-opacity duration-200"
-          :class="
-            isCurrent(row)
-              ? 'bg-[#0004] opacity-100'
-              : 'opacity-0 group-focus-within/row:opacity-100 group-hover/row:opacity-100'
-          "
+          class="absolute inset-0 grid place-items-center transition-opacity duration-200"
+          :class="[
+            hasCover(row) ? (isCurrent(row) ? 'bg-[#0004] text-white' : 'bg-[#0006] text-white') : 'bg-hover text-ink',
+            isCurrent(row) ? 'opacity-100' : 'opacity-0 group-focus-within/row:opacity-100 group-hover/row:opacity-100',
+          ]"
         >
           <template v-if="isCurrent(row)">
             <UiNowPlaying :playing="isPlaying" class="group-focus-within/row:hidden group-hover/row:hidden" />
@@ -336,6 +347,15 @@ function addHere(): void {
           row.stats ? (row.stats.measured ? bytes(row.stats.bytes) : '') : row.size !== null ? bytes(row.size ?? 0) : ''
         }}
       </span>
+      <UiIconButton
+        v-if="connection.trash && writable"
+        icon="trash"
+        :label="`${t('move_to_trash')}: ${row.entry.name}`"
+        :disabled="!ready || trash.busy || isCurrent(row)"
+        class="opacity-60 group-focus-within/row:opacity-100 group-hover/row:opacity-100 [&>svg]:size-16"
+        data-testid="files-trash"
+        @click="toTrash(row)"
+      />
     </li>
   </ul>
   <p v-if="listing?.truncated" class="mt-12 text-11 text-muted">{{ t('files_truncated', { count: MAX_ENTRIES }) }}</p>

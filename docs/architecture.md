@@ -75,6 +75,12 @@ turns pushes into state: the `a103` position, the `a102` play mode and scan
 activity. Mute is an ordinary volume change to 0; the replaced level is a
 browser preference (`disc-player.volume-before-mute`).
 
+The service's own state (combined-008) has stores of its own:
+`stores/disliked.ts` (with the page-side skip rule), `stores/pins.ts`,
+`stores/trash.ts` (with the rescan offer), `stores/about.ts` and
+`stores/browser.ts`, which plays card files in an `Audio` element through
+the media route, a CUE track from its offset, without touching the player.
+
 ## Build and serving constraints
 
 - **CSP** `default-src 'self'` on every page: no inline script/style/handlers,
@@ -95,7 +101,7 @@ browser preference (`disc-player.volume-before-mute`).
 ## Preferences and storage
 
 `localStorage` holds browser-only preferences: locale, appearance, the
-pairing token, album sort, refresh-after-scan and the volume before mute.
+pairing serial number, album sort, refresh-after-scan and the volume before mute.
 Every access tolerates unavailable storage. IndexedDB holds the collection
 snapshot keyed by the library signature and listening enrichment: durations
 and covers per track path, plus album covers per title and per title and

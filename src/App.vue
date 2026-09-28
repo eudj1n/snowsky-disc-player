@@ -8,8 +8,10 @@ import { onBeforeUnmount, onMounted, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import { t } from './i18n'
 import AppearanceDialog from './layout/AppearanceDialog.vue'
+import BrowserPlayer from './layout/BrowserPlayer.vue'
 import AppPlayerBar from './layout/AppPlayerBar.vue'
 import AppSidebar from './layout/AppSidebar.vue'
+import SidebarToggle from './layout/SidebarToggle.vue'
 import AppToast from './layout/AppToast.vue'
 import AppTopbar from './layout/AppTopbar.vue'
 import ConnectionDialog from './layout/ConnectionDialog.vue'
@@ -20,6 +22,9 @@ import ListeningPanel from './layout/ListeningPanel.vue'
 import SoundDialog from './layout/SoundDialog.vue'
 import TrackMenuDialog from './layout/TrackMenuDialog.vue'
 import './stores/appearance'
+// combined-008: disliked tracks (and their skip rule) and pins follow the store once health reports it.
+import './stores/disliked'
+import './stores/pins'
 import { connection, probeGateway, resumeAfterReload } from './stores/connection'
 import { loadEnrichment } from './stores/enrichment'
 import { loadCollection, loadLibraryFacts, loadSavedCollection } from './stores/library'
@@ -76,6 +81,7 @@ watchEffect(() => {
     >{{ t('skip_to_content') }}</a
   >
   <AppSidebar />
+  <SidebarToggle />
   <div
     id="workspace"
     class="ml-(--sidebar) min-h-screen pb-(--player) listening:mr-380"
@@ -91,6 +97,7 @@ watchEffect(() => {
     </main>
   </div>
   <AppPlayerBar v-if="playerVisible" />
+  <BrowserPlayer />
   <ListeningPanel />
   <ConnectionDialog />
   <AppearanceDialog />

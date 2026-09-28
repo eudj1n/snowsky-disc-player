@@ -48,7 +48,9 @@ export function libraryTrack(row: Record<string, unknown>): LibraryTrack | null 
     durationMs: positive(row.DURATION),
     queuePosition: null,
     addedAt: positive(row.ADD_TIME),
-    ...(row.IS_CUE === 1 ? { cue: true } : {}),
+    ...(row.IS_CUE === 1
+      ? { cue: true, cueOffsetMs: typeof row.OFFSET === 'number' && row.OFFSET >= 0 ? row.OFFSET : 0 }
+      : {}),
   }
 }
 

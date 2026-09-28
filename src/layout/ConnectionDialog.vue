@@ -2,13 +2,15 @@
 /**
  * Reference connection dialog, adapted: the page is served by the player,
  * so there is no address form. Connect/Disconnect, identity, the one-owner
- * note and pairing with the card token. Opening never connects.
+ * note, pairing with the player's serial number, and the service's
+ * diagnostics (combined-008) behind a disclosure. Opening never connects.
  */
 import { computed, watch } from 'vue'
 import ConnectionStatus from '../components/connection/ConnectionStatus.vue'
 import PairingForm from '../components/connection/PairingForm.vue'
 import { cardSpace, formatBytes } from '../domain/device'
 import { locale, t } from '../i18n'
+import { about, loadAbout } from '../stores/about'
 import { connect, connection, disconnect } from '../stores/connection'
 import { device, refreshDevice } from '../stores/device'
 import { albums, library, refreshPlayerFacts } from '../stores/library'
@@ -56,6 +58,24 @@ watch(
     }
   },
 )
+
+/** Diagnostics: read when the disclosure opens. */
+function onDiagnostics(event: Event): void {
+  if ((event.target as HTMLDetailsElement).open) void loadAbout()
+}
+const database = computed(() => {
+  const value = about.about?.database
+  if (!value) return null
+  const count = (n: number | null) => (n === null ? '—' : String(n))
+  return t('about_database_facts', {
+    state: value.state,
+    schema: count(value.schema),
+    plays: count(value.plays),
+    records: count(value.records),
+    trash: count(value.trash),
+  })
+})
+const PAGE_SOURCE = { card: 'about_page_card', image: 'about_page_image', embedded: 'about_page_embedded' } as const
 
 const status = computed(() => {
   if (connection.gateway === false) return t('server_unavailable')
@@ -134,5 +154,38 @@ const status = computed(() => {
     </div>
     <PairingForm :stored="pairing.stored" @save="saveToken" @forget="forgetToken" />
     <p class="mt-23 text-11 leading-[1.7] text-muted">{{ t('one_control_connection') }}</p>
+    <details class="mt-16 border-t border-line pt-14 text-12" data-testid="diagnostics" @toggle="onDiagnostics">
+      <summary class="cursor-pointer text-13 font-medium">{{ t('about_title') }}</summary>
+      <p v-if="!about.about" class="mt-10 text-muted">{{ about.loading ? '…' : t('about_unavailable') }}</p>
+      <dl v-else class="mt-10 grid grid-cols-[auto_1fr] gap-x-14 gap-y-6">
+        <dt class="text-muted">{{ t('about_service') }}</dt>
+        <dd class="m-0">{{ about.about.version }} · {{ t('about_build', { build: about.about.build }) }}</dd>
+        <template v-if="about.about.image">
+          <dt class="text-muted">{{ t('about_image') }}</dt>
+          <dd class="m-0">{{ [about.about.image.variant, about.about.image.firmware].filter(Boolean).join(' · ') }}</dd>
+        </template>
+        <dt class="text-muted">{{ t('about_page') }}</dt>
+        <dd class="m-0">
+          {{ t(PAGE_SOURCE[about.about.page.source]) }}
+          <template v-if="about.about.page.release"> · {{ about.about.page.release }}</template>
+        </dd>
+        <template v-if="database">
+          <dt class="text-muted">{{ t('about_database') }}</dt>
+          <dd class="m-0">{{ database }}</dd>
+        </template>
+        <dt class="text-muted">{{ t('about_restarts') }}</dt>
+        <dd class="m-0">
+          <template v-if="!about.about.restarts.length">{{ t('about_none') }}</template>
+          <span v-for="line in about.about.restarts" :key="line" class="block font-mono text-11">{{ line }}</span>
+        </dd>
+        <dt class="text-muted">{{ t('about_messages') }}</dt>
+        <dd class="m-0 max-h-160 overflow-auto">
+          <template v-if="!about.about.log.length">{{ t('about_none') }}</template>
+          <span v-for="(entry, index) in about.about.log" :key="index" class="block font-mono text-11">{{
+            entry.message
+          }}</span>
+        </dd>
+      </dl>
+    </details>
   </UiDialog>
 </template>

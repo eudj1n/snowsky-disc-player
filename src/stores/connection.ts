@@ -53,6 +53,9 @@ interface ConnectionModel {
   /** The service keeps a play history and can favorite any track (next image). */
   history: boolean
   favoriteAny: boolean
+  /** The service keeps the card catalog's collections and a trash (combined-008). */
+  store: boolean
+  trash: boolean
   connection: ConnectionState
   identity: PlayerIdentity | null
   /** currentVolume from the last 0501 read (0..120); null when unknown. */
@@ -66,6 +69,8 @@ const state = reactive<ConnectionModel>({
   snPairing: false,
   history: false,
   favoriteAny: false,
+  store: false,
+  trash: false,
   connection: 'disconnected',
   identity: null,
   volume: null,
@@ -96,6 +101,8 @@ export async function probeGateway(): Promise<boolean> {
     state.snPairing = health.snPairing === true
     state.history = health.history === true
     state.favoriteAny = health.favoriteAny === true
+    state.store = health.store === true
+    state.trash = health.trash === true
   } catch {
     state.gateway = false
     state.notice = 'gateway_unreachable'

@@ -944,29 +944,37 @@ plus macOS leftovers on the Card page. The page's part:
       releases (`.disc/www`), the database; the file manager hides `.disc`
       (every hidden entry) and creates nothing below a hidden folder;
       `DISC_WEB…` and `www` are ordinary names now.
-- [ ] Play history from the service's database (same route; a CUE track's
-      plays now count on their own by the title the service records: done,
-      unit tests); pinned artists and albums
-      (round 16, item 8) and smart playlist definitions (item 2) on its
-      card-catalog collections.
-- [ ] Disliked tracks, the store's acceptance case (owner, 2026-09-28): a
-      collection declared in the card catalog, a "dislike" action in lists and
-      Now Playing, the list of disliked tracks, hiding them from shelves and
-      smart playlists; the service skips a disliked track on its own through
-      the catalog's skip rule. All of it a card release, no image.
+- [x] Play history from the service's database (same route; a CUE track's
+      plays count on their own by the title the service records) and pinned
+      artists and albums (round 16, item 8) on the store's `pinned_artists`
+      and `pinned_albums`: a Pin button on the album and artist pages, pins
+      first in Albums and Artists, a Pinned section on Home. Unit tests
+      (`pinnedFirst`, the store client) and a mock browser test.
+- [ ] Smart playlist definitions (round 16, item 2) on a card-catalog
+      collection.
+- [x] Disliked tracks, the store's acceptance case (owner, 2026-09-28): the
+      `disliked` collection of the card catalog (a CUE track by its path and
+      title), Dislike in every track menu and in Now Playing, the Disliked
+      list under Favorites, hidden from Home and New; the service skips a
+      disliked track on its own through the catalog's skip rule, and while
+      the page holds control it skips with Next itself (at most ten in a
+      row). Unit tests and a mock browser test; smart playlists will leave
+      them out when they come.
 - [ ] The page updates itself: fetch a new release (GitHub Releases) and
       upload it through the service into `.disc/www`, without USB storage
       mode.
 - [ ] Compatibility with older images: say "update the firmware" and hide
       what the image cannot do, instead of failing on unknown routes.
-- [ ] An "About" view from the service's diagnostics document (versions,
-      card and database state, recent service errors).
+- [x] An "About" view from the service's diagnostics document (versions,
+      card and database state, recent service errors): a Diagnostics
+      disclosure in the connection dialog, read when opened. Unit and mock
+      browser tests.
 - [ ] The page stays at `IP:7870` for now; a simpler address (`disc.local`)
       is recorded and deferred.
 - [ ] The name Disc Player in the page and the guide, marked unofficial and
       not affiliated with FiiO or SNOWSKY; a user guide with real
       screenshots, the risks and the way back to stock, licenses.
-- [ ] The trash (owner, 2026-09-28), on the service's reversible trash in
+- [x] The trash (owner, 2026-09-28), on the service's reversible trash in
       `.disc/trash`: "Move to trash" for a file or a folder in the file
       manager (with a confirmation naming what moves; not offered for what
       is playing), and a third Card tab, **Trash**: what was moved, from where,
@@ -974,11 +982,17 @@ plus macOS leftovers on the Card page. The page's part:
       Empty trash; the trash's size also on the Space tab. After moving or
       restoring music the page offers to update the library (a scan), since
       stock drops or finds the tracks only then. Replacing a cover or an LRC
-      moves the old one to the trash too.
-- [ ] Play in this browser (owner, 2026-09-28), on the service's read-only
-      audio route: a track or an album plays in the browser (a phone, a TV)
-      while the player rests; FLAC, MP3 and AAC play everywhere, ALAC only in
-      Safari, DSD and APE not at all.
+      moves the old one to the trash too (the service's replace-to-trash
+      header; the page uses it once it replaces covers). macOS leftovers
+      (`._*`, `.DS_Store`, `.Trashes`, …) move as one entry from the Trash
+      tab. Unit tests and a mock browser test (move, restore, leftovers,
+      the Space line, a dismissed and an accepted confirmation).
+- [x] Play in this browser (owner, 2026-09-28), on the service's read-only
+      audio route: a track (its menu) or an album (its page) plays in the
+      browser (a phone, a TV) while the player rests, a CUE track from its
+      offset in the image; a small bar pauses, skips and stops it. FLAC, MP3
+      and AAC play everywhere, ALAC only in Safari, DSD and APE not at all
+      (the page says so when the browser refuses). Mock browser test.
 - [ ] A visualizer next to karaoke (owner's question about Visicality): with
       the audio file in the browser, its spectrum is computed ahead and drawn
       synced to the player's position, full screen for a TV. Our own canvas
@@ -993,6 +1007,13 @@ plus macOS leftovers on the Card page. The page's part:
 
 Without a new image (card-only, can come first):
 
+- [x] Owner's review of the layout (2026-09-28): the sidebar toggle is a
+      round button on the sidebar's edge, after Reddit, that stays in place
+      while the page scrolls; the search takes the whole free width of the
+      top bar; the file manager's play layer covers a folder's icon instead
+      of showing it through; rows of the Card views (Files, Space, Trash)
+      light up under the pointer like track rows; scrolling to an element
+      keeps it clear of the fixed player bar and phone navigation.
 - [ ] Interface size in the appearance settings (owner, 2026-09-28): 100 %
       (today's, the smallest), 115 % and 130 %, scaling the whole interface
       (CSS `zoom`, sizes are in pixels), for TV browsers with a remote; check

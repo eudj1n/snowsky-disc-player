@@ -57,6 +57,9 @@ const props = defineProps<{
   context?: { text: string; to: RouteLocationRaw | null } | null
   /** The stream the DAC gets (next image); shown when its rate differs from the file's. */
   output?: OutputFacts | null
+  /** Whether the track is disliked (combined-008); null where the store is not available. */
+  disliked?: boolean | null
+  dislikeLabel?: string
 }>()
 const outputRate = computed(() =>
   props.output && resampled(props.output, props.playback.track?.sampleRate) && props.output.rate
@@ -76,6 +79,7 @@ const emit = defineEmits<{
   mode: [kind: 'shuffle' | 'repeat']
   seek: [seconds: number, identity: string]
   favorite: []
+  dislike: []
   volume: [value: number]
   mute: []
   navigate: []
@@ -208,6 +212,15 @@ const emit = defineEmits<{
         :pressed="repeat"
         :disabled="modesDisabled"
         @click="emit('mode', 'repeat')"
+      />
+      <UiIconButton
+        v-if="disliked !== null && disliked !== undefined && playback.track"
+        icon="ban"
+        :label="dislikeLabel ?? ''"
+        :pressed="disliked"
+        data-testid="now-dislike"
+        class="not-aria-pressed:text-muted aria-pressed:text-accent [&>svg]:size-17"
+        @click="emit('dislike')"
       />
     </div>
     <VolumeControl

@@ -26,7 +26,9 @@ import { filterBy } from '../domain/search'
 import { t } from '../i18n'
 import { albumCover } from '../stores/enrichment'
 import { history, loadHistory, recentSourcesShown } from '../stores/history'
+import { isDisliked } from '../stores/disliked'
 import { albums, featuredAlbum, tracks } from '../stores/library'
+import { pins } from '../stores/pins'
 import { selection } from '../stores/selection'
 import { openTrackMenu, ui } from '../stores/ui'
 import UiTextButton from '../ui/UiTextButton.vue'
@@ -40,7 +42,24 @@ const router = useRouter()
 const searching = computed(() => ui.query.trim() !== '')
 const recent = computed(() => recentAlbums(albums.value, 4))
 const featured = featuredAlbum
-const recentTracks = computed(() => [...tracks.value].sort((a, b) => (b.addedAt ?? 0) - (a.addedAt ?? 0)).slice(0, 3))
+// Disliked tracks stay off the shelves (combined-008).
+const recentTracks = computed(() =>
+  tracks.value
+    .filter((track) => !isDisliked(track))
+    .sort((a, b) => (b.addedAt ?? 0) - (a.addedAt ?? 0))
+    .slice(0, 3),
+)
+/** Pinned albums (newest pin first) and artists, from the service's store (combined-008). */
+const pinnedAlbums = computed(() =>
+  [...pins.albums]
+    .sort((a, b) => b.at - a.at)
+    .flatMap((pin) => {
+      const exact = albums.value.filter((album) => album.key === pin.album)
+      // A title pinned as a whole group: every release of that title.
+      return exact.length ? exact : albums.value.filter((album) => JSON.stringify([album.title]) === pin.album)
+    }),
+)
+const pinnedArtists = computed(() => [...pins.artists].sort((a, b) => b.at - a.at).map((pin) => pin.name))
 const found = computed(() => filterBy(albums.value, ui.query, (album) => [album.title, ...album.artists]))
 const played = computed(() => recentlyPlayedAlbums(history.recent, albums.value, tracks.value, 8))
 /** The service's history (next image): the sources the listener started. */
@@ -121,6 +140,33 @@ const heroLines = computed<[string, string]>(() =>
         </section>
       </div>
     </template>
+    <section v-if="pinnedAlbums.length || pinnedArtists.length" :aria-label="t('pinned_section')" data-testid="pinned">
+      <SectionHeading :title="t('pinned_section')" />
+      <CoverRow v-if="pinnedAlbums.length" :label="t('pinned_section')">
+        <CoverCard
+          v-for="album in pinnedAlbums"
+          :key="album.key"
+          role="listitem"
+          :title="album.title"
+          :to="albumCardRoute(album)"
+          :cover="albumCover(album, albumScope(album))"
+          :lines="albumLines(album)"
+          :open-label="t('open_item', { name: album.title })"
+          :play-label="t('play_item', { name: album.title })"
+          :play-disabled="selection.busy"
+          @play="playAlbumCard(album)"
+        />
+      </CoverRow>
+      <ul v-if="pinnedArtists.length" class="m-0 mt-12 flex list-none flex-wrap gap-8 p-0" data-testid="pinned-artists">
+        <li v-for="name in pinnedArtists" :key="name">
+          <RouterLink
+            :to="artistRoute(name)"
+            class="block rounded-20 bg-soft px-14 py-7 text-12 font-[550] text-ink hover:bg-hover"
+            >{{ creditLabel(name) }}</RouterLink
+          >
+        </li>
+      </ul>
+    </section>
     <!-- The service's history: what the listener started, one tile shape for every kind. -->
     <section v-if="tiles.length" :aria-label="t('recently_played')">
       <SectionHeading :title="t('recently_played')" :subtitle="t('recently_played_subtitle')" />

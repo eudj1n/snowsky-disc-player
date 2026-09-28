@@ -46,6 +46,11 @@ export function mediaPath(path: string): string {
     .join('/')
 }
 
+/** The audio file itself for this browser (combined-008): the service answers byte ranges. */
+export function audioUrl(path: string): string {
+  return `/api/media/audio${mediaPath(path)}`
+}
+
 const count = (value: unknown) => (typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : null)
 
 export async function mediaInfo(http: GatewayHttp, path: string): Promise<MediaInfo | null> {

@@ -17,8 +17,10 @@ import { filterBy } from '../domain/search'
 import { t } from '../i18n'
 import { albumCover, albumYear } from '../stores/enrichment'
 import { albums, artists, tracks } from '../stores/library'
+import { isPinnedArtist, pins, togglePinArtist } from '../stores/pins'
 import { selection } from '../stores/selection'
 import { ui } from '../stores/ui'
+import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { albumCardRoute, albumLines, withYear } from './captions'
 import CollectionGate from './CollectionGate.vue'
@@ -82,6 +84,16 @@ function lines(album: Album) {
           <span v-if="loading" class="inline-block h-10 w-90 animate-pulse rounded-4 bg-soft align-middle" />
           <template v-else>{{ t('album_count', { count: own.length }) }}</template>
         </template>
+        <UiPillButton
+          v-if="pins.available && name"
+          icon="pin"
+          variant="secondary"
+          data-testid="pin-artist"
+          :aria-pressed="isPinnedArtist(name)"
+          :disabled="pins.busy"
+          @click="togglePinArtist(name)"
+          >{{ t(isPinnedArtist(name) ? 'unpin' : 'pin') }}</UiPillButton
+        >
       </DetailHeading>
     </template>
     <template #skeleton>

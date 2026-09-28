@@ -47,6 +47,51 @@ const TYPES = {
   '.svg': 'image/svg+xml',
 }
 
+// The service's own state (combined-008): store collections, the trash, what macOS left.
+const STORE_KEYS = { disliked: ['path', 'title'], pinned_artists: ['name'], pinned_albums: ['album'] }
+const STORE_LIMITS = { disliked: 20000, pinned_artists: 500, pinned_albums: 500 }
+const storeData = Object.fromEntries(Object.keys(STORE_KEYS).map((name) => [name, new Map()]))
+const trash = { entries: [], next: 1, removed: new Set() }
+const LEFTOVERS = [
+  { path: '/tmp/sdcard/Forma - Inner Space/._01 Orbit.flac', kind: 'file', files: 1, bytes: 4096 },
+  { path: '/tmp/sdcard/.Trashes', kind: 'folder', files: 3, bytes: 52_000_000 },
+]
+let leftovers = [...LEFTOVERS]
+const storeKey = (collection, fields) => JSON.stringify(STORE_KEYS[collection].map((name) => fields[name] ?? null))
+function readBody(request) {
+  return new Promise((resolve) => {
+    const chunks = []
+    request.on('data', (chunk) => chunks.push(chunk))
+    request.on('end', () => resolve(Buffer.concat(chunks).toString()))
+  })
+}
+/** Service changes carry the serial number and a fresh request ID, like the gateway's. */
+function guarded(request, response) {
+  if (!credential(request.headers['x-disc-token'])) return (send(response, 403, 'Token required\n'), false)
+  const id = request.headers['x-disc-request']
+  if (!id || player.seen.has(id)) return (send(response, 409, 'Request ID already used\n'), false)
+  player.seen.add(id)
+  return true
+}
+/** A small WAV (thirty seconds of 8 kHz silence) standing in for every card audio file. */
+const WAV = (() => {
+  const data = Buffer.alloc(8000 * 30, 0x80)
+  const header = Buffer.alloc(44)
+  header.write('RIFF', 0)
+  header.writeUInt32LE(36 + data.length, 4)
+  header.write('WAVEfmt ', 8)
+  header.writeUInt32LE(16, 16)
+  header.writeUInt16LE(1, 20)
+  header.writeUInt16LE(1, 22)
+  header.writeUInt32LE(8000, 24)
+  header.writeUInt32LE(8000, 28)
+  header.writeUInt16LE(1, 32)
+  header.writeUInt16LE(8, 34)
+  header.write('data', 36)
+  header.writeUInt32LE(data.length, 40)
+  return Buffer.concat([header, data])
+})()
+
 // The scripted player: its current list (the stock queue), position, source flag.
 const player = {
   state: 1,
@@ -85,7 +130,7 @@ function folderEntries(folder) {
     ...TRACKS.map((track) => track.PATH),
     ...player.uploads.map((upload) => upload.path),
     ...[...player.folders].map((created) => `/tmp/sdcard/${created}/`),
-  ]
+  ].filter((path) => ![...trash.removed].some((gone) => path === gone || path.startsWith(`${gone}/`)))
   const entries = new Map()
   for (const path of paths) {
     if (!path.startsWith(prefix)) continue
@@ -196,7 +241,7 @@ function releaseFile(path) {
 const server = createServer((request, response) => {
   if (!admitted(request)) return send(response, 403, 'Host or Origin rejected\n')
   const url = new URL(request.url ?? '/', 'http://mock')
-  if (url.pathname.startsWith('/api/') && url.search && !url.pathname.startsWith('/api/data/')) {
+  if (url.pathname.startsWith('/api/') && url.search && !/^\/api\/(data|store)\//.test(url.pathname)) {
     return send(response, 405, 'Query strings are not accepted\n')
   }
   if (url.pathname === '/api/health') {
@@ -209,6 +254,8 @@ const server = createServer((request, response) => {
       snPairing: true,
       history: true,
       favoriteAny: true,
+      store: true,
+      trash: true,
     }
     return send(response, 200, JSON.stringify(health), 'application/json')
   }
@@ -247,6 +294,180 @@ const server = createServer((request, response) => {
     if (!already) FAVORITES.push(track)
     const body = { songId: track.ID, favorite: true, loveId: 1000 + track.ID, already }
     return send(response, 200, JSON.stringify(body), 'application/json')
+  }
+  if (url.pathname === '/api/about') {
+    const about = {
+      service: { name: 'disc-native-probe', version: '0.8.0', build: 'mock', api: 1, uptime: 3600, supervised: true },
+      image: { schema: 1, variant: 'usb-engineering', firmwareVersion: '2.57', page: BUNDLE },
+      page: { source: 'card', release: BUNDLE },
+      card: { owned: true },
+      database: {
+        state: 'ok',
+        schema: 4,
+        bytes: 90112,
+        plays: HISTORY.length,
+        records: 0,
+        trash: trash.entries.length,
+      },
+      restarts: ['1790000000 restarted after signal 11'],
+      log: [{ t: 1790000100, m: 'Skip rule: skipped to the next track' }],
+    }
+    return send(response, 200, JSON.stringify(about), 'application/json')
+  }
+  // The store: collections of the card catalog, the same operations for each.
+  if (url.pathname === '/api/store') {
+    const collections = Object.fromEntries(
+      Object.keys(STORE_KEYS).map((name) => [
+        name,
+        { records: storeData[name].size, max_records: STORE_LIMITS[name], skip: name === 'disliked' },
+      ]),
+    )
+    return send(response, 200, JSON.stringify({ collections }), 'application/json')
+  }
+  const storeRoute = /^\/api\/store\/([a-z_]+)\/(records|count|record|batch)$/.exec(url.pathname)
+  if (storeRoute) {
+    const [, collection, operation] = storeRoute
+    const records = storeData[collection]
+    if (!records) return send(response, 404, 'No such collection or operation\n')
+    if (operation === 'records' && request.method === 'GET') {
+      const all = [...records.values()]
+      const offset = Number(url.searchParams.get('offset') ?? 0)
+      const limit = Number(url.searchParams.get('limit') ?? 100)
+      const page = all.slice(offset, offset + limit)
+      const body = {
+        collection,
+        records: page,
+        total: all.length,
+        offset,
+        truncated: offset + page.length < all.length,
+      }
+      return send(response, 200, JSON.stringify(body), 'application/json')
+    }
+    if (operation === 'record' && request.method === 'PUT') {
+      if (!guarded(request, response)) return
+      void readBody(request).then((text) => {
+        let value
+        try {
+          value = JSON.parse(text)
+        } catch {
+          return send(response, 400, 'A record is a JSON object\n')
+        }
+        if (!value || typeof value !== 'object' || STORE_KEYS[collection].some((name, i) => i === 0 && !value[name]))
+          return send(response, 400, 'A required field is missing\n')
+        const key = storeKey(collection, value)
+        const created = !records.has(key)
+        if (created && records.size >= STORE_LIMITS[collection]) return send(response, 409, 'The collection is full\n')
+        const updated = Math.floor(Date.now() / 1000)
+        records.set(key, { key: JSON.parse(key), value, updated })
+        send(response, 200, JSON.stringify({ collection, key: JSON.parse(key), created, updated }), 'application/json')
+      })
+      return
+    }
+    if (operation === 'record' && request.method === 'DELETE') {
+      if (!guarded(request, response)) return
+      const key = storeKey(collection, Object.fromEntries(url.searchParams))
+      const deleted = records.delete(key)
+      return send(response, 200, JSON.stringify({ collection, key: JSON.parse(key), deleted }), 'application/json')
+    }
+    return send(response, 405, 'Method not allowed for this operation\n')
+  }
+  // The trash: moved card files wait in .disc/trash; restore, purge and empty.
+  if (url.pathname === '/api/card/leftovers' && request.method === 'GET') {
+    const body = {
+      files: leftovers.reduce((sum, item) => sum + item.files, 0),
+      bytes: leftovers.reduce((sum, item) => sum + item.bytes, 0),
+      items: leftovers,
+      count: leftovers.length,
+      truncated: false,
+    }
+    return send(response, 200, JSON.stringify(body), 'application/json')
+  }
+  if (url.pathname === '/api/card/leftovers/trash' && request.method === 'POST') {
+    if (!guarded(request, response)) return
+    if (!leftovers.length) return send(response, 404, 'No macOS leftovers on the card\n')
+    const entry = {
+      id: trash.next++,
+      path: '/tmp/sdcard',
+      kind: 'leftovers',
+      bytes: leftovers.reduce((sum, item) => sum + item.bytes, 0),
+      files: leftovers.reduce((sum, item) => sum + item.files, 0),
+      trashed: Math.floor(Date.now() / 1000),
+      complete: true,
+    }
+    trash.entries.unshift(entry)
+    leftovers = []
+    return send(response, 200, JSON.stringify({ ...entry, skipped: 0 }), 'application/json')
+  }
+  if (url.pathname === '/api/trash' || url.pathname.startsWith('/api/trash/')) {
+    const summary = () => ({
+      entries: trash.entries,
+      count: trash.entries.length,
+      bytes: trash.entries.reduce((sum, entry) => sum + entry.bytes, 0),
+      truncated: false,
+    })
+    if (url.pathname === '/api/trash' && request.method === 'GET')
+      return send(response, 200, JSON.stringify(summary()), 'application/json')
+    if (!guarded(request, response)) return
+    if (url.pathname === '/api/trash' && request.method === 'POST') {
+      void readBody(request).then((text) => {
+        let path
+        try {
+          path = JSON.parse(text).path
+        } catch {
+          return send(response, 400, 'The body is {"path":"<a file or folder on the card>"}\n')
+        }
+        if (typeof path !== 'string' || !path.startsWith('/tmp/sdcard/') || path.includes('/.'))
+          return send(response, 400, 'Not a file or folder on the card\n')
+        const playing = player.list[player.index]?.PATH
+        if (playing && (playing === path || playing.startsWith(`${path}/`)))
+          return send(response, 409, 'The player has it open\n')
+        const inside = TRACKS.filter((track) => track.PATH === path || track.PATH.startsWith(`${path}/`))
+        const folder = inside.some((track) => track.PATH !== path) || player.folders.has(path.slice(12))
+        if (!inside.length && !folder && !player.uploads.some((upload) => upload.path === path))
+          return send(response, 404, 'No such file or folder\n')
+        const entry = {
+          id: trash.next++,
+          path,
+          kind: folder ? 'folder' : 'file',
+          bytes: Math.max(inside.length, 1) * 25_000_000,
+          files: Math.max(inside.length, 1),
+          trashed: Math.floor(Date.now() / 1000),
+          complete: true,
+        }
+        trash.entries.unshift(entry)
+        trash.removed.add(path)
+        send(response, 200, JSON.stringify(entry), 'application/json')
+      })
+      return
+    }
+    if (url.pathname === '/api/trash' && request.method === 'DELETE') {
+      const purged = trash.entries.length
+      trash.entries = []
+      return send(response, 200, JSON.stringify({ purged }), 'application/json')
+    }
+    const one = /^\/api\/trash\/(\d+)(\/restore)?$/.exec(url.pathname)
+    const entry = one ? trash.entries.find((item) => item.id === Number(one[1])) : null
+    if (!entry) return send(response, 404, 'No such entry in the trash\n')
+    trash.entries = trash.entries.filter((item) => item !== entry)
+    if (one[2] && request.method === 'POST') {
+      trash.removed.delete(entry.path)
+      if (entry.kind === 'leftovers') leftovers = [...LEFTOVERS]
+      return send(response, 200, JSON.stringify({ id: entry.id, path: entry.path, restored: true }), 'application/json')
+    }
+    return send(response, 200, JSON.stringify({ id: entry.id, purged: true }), 'application/json')
+  }
+  if (url.pathname.startsWith('/api/media/audio/') && request.method === 'GET') {
+    const path = decodeURIComponent(url.pathname.slice('/api/media/audio'.length))
+    if (!TRACKS.some((track) => track.PATH === path)) return send(response, 404, 'No such music file\n')
+    const range = /^bytes=(\d+)-(\d*)$/.exec(request.headers.range ?? '')
+    if (!range) return send(response, 200, WAV, 'audio/wav', { 'Accept-Ranges': 'bytes' })
+    const first = Number(range[1])
+    const last = range[2] ? Math.min(Number(range[2]), WAV.length - 1) : WAV.length - 1
+    if (first >= WAV.length) return send(response, 416, '', 'text/plain', { 'Content-Range': `bytes */${WAV.length}` })
+    return send(response, 206, WAV.subarray(first, last + 1), 'audio/wav', {
+      'Accept-Ranges': 'bytes',
+      'Content-Range': `bytes ${first}-${last}/${WAV.length}`,
+    })
   }
   if (url.pathname.startsWith('/api/data/')) {
     const query = url.pathname.slice(10)

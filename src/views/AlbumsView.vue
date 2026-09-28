@@ -12,6 +12,7 @@ import { albumSort } from '../stores/preferences'
 import UiChips from '../ui/UiChips.vue'
 import { albumCover } from '../stores/enrichment'
 import { albums, genres, tracks } from '../stores/library'
+import { albumPinnedAt, pinnedFirst } from '../stores/pins'
 import { ui } from '../stores/ui'
 import { albumCardRoute, albumLines, countLine, genreAlbumRoute } from './captions'
 import { playAlbumCard, playFrom } from './playAlbum'
@@ -31,11 +32,15 @@ const source = computed(() =>
 const mixed = (album: Album) =>
   genre.value !== null &&
   albumTracks(tracks.value, album.title, albumScope(album)).some((track) => track.genre !== genre.value)
+// Pinned albums lead the list (combined-008), each order kept below them.
 const items = computed(() =>
-  sortAlbums(
-    filterBy(source.value, ui.query, (album) => [album.title, ...album.artists]),
-    albumSort.value,
-    locale.value,
+  pinnedFirst(
+    sortAlbums(
+      filterBy(source.value, ui.query, (album) => [album.title, ...album.artists]),
+      albumSort.value,
+      locale.value,
+    ),
+    albumPinnedAt,
   ),
 )
 const sorts = computed(() => ALBUM_SORTS.map((value) => ({ value, text: t(`sort_${value}`) })))

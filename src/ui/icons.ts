@@ -38,6 +38,12 @@ export const ICON_PATHS = {
   karaoke: 'M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3Z M5 11a7 7 0 0 0 14 0 M12 18v3 M9 21h6',
   fullscreen: 'M4 9V4h5 M20 9V4h-5 M4 15v5h5 M20 15v5h-5',
   'fullscreen-exit': 'M9 4v5H4 M15 4v5h5 M9 20v-5H4 M15 20v-5h5',
+  /* combined-008: dislike (a stop sign), pin, trash, the browser player (headphones) and stop. */
+  ban: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM5.6 5.6l12.8 12.8',
+  pin: 'M9 3h6l-1 6 3 3H7l3-3Z M12 12v9',
+  trash: 'M4 7h16 M10 11v6 M14 11v6 M6 7l1 13h10l1-13 M9 7V4h6v3',
+  headphones: 'M4 17v-5a8 8 0 0 1 16 0v5 M4 15h3v6H4Z M17 15h3v6h-3Z',
+  stop: 'M6 6h12v12H6Z',
   'sidebar-collapse':
     'M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z M9.5 4v16 M16 9.5 13.5 12l2.5 2.5',
   'sidebar-expand':

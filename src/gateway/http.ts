@@ -15,6 +15,10 @@ export interface Health {
   history?: boolean
   /** The service can favorite any library track (next image). */
   favoriteAny?: boolean
+  /** The service keeps the card catalog's collections (combined-008). */
+  store?: boolean
+  /** Card files go to the service's trash instead of being deleted (combined-008). */
+  trash?: boolean
 }
 
 export interface DataResult {
@@ -161,6 +165,47 @@ export class GatewayHttp {
       body = JSON.parse(text)
     } catch {
       // Error bodies are plain text.
+    }
+    return { requestId: id, status: response.status, body }
+  }
+
+  /**
+   * A read of the service's own routes (the store, the trash, diagnostics):
+   * null where this image has no such route (404) or the card release no
+   * catalog for it (403).
+   */
+  serviceRead(path: string): Promise<unknown> {
+    return this.retryBusy(async () => {
+      const response = await this.fetchImpl(path, { cache: 'no-store' })
+      if (response.status === 404 || response.status === 403) return null
+      if (!response.ok) throw new HttpError(response.status, (await response.text()).trim())
+      return (await response.json()) as unknown
+    })
+  }
+
+  /** One change on the service's own routes with the serial number and a fresh
+   * request ID. Never retried: the caller reads the state back. */
+  async serviceChange(
+    path: string,
+    init: { method: 'PUT' | 'POST' | 'DELETE'; token: string; body?: unknown },
+  ): Promise<{ requestId: string; status: number; body: unknown }> {
+    const id = newRequestId()
+    const response = await this.fetchImpl(path, {
+      method: init.method,
+      headers: {
+        'X-Disc-Token': init.token,
+        'X-Disc-Request': id,
+        ...(init.body === undefined ? {} : { 'Content-Type': 'application/json' }),
+      },
+      ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
+      cache: 'no-store',
+    })
+    const text = await response.text()
+    let body: unknown = text
+    try {
+      body = JSON.parse(text)
+    } catch {
+      // Error bodies are one line of text.
     }
     return { requestId: id, status: response.status, body }
   }

@@ -7,6 +7,7 @@ import ViewHeading from '../components/common/ViewHeading.vue'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
 import { artists } from '../stores/library'
+import { artistPinnedAt, pinnedFirst } from '../stores/pins'
 import { ui } from '../stores/ui'
 import { artistRoute, countLine } from './captions'
 import { playFrom } from './playAlbum'
@@ -14,7 +15,13 @@ import { selection } from '../stores/selection'
 import CollectionGate from './CollectionGate.vue'
 
 const searching = computed(() => ui.query.trim() !== '')
-const items = computed(() => filterBy(artists.value, ui.query, (artist) => [artist.name]))
+// Pinned artists lead the list (combined-008).
+const items = computed(() =>
+  pinnedFirst(
+    filterBy(artists.value, ui.query, (artist) => [artist.name]),
+    (artist) => artistPinnedAt(artist.name),
+  ),
+)
 </script>
 
 <template>

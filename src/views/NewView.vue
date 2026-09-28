@@ -25,10 +25,19 @@ import UiTextButton from '../ui/UiTextButton.vue'
 import { albumLines, albumCardRoute, albumRoute, artistRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { playFrom, playAlbumCard } from './playAlbum'
+import { isDisliked } from '../stores/disliked'
 import { toggleCurrent } from './trackRows'
 
+// Disliked tracks stay off the shelf (combined-008).
 const newTracks = computed(() =>
-  filterBy(recentlyAdded(tracks.value, 12), ui.query, (track) => [track.title, track.artist, track.album]),
+  filterBy(
+    recentlyAdded(
+      tracks.value.filter((track) => !isDisliked(track)),
+      12,
+    ),
+    ui.query,
+    (track) => [track.title, track.artist, track.album],
+  ),
 )
 const newAlbums = computed(() =>
   filterBy(recentAlbums(albums.value, 12), ui.query, (album) => [album.title, ...album.artists]),

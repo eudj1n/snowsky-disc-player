@@ -14,6 +14,10 @@ page records how the app uses it; `src/gateway/` is the only code that does.
 | `GET /api/data/<query>?…`                                       | Read-only stock database queries from `queries.json` (settings, language, library, favorites, playlists, queue, history, resume point, PEQ, themes) | `gateway/http.ts`, `gateway/settings.ts`, `gateway/library.ts` |
 | `GET\|POST\|DELETE /api/stock/<route>`                          | Stock HTTP routes from `commands.json` (library pages, cover, folders, uploads, playlists); parameters travel in headers                            | `gateway/http.ts`                                              |
 | `WS /api/websocket`                                             | The owner session: FiiO records, `token:` and `request:` control frames                                                                             | `gateway/session.ts`                                           |
+| `GET /api/history`, `GET /api/about`                            | The service's play history (with a CUE track's title) and its diagnostics document                                                                  | `stores/history.ts`, `domain/about.ts`                         |
+| `GET\|PUT\|DELETE /api/store/<collection>/…`                    | Card-catalog collections in the service's database: disliked tracks, pinned artists and albums                                                      | `gateway/store.ts`                                             |
+| `GET\|POST\|DELETE /api/trash…`, `/api/card/leftovers…`         | The reversible trash in `.disc/trash` and the files macOS leaves on the card                                                                        | `gateway/trash.ts`                                             |
+| `GET /api/media/audio/<path>`                                   | One card audio file with byte ranges, for playing in this browser                                                                                   | `gateway/media.ts`                                             |
 | `<release>/compatibility.json`, `commands.json`, `queries.json` | Reviewed firmware identity and the catalogs this release was prepared with                                                                          | `gateway/release.ts`                                           |
 
 ## Session rules
@@ -49,6 +53,29 @@ compares it with the player's own at every change and locks an address out
 after five wrong attempts, so a refused SN is forgotten at once. Reads and
 static files work without it. The file manager hides hidden entries (the
 service's `.disc`, what macOS leaves) and creates nothing below them.
+
+## The service's own state
+
+Since combined-008 `health` says what the image offers (`history`, `store`,
+`trash`, `media`); the page hides what it lacks. Every change there carries
+the serial number as `X-Disc-Token` and a fresh `X-Disc-Request`, needs no
+WebSocket session and is judged by the service's reply alone: `200` is
+confirmed, `409` on a full collection is "full", anything else is uncertain
+and never retried; the page reads the collection or the trash again after
+each change. Reads work without pairing.
+
+- **Disliked tracks** (`disliked`, keyed by path and, for a CUE track, its
+  title) are hidden from Home and New and listed on their own page under
+  Favorites. The service skips one that starts to play while no client holds
+  control; while this page holds control it applies the same rule with Next,
+  at most ten times in a row.
+- **Pins** (`pinned_artists`, `pinned_albums`) lead the Albums and Artists
+  lists and have a Home section.
+- **The trash**: the file manager moves a file or folder after a
+  confirmation naming it (never what is playing); the Card page's Trash tab
+  restores, deletes for good or empties, and moves macOS leftovers as one
+  entry. After music moves either way the page offers a scan, since stock
+  finds or drops tracks only then.
 
 ## Language
 

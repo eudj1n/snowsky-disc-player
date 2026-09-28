@@ -16,7 +16,7 @@ import DetailHeading from '../components/collection/DetailHeading.vue'
 import SectionHeading from '../components/common/SectionHeading.vue'
 import TrackList from '../components/track/TrackList.vue'
 import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
-import { albumTracks, albumsBy, byTrackNumber, discOf, recentAlbums } from '../domain/album'
+import { albumScope, albumTracks, albumsBy, byTrackNumber, discOf, recentAlbums } from '../domain/album'
 import { creditArtists, creditLabel, creditSeparator, sameCredit } from '../domain/artist'
 import { filterBy } from '../domain/search'
 import type { SelectionTarget, TrackKey } from '../gateway/selection'
@@ -26,6 +26,9 @@ import { isHiRes, qualityLabel } from '../domain/quality'
 import { formatBadge } from '../domain/track'
 import { findGenre, playableGenre, sameGenre } from '../domain/genre'
 import { albums, artists, genres, titleGroups, tracks as collection } from '../stores/library'
+import { playInBrowser } from '../stores/browser'
+import { connection } from '../stores/connection'
+import { isPinnedAlbum, pins, togglePinAlbum } from '../stores/pins'
 import { selection } from '../stores/selection'
 import { openPlaylistDialog, openTrackMenu, ui } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
@@ -89,6 +92,12 @@ const quality = computed(() => {
 })
 /** Several releases share this title: offer their artists as filters (and the whole group). */
 const releases = computed(() => albums.value.filter((album) => album.title === name.value).length)
+/** What a pin keeps: the one release shown (its scope), or the title group (combined-008). */
+const pinTarget = computed(() => {
+  const candidates = albums.value.filter((album) => album.title === name.value)
+  if (candidates.length === 1) return candidates[0] ?? null
+  return candidates.find((album) => scope.value !== null && albumScope(album) === scope.value) ?? group.value
+})
 const choices = computed(() => {
   const artists = group.value?.trackArtists ?? []
   // One album with a guest on some tracks needs no filters; homonymous albums (or an open scope) do.
@@ -203,6 +212,25 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
           :disabled="loading || !tracks.length"
           @click="openPlaylistDialog({ mode: 'add', tracks: tracks.map((track) => ({ ...track })), title: name })"
           >{{ t('add_to_playlist') }}</UiPillButton
+        >
+        <UiPillButton
+          v-if="connection.media"
+          icon="headphones"
+          variant="secondary"
+          data-testid="album-browser"
+          :disabled="loading || !tracks.length"
+          @click="playInBrowser(tracks)"
+          >{{ t('play_in_browser') }}</UiPillButton
+        >
+        <UiPillButton
+          v-if="pins.available && pinTarget"
+          icon="pin"
+          variant="secondary"
+          data-testid="pin-album"
+          :aria-pressed="isPinnedAlbum(pinTarget)"
+          :disabled="pins.busy"
+          @click="pinTarget && togglePinAlbum(pinTarget)"
+          >{{ t(isPinnedAlbum(pinTarget) ? 'unpin' : 'pin') }}</UiPillButton
         >
       </DetailHeading>
       <nav

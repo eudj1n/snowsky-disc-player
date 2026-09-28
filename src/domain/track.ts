@@ -16,6 +16,8 @@ export interface Track {
   dsd?: boolean
   /** One track of a CUE sheet: several tracks share one file path (IS_CUE, a202 is_cue). */
   cue?: boolean
+  /** Where a CUE track starts in its image (SONG.OFFSET, ms), for playing it in the browser. */
+  cueOffsetMs?: number
 }
 
 /** A track row from the stock library database (data level). */

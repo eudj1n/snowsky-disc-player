@@ -11,6 +11,9 @@ import { useRouter } from 'vue-router'
 import Artwork from '../components/artwork/Artwork.vue'
 import { coverFor } from '../stores/enrichment'
 import { t } from '../i18n'
+import { playInBrowser } from '../stores/browser'
+import { connection } from '../stores/connection'
+import { disliked, isDisliked, toggleDislike } from '../stores/disliked'
 import { selection } from '../stores/selection'
 import { closeTrackMenu, openPlaylistDialog, ui } from '../stores/ui'
 import { backdropDismissal, trackOpen } from '../ui/dialogs'
@@ -27,6 +30,20 @@ const items = computed<{ id: string; icon: IconName; label: string; enabled: boo
   { id: 'add', icon: 'playlist', label: t('add_to_playlist'), enabled: Boolean(menu.value?.track.title) },
   { id: 'album', icon: 'album', label: t('go_to_album'), enabled: Boolean(menu.value?.track.album) },
   { id: 'artist', icon: 'artist', label: t('go_to_artist'), enabled: Boolean(menu.value?.track.artist) },
+  // combined-008: the service's store and audio route.
+  ...(connection.store && disliked.available && menu.value?.track.path
+    ? [
+        {
+          id: 'dislike',
+          icon: 'ban' as const,
+          label: t(isDisliked(menu.value.track) ? 'undislike' : 'dislike'),
+          enabled: !disliked.busy,
+        },
+      ]
+    : []),
+  ...(connection.media && menu.value?.track.path
+    ? [{ id: 'browser', icon: 'headphones' as const, label: t('play_in_browser'), enabled: true }]
+    : []),
   // Only rows opened from a playlist page can leave it.
   ...(menu.value?.playlist
     ? [{ id: 'remove', icon: 'close' as const, label: t('remove_from_playlist'), enabled: true }]
@@ -78,6 +95,8 @@ async function choose(id: string): Promise<void> {
   closeTrackMenu()
   if (!current) return
   if (id === 'play' && current.play) await playFrom(current.play)
+  if (id === 'dislike') await toggleDislike(current.track)
+  if (id === 'browser') playInBrowser([current.track])
   if (id === 'add') openPlaylistDialog({ mode: 'add', tracks: [{ ...current.track }], title: current.track.title })
   if (id === 'remove' && current.playlist)
     openPlaylistDialog({ mode: 'remove', playlist: current.playlist, track: { ...current.track } })

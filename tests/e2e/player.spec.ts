@@ -658,7 +658,11 @@ test.describe('player controls on the mock', () => {
     const row = page.getByRole('row').filter({ hasText: 'Soft Focus' })
     await row.getByRole('button', { name: 'Pause Soft Focus' }).click()
     await expect(row.getByRole('button', { name: 'Play Soft Focus' })).toBeAttached({ timeout: 15_000 })
-    await expect(page.getByRole('button', { name: 'Play', exact: true }).filter({ visible: true })).toHaveCount(1)
+    // The player bar pauses with the row; the row itself keeps naming its track.
+    await expect(
+      page.getByRole('region', { name: 'Player' }).getByRole('button', { name: 'Play', exact: true }),
+    ).toHaveCount(1)
+    await expect(row.getByRole('button', { name: 'Play', exact: true })).toHaveCount(0)
     await row.getByRole('button', { name: 'Play Soft Focus' }).click()
     await expect(row.getByRole('button', { name: 'Pause Soft Focus' })).toBeAttached({ timeout: 15_000 })
     await expect(page.getByTestId('track-title')).toHaveText('Soft Focus')
@@ -1204,8 +1208,21 @@ test('keeps the reference layout on a phone without horizontal scrolling', async
   await page.setViewportSize({ width: 360, height: 740 })
   await english(page)
   await expect(page.getByRole('navigation').getByRole('link', { name: 'Albums' })).toBeVisible()
-  const overflow = await page.evaluate(
-    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-  )
-  expect(overflow).toBeLessThanOrEqual(0)
+  const overflow = () =>
+    page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+  expect(await overflow()).toBeLessThanOrEqual(0)
+  if (external) return
+  // Pages with a row of actions or wide rows (album and artist headings, the Card views).
+  for (const [path, heading] of [
+    ['/#/album/Afterglow', 'Afterglow'],
+    ['/#/artist/Northline', 'Northline'],
+    ['/#/card', 'Card'],
+    ['/#/card/files', 'Card'],
+    ['/#/card/trash', 'Card'],
+  ] as const) {
+    await page.goto(path)
+    await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible()
+    await expect(page.getByRole('main').getByRole('button').first()).toBeVisible()
+    expect(await overflow(), path).toBeLessThanOrEqual(0)
+  }
 })

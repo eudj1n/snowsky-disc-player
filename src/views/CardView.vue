@@ -19,11 +19,13 @@ import { connection } from '../stores/connection'
 import { device, refreshDevice } from '../stores/device'
 import { albumCover, enrichment, forgetSizes, wantSizes } from '../stores/enrichment'
 import { history, loadHistory } from '../stores/history'
+import { loadTrash, trash } from '../stores/trash'
 import { albums, library, tracks } from '../stores/library'
 import UiIcon from '../ui/UiIcon.vue'
 import UiSkeleton from '../ui/UiSkeleton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { albumCardRoute, albumLines, artistRoute, leadArtist } from './captions'
+import { CARD_ROW } from './cardRows'
 import CollectionGate from './CollectionGate.vue'
 
 const ALBUM_ROWS = 12
@@ -108,6 +110,7 @@ async function measureAgain(): Promise<void> {
 onMounted(() => {
   void refreshDevice()
   if (!history.loaded) void loadHistory()
+  if (connection.trash) void loadTrash()
 })
 // The collection may arrive after the view opened (or change with a rescan).
 watch(
@@ -123,7 +126,7 @@ watch(
   <CollectionGate :count="withPath.length" :searching="false" empty-key="search_empty_tracks">
     <template #heading="{ loading }">
       <ViewHeading :eyebrow="t('your_player')" :title="t('card_section')" :meta="loading ? null : meta">
-        <CardTabs current="space" />
+        <CardTabs current="space" :trash="connection.trash" />
       </ViewHeading>
     </template>
     <template #skeleton>
@@ -161,6 +164,16 @@ watch(
           <span class="size-8 rounded-full border border-line bg-progress-bg" aria-hidden="true" />
           {{ t('space_free') }} · <strong class="font-semibold text-ink">{{ bytes(usage.free) }}</strong>
         </li>
+        <li v-if="connection.trash && trash.listing?.bytes" class="flex items-center gap-6">
+          <UiIcon name="trash" class="size-12! shrink-0" />
+          <RouterLink
+            to="/card/trash"
+            class="underline-offset-3 hover:text-ink hover:underline"
+            data-testid="space-trash"
+            >{{ t('space_trash') }} ·
+            <strong class="font-semibold text-ink">{{ bytes(trash.listing.bytes) }}</strong></RouterLink
+          >
+        </li>
       </ul>
       <p class="mt-12 mb-0 flex flex-wrap items-center gap-x-12 gap-y-4 text-11 text-muted">
         <span>{{ t('space_measure_note') }}</span>
@@ -172,11 +185,12 @@ watch(
 
     <template v-if="formats.length">
       <SectionHeading :title="t('space_by_format')" />
-      <ul class="m-0 grid list-none gap-8 p-0" data-testid="space-formats">
+      <ul class="m-0 grid list-none gap-2 p-0" data-testid="space-formats">
         <li
           v-for="format in formats"
           :key="format.label"
           class="grid grid-cols-[minmax(7rem,10rem)_1fr_auto] items-center gap-14 phone:grid-cols-[1fr_auto]"
+          :class="[CARD_ROW, 'py-6']"
         >
           <span class="text-13 font-semibold"
             >{{ format.label }}
@@ -200,6 +214,7 @@ watch(
           v-for="entry in shownAlbums"
           :key="entry.album.key"
           class="flex items-center gap-14 border-b border-line py-9 last:border-b-0"
+          :class="CARD_ROW"
         >
           <RouterLink
             :to="albumCardRoute(entry.album)"
@@ -250,6 +265,7 @@ watch(
           v-for="artist in shownArtists"
           :key="artist.name ?? ''"
           class="flex items-center gap-14 border-b border-line py-9 last:border-b-0"
+          :class="CARD_ROW"
         >
           <RouterLink
             v-if="artist.name"
@@ -297,7 +313,7 @@ watch(
         <li
           v-for="pair in shownDuplicates"
           :key="pair.copies[0].folder + pair.copies[1].folder"
-          class="rounded-10 bg-soft px-14 py-11"
+          class="rounded-10 bg-soft px-14 py-11 transition-colors duration-150 hover:bg-hover"
         >
           <p class="m-0 text-12 font-semibold">{{ t('duplicate_tracks', { count: pair.tracks }) }}</p>
           <p v-for="copy in pair.copies" :key="copy.folder" class="m-0 mt-5 flex items-center gap-8 text-12 text-muted">

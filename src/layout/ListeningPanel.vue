@@ -23,6 +23,7 @@ import { loadQueue, queue } from '../stores/queue'
 import { lyrics } from '../stores/lyrics'
 import { playerOptions } from '../stores/playerOptions'
 import { closePanel, showPanelSection, ui } from '../stores/ui'
+import { disliked, isDisliked, toggleDislike } from '../stores/disliked'
 import UiIconButton from '../ui/UiIconButton.vue'
 import { usePlaybackContext } from './usePlaybackContext'
 import { openKaraoke } from './karaoke'
@@ -163,6 +164,11 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         :volume-disabled="player.volumeDisabled.value"
         :labels="labels"
         :context="context"
+        :disliked="
+          connection.store && disliked.available && playback.current.track ? isDisliked(playback.current.track) : null
+        "
+        :dislike-label="t(playback.current.track && isDisliked(playback.current.track) ? 'undislike' : 'dislike')"
+        @dislike="playback.current.track && toggleDislike(playback.current.track)"
         @transport="player.onTransport"
         @mode="player.onMode"
         @seek="player.onSeek"

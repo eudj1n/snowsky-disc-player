@@ -5,6 +5,7 @@ import TrackList from '../components/track/TrackList.vue'
 import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
+import { disliked } from '../stores/disliked'
 import { favorites, library } from '../stores/library'
 import { openTrackMenu, ui } from '../stores/ui'
 import { countLine } from './captions'
@@ -29,7 +30,15 @@ const columns = computed(() => ({
         :eyebrow="t('my_collection')"
         :title="t('favorites')"
         :meta="loading ? null : countLine(searching, items.length)"
-      />
+      >
+        <RouterLink
+          v-if="disliked.available"
+          to="/disliked"
+          data-testid="disliked-link"
+          class="rounded-20 bg-soft px-14 py-7 text-12 font-[550] text-muted hover:bg-hover hover:text-ink"
+          >{{ t('disliked_section') }} · {{ disliked.records.length }}</RouterLink
+        >
+      </ViewHeading>
     </template>
     <template #skeleton>
       <TrackListSkeleton :rows="skeletonRows" actions :header="columns" />

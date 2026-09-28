@@ -310,6 +310,8 @@
 @layer base {
   html {
     scrollbar-gutter: stable;
+    /* Scrolling to an element (focus, anchors) keeps it clear of the fixed player bar and navigation. */
+    scroll-padding-bottom: var(--player);
     @apply bg-paper font-sans text-ink;
   }
   /* Tailwind 4 resets buttons to the default cursor; interactive ones point. */

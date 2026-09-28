@@ -1,11 +1,10 @@
 <script setup lang="ts">
 /**
- * Top bar: the sidebar toggle (where the window is wide enough for a full
- * sidebar), search (focused by "/"), a quiet Add music button, refresh, the
+ * Top bar: search (focused by "/"), a quiet Add music button, refresh, the
  * device button on phones, appearance, sound settings and language. The
- * reference breadcrumb gave way to the toggle (owner, round 14): pages are
- * two or three levels deep and carry their own back link, and its changing
- * width moved the search.
+ * reference breadcrumb is gone (owner, round 14): pages are two or three
+ * levels deep and carry their own back link, and its changing width moved
+ * the search. The sidebar toggle sits on the sidebar's edge (SidebarToggle).
  */
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
@@ -13,7 +12,6 @@ import { chooseLocale, locale, t, type Locale, type MessageKey } from '../i18n'
 import { appearance } from '../stores/appearance'
 import { library, loadCollection } from '../stores/library'
 import { imports, setImportDestination } from '../stores/imports'
-import { sidebarRail, toggleSidebar } from '../stores/sidebar'
 import { openDialog, setQuery, ui } from '../stores/ui'
 import UiIcon from '../ui/UiIcon.vue'
 import UiIconButton from '../ui/UiIconButton.vue'
@@ -42,17 +40,9 @@ function addMusic(): void {
   <header
     class="flex h-86 items-center gap-22 border-b border-line px-44 wide:h-94 compact:gap-15 compact:px-26 rail:gap-10 phone:h-65 phone:gap-5 phone:px-12 listening:gap-12 listening:px-24"
   >
-    <span class="contents rail:hidden">
-      <UiIconButton
-        :icon="sidebarRail ? 'sidebar-expand' : 'sidebar-collapse'"
-        :label="t(sidebarRail ? 'sidebar_expand' : 'sidebar_collapse')"
-        class="-ml-32 wide:-ml-38 compact:-ml-16 listening:-ml-14"
-        @click="toggleSidebar"
-      />
-    </span>
-    <!-- Search takes the free width up to 720px and keeps to the actions on the right (owner, rounds 9 and 14). -->
+    <!-- Search takes the free width and keeps to the actions on the right (owner, rounds 9 and 14, 2026-09-28). -->
     <label
-      class="ml-auto flex max-w-720 min-w-0 flex-1 items-center gap-10 rounded-8 bg-soft px-13 py-10 text-muted focus-within:shadow-[0_0_0_2px_var(--focus-ring)] phone:max-w-none phone:px-10 phone:py-9"
+      class="flex min-w-0 flex-1 items-center gap-10 rounded-8 bg-soft px-13 py-10 text-muted focus-within:shadow-[0_0_0_2px_var(--focus-ring)] phone:px-10 phone:py-9"
     >
       <UiIcon name="search" class="size-16" />
       <input

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-/** The Card page's two views: what takes space, and the folders (round 16). */
+/** The Card page's views: what takes space, the folders (round 16) and the trash (combined-008). */
 import { t } from '../../i18n'
 
-defineProps<{ current: 'space' | 'files' }>()
+withDefaults(defineProps<{ current: 'space' | 'files' | 'trash'; trash?: boolean }>(), { trash: false })
 const TAB =
   'rounded-20 px-14 py-7 text-12 font-[550] text-muted hover:bg-hover hover:text-ink aria-[current=page]:bg-selected aria-[current=page]:text-ink'
 </script>
@@ -14,6 +14,9 @@ const TAB =
     }}</RouterLink>
     <RouterLink to="/card/files" :class="TAB" :aria-current="current === 'files' ? 'page' : undefined">{{
       t('files_tab')
+    }}</RouterLink>
+    <RouterLink v-if="trash" to="/card/trash" :class="TAB" :aria-current="current === 'trash' ? 'page' : undefined">{{
+      t('trash_tab')
     }}</RouterLink>
   </nav>
 </template>
