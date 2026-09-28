@@ -970,6 +970,12 @@ plus macOS leftovers on the Card page. The page's part:
       the diagnostics. Found there: stock's folder listing answers the folder
       it listed last from memory, so after a trash change the page lists
       `.disc/` first (`docs/gateway.md`); the mock now behaves the same.
+- [x] On the owner's player (2026-09-28): combined-008 installed (image
+      `ecebe540…` with this page built in), release `784edefa1737c1cd`
+      published to the card's `.disc/www` and served from there, the play
+      history moved into the service's database; the owner's browser
+      acceptance over Wi-Fi: "все отлично работает" (snowsky-disc-service
+      `docs/combined-008-installation-observation.md`).
 - [ ] The page updates itself: fetch a new release (GitHub Releases) and
       upload it through the service into `.disc/www`, without USB storage
       mode.
