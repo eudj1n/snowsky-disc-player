@@ -1030,14 +1030,48 @@ plus macOS leftovers on the Card page. The page's part:
 - [ ] A visualizer next to karaoke (owner's question about Visicality): with
       the audio file in the browser, its spectrum is computed ahead and drawn
       synced to the player's position, full screen for a TV. Our own canvas
-      code: Visicality has no license, so only its ideas are used.
+      code: Visicality has no license, so only its ideas are used. Approach
+      proposed (2026-09-29): instead of decoding whole files ahead (heavy for
+      a phone or a TV), the browser plays the same file silently through the
+      audio route into a Web Audio analyser and follows the player's
+      position (resynced at track changes, seeks and pauses).
+- [ ] Now Playing without duplicated controls (owner, 2026-09-29, agreed):
+      the side panel gets two tabs instead of three. "Now": cover, title,
+      artists and album with links, a tag block (format and quality, bit
+      rate, channels, the DAC stream when it differs, year, genre, disc and
+      track numbers, album artist, file size and folder with a link to the
+      file manager, plays and last played from the history, when added, the
+      dislike action) and below it, on the same scroll, the whole queue with
+      the current track marked; the bar's queue button opens "Now" at the
+      queue. "Lyrics": lyrics, karaoke, later the visualizer. On desktop the
+      panel has no transport, seek, modes or volume: the bottom bar is the
+      one control surface. On phones, where the bar only has Play and Next,
+      the open panel hides the bar and becomes a full-screen player with the
+      full controls.
 - [ ] Enrichment providers once the card catalog allows their origins:
       MusicBrainz with Cover Art Archive (tags, years, album artists,
       covers) and LRCLIB (synced lyrics for karaoke), each off by default
       (track names leave the network), results offered, not applied
       silently; applying writes covers and LRC to the card (tags later, with
       the tag editor). Spotify and Apple Music need secrets a static page
-      cannot keep; no third-party code plugins.
+      cannot keep; no third-party code plugins. Order proposed (2026-09-29):
+      LRCLIB lyrics first, then Cover Art Archive covers (and years, album
+      artists) for albums without one; MusicBrainz at most one request a
+      second; applying writes only where nothing exists, never overwrites.
+      Artist pictures (owner's question): neither Cover Art Archive nor
+      MusicBrainz hosts them, but a MusicBrainz artist links Wikidata, whose
+      image (P18) is a Wikimedia Commons file (free licences, no key, CORS):
+      MusicBrainz, then Wikidata, then a Commons thumbnail, with the author
+      and licence kept and shown; new origins `www.wikidata.org` and
+      `upload.wikimedia.org` in the card catalog. Where none exists, the
+      artist's most played album cover stands in. Last.fm (placeholders
+      only), Fanart.tv and Discogs (keys) and Deezer (no CORS) do not fit.
+
+Ideas to weigh (2026-09-29, collected with the owner): listening statistics
+from the service's history (top artists, hours a week); a library health view
+(albums without covers or tags, duplicates), which meets the enrichment;
+ListenBrainz scrobbling with the user's own token kept in the browser, off
+until switched on.
 
 Without a new image (card-only, can come first):
 
