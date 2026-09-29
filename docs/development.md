@@ -101,6 +101,13 @@ docker exec $C python3 -B /platform/tests/integration/prepare_guest.py
 The last step leaves the CI album paused, as the service fixture expects;
 delete any playlist a failed run left behind before rescanning.
 
+The guest card holds about 38 MB and every `publish` keeps the earlier
+releases: after a dozen of them the card fills up, the next publish fails with
+"No space left on device" (the manifest stays on the old release) and the
+service stops recording plays. Check `df -k /tmp/sdcard` in the container and
+remove old directories under `/tmp/sdcard/.disc/www/releases/` other than the
+one `active.json` names (the guest only; never on the owner's card).
+
 ## CI
 
 `.github/workflows/ci.yml` runs `format:check`, `lint`, `typecheck`, `test`,

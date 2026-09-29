@@ -339,7 +339,10 @@ test('keeps a play history with its source, favorites any row and reads the devi
   const album = 'Quiet Meridian (The Complete Anniversary Recordings)'
   await page.goto(`/#/album/${encodeURIComponent(album)}`)
   await verified(page, () => page.getByRole('button', { name: 'Play album' }).click())
-  await page.waitForTimeout(20_000)
+  // Half of the 25 s file counts as a play (about 12.5 s); pause well before it ends, since the
+  // confirmation itself can take several seconds on the guest and a finished queue is resumed
+  // elsewhere by the Play button.
+  await page.waitForTimeout(14_000)
   await page.getByTestId('toggle').click()
   await page.goto('/#/')
   await page.reload()

@@ -1280,6 +1280,12 @@ image; card-only items (catalog or query additions) are marked as such.
       stock database.
 - [ ] _(card-only)_ Revisit the upload bound: the catalog allows 1 GiB per
       file, the reference 2 GiB − 1; the UI uses the catalog value.
+- [ ] **Say when the play history cannot be written.** Found on the guest
+      (2026-09-29): its 38 MB card filled up and the service silently
+      recorded no plays for an hour while `/api/health` still said
+      `"history": true`. The diagnostics should report a failed write (and
+      a card too full to write), so the page can say why Recently played
+      stands still. Needs a new image.
 
 ## Later
 
