@@ -1,13 +1,18 @@
 <script setup lang="ts">
 /**
- * Reference listening panel (aside#now-panel): non-modal, Now Playing and
- * Queue under one header, each section scrolling on its own. It reserves
- * 380px from 1200px (App.vue sets .listening-open), overlays below and fills
- * the width on phones. Opening focuses the minimize button; explicit closes
- * return focus to the opener; Escape closes it only when no dialog is open.
+ * Reference listening panel (aside#now-panel), two tabs since 2026-09-29
+ * (owner): Now (the track's head, its facts and, on the same scroll, the
+ * whole queue, which the bar's queue button scrolls to) and Lyrics. The bar
+ * stays the one control surface: the panel repeats no controls, except on
+ * phones, where it covers the screen as a full-screen player with the bar
+ * hidden. It reserves 380px from 1200px (App.vue sets .listening-open) and
+ * overlays below. Opening focuses the minimize button; explicit closes return
+ * focus to the opener; Escape closes it only when no dialog is open.
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import NowPlayingDetails from '../components/player/NowPlayingDetails.vue'
+import TrackFacts from '../components/player/TrackFacts.vue'
+import { libraryRow, trackFacts } from '../domain/nowFacts'
 import { device } from '../stores/device'
 import LyricsView from '../components/player/LyricsView.vue'
 import ArtistCredit from '../components/track/ArtistCredit.vue'
@@ -15,7 +20,9 @@ import QueueRows from '../components/player/QueueRows.vue'
 import { t } from '../i18n'
 import { connection } from '../stores/connection'
 import { selectInQueue } from '../stores/controls'
-import { coverFor } from '../stores/enrichment'
+import { coverFor, enrichment, wantFileFacts } from '../stores/enrichment'
+import { history, loadHistory } from '../stores/history'
+import { tracks } from '../stores/library'
 import { observations } from '../stores/observations'
 import { isPlaying, playback } from '../stores/playback'
 import { loadQueue, queue } from '../stores/queue'
@@ -30,6 +37,39 @@ import { usePlayerControls } from './usePlayerControls'
 
 const player = usePlayerControls()
 const close = ref<InstanceType<typeof UiIconButton> | null>(null)
+const queueSection = ref<HTMLElement | null>(null)
+/** The playing track's facts for the Now tab. */
+const facts = computed(() => {
+  const track = playback.current.track
+  if (!track) return null
+  const path = track.path
+  return trackFacts({
+    track,
+    library: libraryRow(tracks.value, track),
+    file: path ? (enrichment.files[path] ?? null) : null,
+    year: path ? (enrichment.years[path] ?? null) : null,
+    plays: history.plays,
+  })
+})
+// The facts read the playing file once (size, channels, year) and the play history.
+watch(
+  () => [ui.panel, playback.current.track?.path] as const,
+  ([panel]) => {
+    if (panel !== 'now') return
+    wantFileFacts(playback.current.track)
+    if (connection.history && !history.loaded) void loadHistory()
+  },
+  { immediate: true },
+)
+// The bar's queue button shows the Now tab at the queue.
+watch(
+  () => ui.queueRequest,
+  async () => {
+    await nextTick()
+    const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches
+    queueSection.value?.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' })
+  },
+)
 const items = computed(() =>
   queue.items.map((row, index) => {
     const detail = queue.details[index]
@@ -123,7 +163,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
     v-if="ui.panel"
     id="now-panel"
     :aria-label="t('player_view')"
-    class="fixed top-0 right-0 bottom-(--player) z-25 flex w-380 animate-listening-enter flex-col border-l border-line bg-raised text-left shadow-[-15px_0_65px_#26301418] phone:w-full phone:border-l-0"
+    class="fixed top-0 right-0 bottom-(--player) z-25 flex w-380 animate-listening-enter flex-col border-l border-line bg-raised text-left shadow-[-15px_0_65px_#26301418] phone:bottom-0 phone:z-40 phone:w-full phone:border-l-0"
   >
     <div class="flex items-center justify-between px-24 pt-22 pb-12 phone:px-24 phone:pt-16 phone:pb-10">
       <span class="text-10 font-[650] tracking-[1.8px] text-muted uppercase">SNOWSKY DISC</span>
@@ -131,14 +171,14 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
     </div>
     <div class="mx-24 mb-20 flex shrink-0 gap-4 rounded-24 border border-line p-4 phone:mb-16" role="group">
       <button
-        v-for="section in ['now', 'lyrics', 'queue'] as const"
+        v-for="section in ['now', 'lyrics'] as const"
         :key="section"
         type="button"
         :aria-pressed="ui.panel === section"
         class="flex-1 rounded-20 px-12 py-9 text-12 text-muted aria-pressed:bg-paper aria-pressed:text-ink aria-pressed:shadow-[0_1px_5px_#0001]"
         @click="showPanelSection(section)"
       >
-        {{ t(section === 'now' ? 'now_playing' : section === 'lyrics' ? 'lyrics_tab' : 'queue') }}
+        {{ t(section === 'now' ? 'now_playing' : 'lyrics_tab') }}
       </button>
     </div>
     <div
@@ -163,11 +203,6 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         :volume-disabled="player.volumeDisabled.value"
         :labels="labels"
         :context="context"
-        :disliked="
-          connection.store && disliked.available && playback.current.track ? isDisliked(playback.current.track) : null
-        "
-        :dislike-label="t(playback.current.track && isDisliked(playback.current.track) ? 'undislike' : 'dislike')"
-        @dislike="playback.current.track && toggleDislike(playback.current.track)"
         @transport="player.onTransport"
         @mode="player.onMode"
         @seek="player.onSeek"
@@ -175,7 +210,50 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         @volume="player.onVolume"
         @mute="player.onMute"
         @navigate="onNavigate"
-      />
+      >
+        <TrackFacts
+          v-if="facts"
+          :facts="facts"
+          :plays-known="connection.history"
+          :disliked="
+            connection.store && disliked.available && playback.current.track ? isDisliked(playback.current.track) : null
+          "
+          :dislike-label="t(playback.current.track && isDisliked(playback.current.track) ? 'undislike' : 'dislike')"
+          @dislike="playback.current.track && toggleDislike(playback.current.track)"
+          @navigate="onNavigate"
+        />
+        <section
+          ref="queueSection"
+          class="mt-30 scroll-mt-8"
+          data-testid="panel-queue"
+          :aria-labelledby="'panel-queue-title'"
+        >
+          <div class="flex items-end justify-between">
+            <div>
+              <span class="text-10 font-[650] tracking-[1.8px] text-muted uppercase">{{ t('your_selection') }}</span>
+              <h2 id="panel-queue-title" class="mt-6 mb-4 text-24 font-bold tracking-[-0.8px]">{{ t('queue') }}</h2>
+            </div>
+            <UiIconButton
+              icon="refresh"
+              :label="t('refresh_queue')"
+              :disabled="connection.connection !== 'connected' || queue.status === 'loading'"
+              @click="loadQueue"
+            />
+          </div>
+          <p class="mt-4 mb-4 text-11 text-muted" role="status">{{ queueHint }}</p>
+          <p v-if="queue.status === 'ready'" class="mt-0 mb-14 text-11 leading-[1.6] text-muted">
+            {{ t('queue_snapshot_note') }}
+          </p>
+          <QueueRows
+            :items="items"
+            :current="queue.current"
+            :playing="isPlaying"
+            :select-label="t('select_in_queue')"
+            :disabled="!player.ready.value || queue.status !== 'ready'"
+            @select="(index) => selectInQueue(queue.items, index)"
+          />
+        </section>
+      </NowPlayingDetails>
     </div>
     <template v-else-if="ui.panel === 'lyrics'">
       <!-- The tab already says Lyrics: the header names the track only (owner, round 14). -->
@@ -216,31 +294,5 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         @seek="(ms) => player.identity.value && player.onSeek(Math.floor(ms / 1000), player.identity.value)"
       />
     </template>
-    <div v-else class="min-h-0 flex-1 [scrollbar-width:thin] overflow-auto overscroll-contain px-24 pb-28">
-      <div class="flex items-end justify-between">
-        <div>
-          <span class="text-10 font-[650] tracking-[1.8px] text-muted uppercase">{{ t('your_selection') }}</span>
-          <h2 class="mt-6 mb-4 text-24 font-bold tracking-[-0.8px]">{{ t('queue') }}</h2>
-        </div>
-        <UiIconButton
-          icon="refresh"
-          :label="t('refresh_queue')"
-          :disabled="connection.connection !== 'connected' || queue.status === 'loading'"
-          @click="loadQueue"
-        />
-      </div>
-      <p class="mt-4 mb-4 text-11 text-muted" role="status">{{ queueHint }}</p>
-      <p v-if="queue.status === 'ready'" class="mt-0 mb-14 text-11 leading-[1.6] text-muted">
-        {{ t('queue_snapshot_note') }}
-      </p>
-      <QueueRows
-        :items="items"
-        :current="queue.current"
-        :playing="isPlaying"
-        :select-label="t('select_in_queue')"
-        :disabled="!player.ready.value || queue.status !== 'ready'"
-        @select="(index) => selectInQueue(queue.items, index)"
-      />
-    </div>
   </aside>
 </template>

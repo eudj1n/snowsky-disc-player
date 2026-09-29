@@ -14,6 +14,9 @@ playing on the DISC; nothing streams to the browser.
 >   queue;
 > - follow what is playing, seek, change volume or mute, shuffle, repeat and
 >   mark the current track as a favorite;
+> - see what is known about the playing track (quality, bit rate, year, genre,
+>   disc and track, file size and folder, how often it was played) with the
+>   whole queue below it; on a phone the panel is a full-screen player;
 > - adjust gain, balance, the DAC filter and DRE;
 > - add music: upload files or album folders, then let the player scan.
 >

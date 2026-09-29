@@ -20,6 +20,6 @@ import { ui } from '../stores/ui'
           ]
     "
   >
-    {{ t(ui.toast.key) }}
+    {{ t(ui.toast.key, ui.toast.params) }}
   </div>
 </template>

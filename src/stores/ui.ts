@@ -1,11 +1,14 @@
 /** Presentation state shared across the shell: search query, dialogs, toast. */
-import { reactive, readonly } from 'vue'
+import { nextTick, reactive, readonly } from 'vue'
 import type { SelectionTarget } from '../gateway/selection'
 import type { Track } from '../domain/track'
 import type { MessageKey } from '../i18n'
 
 export type DialogName = 'connection' | 'appearance' | 'sound' | 'import'
-export type PanelSection = 'now' | 'lyrics' | 'queue'
+/** The listening panel's tabs (owner, 2026-09-29: the queue joined Now). */
+export type PanelSection = 'now' | 'lyrics'
+/** What an opener asks for: a tab, or the queue (the Now tab scrolled to it). */
+export type PanelTarget = PanelSection | 'queue'
 
 /** The open track actions menu: the row's track, what Play selects, and
  * where to anchor (reference openTrackMenu: right-aligned below the ⋯). */
@@ -29,6 +32,8 @@ export type PlaylistDialog =
 
 interface Toast {
   key: MessageKey
+  /** Values for the message's placeholders ("{position}"). */
+  params: Record<string, string | number>
   error: boolean
   /** Announced only (sr-only), not drawn. */
   quiet: boolean
@@ -39,6 +44,10 @@ const state = reactive({
   query: '',
   dialog: null as DialogName | null,
   panel: null as PanelSection | null,
+  /** What the panel was opened for; the queue asks the Now tab to scroll to it. */
+  panelTarget: null as PanelTarget | null,
+  /** Increments each time an opener asks for the queue. */
+  queueRequest: 0,
   toast: null as Toast | null,
   trackMenu: null as TrackMenu | null,
   playlistDialog: null as PlaylistDialog | null,
@@ -80,35 +89,41 @@ export function closeDialog(): void {
  */
 const QUIET: readonly MessageKey[] = ['done_verified_on_disc', 'already_set']
 
-export function toast(key: MessageKey, error = false): void {
+export function toast(key: MessageKey, error = false, params: Record<string, string | number> = {}): void {
   clearTimeout(toastTimer)
-  state.toast = { key, error, quiet: !error && QUIET.includes(key), id: ++toastId }
+  state.toast = { key, params, error, quiet: !error && QUIET.includes(key), id: ++toastId }
   toastTimer = setTimeout(() => (state.toast = null), error ? 11_000 : 4_500)
 }
 
 let panelOpener: HTMLElement | null = null
 
 /**
- * The listening panel (reference toggleListeningPanel): the opener of the
- * visible section closes it, the other switches section. Explicit closes
- * return focus to the opener.
+ * The listening panel (reference toggleListeningPanel): the opener of what is
+ * shown closes it, another opener switches to its tab. The queue opener shows
+ * the Now tab at the queue. Explicit closes return focus to the opener.
  */
-export function togglePanel(section: PanelSection, opener: HTMLElement | null): void {
-  if (state.panel === section) {
+export function togglePanel(target: PanelTarget, opener: HTMLElement | null): void {
+  if (state.panel !== null && state.panelTarget === target) {
     closePanel(true)
     return
   }
   if (state.panel === null) panelOpener = opener
-  state.panel = section
+  state.panel = target === 'queue' ? 'now' : target
+  state.panelTarget = target
+  if (target === 'queue') state.queueRequest++
 }
 
 export function showPanelSection(section: PanelSection): void {
   state.panel = section
+  state.panelTarget = section
 }
 
 export function closePanel(restoreFocus: boolean): void {
   state.panel = null
-  if (restoreFocus) panelOpener?.focus({ preventScroll: true })
+  state.panelTarget = null
+  // On phones the opener's bar hides while the panel is open: focus it once it is back.
+  const opener = panelOpener
+  if (restoreFocus && opener) void nextTick(() => opener.focus({ preventScroll: true }))
   panelOpener = null
 }
 

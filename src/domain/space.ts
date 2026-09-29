@@ -16,6 +16,8 @@ export interface FileFacts {
   sampleRate: number | null
   bitDepth: number | null
   bitRate: number | null
+  /** Measured since 2026-09-29 (the Now tab); absent in sizes remembered before. */
+  channels?: number | null
 }
 
 const LOSSLESS = new Set(['flac', 'wav', 'aif', 'aiff', 'ape', 'wv', 'alac', 'dsf', 'dff'])

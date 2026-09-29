@@ -209,6 +209,7 @@ function wantInfo(path: string): void {
           sampleRate: info.sampleRate,
           bitDepth: info.bitDepth,
           bitRate: info.bitRate,
+          channels: info.channels,
         }
       // No size (the file is gone or unreadable): not asked again on every visit to Space.
       else missedFiles[path] = Date.now()
@@ -257,6 +258,13 @@ export function wantSizes(tracks: readonly Pick<Track, 'path'>[]): void {
   if (!connection.media) return
   for (const track of tracks)
     if (track.path && !state.files[track.path] && !sizeUnreadable(track.path)) wantInfo(track.path)
+}
+
+/** Measures one track's file (the Now tab's facts), unless known or lately unreadable. */
+export function wantFileFacts(track: Pick<Track, 'path'> | null): void {
+  const path = track?.path
+  if (!connection.media || !path || state.files[path] || sizeUnreadable(path)) return
+  wantInfo(path)
 }
 
 /** Forgets the measured (and unreadable) files so the card space view reads them again. */

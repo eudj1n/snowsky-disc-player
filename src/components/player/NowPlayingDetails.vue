@@ -1,9 +1,11 @@
 <script setup lang="ts">
 /**
- * Now Playing section of the listening panel (reference .listening-main):
- * large cover, status with format badge, title, artist and album links,
- * timeline with seek feedback, transport, modes, favorite and volume. It
- * mirrors the mini-player's disabled rules.
+ * The head of the Now tab (reference .listening-main): large cover, status
+ * with format badge, title, artist and album links and where playback comes
+ * from. On phones, where the open panel is a full-screen player, the timeline
+ * with seek feedback, transport, modes, favorite and volume follow; on wider
+ * screens the bottom bar is the one control surface (owner, 2026-09-29). The
+ * default slot takes what the tab shows below (the facts, the queue).
  */
 import { computed } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
@@ -58,9 +60,6 @@ const props = defineProps<{
   context?: { text: string; to: RouteLocationRaw | null } | null
   /** The stream the DAC gets (next image); shown when its rate differs from the file's. */
   output?: OutputFacts | null
-  /** Whether the track is disliked (combined-008); null where the store is not available. */
-  disliked?: boolean | null
-  dislikeLabel?: string
 }>()
 const outputRate = computed(() =>
   props.output && resampled(props.output, props.playback.track?.sampleRate) && props.output.rate
@@ -80,7 +79,6 @@ const emit = defineEmits<{
   mode: [kind: 'shuffle' | 'repeat']
   seek: [seconds: number, identity: string]
   favorite: []
-  dislike: []
   volume: [value: number]
   mute: []
   navigate: []
@@ -152,85 +150,79 @@ const emit = defineEmits<{
       >
       <span v-else class="truncate">{{ context.text }}</span>
     </p>
-    <SeekBar
-      class="text-10"
-      :position-ms="positionMs"
-      :duration-ms="playback.track?.durationMs ?? null"
-      :identity="identity"
-      :disabled="seekDisabled"
-      :label="labels.seek"
-      @seek="(seconds, id) => emit('seek', seconds, id)"
-    />
-    <p v-if="seekFeedback" role="status" class="mt-6 text-11 text-secondary">{{ seekFeedback }}</p>
-    <div class="my-20 flex items-center justify-center gap-32">
-      <UiIconButton
-        icon="previous"
-        :label="labels.previous"
-        :disabled="controlsDisabled"
-        class="text-ink"
-        @click="emit('transport', 'previous')"
+    <div class="hidden phone:block" data-testid="panel-controls">
+      <SeekBar
+        class="text-10"
+        :position-ms="positionMs"
+        :duration-ms="playback.track?.durationMs ?? null"
+        :identity="identity"
+        :disabled="seekDisabled"
+        :label="labels.seek"
+        @seek="(seconds, id) => emit('seek', seconds, id)"
       />
-      <button
-        type="button"
-        :aria-label="playback.state === 'playing' ? labels.pause : labels.play"
-        :disabled="controlsDisabled"
-        class="flex size-54 items-center justify-center rounded-full bg-strong text-strong-ink hover:enabled:scale-[1.05]"
-        @click="emit('transport', 'toggle')"
-      >
-        <UiIcon filled :name="playback.state === 'playing' ? 'pause' : 'play'" class="size-21 stroke-[1.5]" />
-      </button>
-      <UiIconButton
-        icon="next"
-        :label="labels.next"
-        :disabled="controlsDisabled"
-        class="text-ink"
-        @click="emit('transport', 'next')"
+      <p v-if="seekFeedback" role="status" class="mt-6 text-11 text-secondary">{{ seekFeedback }}</p>
+      <div class="my-20 flex items-center justify-center gap-32">
+        <UiIconButton
+          icon="previous"
+          :label="labels.previous"
+          :disabled="controlsDisabled"
+          class="text-ink"
+          @click="emit('transport', 'previous')"
+        />
+        <button
+          type="button"
+          :aria-label="playback.state === 'playing' ? labels.pause : labels.play"
+          :disabled="controlsDisabled"
+          class="flex size-54 items-center justify-center rounded-full bg-strong text-strong-ink hover:enabled:scale-[1.05]"
+          @click="emit('transport', 'toggle')"
+        >
+          <UiIcon filled :name="playback.state === 'playing' ? 'pause' : 'play'" class="size-21 stroke-[1.5]" />
+        </button>
+        <UiIconButton
+          icon="next"
+          :label="labels.next"
+          :disabled="controlsDisabled"
+          class="text-ink"
+          @click="emit('transport', 'next')"
+        />
+      </div>
+      <div class="mt-10 mb-15 flex justify-center gap-45">
+        <UiIconButton
+          icon="shuffle"
+          :label="labels.shuffle"
+          :pressed="shuffle"
+          :disabled="modesDisabled"
+          @click="emit('mode', 'shuffle')"
+        />
+        <UiIconButton
+          icon="heart"
+          :label="labels.favorite"
+          :pressed="playback.favorite ?? false"
+          :disabled="favoriteDisabled"
+          class="not-aria-pressed:text-muted [&>svg]:size-17"
+          @click="emit('favorite')"
+        />
+        <UiIconButton
+          icon="repeat"
+          :label="labels.repeat"
+          :pressed="repeat"
+          :disabled="modesDisabled"
+          @click="emit('mode', 'repeat')"
+        />
+      </div>
+      <VolumeControl
+        class="text-muted"
+        :volume="volume"
+        :disabled="volumeDisabled"
+        :label="labels.volume"
+        :title="labels.volumeTitle"
+        :mute-label="labels.mute"
+        :unmute-label="labels.unmute"
+        @change="(value) => emit('volume', value)"
+        @mute="emit('mute')"
       />
+      <p class="mt-20 text-11 text-muted">{{ labels.output }}</p>
     </div>
-    <div class="mt-10 mb-15 flex justify-center gap-45">
-      <UiIconButton
-        icon="shuffle"
-        :label="labels.shuffle"
-        :pressed="shuffle"
-        :disabled="modesDisabled"
-        @click="emit('mode', 'shuffle')"
-      />
-      <UiIconButton
-        icon="heart"
-        :label="labels.favorite"
-        :pressed="playback.favorite ?? false"
-        :disabled="favoriteDisabled"
-        class="not-aria-pressed:text-muted [&>svg]:size-17"
-        @click="emit('favorite')"
-      />
-      <UiIconButton
-        icon="repeat"
-        :label="labels.repeat"
-        :pressed="repeat"
-        :disabled="modesDisabled"
-        @click="emit('mode', 'repeat')"
-      />
-      <UiIconButton
-        v-if="disliked !== null && disliked !== undefined && playback.track"
-        icon="ban"
-        :label="dislikeLabel ?? ''"
-        :pressed="disliked"
-        data-testid="now-dislike"
-        class="not-aria-pressed:text-muted aria-pressed:text-accent [&>svg]:size-17"
-        @click="emit('dislike')"
-      />
-    </div>
-    <VolumeControl
-      class="text-muted"
-      :volume="volume"
-      :disabled="volumeDisabled"
-      :label="labels.volume"
-      :title="labels.volumeTitle"
-      :mute-label="labels.mute"
-      :unmute-label="labels.unmute"
-      @change="(value) => emit('volume', value)"
-      @mute="emit('mute')"
-    />
-    <p class="mt-20 text-11 text-muted">{{ labels.output }}</p>
+    <slot />
   </div>
 </template>

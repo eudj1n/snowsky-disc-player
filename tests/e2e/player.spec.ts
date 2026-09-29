@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test'
 import {
   connectAndPair,
   disconnect,
@@ -104,8 +104,9 @@ test('plays a track from an album page and shows it in Now Playing and Queue', a
   await page.getByRole('button', { name: 'Open Now Playing panel' }).click()
   const panel = page.getByRole('complementary', { name: 'Player view' })
   await expect(panel.getByRole('heading', { name: 'Window Seat' })).toBeVisible()
-  await panel.getByRole('button', { name: 'Queue', exact: true }).click()
-  await expect(panel.locator('[aria-current=true]')).toContainText('Window Seat')
+  // The queue sits below the track's facts in the same tab (2026-09-29).
+  await expect(panel.getByRole('button', { name: 'Queue', exact: true })).toHaveCount(0)
+  await expect(panel.getByTestId('panel-queue').locator('[aria-current=true]')).toContainText('Window Seat')
   // Queue rows show the album's cover (their paths come from the persisted queue), not the sleeve.
   const rows = panel.getByRole('listitem')
   await expect(rows).toHaveCount(4)
@@ -363,6 +364,24 @@ test.describe('player controls on the mock', () => {
     return page.getByRole('complementary', { name: 'Player view' })
   }
 
+  /**
+   * The player's controls: the bottom bar on wider screens, the open panel on phones, where
+   * it is a full-screen player (2026-09-29: the panel repeats no controls elsewhere).
+   */
+  async function controls(page: Page, info: TestInfo) {
+    if (info.project.name === 'phone')
+      return {
+        scope: await openPanel(page, 'Open Now Playing panel'),
+        volume: 'Player volume',
+        favorite: /^Favorite track$/,
+      }
+    return {
+      scope: page.getByRole('region', { name: 'Player' }),
+      volume: 'DISC volume',
+      favorite: /^(Favorite|Unfavorite) the current track$/,
+    }
+  }
+
   async function flips(page: Page, button: Locator): Promise<void> {
     const before = await button.getAttribute('aria-pressed')
     await button.click()
@@ -418,24 +437,58 @@ test.describe('player controls on the mock', () => {
   test('volume, modes and favorite are sent once and verified', async ({ page }, info) => {
     await english(page)
     await connectAndPair(page)
-    const panel = await openPanel(page, 'Open Now Playing panel')
+    const { scope, volume, favorite } = await controls(page, info)
     const value = info.project.name === 'phone' ? '70' : '60'
-    await panel.getByRole('slider', { name: 'Player volume' }).fill(value)
+    await scope.getByRole('slider', { name: volume }).fill(value)
     await expect(page.getByRole('status').filter({ hasText: 'Done. Verified on DISC.' })).toBeVisible({
       timeout: 15_000,
     })
-    await expect(panel.locator('output')).toHaveText(value)
-    await flips(page, panel.getByRole('button', { name: 'Shuffle' }))
-    await flips(page, panel.getByRole('button', { name: 'Favorite track' }))
+    await expect(scope.locator('output')).toHaveText(value)
+    await flips(page, scope.getByRole('button', { name: 'Shuffle' }))
+    await flips(page, scope.getByRole('button', { name: favorite }))
     await disconnect(page)
   })
 
-  test('a track liked in the player appears in Favorites at once', async ({ page }) => {
+  test('the listening panel repeats no controls on wider screens and is a full-screen player on phones', async ({
+    page,
+  }, info) => {
+    await english(page)
+    await connectAndPair(page)
+    const panel = await openPanel(page, 'Open Now Playing panel')
+    const bar = page.getByRole('region', { name: 'Player' })
+    await expect(panel.getByRole('button', { name: 'Now Playing', exact: true })).toBeVisible()
+    await expect(panel.getByRole('button', { name: 'Lyrics', exact: true })).toBeVisible()
+    await expect(panel.getByTestId('track-facts')).toBeVisible()
+    await expect(panel.getByTestId('panel-queue')).toBeAttached()
+    if (info.project.name === 'phone') {
+      await expect(panel.getByRole('button', { name: 'Next track' })).toBeVisible()
+      await expect(panel.getByRole('slider', { name: 'Player volume' })).toBeVisible()
+      await expect(bar).toBeHidden()
+      const box = await panel.boundingBox()
+      expect(box?.height).toBe(page.viewportSize()?.height)
+    } else {
+      await expect(panel.getByRole('button', { name: 'Next track' })).toBeHidden()
+      await expect(panel.getByRole('slider', { name: 'Player volume' })).toBeHidden()
+      await expect(bar).toBeVisible()
+      // The bar's queue button shows the queue in the same tab.
+      await bar.getByRole('button', { name: 'Open queue' }).click()
+      await expect(panel.getByRole('heading', { name: 'Queue' })).toBeInViewport()
+      await expect(panel.getByRole('button', { name: 'Now Playing', exact: true })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      )
+    }
+    await page.keyboard.press('Escape')
+    await expect(panel).toBeHidden()
+    await disconnect(page)
+  })
+
+  test('a track liked in the player appears in Favorites at once', async ({ page }, info) => {
     await english(page)
     await connectAndPair(page)
     const title = ((await page.getByTestId('track-title').textContent()) ?? '').trim()
-    const panel = await openPanel(page, 'Open Now Playing panel')
-    const heart = panel.getByRole('button', { name: 'Favorite track' })
+    const { scope, favorite } = await controls(page, info)
+    const heart = scope.getByRole('button', { name: favorite })
     if ((await heart.getAttribute('aria-pressed')) === 'true') await flips(page, heart)
     await flips(page, heart)
     await page.keyboard.press('Escape')
@@ -444,10 +497,10 @@ test.describe('player controls on the mock', () => {
     await disconnect(page)
   })
 
-  test('the volume icon mutes and restores the earlier level', async ({ page }) => {
+  test('the volume icon mutes and restores the earlier level', async ({ page }, info) => {
     await english(page)
     await connectAndPair(page)
-    const panel = await openPanel(page, 'Open Now Playing panel')
+    const { scope: panel, volume } = await controls(page, info)
     const output = panel.locator('output')
     if ((await output.textContent()) === '0') {
       await panel.getByRole('button', { name: 'Unmute' }).click()
@@ -463,13 +516,13 @@ test.describe('player controls on the mock', () => {
     const level = before === '37' ? '38' : '37'
     const toast = page.getByTestId('toast')
     await expect(toast).toBeHidden({ timeout: 15_000 })
-    await panel.getByRole('slider', { name: 'Player volume' }).fill(level)
+    await panel.getByRole('slider', { name: volume }).fill(level)
     await expect(toast).toHaveText('Done. Verified on DISC.', { timeout: 15_000 })
     await panel.getByRole('button', { name: 'Mute' }).click()
     await expect(output).toHaveText('0', { timeout: 15_000 })
     await panel.getByRole('button', { name: 'Unmute' }).click()
     await expect(output).toHaveText(level, { timeout: 15_000 })
-    await panel.getByRole('slider', { name: 'Player volume' }).fill(before)
+    await panel.getByRole('slider', { name: volume }).fill(before)
     await expect(output).toHaveText(before, { timeout: 15_000 })
     await disconnect(page)
   })
@@ -595,7 +648,7 @@ test.describe('player controls on the mock', () => {
     await disconnect(page)
   })
 
-  test('shows the lyrics of the current track, synced with its position', async ({ page }) => {
+  test('shows the lyrics of the current track, synced with its position', async ({ page }, info) => {
     await english(page)
     await connectAndPair(page)
     await page.goto('/#/album/Inner%20Space/Forma')
@@ -606,11 +659,18 @@ test.describe('player controls on the mock', () => {
     await expect(lyrics.getByRole('button', { name: 'Weightless, first line' })).toBeVisible({ timeout: 15_000 })
     await expect(lyrics.locator('[aria-current=true]')).toHaveCount(1, { timeout: 15_000 })
     await expect(lyrics).toContainText('From the .lrc file beside the track')
-    // Paused, away and back: the tab opens at the current line.
-    await page.getByTestId('toggle').click()
-    await expect(page.getByTestId('toggle')).toHaveAttribute('aria-label', 'Play', { timeout: 15_000 })
+    // Paused, away and back: the tab opens at the current line. Phones pause from the
+    // full-screen player's Now tab, which covers the bar.
     const panel = page.getByRole('complementary', { name: 'Player view' })
-    await panel.getByRole('button', { name: 'Now Playing', exact: true }).click()
+    if (info.project.name === 'phone') {
+      await panel.getByRole('button', { name: 'Now Playing', exact: true }).click()
+      await panel.getByRole('button', { name: 'Pause', exact: true }).click()
+      await expect(panel.getByRole('button', { name: 'Play', exact: true })).toBeVisible({ timeout: 15_000 })
+    } else {
+      await page.getByTestId('toggle').click()
+      await expect(page.getByTestId('toggle')).toHaveAttribute('aria-label', 'Play', { timeout: 15_000 })
+      await panel.getByRole('button', { name: 'Now Playing', exact: true }).click()
+    }
     await panel.getByRole('button', { name: 'Lyrics', exact: true }).click()
     await expect(page.getByTestId('lyrics').locator('[aria-current=true]')).toBeInViewport()
     await page.keyboard.press('Escape')
@@ -667,8 +727,10 @@ test.describe('player controls on the mock', () => {
     await page.getByRole('button', { name: 'Play Hallway' }).click()
     await expect(page.getByTestId('track-title')).toHaveText('Hallway', { timeout: 15_000 })
     const panel = await openPanel(page, 'Open Now Playing panel')
+    // The first links are the track's credit; the facts may name the album artist again.
     for (const name of ['Kite Lines', 'Mira Sol'])
-      await expect(panel.getByRole('link', { name, exact: true })).toBeVisible()
+      await expect(panel.getByRole('link', { name, exact: true }).first()).toBeVisible()
+    await expect(panel.getByTestId('track-facts').locator('[data-fact=album-artist]')).toHaveText('Kite Lines')
     await panel.getByRole('button', { name: 'Lyrics', exact: true }).click()
     await expect(panel.getByRole('link', { name: 'Mira Sol', exact: true })).toBeVisible()
     await expect(panel).not.toContainText('Kite Lines; Mira Sol')
@@ -757,21 +819,26 @@ test.describe('player controls on the mock', () => {
     await disconnect(page)
   })
 
-  test('a paused seek waits and confirms after playback resumes', async ({ page }) => {
+  test('a paused seek waits and confirms after playback resumes', async ({ page }, info) => {
     await english(page)
     await connectAndPair(page)
-    const panel = await openPanel(page, 'Open Now Playing panel')
-    const pause = panel.getByRole('button', { name: 'Pause', exact: true })
+    const { scope } = await controls(page, info)
+    const pause = scope.getByRole('button', { name: 'Pause', exact: true })
     if (await pause.isVisible()) {
       await pause.click()
-      await expect(panel.getByRole('button', { name: 'Play', exact: true })).toBeVisible({ timeout: 15_000 })
+      await expect(scope.getByRole('button', { name: 'Play', exact: true })).toBeVisible({ timeout: 15_000 })
     }
-    const slider = panel.getByRole('slider', { name: 'Seek position' })
+    const slider = scope.getByRole('slider', { name: 'Seek position' })
     await slider.dispatchEvent('pointerdown')
     await slider.fill('90')
-    await expect(panel.getByRole('status').filter({ hasText: 'Seek to 1:30 sent' })).toBeVisible({ timeout: 15_000 })
-    await panel.getByRole('button', { name: 'Play', exact: true }).click()
-    await expect(panel.getByRole('status').filter({ hasText: 'Position confirmed' })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('status').filter({ hasText: 'Seek to 1:30 sent' }).first()).toBeAttached({
+      timeout: 15_000,
+    })
+    await scope.getByRole('button', { name: 'Play', exact: true }).click()
+    // Confirmed once playback resumes: a toast says so (the bar has no line for it).
+    await expect(page.getByRole('status').filter({ hasText: 'Position confirmed' }).first()).toBeAttached({
+      timeout: 15_000,
+    })
     await disconnect(page)
   })
 

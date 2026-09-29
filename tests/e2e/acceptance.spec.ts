@@ -131,14 +131,16 @@ test('controls transport, seek, volume and mute, modes, favorite and the queue o
   await toggle.click()
   await expect(toggle).toHaveAttribute('aria-label', 'Pause', { timeout: 30_000 })
 
-  await page.getByRole('button', { name: 'Open Now Playing panel' }).click()
-  const panel = page.getByRole('complementary', { name: 'Player view' })
+  // The bottom bar is the one control surface on desktop (the panel repeats none since 2026-09-29).
+  const panel = page.getByRole('region', { name: 'Player' })
   const seek = panel.getByRole('slider', { name: 'Seek position' })
   await seek.dispatchEvent('pointerdown')
   await seek.fill('12')
-  await expect(panel.getByRole('status').filter({ hasText: 'Position confirmed' })).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByRole('status').filter({ hasText: 'Position confirmed' }).first()).toBeAttached({
+    timeout: 30_000,
+  })
 
-  const volume = panel.getByRole('slider', { name: 'Player volume' })
+  const volume = panel.getByRole('slider', { name: 'DISC volume' })
   const output = panel.locator('output').first()
   const original = (await output.textContent())?.trim() ?? '30'
   await verified(page, () => volume.fill(original === '25' ? '26' : '25'))
@@ -151,11 +153,10 @@ test('controls transport, seek, volume and mute, modes, favorite and the queue o
   const shuffle = panel.getByRole('button', { name: 'Shuffle' })
   await flip(shuffle)
   await flip(shuffle)
-  const favorite = panel.getByRole('button', { name: 'Favorite track' })
+  const favorite = panel.getByRole('button', { name: /^(Favorite|Unfavorite) the current track$/ })
   await flip(favorite)
   await flip(favorite)
 
-  await page.keyboard.press('Escape')
   await page.getByRole('button', { name: 'Open queue' }).click()
   const queue = page.getByRole('complementary', { name: 'Player view' })
   await queue
@@ -492,12 +493,10 @@ test('removes a favorite that is not playing from its row on stock', async ({ pa
   await page.goto('/#/album/Night%20Lines/Lumen')
   await verified(page, () => page.getByRole('button', { name: 'Play Signal' }).click())
   await expect(page.getByTestId('track-title')).toHaveText('Signal', { timeout: 30_000 })
-  await page.getByRole('button', { name: 'Open Now Playing panel' }).click()
   const favorite = page
-    .getByRole('complementary', { name: 'Player view' })
-    .getByRole('button', { name: 'Favorite track' })
+    .getByRole('region', { name: 'Player' })
+    .getByRole('button', { name: /^(Favorite|Unfavorite) the current track$/ })
   if ((await favorite.getAttribute('aria-pressed')) !== 'true') await flip(favorite)
-  await page.keyboard.press('Escape')
   // Only rows that are not playing offer removal.
   await page.getByRole('button', { name: 'Next track' }).first().click()
   await expect(page.getByTestId('track-title')).toHaveText('Streetlight', { timeout: 30_000 })

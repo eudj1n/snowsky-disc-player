@@ -54,6 +54,7 @@ const labels = computed(() => ({
   <section
     :aria-label="t('player')"
     class="fixed inset-x-0 bottom-0 z-30 grid min-h-(--player) grid-cols-[minmax(230px,1fr)_minmax(270px,1.2fr)_minmax(210px,1fr)] items-center gap-25 border-t border-line bg-player-bg px-28 py-15 backdrop-blur-[22px] compact:grid-cols-[1fr_1fr_.65fr] compact:gap-15 compact:px-20 rail:grid-cols-[1fr_1fr_32px] rail:gap-14 phone:bottom-58 phone:min-h-78 phone:grid-cols-[1fr_78px_28px] phone:gap-10 phone:px-14 phone:pt-11 phone:pb-14"
+    :class="{ 'phone:hidden': ui.panel !== null }"
   >
     <span
       v-if="operation.busy"
@@ -63,7 +64,7 @@ const labels = computed(() => ({
     />
     <NowPlayingSummary
       :open-label="t('open_now_playing')"
-      :expanded="ui.panel === 'now'"
+      :expanded="ui.panelTarget === 'now'"
       :title="title"
       :subtitle="subtitle"
       :artwork-title="track?.title ?? null"
@@ -101,9 +102,9 @@ const labels = computed(() => ({
       :mute-label="t('mute')"
       :unmute-label="t('unmute')"
       :queue-label="t('open_queue')"
-      :queue-expanded="ui.panel === 'queue'"
+      :queue-expanded="ui.panelTarget === 'queue'"
       :lyrics-label="t('open_lyrics')"
-      :lyrics-expanded="ui.panel === 'lyrics'"
+      :lyrics-expanded="ui.panelTarget === 'lyrics'"
       :queue-disabled="connection.connection !== 'connected'"
       @queue="(opener) => togglePanel('queue', opener)"
       @lyrics="(opener) => togglePanel('lyrics', opener)"

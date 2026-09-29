@@ -287,7 +287,7 @@ export async function seekTo(seconds: number, displayed: string): Promise<void> 
   state.seekFeedback = { key: SEEK_FEEDBACK[result], position }
   if (result === 'waiting')
     state.pendingSeek = { identity: displayed, target: Math.floor(positionMs / 1000) * 1000, resumedAt: null }
-  toast(SEEK_FEEDBACK[result], result !== 'confirmed')
+  toast(SEEK_FEEDBACK[result], result !== 'confirmed', { position })
 }
 
 /** Paused-seek reconciliation (reference app.js updateSeek): once the same
@@ -305,12 +305,15 @@ export function reconcileSeek(now = Date.now()): void {
   pending.resumedAt ??= now
   const elapsed = now - pending.resumedAt
   const position = observations.positionMs
+  // The bar has no line for the outcome (the panel repeats no controls since 2026-09-29): a toast says it.
   if (position !== null && position >= pending.target && position <= pending.target + elapsed + 2000) {
     state.seekFeedback = { key: 'seek_confirmed' }
     state.pendingSeek = null
+    toast('seek_confirmed')
   } else if (elapsed > 8000) {
     state.seekFeedback = { key: 'seek_unconfirmed' }
     state.pendingSeek = null
+    toast('seek_unconfirmed', true)
   }
 }
 

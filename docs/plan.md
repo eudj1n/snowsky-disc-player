@@ -1055,7 +1055,7 @@ plus macOS leftovers on the Card page. The page's part:
       changes, seeks and pauses). Known cost: once opened, the page's audio
       plays through the Web Audio graph, which a phone may suspend in the
       background; playing again resumes it.
-- [ ] Now Playing without duplicated controls (owner, 2026-09-29, agreed):
+- [x] Now Playing without duplicated controls (owner, 2026-09-29, agreed):
       the side panel gets two tabs instead of three. "Now": cover, title,
       artists and album with links, a tag block (format and quality, bit
       rate, channels, the DAC stream when it differs, year, genre, disc and
@@ -1067,7 +1067,20 @@ plus macOS leftovers on the Card page. The page's part:
       panel has no transport, seek, modes or volume: the bottom bar is the
       one control surface. On phones, where the bar only has Play and Next,
       the open panel hides the bar and becomes a full-screen player with the
-      full controls.
+      full controls. Done: the panel's tabs are Now Playing and Lyrics; Now
+      holds the head (cover, quality, title, credits, album, source), an
+      "About this track" list (bit rate, channels, year, genre, disc and
+      track, album artist where it differs, file size, folder linking the
+      file manager, plays with the last one, when added; the file is
+      measured once for its size, channels and year) with the dislike
+      action, and below it the whole queue, which the bar's queue button
+      scrolls to. Seek, transport, modes, favorite and volume show only on
+      phones, where the panel covers the screen (bar and navigation
+      hidden); focus returns to the opener once the bar is back. A paused
+      seek's outcome is now a toast (the bar has no line for it), and toasts
+      fill their placeholders (the paused seek showed "{position}"). Unit
+      tests for the facts; mock browser tests on desktop and phone (136
+      passed); emulator acceptance with the controls from the bar.
 - [ ] Enrichment providers once the card catalog allows their origins:
       MusicBrainz with Cover Art Archive (tags, years, album artists,
       covers) and LRCLIB (synced lyrics for karaoke), each off by default

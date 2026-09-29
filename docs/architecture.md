@@ -86,6 +86,15 @@ The service's own state (combined-008) has stores of its own:
 `stores/browser.ts`, which plays card files in an `Audio` element through
 the media route, a CUE track from its offset, without touching the player.
 
+The listening panel (`layout/ListeningPanel.vue`) has two tabs. Now shows
+the track's head (`components/player/NowPlayingDetails.vue`, whose controls
+render only on phones, where the panel is a full-screen player and the bar is
+hidden), its facts (`components/player/TrackFacts.vue` from the pure
+`domain/nowFacts.ts`: stock's play state, the library row, the file measured
+through the media route and the service's play history) and the whole queue;
+Lyrics holds the lyrics and karaoke. On wider screens the bottom bar is the
+only control surface.
+
 The visualizer (`layout/VisualizerMode.vue`) draws what plays in this
 browser. Its first opening (a click or the V key, since browsers start audio
 only from the user's own action) routes the `Audio` element through a Web
