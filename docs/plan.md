@@ -1179,8 +1179,11 @@ first, then layout, then style.
       forgets it too. The cache belongs to one address: the page opened by
       another name or IP measures again. Mock browser test with a file whose
       info answers 404, over a reload.
-- [ ] The album grid switches from 4 to 8 columns when the queue panel
-      opens: at most 4 columns, even on a large screen.
+- [x] The album grid switches from 4 to 8 columns when the queue panel
+      opens: at most 4 columns, even on a large screen. The open panel
+      filled the grid with as many 145px columns as fit; a column is now at
+      least a quarter of the grid (less the widest gaps), so 4 at most and
+      fewer in a narrow window. Mock browser test at 1920 and 1280 px.
 - [ ] The Home hero offers no unknown artist or unknown album and no album
       without a cover.
 - [ ] Karaoke without word timings highlights the current line only, with

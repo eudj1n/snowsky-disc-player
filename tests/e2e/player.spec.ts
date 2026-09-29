@@ -387,6 +387,29 @@ test.describe('player controls on the mock', () => {
     await disconnect(page)
   })
 
+  test('keeps at most four album columns with the listening panel open on a large screen', async ({ page }, info) => {
+    test.skip(info.project.name === 'phone', 'The listening panel reserves space from 1200px')
+    await page.setViewportSize({ width: 1920, height: 1080 })
+    await english(page)
+    await connectAndPair(page)
+    await page.goto('/#/albums')
+    const grid = page.getByRole('article').first().locator('..')
+    const columns = () => grid.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').length)
+    expect(await columns()).toBe(4)
+    await openPanel(page, 'Open queue')
+    await expect(page.locator('.listening-open')).toHaveCount(1)
+    expect(await columns()).toBe(4)
+    // A narrower window with the panel fits fewer, never tiny, cards.
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await expect.poll(columns).toBeLessThanOrEqual(4)
+    const width = await page
+      .getByRole('article')
+      .first()
+      .evaluate((element) => element.getBoundingClientRect().width)
+    expect(width).toBeGreaterThanOrEqual(145)
+    await disconnect(page)
+  })
+
   test('volume, modes and favorite are sent once and verified', async ({ page }, info) => {
     await english(page)
     await connectAndPair(page)
