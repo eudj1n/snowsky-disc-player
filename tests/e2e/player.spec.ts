@@ -117,6 +117,12 @@ test('plays a track from an album page and shows it in Now Playing and Queue', a
   await next.click()
   await expect(playing).toContainText('An Open Door', { timeout: 15_000 })
   await expect(playing).toHaveCount(1)
+  // As in the collection's rows, the playing row's cover pauses and resumes it.
+  await playing.hover()
+  await playing.getByRole('button', { name: 'Pause An Open Door' }).click()
+  await expect(playing.getByRole('button', { name: 'Play An Open Door' })).toBeAttached({ timeout: 15_000 })
+  await playing.getByRole('button', { name: 'Play An Open Door' }).click()
+  await expect(playing.getByRole('button', { name: 'Pause An Open Door' })).toBeAttached({ timeout: 15_000 })
   await page.keyboard.press('Escape')
   await expect(panel).toBeHidden()
   await expect(page.getByRole('button', { name: 'Open Now Playing panel' })).toBeFocused()
@@ -1178,6 +1184,12 @@ test('collapses the sidebar to its icon rail and remembers it', async ({ page },
   const sidebar = page.getByRole('complementary', { name: 'Main navigation' })
   const width = async () => (await sidebar.boundingBox())?.width
   const full = await width()
+  // The toggle sits where the sidebar's edge meets the top bar's bottom line.
+  const toggle = await page.getByRole('button', { name: 'Collapse sidebar' }).boundingBox()
+  const banner = await page.getByRole('banner').boundingBox()
+  const edge = await sidebar.boundingBox()
+  expect(toggle && banner && Math.abs(toggle.y + toggle.height / 2 - (banner.y + banner.height))).toBeLessThanOrEqual(1)
+  expect(toggle && edge && Math.abs(toggle.x + toggle.width / 2 - (edge.x + edge.width))).toBeLessThanOrEqual(1)
   await page.getByRole('button', { name: 'Collapse sidebar' }).click()
   await expect.poll(width).toBe(74)
   await expect(sidebar.getByRole('link', { name: 'Albums' })).toHaveAttribute('title', 'Albums')

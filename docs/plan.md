@@ -1363,6 +1363,13 @@ started:
       letters (left out on list-row sizes); artists a round monogram, the
       colour faint over the surface and the letters in it. Same hash and
       palette count as before; the visualizer's label lost its spindle too.
+- [x] The sidebar toggle sits where the sidebar's edge meets the top bar's
+      bottom line (owner, 2026-09-29), at the top of the page; checked in the
+      mock browser test to a pixel.
+- [x] Queue rows look like the collection's track rows (owner, 2026-09-29):
+      the cover is the row's button with play on hover, the playing row shows
+      its pulsing mark and, on hover, pause or resume (the same guarded
+      toggle as the bar); no separate play column. Mock browser tests.
 
 ## Requests for the next service build
 

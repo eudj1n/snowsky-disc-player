@@ -289,8 +289,11 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
             :current="queueCurrent"
             :playing="isPlaying"
             :select-label="t('select_in_queue')"
+            :play-label="t('play')"
+            :pause-label="t('pause')"
             :disabled="!player.ready.value || queue.status !== 'ready'"
             @select="(index) => selectInQueue(queue.items, index)"
+            @toggle="player.onTransport('toggle')"
           />
         </section>
       </NowPlayingDetails>
