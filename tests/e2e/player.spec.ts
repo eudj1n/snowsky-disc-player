@@ -1424,7 +1424,7 @@ test("finds an artist's photo on Wikimedia Commons, credits it, and lets an albu
   await expect(page.getByTestId('photo-find')).toBeVisible()
 })
 
-test('highlights a karaoke line without word timings whole, without a sweep', async ({ page }) => {
+test('shows a karaoke line without word timings white among grey ones, as the side panel', async ({ page }) => {
   test.skip(external, 'Needs the mock collection')
   test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
   await english(page)
@@ -1442,9 +1442,16 @@ test('highlights a karaoke line without word timings whole, without a sweep', as
   await page.getByRole('complementary', { name: 'Player view' }).getByTestId('karaoke-open').click()
   const current = page.getByTestId('karaoke').locator('[aria-current=true]')
   await expect(current).toHaveText('Weightless, first line', { timeout: 15_000 })
-  // Five seconds long, it is lit whole from its start: one part, fully sung.
-  await expect(current.locator('span')).toHaveCount(1)
-  await expect(current.locator('span')).toHaveAttribute('data-progress', '1.00')
+  // As in the side panel: the current line plain white, the lines around it grey.
+  await expect(current.locator('span')).toHaveCount(0)
+  expect(await current.evaluate((element) => getComputedStyle(element).color)).toBe('rgb(255, 255, 255)')
+  // Lines fade over half a second as they change: wait for it.
+  await expect.poll(() => current.evaluate((element) => Number(getComputedStyle(element).opacity))).toBe(1)
+  const next = page.getByTestId('karaoke').locator('[data-line="1"]')
+  await expect(next).toHaveText('Weightless, second line')
+  await expect
+    .poll(() => next.evaluate((element) => Number(getComputedStyle(element).opacity)))
+    .toBeLessThanOrEqual(0.5)
   await page.keyboard.press('Escape')
   await disconnect(page)
 })

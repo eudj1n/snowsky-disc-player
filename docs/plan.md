@@ -1310,9 +1310,12 @@ first, then layout, then style.
 Owner's notes after release `44d8fc9cf06ef9c3` (2026-09-29), recorded, not
 started:
 
-- [ ] Full-screen karaoke looks like the side panel's lyrics: the current line
+- [x] Full-screen karaoke looks like the side panel's lyrics: the current line
       white among grey ones, most visibly for lyrics without word timings
-      (today they are lit whole in the accent colour).
+      (today they are lit whole in the accent colour). A line without word
+      timings is now plain white; the lines around read grey (white at half
+      strength or less, fading further out); timed words still fill in the
+      accent colour. Mock browser test of the colours.
 - [ ] Lyrics that the tags hold as plain text (no timings) still offer the
       LRCLIB lookup for synced lyrics; check the order shown: a `.lrc` file
       first, then the embedded tags.

@@ -3,8 +3,8 @@
  * Karaoke (owner, round 16): the current track's lyrics full screen in a large
  * font, at most seven lines (two sung, the current one, four to come). The
  * current line fills as it is sung, word by word (or syllable by syllable),
- * where the LRC has word timings; a line without them is highlighted whole
- * (owner, 2026-09-29: no sweep across words it does not time). Plain lyrics
+ * where the LRC has word timings; a line without them is simply white among
+ * grey ones, as the side panel shows lyrics (owner, 2026-09-29). Plain lyrics
  * read large without a highlight. Space and the arrows keep
  * their shortcuts; Esc, the close button or leaving full screen close it.
  * Controls and the pointer hide while the listener only listens.
@@ -79,15 +79,12 @@ const nextMs = computed(() => {
   }
   return null
 })
-/** The current line as parts with how much of each is sung (timed words, or the whole line at once). */
+/** The current line's timed words with how much of each is sung; none for a line without word timings. */
 const sung = computed(() => {
   const line = lines.value[active.value]
-  if (!line) return []
-  if (line.words?.length) {
-    const progress = wordProgress(line, nextMs.value, position.value)
-    return line.words.map((word, index) => ({ text: word.text, progress: progress[index] ?? 0 }))
-  }
-  return [{ text: line.text, progress: 1 }]
+  if (!line?.words?.length) return []
+  const progress = wordProgress(line, nextMs.value, position.value)
+  return line.words.map((word, index) => ({ text: word.text, progress: progress[index] ?? 0 }))
 })
 /*
  * Pauses (an empty line, or a note or dots in the LRC) show three dots that
@@ -122,16 +119,17 @@ const fill = (progress: number) => {
  * (owner, round 16): sung lines faster than coming ones, which stay readable
  * a little longer. Lines outside the window are hidden.
  */
+/* Lines around the current one read grey, as in the side panel (owner, 2026-09-29): white at half strength or less. */
 const COMING = [
-  { opacity: 0.86, blur: 0 },
-  { opacity: 0.72, blur: 0 },
-  { opacity: 0.5, blur: 0.012 },
-  { opacity: 0.32, blur: 0.026 },
-  { opacity: 0.18, blur: 0.042 },
+  { opacity: 0.5, blur: 0 },
+  { opacity: 0.42, blur: 0 },
+  { opacity: 0.32, blur: 0.012 },
+  { opacity: 0.22, blur: 0.026 },
+  { opacity: 0.13, blur: 0.042 },
 ]
 const SUNG = [
-  { opacity: 0.42, blur: 0.014 },
-  { opacity: 0.2, blur: 0.034 },
+  { opacity: 0.34, blur: 0.014 },
+  { opacity: 0.17, blur: 0.034 },
 ]
 function lineStyle(index: number): { opacity: number; filter?: string } {
   const { from, to, center } = range.value
@@ -315,7 +313,7 @@ onBeforeUnmount(() => {
               :style="dot(filled)"
             />
           </span>
-          <template v-else-if="synced && index === active">
+          <template v-else-if="synced && index === active && sung.length">
             <span
               v-for="(part, at) in sung"
               :key="at"
