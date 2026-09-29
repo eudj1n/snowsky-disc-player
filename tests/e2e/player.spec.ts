@@ -1284,6 +1284,65 @@ test('finds lyrics on LRCLIB for a track without any and saves them beside it', 
   await disconnect(page)
 })
 
+test('finds a cover on Cover Art Archive for an album without one and saves it into its folder', async ({
+  page,
+}, info) => {
+  test.skip(external, 'Needs the mock collection')
+  test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
+  test.skip(info.project.name === 'phone', 'Runs once: the saved cover stays in the shared mock')
+  const asked: URL[] = []
+  const cors = { 'Access-Control-Allow-Origin': '*' }
+  await page.route('https://musicbrainz.org/ws/2/**', async (route) => {
+    asked.push(new URL(route.request().url()))
+    await route.fulfill({
+      headers: cors,
+      json: {
+        releases: [
+          {
+            id: 'release-night-drive',
+            score: 100,
+            title: 'Night Drive',
+            date: '2004-06-01',
+            'track-count': 3,
+            'artist-credit': [{ name: 'Northline' }],
+            'release-group': { id: 'group-night-drive' },
+          },
+        ],
+      },
+    })
+  })
+  // First archive.org does not answer, as on some networks.
+  await page.route('https://coverartarchive.org/**', (route) => route.abort('timedout'))
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/album/Night%20Drive/Northline')
+  const find = page.getByTestId('cover-find')
+  await expect(find).toBeVisible({ timeout: 15_000 })
+  await find.click()
+  const offer = page.getByTestId('cover-offer')
+  await expect(offer).toContainText('archive.org, which does not answer from this network', { timeout: 15_000 })
+  await page.unroute('https://coverartarchive.org/**')
+  await page.route('https://coverartarchive.org/**', (route) =>
+    route.fulfill({ headers: cors, contentType: 'image/png', path: 'tests/e2e/fixtures/cover.png' }),
+  )
+  await find.click()
+  await expect(offer).toContainText('Cover Art Archive: Night Drive · Northline · 2004. Not on the card yet.', {
+    timeout: 15_000,
+  })
+  expect(asked[0]?.searchParams.get('query')).toBe('release:"Night Drive" AND artist:"Northline"')
+  await page.getByTestId('cover-save').click()
+  await expect(
+    page.getByRole('status').filter({ hasText: "Saved into the album's folder as its cover." }).first(),
+  ).toBeAttached({ timeout: 15_000 })
+  // Read back from the card: the album now has a cover of its own and offers none.
+  await expect(offer).toBeHidden()
+  await expect(find).toBeHidden({ timeout: 15_000 })
+  await page.reload()
+  await expect(page.locator('main canvas').first()).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByTestId('cover-find')).toHaveCount(0)
+  await disconnect(page)
+})
+
 test('highlights a karaoke line without word timings whole, without a sweep', async ({ page }) => {
   test.skip(external, 'Needs the mock collection')
   test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')

@@ -32,6 +32,9 @@ playing on the DISC; nothing streams to the browser.
 > - find lyrics for a track that has none on LRCLIB (only when you ask, or
 >   automatically once you switch that on) and save them beside the track on
 >   the card;
+> - find a cover for an album that has none on Cover Art Archive and save it
+>   into the album's folder (Cover Art Archive's images are served by
+>   archive.org, which some networks cannot reach);
 > - watch what plays in this browser as a disc: the cover turns, its ring
 >   pulses with the bass and the spectrum spreads around it, full screen.
 >

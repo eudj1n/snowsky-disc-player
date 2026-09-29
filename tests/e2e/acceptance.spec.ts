@@ -520,6 +520,46 @@ test('looks lyrics up on LRCLIB and saves them beside the track through the serv
   expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])
 })
 
+test("finds a cover on Cover Art Archive and saves it into the album's folder through the service on stock", async ({
+  page,
+}) => {
+  // MusicBrainz and Cover Art Archive are stubbed in the browser; the service's policy must admit
+  // them, its upload route writes cover.png and its media route then serves it for the album.
+  const cors = { 'Access-Control-Allow-Origin': '*' }
+  await page.route('https://musicbrainz.org/ws/2/**', (route) =>
+    route.fulfill({
+      headers: cors,
+      json: {
+        releases: [
+          {
+            id: 'night-lines',
+            score: 100,
+            title: 'Night Lines',
+            'track-count': 2,
+            'artist-credit': [{ name: 'Lumen' }],
+          },
+        ],
+      },
+    }),
+  )
+  await page.route('https://coverartarchive.org/**', (route) =>
+    route.fulfill({ headers: cors, contentType: 'image/png', path: 'tests/e2e/fixtures/cover.png' }),
+  )
+  const errors = watchErrors(page)
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/album/Night%20Lines/Lumen')
+  await page.getByTestId('cover-find').click({ timeout: 60_000 })
+  await expect(page.getByTestId('cover-offer')).toContainText('Not on the card yet', { timeout: 30_000 })
+  await page.getByTestId('cover-save').click()
+  await expect(page.getByTestId('cover-offer')).toBeHidden({ timeout: 30_000 })
+  await page.reload()
+  await expect(page.locator('main canvas').first()).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByTestId('cover-find')).toHaveCount(0)
+  await disconnect(page)
+  expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])
+})
+
 test('removes a favorite that is not playing from its row on stock', async ({ page }) => {
   await english(page)
   await connectAndPair(page)

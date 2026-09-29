@@ -92,6 +92,10 @@ reads the same file through `loadOrigins()` and `originAllowed()` before
 offering a provider). `gateway/lrclib.ts` asks LRCLIB for a track's lyrics
 with plain GETs; `stores/lyrics.ts` offers the lookup for a track without
 lyrics and saves what it found beside the track through the upload route.
+`gateway/musicbrainz.ts` (paced to one request a second) and
+`gateway/coverart.ts` find an album's front cover; `domain/covers.ts` picks the
+release and the folder a cover may go to, and `stores/coverSearch.ts` offers,
+previews and saves it as the album folder's cover through the upload route.
 
 The listening panel (`layout/ListeningPanel.vue`) has two tabs. Now shows
 the track's head (`components/player/NowPlayingDetails.vue`, whose controls

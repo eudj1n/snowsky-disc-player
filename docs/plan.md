@@ -1091,7 +1091,21 @@ plus macOS leftovers on the Card page. The page's part:
       card yet" until "Save to the card" uploads it beside the track as its
       `.lrc` through the guarded upload route, which never overwrites; unit
       tests, a mock browser test and emulator acceptance with LRCLIB stubbed
-      in the browser and the real service's policy, upload and media route):
+      in the browser and the real service's policy, upload and media route;
+      step 2, covers, done 2026-09-29: Cover Art Archive is the only source
+      (owner's choice; archive.org, where its images live, does not answer
+      from the owner's network, and the page says so). An album known to
+      have no cover offers "Find a cover on Cover Art Archive": its title
+      and artist go to MusicBrainz (a search, at most one request a second),
+      the best-scored release (preferring the album's number of tracks)
+      gives its front cover (else its release group's), previewed in the
+      sleeve as "not on the card yet"; "Save to the card" uploads cover.jpg
+      or .png into the album's folder, only when the folder holds that album
+      alone, never over a file; the album then reads it from the card. The
+      service's origins admit archive.org and its hosts for fetch (card-only,
+      snowsky-disc-service `774f35e`). Unit tests, a mock browser test (the
+      unreachable archive, then a saved cover) and emulator acceptance with
+      the providers stubbed in the browser):
       MusicBrainz with Cover Art Archive (tags, years, album artists,
       covers) and LRCLIB (synced lyrics for karaoke), each off by default
       (track names leave the network), results offered, not applied
@@ -1303,6 +1317,14 @@ image; card-only items (catalog or query additions) are marked as such.
       stock database.
 - [ ] _(card-only)_ Revisit the upload bound: the catalog allows 1 GiB per
       file, the reference 2 GiB − 1; the UI uses the catalog value.
+- [ ] **Serve the page's files ahead of media reads.** Found on the guest
+      (2026-09-29): during acceptance a lazily loaded view (a JavaScript
+      chunk of the release) stayed unanswered for over five seconds while
+      the gateway's few workers were busy with media reads and the session,
+      so the page kept showing the previous view. Consider more workers or
+      a separate lane for static files; the owner's player may show the
+      same under load (compare the ERR_CONTENT_LENGTH_MISMATCH seen on
+      2026-09-27). Needs a new image.
 - [ ] **Say when the play history cannot be written.** Found on the guest
       (2026-09-29): its 38 MB card filled up and the service silently
       recorded no plays for an hour while `/api/health` still said

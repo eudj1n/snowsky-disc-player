@@ -43,6 +43,8 @@ export const ICON_PATHS = {
   pin: 'M9 3h6l-1 6 3 3H7l3-3Z M12 12v9',
   trash: 'M4 7h16 M10 11v6 M14 11v6 M6 7l1 13h10l1-13 M9 7V4h6v3',
   headphones: 'M4 17v-5a8 8 0 0 1 16 0v5 M4 15h3v6H4Z M17 15h3v6h-3Z',
+  /* A picture (2026-09-29): finding a cover for an album without one. */
+  image: 'M4 5h16v14H4Z M4 15l4.5-4.5 4 4 2.5-2.5L20 17 M15 9.5a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0',
   /* The visualizer (2026-09-29): the ringed disc sending out spokes of sound. */
   visualizer:
     'M8 12a4 4 0 1 0 8 0a4 4 0 1 0-8 0Z M12 11.9v.2 M12 6V2.5 M16.2 7.8l1.4-1.4 M18 12h4 M16.2 16.2l2.1 2.1 M12 18v2 M7.8 16.2l-2.5 2.5 M6 12H3 M7.8 7.8 6.4 6.4',

@@ -8,7 +8,7 @@
  * joint album ("A; B") shows the pair's other albums, else its first
  * artist's, and then its artists (owner, round 14).
  */
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import CoverCard from '../components/collection/CoverCard.vue'
 import CoverRow from '../components/collection/CoverRow.vue'
@@ -21,7 +21,15 @@ import { creditArtists, creditLabel, creditSeparator, leadCredit, sameCredit } f
 import { filterBy } from '../domain/search'
 import type { SelectionTarget, TrackKey } from '../gateway/selection'
 import { t } from '../i18n'
-import { albumCover, albumQuality, albumYear } from '../stores/enrichment'
+import { albumCover, albumCoverState, albumQuality, albumYear } from '../stores/enrichment'
+import {
+  coverLookupAllowed,
+  coverSearch,
+  coverSearchKey,
+  dismissCover,
+  lookUpCover,
+  saveCover,
+} from '../stores/coverSearch'
 import { isHiRes, qualityLabel } from '../domain/quality'
 import { formatBadge } from '../domain/track'
 import { findGenre, playableGenre, sameGenre } from '../domain/genre'
@@ -82,6 +90,47 @@ const ownCredit = computed(
     leadCredit(tracks.value.map((track) => track.artist)) ?? (credits.value.length ? credits.value.join(';') : null),
 )
 const year = computed(() => (group.value ? albumYear(group.value, scope.value) : null))
+/*
+ * A cover from Cover Art Archive for an album known to have none (2026-09-29):
+ * offered, previewed in the sleeve, saved into its folder only on request.
+ */
+const coverOffered = computed(
+  () =>
+    connection.media &&
+    coverLookupAllowed() &&
+    group.value !== null &&
+    albumCoverState(group.value, scope.value) === 'missing',
+)
+const searchHere = computed(() => group.value !== null && coverSearch.key === coverSearchKey(group.value, scope.value))
+const sleeve = computed(() =>
+  searchHere.value && coverSearch.cover ? coverSearch.cover : group.value ? albumCover(group.value, scope.value) : null,
+)
+const coverMessage = computed(() => {
+  if (!searchHere.value) return null
+  const release = coverSearch.release
+  switch (coverSearch.status) {
+    case 'searching':
+      return t('cover_searching')
+    case 'found':
+      return release
+        ? t('cover_found', {
+            release: [release.title, release.artist, release.date?.slice(0, 4)].filter(Boolean).join(' · '),
+          })
+        : null
+    case 'missing':
+      return t('cover_missing')
+    case 'unreachable':
+      return t('cover_unreachable')
+    case 'failed':
+      return t('cover_failed')
+    default:
+      return null
+  }
+})
+// Another album leaves the offer behind.
+watch([group, scope], () => {
+  if (coverSearch.key && !searchHere.value) dismissCover()
+})
 /** "FLAC 24/96" and whether it is Hi-Res, from the first track's file. */
 const quality = computed(() => {
   const found = group.value ? albumQuality(group.value, scope.value) : null
@@ -179,7 +228,7 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
       <DetailHeading
         :title="name"
         :kind="t('kind_album')"
-        :cover="group ? albumCover(group, scope) : null"
+        :cover="sleeve"
         :sticky-action="loading ? null : heading.action.value"
         @sticky="heading.run"
       >
@@ -223,6 +272,14 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
           @click="playInBrowser(tracks)"
         />
         <UiCircleButton
+          v-if="coverOffered && !(searchHere && coverSearch.status === 'found')"
+          icon="image"
+          :label="t('cover_find')"
+          data-testid="cover-find"
+          :disabled="searchHere && coverSearch.status === 'searching'"
+          @click="group && lookUpCover(group, scope)"
+        />
+        <UiCircleButton
           v-if="pins.available && pinTarget"
           icon="pin"
           :label="t(isPinnedAlbum(pinTarget) ? 'unpin' : 'pin')"
@@ -232,6 +289,27 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
           @click="pinTarget && togglePinAlbum(pinTarget)"
         />
       </DetailHeading>
+      <section
+        v-if="coverMessage"
+        class="mb-24 flex flex-wrap items-center gap-12 rounded-12 border border-line bg-raised px-18 py-14"
+        data-testid="cover-offer"
+        :aria-label="t('cover_find')"
+      >
+        <p class="m-0 min-w-0 flex-1 text-12 leading-[1.6] text-secondary" role="status">
+          {{ coverMessage }}
+          <span v-if="coverSearch.status === 'searching'" class="block text-10 text-muted">{{ t('cover_note') }}</span>
+        </p>
+        <template v-if="coverSearch.status === 'found'">
+          <UiPillButton
+            variant="secondary"
+            :disabled="coverSearch.saving"
+            data-testid="cover-save"
+            @click="group && saveCover(group, scope)"
+            >{{ t('cover_save') }}</UiPillButton
+          >
+          <UiTextButton class="text-12" @click="dismissCover">{{ t('cover_dismiss') }}</UiTextButton>
+        </template>
+      </section>
       <nav
         v-if="!loading && choices.length"
         :aria-label="t('album_scope_label')"

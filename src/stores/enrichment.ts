@@ -43,6 +43,8 @@ interface EnrichmentModel {
   unmeasured: Record<string, number>
   /** Metadata reads queued or under way. */
   pending: number
+  /** Counts covers found missing, so views that ask whether one is missing follow. */
+  coverMisses: number
 }
 
 const state = reactive<EnrichmentModel>({
@@ -55,6 +57,7 @@ const state = reactive<EnrichmentModel>({
   files: {},
   unmeasured: {},
   pending: 0,
+  coverMisses: 0,
 })
 export const enrichment = readonly(state)
 
@@ -143,6 +146,7 @@ function wantCover(key: string, path: string, album: { title: string; key: strin
       const blob = await mediaCover(http, path)
       if (!blob) {
         noCover[key] = Date.now()
+        state.coverMisses++
         await cacheSet(NO_COVER, { ...noCover })
         return
       }
@@ -346,7 +350,19 @@ export function albumCoverState(
     : state.albumCovers[album.title]
   if (member) return 'found'
   const key = artist ? scopeKey(album.title, artist) : JSON.stringify([album.title])
-  return recent(noCover[key]) ? 'missing' : 'unknown'
+  // Read the miss count too, so a view follows a cover found missing later.
+  return state.coverMisses >= 0 && recent(noCover[key]) ? 'missing' : 'unknown'
+}
+
+/** Reads a release's cover again (after one was saved beside its tracks), forgetting that it had none. */
+export async function recheckAlbumCover(
+  album: { title: string; trackArtists: readonly string[]; paths?: Readonly<Record<string, string>> },
+  artist: string | null = null,
+): Promise<void> {
+  const key = artist ? scopeKey(album.title, artist) : JSON.stringify([album.title])
+  noCover = Object.fromEntries(Object.entries(noCover).filter(([name]) => name !== key))
+  await cacheSet(NO_COVER, { ...noCover })
+  albumCover(album, artist)
 }
 
 function rememberDuration(track: Track): void {

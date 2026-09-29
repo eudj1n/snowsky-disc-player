@@ -647,8 +647,14 @@ const server = createServer((request, response) => {
       if (TRACKS.some((track) => track.PATH === path) || player.uploads.some((upload) => upload.path === path)) {
         return send(response, 409, 'File already exists; no overwrite\n')
       }
-      // A lyrics file keeps its text: the media route serves it beside its track.
-      player.uploads.push({ path, bytes, text: path.toLowerCase().endsWith('.lrc') ? body.toString('utf8') : null })
+      // A lyrics file keeps its text and a folder cover its bytes: the media route serves them for its tracks.
+      const lower = path.toLowerCase()
+      player.uploads.push({
+        path,
+        bytes,
+        text: lower.endsWith('.lrc') ? body.toString('utf8') : null,
+        image: /\/cover\.(jpe?g|png)$/.test(lower) ? body : null,
+      })
       listed = null
       send(response, 201, JSON.stringify({ path, bytes, indexed: false }), 'application/json')
     })
@@ -665,6 +671,12 @@ const server = createServer((request, response) => {
       const sidecar = player.uploads.find((upload) => upload.text !== null && upload.path === `${stem}.lrc`)
       if (sidecar?.text)
         return send(response, 200, sidecar.text, 'text/plain; charset=utf-8', { 'X-Lyrics-Source': 'sidecar' })
+    }
+    if (match[1] === 'cover') {
+      const folder = mediaFile.slice(0, mediaFile.lastIndexOf('/'))
+      const cover = player.uploads.find((upload) => upload.image && upload.path.startsWith(`${folder}/cover.`))
+      if (cover?.image)
+        return send(response, 200, cover.image, cover.path.endsWith('.png') ? 'image/png' : 'image/jpeg', {})
     }
     if (match[1] === 'info') {
       player.infoReads.set(mediaFile, (player.infoReads.get(mediaFile) ?? 0) + 1)

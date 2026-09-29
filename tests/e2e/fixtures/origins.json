@@ -14,10 +14,15 @@
       "directives": ["connect-src", "img-src"],
       "purpose": "Front covers by MusicBrainz release id."
     },
+    "archive_root": {
+      "origin": "https://archive.org",
+      "directives": ["connect-src", "img-src"],
+      "purpose": "Cover Art Archive answers every image with a redirect to archive.org/download, which redirects again to a download host."
+    },
     "archive": {
       "origin": "https://*.archive.org",
-      "directives": ["img-src"],
-      "purpose": "Cover Art Archive redirects its images to Internet Archive hosts."
+      "directives": ["connect-src", "img-src"],
+      "purpose": "The Internet Archive's download hosts holding Cover Art Archive images, read as bytes (covers are drawn on a canvas) and shown."
     },
     "lrclib": {
       "origin": "https://lrclib.net",
