@@ -59,3 +59,33 @@ export const router = createRouter({
   routes,
   scrollBehavior: () => ({ top: 0 }),
 })
+
+/**
+ * vue-router follows address changes only once its first navigation is done,
+ * and that navigation then writes its own address: a hash changed while the
+ * first view's chunk still loads (an address typed or Back pressed right after
+ * opening the page, 2026-09-29 on the emulator) was lost and the page stayed
+ * on the first view. The last such change is applied once the router is ready.
+ * popstate comes first, with the new address; hashchange may come only after
+ * that navigation rewrote it, so it is read from the event.
+ */
+export function keepEarlyAddress(): void {
+  let early: string | null = null
+  const fromHash = (hash: string) => hash.slice(1) || '/'
+  const onPop = () => {
+    early = fromHash(location.hash)
+  }
+  const onHash = (event: HashChangeEvent) => {
+    early = fromHash(new URL(event.newURL).hash)
+  }
+  window.addEventListener('popstate', onPop)
+  window.addEventListener('hashchange', onHash)
+  void router
+    .isReady()
+    .catch(() => undefined)
+    .then(() => {
+      window.removeEventListener('popstate', onPop)
+      window.removeEventListener('hashchange', onHash)
+      if (early !== null && early !== router.currentRoute.value.fullPath) void router.replace(early)
+    })
+}

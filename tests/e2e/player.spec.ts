@@ -27,6 +27,19 @@ test('loads from / under the gateway CSP, adopts the player language and shows t
   expect(errors).toEqual([])
 })
 
+test('keeps an address changed while the first view still loads', async ({ page }) => {
+  test.skip(external, 'Delays a chunk of the served build')
+  // The first view's chunk arrives late, so the hash changes before the router's first navigation ends.
+  await page.route('**/assets/HomeView-*.js', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 1_500))
+    await route.continue()
+  })
+  await page.goto('/')
+  await page.goto('/#/albums')
+  await expect(page.getByRole('heading', { level: 1, name: /Albums|Альбомы/ })).toBeVisible({ timeout: 10_000 })
+  expect(new URL(page.url()).hash).toBe('#/albums')
+})
+
 test('a connected tab reconnects after a reload; after Disconnect it waits', async ({ page }) => {
   test.skip(external, 'Needs the mock gateway')
   await english(page)

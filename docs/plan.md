@@ -1491,6 +1491,13 @@ browser on its own.
       suite 143 passed (59 emulator-only skipped), `npm run release` packed
       87 files; the service's host tests and guest acceptance with the probe
       as `Apps/Disc Player` passed (service `a64ce31`).
+- [x] An address changed while the first view still loads is kept
+      (2026-09-29, found by the emulator acceptance: the albums and card
+      cases opened Home instead). vue-router 5 follows address changes only
+      after its first navigation, which then writes its own address;
+      `keepEarlyAddress()` applies the last early change once the router is
+      ready. On the guest the Home-then-route navigation failed 5 of 20
+      times before and 0 of 40 after; a mock test delays the Home chunk.
 - [ ] Emulator acceptance with the zip installed into the guest card's
       `Apps/Disc Player` (combined-009 stage 8).
 
