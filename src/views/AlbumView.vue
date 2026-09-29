@@ -31,6 +31,7 @@ import { connection } from '../stores/connection'
 import { isPinnedAlbum, pins, togglePinAlbum } from '../stores/pins'
 import { openPlaylistDialog, openTrackMenu, ui } from '../stores/ui'
 import UiCircleButton from '../ui/UiCircleButton.vue'
+import UiHiResBadge from '../ui/UiHiResBadge.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { albumCardRoute, albumRoute, artistRoute, genreRoute, withYear } from './captions'
@@ -200,11 +201,7 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
             <template v-if="year"><span v-if="credits.length"> · </span>{{ year }}</template>
             <template v-if="quality">
               <span v-if="credits.length || year"> · </span><span data-testid="album-quality">{{ quality.text }}</span>
-              <span
-                v-if="quality.hiRes"
-                class="ml-4 rounded-5 bg-accent px-6 py-2 align-middle text-10 font-semibold tracking-[1px] text-white"
-                >Hi-Res</span
-              >
+              <UiHiResBadge v-if="quality.hiRes" class="ml-6" />
             </template>
           </template>
         </template>

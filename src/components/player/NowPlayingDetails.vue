@@ -12,6 +12,7 @@ import { formatRate, resampled, type OutputFacts } from '../../domain/device'
 import { isHiRes, qualityLabel, type AudioQuality } from '../../domain/quality'
 import { formatBadge } from '../../domain/track'
 import UiIcon from '../../ui/UiIcon.vue'
+import UiHiResBadge from '../../ui/UiHiResBadge.vue'
 import UiIconButton from '../../ui/UiIconButton.vue'
 import Artwork from '../artwork/Artwork.vue'
 import ArtistCredit from '../track/ArtistCredit.vue'
@@ -104,11 +105,7 @@ const emit = defineEmits<{
     <p class="flex items-center justify-between gap-10 text-11 text-muted">
       <span>{{ status }}</span>
       <span v-if="quality.format" class="flex items-center gap-6" data-testid="quality">
-        <span
-          v-if="isHiRes(quality)"
-          class="rounded-5 bg-accent px-7 py-4 text-10 font-semibold tracking-[1px] text-white"
-          >Hi-Res</span
-        >
+        <UiHiResBadge v-if="isHiRes(quality)" class="py-5" />
         <span :title="labels.format" class="rounded-5 border border-line px-7 py-4 text-11 tracking-[1px]"
           >{{ quality.format }}<template v-if="qualityLabel(quality)"> · {{ qualityLabel(quality) }}</template
           ><span v-if="outputRate" data-testid="output-rate" :title="labels.resampled.replace('{rate}', outputRate)">
