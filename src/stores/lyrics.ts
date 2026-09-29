@@ -5,12 +5,16 @@
  * written after this track started: stock rewrites that file a few seconds
  * into a track with lyrics and leaves it unchanged for a track without.
  *
- * A track left without lyrics can be looked up on LRCLIB (owner, 2026-09-29,
- * enrichment step 1) when the release's origins admit it: on the listener's
- * request, or for every such track once they switch that on in this browser
- * (off by default, since the track's names leave the network). What LRCLIB
- * gives is shown as not yet on the card until the listener saves it beside
- * the track as its .lrc, through the upload route, which never overwrites.
+ * A track without synced lyrics (none at all, or plain text without timings
+ * in its tags, its .lrc or stock's file) can be looked up on LRCLIB (owner,
+ * 2026-09-29, enrichment step 1) when the release's origins admit it: on the
+ * listener's request, or for every such track once they switch that on in
+ * this browser (off by default, since the track's names leave the network).
+ * What LRCLIB gives is shown as not yet on the card until the listener saves
+ * it beside the track as its .lrc, through the upload route, which never
+ * overwrites; a plain .lrc already there goes to the service's trash
+ * instead (reversible). The media route reads a .lrc before the tags, so a
+ * saved file wins over lyrics embedded in the file.
  */
 import { reactive, readonly, watch } from 'vue'
 import { parseLyrics, sidecarPath, type Lyrics } from '../domain/lyrics'
@@ -28,7 +32,7 @@ import { toast } from './ui'
 
 export type LyricsStatus = 'idle' | 'loading' | 'ready' | 'none' | 'unavailable'
 /** An LRCLIB lookup for the current track. */
-export type LyricsLookup = 'idle' | 'searching' | 'missing' | 'instrumental' | 'failed'
+export type LyricsLookup = 'idle' | 'searching' | 'missing' | 'missing-synced' | 'instrumental' | 'failed'
 
 interface LyricsModel {
   path: string | null
@@ -39,6 +43,8 @@ interface LyricsModel {
   /** Look up every track left without lyrics (this browser's choice). */
   autoLookup: boolean
   saving: boolean
+  /** What LRCLIB's lyrics stand in for: none, or plain lyrics from this source. */
+  replaced: LyricsSource | null
 }
 
 const AUTO_KEY = 'disc-player.lrclib-auto'
@@ -50,6 +56,7 @@ const state = reactive<LyricsModel>({
   lookup: 'idle',
   autoLookup: readPreference(AUTO_KEY) === '1',
   saving: false,
+  replaced: null,
 })
 /** The LRC text found on LRCLIB for the current track, kept for saving it. */
 let found: string | null = null
@@ -73,6 +80,7 @@ async function load(path: string | null, media: boolean, cue: boolean): Promise<
   state.lyrics = null
   state.source = null
   state.lookup = 'idle'
+  state.replaced = null
   found = null
   if (!path) {
     state.status = 'idle'
@@ -108,13 +116,23 @@ async function load(path: string | null, media: boolean, cue: boolean): Promise<
   } catch {
     if (current === request) state.status = 'none'
   }
-  if (current === request && state.status === 'none' && state.autoLookup) void lookUpLyrics()
+  if (current === request && state.autoLookup && lyricsLookupAvailable()) void lookUpLyrics()
 }
 
-/** LRCLIB can be asked for the current track: the origins admit it and the track has no lyrics of its own. */
+/** The track's own lyrics are plain text without timings (owner, 2026-09-29: still offer synced ones). */
+export const plainLyricsOnly = (): boolean =>
+  state.status === 'ready' && state.lyrics !== null && !state.lyrics.synced && state.source !== 'lrclib'
+
+/** LRCLIB can be asked for the current track: the origins admit it and it has no synced lyrics. */
 export function lyricsLookupAvailable(): boolean {
   const track = playback.current.track
-  return originAllowed('lrclib') && !!track?.path && !track.cue && !!track.artist && state.status === 'none'
+  return (
+    originAllowed('lrclib') &&
+    !!track?.path &&
+    !track.cue &&
+    !!track.artist &&
+    (state.status === 'none' || plainLyricsOnly())
+  )
 }
 
 /** Looks the current track up on LRCLIB (its artist, title, album and length leave the network). */
@@ -131,11 +149,14 @@ export async function lookUpLyrics(): Promise<void> {
       durationMs: track.durationMs,
     })
     if (current !== request) return
-    const text = result?.synced ?? result?.plain ?? null
+    // Beside plain lyrics of its own, only synced ones are worth offering.
+    const plain = plainLyricsOnly()
+    const text = result?.synced ?? (plain ? null : result?.plain) ?? null
     if (!text) {
-      state.lookup = result?.instrumental ? 'instrumental' : 'missing'
+      state.lookup = result?.instrumental ? 'instrumental' : plain ? 'missing-synced' : 'missing'
       return
     }
+    state.replaced = plain ? (state.source as LyricsSource | null) : null
     found = text
     settle(text, 'lrclib')
     state.lookup = 'idle'
@@ -147,13 +168,14 @@ export async function lookUpLyrics(): Promise<void> {
 export function setAutoLookup(on: boolean): void {
   state.autoLookup = on
   writePreference(AUTO_KEY, on ? '1' : null)
-  if (on && state.status === 'none' && state.lookup === 'idle') void lookUpLyrics()
+  if (on && state.lookup === 'idle' && lyricsLookupAvailable()) void lookUpLyrics()
 }
 
 /**
  * Saves what LRCLIB gave beside the track as its .lrc: one guarded upload
- * (the player's serial number, a fresh request ID, pacing), never over an
- * existing file; a lost reply is not retried.
+ * (the player's serial number, a fresh request ID, pacing); a plain .lrc
+ * already there goes to the service's trash, anything else is never
+ * overwritten; a lost reply is not retried.
  */
 export async function saveFoundLyrics(): Promise<void> {
   const track = playback.current.track
@@ -166,13 +188,19 @@ export async function saveFoundLyrics(): Promise<void> {
   }
   const text = found
   const current = request
+  const replaces = state.replaced === 'sidecar'
   state.saving = true
   try {
     const outcome = await run('upload', async (context) => {
       await context.pace()
       context.guard()
       context.attempted()
-      return uploadFile({ file: new Blob([text], { type: 'text/plain' }), path: target, token })
+      return uploadFile({
+        file: new Blob([text], { type: 'text/plain' }),
+        path: target,
+        token,
+        ...(replaces ? { replace: 'trash' as const } : {}),
+      })
     }).catch(() => 'not-sent' as const)
     if (outcome === 'confirmed') {
       if (current === request) state.source = 'sidecar'

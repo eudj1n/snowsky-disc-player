@@ -82,6 +82,7 @@ back after a reload, the trash with a folder and macOS leftovers, card files
 and a CUE track played in the browser with the visualizer hearing them, the
 diagnostics, lyrics found on LRCLIB and a cover found on Cover Art Archive
 (both stubbed in the browser) saved beside a track and into an album folder,
+a plain `.lrc` replaced by synced lyrics with the old one in the trash,
 an artist photo from stubbed Wikimedia within the service's policy) and an upload with a
 scan. It changes device state, so it runs only with
 `E2E_ACCEPTANCE=emulator` and never against a player. Steps, with the

@@ -1316,9 +1316,19 @@ started:
       timings is now plain white; the lines around read grey (white at half
       strength or less, fading further out); timed words still fill in the
       accent colour. Mock browser test of the colours.
-- [ ] Lyrics that the tags hold as plain text (no timings) still offer the
+- [x] Lyrics that the tags hold as plain text (no timings) still offer the
       LRCLIB lookup for synced lyrics; check the order shown: a `.lrc` file
-      first, then the embedded tags.
+      first, then the embedded tags. The lookup is offered whenever a track
+      has no synced lyrics (none, or plain text in its tags, its `.lrc` or
+      stock's file: "These lyrics have no timings: find synced ones on
+      LRCLIB"); beside plain lyrics only synced ones count as found. The
+      order holds: the media route reads a same-stem `.lrc` before the tags,
+      so a saved file wins. A plain `.lrc` already beside the track is
+      replaced with the upload route's `X-Disc-Replace: trash` (combined-008:
+      the old file goes to the service's trash, restorable); nothing else is
+      overwritten. Unit test of the header, a mock browser test (plain tags,
+      then the saved `.lrc` after a reload) and emulator acceptance (a plain
+      `.lrc` replaced, the old one in the trash).
 - [ ] Starting playback in this browser pauses the player (a guarded pause
       only while it plays, confirmed like any command).
 

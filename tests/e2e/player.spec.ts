@@ -1290,6 +1290,53 @@ test('finds lyrics on LRCLIB for a track without any and saves them beside it', 
   await disconnect(page)
 })
 
+test('offers synced lyrics from LRCLIB beside plain ones in the tags, and a saved .lrc wins', async ({
+  page,
+}, info) => {
+  test.skip(external, 'Needs the mock collection')
+  test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
+  test.skip(info.project.name === 'phone', 'Runs once: the saved lyrics stay in the shared mock')
+  await page.route('https://lrclib.net/api/**', (route) =>
+    route.fulfill({
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      json: {
+        syncedLyrics: '[00:00.00]Blue hours, a synced line\n[00:05.00]Blue hours, the next one',
+        plainLyrics: 'Blue hours, a synced line\nBlue hours, the next one',
+        instrumental: false,
+        duration: 224,
+      },
+    }),
+  )
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/album/Blue%20Hours/Mira%20Sol')
+  const title = page.getByTestId('track-title')
+  if ((await title.count()) && (await title.textContent())?.trim() === 'Blue Hours') {
+    await page.getByRole('button', { name: 'Play Almost Sunday' }).click()
+    await expect(title).toHaveText('Almost Sunday', { timeout: 15_000 })
+  }
+  await page.getByRole('button', { name: 'Play Blue Hours' }).first().click()
+  await expect(title).toHaveText('Blue Hours', { timeout: 15_000 })
+  await page.getByRole('button', { name: 'Lyrics' }).filter({ visible: true }).first().click()
+  const lyrics = page.getByTestId('lyrics')
+  // The tags hold plain text: it shows, and synced lyrics are still offered.
+  await expect(lyrics).toContainText('Blue hours, plain line one', { timeout: 15_000 })
+  const find = page.getByTestId('lyrics-find')
+  await expect(find).toHaveText('These lyrics have no timings: find synced ones on LRCLIB')
+  await find.click()
+  await expect(lyrics).toContainText('Blue hours, a synced line')
+  await expect(lyrics).toContainText('From LRCLIB, not on the card yet')
+  await page.getByTestId('lyrics-save').click()
+  await expect(lyrics).toContainText('From the .lrc file beside the track', { timeout: 15_000 })
+  // After a reload the card's .lrc comes before the tags.
+  await page.reload()
+  await page.getByRole('button', { name: 'Lyrics' }).filter({ visible: true }).first().click()
+  await expect(page.getByTestId('lyrics')).toContainText('Blue hours, a synced line', { timeout: 15_000 })
+  await expect(page.getByTestId('lyrics-find')).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await disconnect(page)
+})
+
 test('finds a cover on Cover Art Archive for an album without one and saves it into its folder', async ({
   page,
 }, info) => {

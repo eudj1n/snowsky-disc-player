@@ -27,7 +27,14 @@ import { tracks } from '../stores/library'
 import { observations } from '../stores/observations'
 import { isPlaying, playback } from '../stores/playback'
 import { loadQueue, queue, queueCurrent } from '../stores/queue'
-import { lookUpLyrics, lyrics, lyricsLookupAvailable, saveFoundLyrics, setAutoLookup } from '../stores/lyrics'
+import {
+  lookUpLyrics,
+  lyrics,
+  lyricsLookupAvailable,
+  plainLyricsOnly,
+  saveFoundLyrics,
+  setAutoLookup,
+} from '../stores/lyrics'
 import UiPillButton from '../ui/UiPillButton.vue'
 import { playerOptions } from '../stores/playerOptions'
 import { closePanel, showPanelSection, ui } from '../stores/ui'
@@ -128,11 +135,13 @@ const lookupMessage = computed(() =>
     ? t('lrclib_searching')
     : lyrics.lookup === 'missing'
       ? t('lrclib_missing')
-      : lyrics.lookup === 'instrumental'
-        ? t('lrclib_instrumental')
-        : lyrics.lookup === 'failed'
-          ? t('lrclib_failed')
-          : null,
+      : lyrics.lookup === 'missing-synced'
+        ? t('lrclib_missing_synced')
+        : lyrics.lookup === 'instrumental'
+          ? t('lrclib_instrumental')
+          : lyrics.lookup === 'failed'
+            ? t('lrclib_failed')
+            : null,
 )
 const lyricsSource = computed(() =>
   lyrics.source === 'lrclib'
@@ -329,7 +338,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
             variant="secondary"
             data-testid="lyrics-find"
             @click="lookUpLyrics"
-            >{{ t('lrclib_find') }}</UiPillButton
+            >{{ t(plainLyricsOnly() ? 'lrclib_find_synced' : 'lrclib_find') }}</UiPillButton
           >
           <p class="mt-8 mb-6 text-10 leading-[1.5] text-muted">{{ t('lrclib_note') }}</p>
           <label class="flex items-center gap-8 text-11 text-secondary">

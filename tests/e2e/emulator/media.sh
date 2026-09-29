@@ -36,6 +36,8 @@ tone 'Lumen - Night Lines' 'b Streetlight.flac' 'Streetlight' 2 'Night Lines' Lu
 # Lyrics: a same-stem .lrc next to Signal, an embedded LYRICS comment in Streetlight.
 printf '[00:00.00]Signal, first line\n[00:05.00]Signal, second line\n[00:10.00]Signal, third line\n' \
   > "$root/Lumen - Night Lines/a Signal.lrc"
+# Plain lyrics without timings beside Low Tide: the page offers synced ones and may replace this file.
+printf 'Low tide, a plain line\nLow tide, another plain line\n' > "$root/Lumen - Harbor/b Low Tide.lrc"
 rm "$root/Lumen - Night Lines/b Streetlight.flac"
 sox -n --comment 'TITLE=Streetlight' --add-comment 'TRACKNUMBER=2' --add-comment 'ALBUM=Night Lines' \
   --add-comment 'ARTIST=Lumen' --add-comment 'GENRE=Jazz' \

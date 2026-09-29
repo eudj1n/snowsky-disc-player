@@ -17,6 +17,11 @@ export interface UploadRequest {
   /** Relative path below the card root, e.g. Album/01 Track.flac. */
   path: string
   token: string
+  /**
+   * A cover or lyrics file already there goes to the service's trash first
+   * (combined-008); without it nothing is overwritten. Audio never is.
+   */
+  replace?: 'trash'
   onProgress?: (sent: number, total: number) => void
   /** Injectable for tests. */
   xhr?: () => XMLHttpRequest
@@ -49,6 +54,7 @@ export function uploadFile(request: UploadRequest): Promise<UploadOutcome> {
     xhr.setRequestHeader('X-Disc-Token', request.token)
     xhr.setRequestHeader('X-Disc-Request', newRequestId())
     xhr.setRequestHeader('Content-Type', 'application/octet-stream')
+    if (request.replace) xhr.setRequestHeader('X-Disc-Replace', request.replace)
     xhr.upload.onprogress = (event) => {
       started = true
       request.onProgress?.(event.loaded, event.total || request.file.size)

@@ -520,6 +520,40 @@ test('looks lyrics up on LRCLIB and saves them beside the track through the serv
   expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])
 })
 
+test('replaces a plain .lrc with synced lyrics from LRCLIB, the old one going to the trash, on stock', async ({
+  page,
+}) => {
+  await page.route('https://lrclib.net/api/**', (route) =>
+    route.fulfill({
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      json: new URL(route.request().url()).pathname.endsWith('/search')
+        ? [{ syncedLyrics: '[00:00.00]Low tide, synced now\n[00:10.00]Low tide, second', duration: 25 }]
+        : { syncedLyrics: '[00:00.00]Low tide, synced now\n[00:10.00]Low tide, second', duration: 25 },
+    }),
+  )
+  const errors = watchErrors(page)
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/album/Harbor/Lumen')
+  await verified(page, () => page.getByRole('button', { name: 'Play Low Tide' }).click())
+  await page.getByRole('button', { name: 'Lyrics' }).filter({ visible: true }).first().click()
+  const lyrics = page.getByTestId('lyrics')
+  await expect(lyrics).toContainText('Low tide, a plain line', { timeout: 30_000 })
+  await page.getByTestId('lyrics-find').click()
+  await expect(lyrics).toContainText('Low tide, synced now', { timeout: 30_000 })
+  await page.getByTestId('lyrics-save').click()
+  await expect(lyrics).toContainText('From the .lrc file beside the track', { timeout: 30_000 })
+  await page.reload()
+  await page.getByRole('button', { name: 'Lyrics' }).filter({ visible: true }).first().click()
+  await expect(page.getByTestId('lyrics')).toContainText('Low tide, synced now', { timeout: 30_000 })
+  // The plain file is in the service's trash, restorable.
+  await page.keyboard.press('Escape')
+  await page.goto('/#/card/trash')
+  await expect(page.getByTestId('trash-list')).toContainText('b Low Tide.lrc', { timeout: 30_000 })
+  await disconnect(page)
+  expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])
+})
+
 test("finds a cover on Cover Art Archive and saves it into the album's folder through the service on stock", async ({
   page,
 }) => {
