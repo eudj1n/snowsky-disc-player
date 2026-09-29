@@ -1349,6 +1349,13 @@ started:
       confirmed by the player's state. Needs control (paired); otherwise
       nothing is sent. Unit test (a paused player gets nothing), a mock
       browser test and emulator acceptance on stock.
+- [ ] Rethink the artwork placeholders (owner, 2026-09-29): the sleeves of
+      artists, albums and tracks without artwork look apart from the player,
+      with volume (gradients, a glow, scan lines) and colours not its own
+      (six earthy palettes, a serif monogram). Options to be shown as mock-ups
+      before any change: flat surfaces in the theme's own tones with the
+      project's ringed-disc mark, a flat vinyl for albums with a round
+      monogram for artists, or flat tints from the page's tokens.
 
 ## Requests for the next service build
 
