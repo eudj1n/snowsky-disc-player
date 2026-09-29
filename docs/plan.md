@@ -968,7 +968,8 @@ plus macOS leftovers on the Card page. The page's part:
       guarded position edits, and needs no scan; entries relative to the card
       root. It needs a service route that writes the lists (next image, see
       the service plan); such lists do not appear in the device's playlist
-      list.
+      list. Researched in snowsky-disc-service `docs/m3u.md` (forms, missing
+      entries, CUE images, navigation, history hash, favorites).
 - [x] Disliked tracks, the store's acceptance case (owner, 2026-09-28): the
       `disliked` collection of the card catalog (a CUE track by its path and
       title), Dislike in every track menu and in Now Playing, the Disliked
