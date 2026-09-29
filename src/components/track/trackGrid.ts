@@ -11,44 +11,41 @@ export const TRACK_ROW = 'relative grid items-center gap-13 rounded-8 px-12 py-1
 /** What leads a row: the cover (play on hover) or the track number (album pages). */
 export type TrackLead = 'cover' | 'number'
 
-// Lead, title, [album], [duration], [actions]. Phones drop album. The favorite
-// heart sits outside the row, in the page gutter (owner's reference), where
-// the gutter is wide enough; narrower pages (compact widths, an open listening
-// panel, phones) leave it no room from the sidebar or the screen edge, so
-// there rows open a heart lane of their own (owner, rounds 9 and 14).
+// Lead, title, [album], [heart], [duration], [actions]. Phones drop album. The
+// favorite heart is a column of its own right before the duration (owner,
+// 2026-09-29, as in Apple Music: the gutter heart and the lane that narrow
+// pages opened for it read as stray padding).
 
-/** Rows and their header, where the gutter is narrow, when the list shows favorite hearts. */
-export const HEART_LANE = 'compact:pl-40 listening:pl-40 phone:pl-24'
-const COLUMNS = {
-  'cover:album+duration':
-    'grid-cols-[40px_minmax(100px,1fr)_minmax(70px,.55fr)_46px] phone:grid-cols-[34px_minmax(0,1fr)_30px]',
-  'cover:album+duration+actions':
-    'grid-cols-[40px_minmax(100px,1fr)_minmax(70px,.55fr)_46px_28px] phone:grid-cols-[34px_minmax(0,1fr)_30px_25px]',
-  'cover:album': 'grid-cols-[40px_minmax(100px,1fr)_minmax(70px,.55fr)] phone:grid-cols-[34px_minmax(0,1fr)]',
-  'cover:album+actions':
-    'grid-cols-[40px_minmax(100px,1fr)_minmax(70px,.55fr)_28px] phone:grid-cols-[34px_minmax(0,1fr)_25px]',
-  'cover:duration': 'grid-cols-[40px_minmax(100px,1fr)_46px] phone:grid-cols-[34px_minmax(0,1fr)_30px]',
-  'cover:duration+actions':
-    'grid-cols-[40px_minmax(100px,1fr)_46px_28px] phone:grid-cols-[34px_minmax(0,1fr)_30px_25px]',
-  'cover:none': 'grid-cols-[40px_minmax(100px,1fr)] phone:grid-cols-[34px_minmax(0,1fr)]',
-  'cover:none+actions': 'grid-cols-[40px_minmax(100px,1fr)_28px] phone:grid-cols-[34px_minmax(0,1fr)_25px]',
-  'number:album+duration':
-    'grid-cols-[28px_minmax(100px,1fr)_minmax(70px,.55fr)_46px] phone:grid-cols-[22px_minmax(0,1fr)_30px]',
-  'number:album+duration+actions':
-    'grid-cols-[28px_minmax(100px,1fr)_minmax(70px,.55fr)_46px_28px] phone:grid-cols-[22px_minmax(0,1fr)_30px_25px]',
-  'number:album': 'grid-cols-[28px_minmax(100px,1fr)_minmax(70px,.55fr)] phone:grid-cols-[22px_minmax(0,1fr)]',
-  'number:album+actions':
-    'grid-cols-[28px_minmax(100px,1fr)_minmax(70px,.55fr)_28px] phone:grid-cols-[22px_minmax(0,1fr)_25px]',
-  'number:duration': 'grid-cols-[28px_minmax(100px,1fr)_46px] phone:grid-cols-[22px_minmax(0,1fr)_30px]',
-  'number:duration+actions':
-    'grid-cols-[28px_minmax(100px,1fr)_46px_28px] phone:grid-cols-[22px_minmax(0,1fr)_30px_25px]',
-  'number:none': 'grid-cols-[28px_minmax(100px,1fr)] phone:grid-cols-[22px_minmax(0,1fr)]',
-  'number:none+actions': 'grid-cols-[28px_minmax(100px,1fr)_28px] phone:grid-cols-[22px_minmax(0,1fr)_25px]',
-} as const
+/** The row grid takes its columns from two custom properties (see trackColumns). */
+export const TRACK_COLUMNS = 'grid-cols-(--track-columns) phone:grid-cols-(--track-columns-phone)'
 
-export function trackColumns(lead: TrackLead, album: boolean, duration: boolean, actions = false): string {
-  const base = album && duration ? 'album+duration' : album ? 'album' : duration ? 'duration' : 'none'
-  return COLUMNS[`${lead}:${base}${actions ? '+actions' : ''}`]
+const LEAD = { cover: ['40px', '34px'], number: ['28px', '22px'] } as const
+
+/**
+ * The column templates of a row, its header and its skeleton, wide and on
+ * phones, as custom properties for TRACK_COLUMNS (a style binding, so every
+ * combination needs no class of its own).
+ */
+export function trackColumns(
+  lead: TrackLead,
+  album: boolean,
+  duration: boolean,
+  actions = false,
+  heart = false,
+): Record<'--track-columns' | '--track-columns-phone', string> {
+  const [wide, phone] = LEAD[lead]
+  const columns = (parts: (string | false)[]) => parts.filter((part) => part !== false).join(' ')
+  return {
+    '--track-columns': columns([
+      wide,
+      'minmax(100px,1fr)',
+      album && 'minmax(70px,.55fr)',
+      heart && '28px',
+      duration && '46px',
+      actions && '28px',
+    ]),
+    '--track-columns-phone': columns([phone, 'minmax(0,1fr)', heart && '22px', duration && '30px', actions && '25px']),
+  }
 }
 
 /** Column names of the muted header row. */

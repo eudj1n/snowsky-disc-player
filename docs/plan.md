@@ -1197,8 +1197,13 @@ first, then layout, then style.
       or an unstamped line of an enhanced one) is now lit whole from its
       start; timed words still fill one by one, and pauses keep their dots.
       Mock browser test on a plain LRC.
-- [ ] The heart sits before the duration in track tables, so the gap reads
-      as a column, not as padding.
+- [x] The heart sits before the duration in track tables, so the gap reads
+      as a column, not as padding. The heart left the page gutter (and the
+      lane narrow pages opened for it on the left) for a column of its own
+      between the album and the duration; the row templates are now built
+      in code as custom properties, so the heart column needs no set of
+      classes of its own. Mock browser test of its place at three desktop
+      widths and on a phone.
 - [ ] A genre page names its number of artists in the heading, and its
       Artists shelf counts albums, not tracks (inside, the artist shows
       albums).

@@ -2,7 +2,14 @@
 /** Loading placeholder with the exact geometry of TrackList rows. */
 import UiSkeleton from '../../ui/UiSkeleton.vue'
 import TrackListHeader from './TrackListHeader.vue'
-import { ROW_DIVIDER, TRACK_ROW, trackColumns, type TrackColumnLabels, type TrackLead } from './trackGrid'
+import {
+  ROW_DIVIDER,
+  TRACK_COLUMNS,
+  TRACK_ROW,
+  trackColumns,
+  type TrackColumnLabels,
+  type TrackLead,
+} from './trackGrid'
 
 withDefaults(
   defineProps<{
@@ -13,9 +20,11 @@ withDefaults(
     album?: boolean
     duration?: boolean
     actions?: boolean
+    /** The favorite heart column, which every list of the views shows. */
+    heart?: boolean
     header?: TrackColumnLabels | null
   }>(),
-  { lead: 'cover', lines: 2, album: true, duration: false, actions: false, header: null },
+  { lead: 'cover', lines: 2, album: true, duration: false, actions: false, heart: true, header: null },
 )
 // Varied bar widths read as text rather than a striped block.
 const WIDTHS = ['w-[62%]', 'w-[48%]', 'w-[71%]', 'w-[55%]', 'w-[66%]', 'w-[43%]'] as const
@@ -30,16 +39,13 @@ const WIDTHS = ['w-[62%]', 'w-[48%]', 'w-[71%]', 'w-[55%]', 'w-[66%]', 'w-[43%]'
       :album="album"
       :duration="duration"
       :actions="actions"
+      :heart="heart"
     />
     <div
       v-for="row in rows"
       :key="row"
-      :class="[
-        TRACK_ROW,
-        ROW_DIVIDER,
-        trackColumns(lead, album, duration, actions),
-        lines === 1 ? 'min-h-46' : 'min-h-59',
-      ]"
+      :class="[TRACK_ROW, ROW_DIVIDER, TRACK_COLUMNS, lines === 1 ? 'min-h-46' : 'min-h-59']"
+      :style="trackColumns(lead, album, duration, actions, heart)"
     >
       <UiSkeleton v-if="lead === 'cover'" class="mx-auto size-40 rounded-6 phone:size-34" />
       <UiSkeleton v-else class="mx-auto h-9 w-10" />
@@ -54,6 +60,7 @@ const WIDTHS = ['w-[62%]', 'w-[48%]', 'w-[71%]', 'w-[55%]', 'w-[66%]', 'w-[43%]'
       <div v-if="album" class="flex h-[1lh] items-center text-11 phone:hidden">
         <UiSkeleton class="h-[0.75em]" :class="WIDTHS[(row + 1) % WIDTHS.length]" />
       </div>
+      <span v-if="heart" />
       <div v-if="duration" class="flex h-[1lh] items-center justify-end text-11">
         <UiSkeleton class="h-[0.75em] w-28" />
       </div>

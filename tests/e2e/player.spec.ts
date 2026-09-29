@@ -1038,7 +1038,7 @@ test('links the featured album and its artist on Home without playing', async ({
   await expect(page).toHaveURL(/#\/artist\//)
 })
 
-test('keeps favorite hearts clear of the sidebar and the screen edge', async ({ page }, info) => {
+test('places the favorite heart in its own column right before the duration', async ({ page }, info) => {
   test.skip(external, 'Needs the mock collection')
   await english(page)
   await page.goto('/#/tracks')
@@ -1047,11 +1047,17 @@ test('keeps favorite hearts clear of the sidebar and the screen edge', async ({ 
     await page.setViewportSize({ width, height: 800 })
     const heart = page.getByTitle('In favorites').first()
     await expect(heart).toBeVisible()
+    const row = heart.locator('xpath=ancestor::*[@role="row"][1]')
     const box = await heart.boundingBox()
-    const sidebar = await page.getByRole('complementary', { name: 'Main navigation' }).boundingBox()
-    // Phones show the sidebar as the bottom navigation: only the screen edge counts there.
-    const edge = width > 540 && sidebar ? sidebar.x + sidebar.width : 0
-    expect(box && box.x - edge, `width ${width}`).toBeGreaterThanOrEqual(8)
+    const rowBox = await row.boundingBox()
+    const duration = await row.getByRole('cell').nth(-2).boundingBox()
+    const lead = await row.getByRole('cell').first().boundingBox()
+    expect(box && rowBox && duration && lead, `width ${width}`).toBeTruthy()
+    if (!box || !rowBox || !duration || !lead) continue
+    // Inside the row, just left of the duration; the row opens no lane of its own on the left.
+    expect(box.x + box.width, `width ${width}`).toBeLessThanOrEqual(duration.x)
+    expect(duration.x - (box.x + box.width), `width ${width}`).toBeLessThan(24)
+    expect(lead.x - rowBox.x, `width ${width}`).toBeLessThanOrEqual(12)
   }
 })
 
