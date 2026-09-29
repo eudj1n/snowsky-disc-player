@@ -635,6 +635,8 @@ test.describe('player controls on the mock', () => {
     await page.getByRole('button', { name: 'Play Meridian Line' }).click()
     const title = page.getByTestId('track-title')
     await expect(title).toHaveText('Meridian Line', { timeout: 15_000 })
+    // Confirmed although stock reports the album cut short: its full name is the only one it begins.
+    await expect(page.getByRole('status').filter({ hasText: 'Done. Verified on DISC.' })).toBeAttached()
     await page.goto('/#/tracks')
     await title.click()
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(album)

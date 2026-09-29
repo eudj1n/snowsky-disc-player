@@ -201,7 +201,32 @@ export function genre(style, album) {
 }
 
 /** One page of a stock category, or null when the category is not modelled. */
+/**
+ * Album name lists (stock types album, artist/album and style/album): each
+ * title once, whole. The page reads one to confirm a play whose album stock
+ * reports cut short (a long title).
+ */
+function albumNames(headers) {
+  let source
+  if (headers.type === 'album') source = TRACKS
+  else if (headers.type === 'artist/album' && headers.artist !== undefined)
+    source = TRACKS.filter((track) => track.ARTIST === decodeURIComponent(headers.artist))
+  else if (headers.type === 'style/album' && headers.style !== undefined)
+    source = TRACKS.filter((track) => track.GENRE === decodeURIComponent(headers.style))
+  else return null
+  const titles = new Map()
+  for (const track of source)
+    if (track.ALBUM && !titles.has(track.ALBUM)) titles.set(track.ALBUM, { name: track.ALBUM, author: track.ARTIST })
+  return [...titles.values()]
+}
+
 export function catalogPage(headers, rowsOverride) {
+  const albums = rowsOverride ? null : albumNames(headers)
+  if (albums) {
+    const start = Number(headers['start-pos'] ?? 0)
+    const count = Number(headers['num-max'] ?? 200)
+    return { rows: albums.slice(start, start + count), total: albums.length }
+  }
   if (headers.type === 'custom') {
     const start = Number(headers['start-pos'] ?? 0)
     const count = Number(headers['num-max'] ?? 200)
