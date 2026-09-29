@@ -1,13 +1,14 @@
 /** A snapshot of the stock play queue, refreshed on demand (reference: on
  * opening the panel, after this browser's selections, explicit refresh). */
-import { reactive, readonly } from 'vue'
-import { alignQueue } from '../domain/queue'
+import { computed, reactive, readonly } from 'vue'
+import { alignQueue, queueRowOf } from '../domain/queue'
 import type { LibraryTrack } from '../domain/track'
 import { readQueue } from '../gateway/queue'
 import type { CatalogRow } from '../gateway/catalog'
 import { libraryTracks, queueData } from '../gateway/library'
 import { http, onSessionOpened } from './connection'
 import { tracks } from './library'
+import { playback } from './playback'
 
 interface QueueModel {
   items: CatalogRow[]
@@ -29,6 +30,17 @@ async function persistedQueue(): Promise<LibraryTrack[]> {
   }
 }
 export const queue = readonly(state)
+
+/**
+ * The shown queue's row that is playing now (2026-09-29): it follows the
+ * playback between refreshes of the snapshot. Null while a track plays that
+ * the shown queue does not hold (the panel then reads the queue again); the
+ * snapshot's own mark when nothing plays.
+ */
+export const queueCurrent = computed(() => {
+  const track = playback.current.track
+  return track ? queueRowOf(state.items, state.details, track) : state.current
+})
 let request = 0
 
 export async function loadQueue(): Promise<void> {

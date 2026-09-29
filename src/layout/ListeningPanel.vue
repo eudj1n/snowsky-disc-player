@@ -13,6 +13,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import NowPlayingDetails from '../components/player/NowPlayingDetails.vue'
 import TrackFacts from '../components/player/TrackFacts.vue'
 import { libraryRow, trackFacts } from '../domain/nowFacts'
+import { trackKey } from '../domain/track'
 import { device } from '../stores/device'
 import LyricsView from '../components/player/LyricsView.vue'
 import ArtistCredit from '../components/track/ArtistCredit.vue'
@@ -25,7 +26,7 @@ import { history, loadHistory } from '../stores/history'
 import { tracks } from '../stores/library'
 import { observations } from '../stores/observations'
 import { isPlaying, playback } from '../stores/playback'
-import { loadQueue, queue } from '../stores/queue'
+import { loadQueue, queue, queueCurrent } from '../stores/queue'
 import { lookUpLyrics, lyrics, lyricsLookupAvailable, saveFoundLyrics, setAutoLookup } from '../stores/lyrics'
 import UiPillButton from '../ui/UiPillButton.vue'
 import { playerOptions } from '../stores/playerOptions'
@@ -61,6 +62,20 @@ watch(
     if (connection.history && !history.loaded) void loadHistory()
   },
   { immediate: true },
+)
+// A track the shown queue does not hold (another source started, here or on the player) reads it again.
+watch(
+  () => (playback.current.track ? trackKey(playback.current.track) : null),
+  (key) => {
+    if (
+      key &&
+      ui.panel &&
+      connection.connection === 'connected' &&
+      queue.status === 'ready' &&
+      queueCurrent.value === null
+    )
+      void loadQueue()
+  },
 )
 // The bar's queue button shows the Now tab at the queue.
 watch(
@@ -262,7 +277,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
           </p>
           <QueueRows
             :items="items"
-            :current="queue.current"
+            :current="queueCurrent"
             :playing="isPlaying"
             :select-label="t('select_in_queue')"
             :disabled="!player.ready.value || queue.status !== 'ready'"

@@ -106,11 +106,17 @@ test('plays a track from an album page and shows it in Now Playing and Queue', a
   await expect(panel.getByRole('heading', { name: 'Window Seat' })).toBeVisible()
   // The queue sits below the track's facts in the same tab (2026-09-29).
   await expect(panel.getByRole('button', { name: 'Queue', exact: true })).toHaveCount(0)
-  await expect(panel.getByTestId('panel-queue').locator('[aria-current=true]')).toContainText('Window Seat')
+  const playing = panel.getByTestId('panel-queue').locator('[aria-current=true]')
+  await expect(playing).toContainText('Window Seat')
   // Queue rows show the album's cover (their paths come from the persisted queue), not the sleeve.
   const rows = panel.getByRole('listitem')
   await expect(rows).toHaveCount(4)
   await expect(rows.locator('[data-cover=true] canvas')).toHaveCount(4, { timeout: 15_000 })
+  // The mark follows playback without reading the queue again (the bar is hidden on phones).
+  const next = page.getByRole('button', { name: 'Next track' }).filter({ visible: true }).first()
+  await next.click()
+  await expect(playing).toContainText('An Open Door', { timeout: 15_000 })
+  await expect(playing).toHaveCount(1)
   await page.keyboard.press('Escape')
   await expect(panel).toBeHidden()
   await expect(page.getByRole('button', { name: 'Open Now Playing panel' })).toBeFocused()

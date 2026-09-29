@@ -1093,6 +1093,14 @@ plus macOS leftovers on the Card page. The page's part:
       fill their placeholders (the paused seek showed "{position}"). Unit
       tests for the facts; mock browser tests on desktop and phone (136
       passed); emulator acceptance with the controls from the bar.
+      Owner's finding after release `a3ec52396ac2b620`: the queue did not
+      mark the playing track once it changed (a snapshot's mark, read when
+      the panel opened, stayed on the old row when the next track started or
+      Next was pressed on the player). The mark now follows playback: the
+      queue position stock reports with the track when that row is the
+      track (its file, else its name, which stock may cut), else the one row
+      that is; a track the shown queue does not hold reads the queue again.
+      Unit tests; the mock browser test presses Next with the panel open.
 - [ ] Enrichment providers once the card catalog allows their origins
       (step 1, LRCLIB, done 2026-09-29: the page reads its release's
       `origins.json` and offers "Find lyrics on LRCLIB" in the Lyrics tab of
