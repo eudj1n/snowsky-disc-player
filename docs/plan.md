@@ -1030,11 +1030,16 @@ plus macOS leftovers on the Card page. The page's part:
 - [ ] A visualizer next to karaoke (owner's question about Visicality): with
       the audio file in the browser, its spectrum is computed ahead and drawn
       synced to the player's position, full screen for a TV. Our own canvas
-      code: Visicality has no license, so only its ideas are used. Approach
-      proposed (2026-09-29): instead of decoding whole files ahead (heavy for
-      a phone or a TV), the browser plays the same file silently through the
-      audio route into a Web Audio analyser and follows the player's
-      position (resynced at track changes, seeks and pauses).
+      code: Visicality has no license, so only its ideas are used. First
+      step (owner, 2026-09-29): only for playing in this browser, where the
+      sound is the browser's own: its audio element feeds a Web Audio
+      analyser, so the picture is exactly in time, no second stream crosses
+      the Wi-Fi and a TV or laptop works as the speaker with the picture on
+      screen; full screen, opened from the browser bar and the Lyrics tab
+      while the browser plays. The renderer takes any analyser, so the
+      player's own playback can follow later: the browser then plays the same
+      file silently and follows the player's position (resynced at track
+      changes, seeks and pauses), instead of decoding whole files ahead.
 - [ ] Now Playing without duplicated controls (owner, 2026-09-29, agreed):
       the side panel gets two tabs instead of three. "Now": cover, title,
       artists and album with links, a tag block (format and quality, bit
