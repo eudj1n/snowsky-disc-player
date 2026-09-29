@@ -95,7 +95,7 @@ tests/e2e/emulator/media.sh $C                      # tagged tones on the guest 
 npm run build && DISC_SERVICE_DIR=../snowsky-disc-service npm run release
 docker cp work/release-<timestamp>/www $C:/work/player-release
 docker exec $C python3 /platform/scripts/webroot_bundle.py publish \
-  --prepared /work/player-release --card /tmp/sdcard --confirm-card-write
+  --prepared /work/player-release --card /tmp/sdcard --confirm-card-write --prune
 E2E_ACCEPTANCE=emulator E2E_BASE_URL=http://127.0.0.1:17870 E2E_SERIAL=00000000000000 \
   npx playwright test --project=desktop
 tests/e2e/emulator/media.sh $C remove               # then rescan:
@@ -105,12 +105,12 @@ docker exec $C python3 -B /platform/tests/integration/prepare_guest.py
 The last step leaves the CI album paused, as the service fixture expects;
 delete any playlist a failed run left behind before rescanning.
 
-The guest card holds about 38 MB and every `publish` keeps the earlier
-releases: after a dozen of them the card fills up, the next publish fails with
-"No space left on device" (the manifest stays on the old release) and the
-service stops recording plays. Check `df -k /tmp/sdcard` in the container and
-remove old directories under `/tmp/sdcard/.disc/www/releases/` other than the
-one `active.json` names (the guest only; never on the owner's card).
+`--prune` keeps only the release that was active before (for rollback): a
+guest card once filled up with releases and the service stopped recording
+plays (2026-09-29). The publisher now refuses, writing nothing, when the card
+could not keep 8 MiB free for the service's database afterwards, and a guest
+set up since then has about 224 MB more room (snowsky-disc-service
+`docs/development.md`). Never prune on the owner's card unless asked.
 
 ## CI
 

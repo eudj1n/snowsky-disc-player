@@ -1545,6 +1545,12 @@ image; card-only items (catalog or query additions) are marked as such.
       2026-09-29, with the player/browser switch): the observer never sees
       files the audio route serves. A history write route with the SN, a
       fresh request ID and pacing (see the service plan). Needs a new image.
+- [ ] These requests, the M3U list route and the history write diagnostics
+      go into the service's combined-009 image (owner, 2026-09-29; see the
+      service plan). Before it, the guest's card got 224 MB more room and the
+      publisher keeps 8 MiB free for the service's database (`--prune` on
+      the guest), so page releases no longer fill the card and stop the
+      history.
 
 ## Later
 

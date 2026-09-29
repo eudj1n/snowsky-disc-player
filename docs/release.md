@@ -51,7 +51,10 @@ diskutil eject /Volumes/PLAY
 ```
 
 The publisher copies and verifies every file, keeps previous releases and
-writes `active.json` last. Leave storage mode on the player and reload the page.
+writes `active.json` last. It refuses before writing when the card could not
+keep 8 MiB free for the service's database afterwards; `--prune` removes every
+release but the active one (kept for rollback) first, and is used on the
+owner's card only when the owner asks for old releases to go. Leave storage mode on the player and reload the page.
 
 ## Compatibility
 
