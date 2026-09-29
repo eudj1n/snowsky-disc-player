@@ -137,6 +137,9 @@ const fullscreen = ref(Boolean(document.fullscreenElement))
 function onFullscreen(): void {
   fullscreen.value = Boolean(document.fullscreenElement)
 }
+/** A button of the visualizer itself: Space activates it; anywhere else (the page behind) Space pauses. */
+const ownButton = (target: EventTarget | null): boolean =>
+  target instanceof HTMLElement && target.closest('button') !== null && root.value?.contains(target) === true
 /* Keys go to this browser's playback while the visualizer is open, not to the player's. */
 function onKey(event: KeyboardEvent): void {
   wake()
@@ -144,7 +147,7 @@ function onKey(event: KeyboardEvent): void {
   if (event.key === 'Escape') {
     event.preventDefault()
     closeVisualizer()
-  } else if (event.key === ' ' && !(event.target as HTMLElement | null)?.closest('button')) {
+  } else if (event.key === ' ' && !ownButton(event.target)) {
     event.preventDefault()
     toggleBrowser()
   } else if (event.key === 'ArrowRight') {
