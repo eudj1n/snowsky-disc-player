@@ -127,16 +127,16 @@ own playback can feed it later. Karaoke and the visualizer share
   no `data:` URLs (Vite `assetsInlineLimit: 0`), no external fonts or CDNs.
   Tailwind compiles to a static CSS file; SFC templates are precompiled, so
   the runtime never evaluates code.
-- **Paths.** The gateway serves the active `index.html` at `/` and every other
-  file under `/releases/<id>/`. The build keeps `index.html` references
-  root-absolute (the service publisher rewrites them to the release path) and
-  everything else relative (`base: './'`). Release files are fetched relative
-  to the script (`new URL('..', import.meta.url)`).
+- **Paths.** The page is the app `Apps/Disc Player/` (combined-009), served
+  at `/` and at `/apps/Disc%20Player/`, so every reference is relative
+  (`base: './'`); `/api/…` stays absolute. The app's own `origins.json` is
+  fetched relative to the script (`new URL('..', import.meta.url)`); the
+  reviewed catalogs come from the service at `/api/contract/`.
 - **Routing** uses the URL hash (`#/albums?artist=…`): the gateway has no
   history fallback for unknown paths, and query strings on `/` are ignored by
   the gateway, so navigation state lives in the hash.
-- **Bundle contract** is checked after every build by
-  `scripts/check-bundle.mjs` (mirrors the service publisher).
+- **The rules for apps** are checked after every build by
+  `scripts/check-bundle.mjs` (mirrors the service's `app_bundle.py check`).
 
 ## Preferences and storage
 

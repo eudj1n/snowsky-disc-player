@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // A synthetic stand-in for the DISC service gateway, for browser tests in CI
-// and visual work without a player. It serves a built dist/ exactly as the
-// gateway serves a published release (index.html at /, files only below
-// /releases/<id>/, the same CSP), answers the data level and stock catalog
+// and visual work without a player. It serves a built dist/ as the gateway
+// serves the Disc Player app since combined-009 (at / and at
+// /apps/Disc%20Player/, the same CSP and caching, the catalogs at
+// /api/contract/), answers the data level and stock catalog
 // pages from a fictional collection, and implements the WebSocket owner,
 // token, request-ID and replay rules with a scripted player. It is not a
 // protocol reference.
@@ -31,7 +32,6 @@ const AUDIO_NAME = /\.(flac|wav|mp3|m4a|aac|ogg|opus|ape|wv|wma|dsf|dff|aiff?)$/
 const PORT = Number(process.env.MOCK_GATEWAY_PORT ?? 4870)
 const DIST = process.env.MOCK_GATEWAY_DIST ?? 'dist'
 const FIXTURES = new URL('./fixtures/', import.meta.url)
-const BUNDLE = '0123456789abcdef'
 const LANGUAGE = Number(process.env.MOCK_GATEWAY_LANGUAGE ?? 9)
 // Optional latency for data reads, to see loading skeletons in development.
 const DELAY = Number(process.env.MOCK_GATEWAY_DELAY ?? 0)
@@ -265,20 +265,23 @@ function admitted(request) {
   const origin = request.headers.origin
   return !origin || origin === `http://${request.headers.host}`
 }
-function releaseFile(path) {
-  if (['compatibility.json', 'commands.json', 'origins.json'].includes(path))
-    return readFileSync(new URL(path, FIXTURES))
+/** A file of the app: dist/ as copied into Apps/Disc Player, with its own origins.json. */
+function appFile(path) {
+  if (path === 'origins.json') return readFileSync(new URL(path, FIXTURES))
   const file = normalize(join(DIST, path))
   if (path === 'index.html' && !existsSync(file)) {
-    // No build yet (dev:mock): the dev server only needs the active release id.
-    return Buffer.from(`<!doctype html><title>mock</title><link rel="icon" href="/releases/${BUNDLE}/favicon.svg">`)
+    // No build yet (dev:mock): the dev server serves the page itself.
+    return Buffer.from('<!doctype html><title>mock</title>')
   }
   if (!file.startsWith(normalize(DIST)) || !existsSync(file) || !statSync(file).isFile()) return null
-  const data = readFileSync(file)
-  // The service publisher rewrites root-absolute document references.
-  return path === 'index.html'
-    ? Buffer.from(data.toString().replace(/\b(href|src)="\/(?!api\/)/g, `$1="/releases/${BUNDLE}/`))
-    : data
+  return readFileSync(file)
+}
+/** The gateway's caching since combined-009: documents never, content-hashed names for good, the rest revalidated. */
+function caching(path) {
+  if (path.endsWith('.html')) return 'no-store'
+  const name = path.split('/').pop()
+  const hash = /-([A-Za-z0-9_-]{8,})\.[^.]+$/.exec(name)?.[1]
+  return hash && /[0-9A-Z]/.test(hash) ? 'public, max-age=31536000, immutable' : 'no-cache'
 }
 
 const server = createServer((request, response) => {
@@ -341,8 +344,13 @@ const server = createServer((request, response) => {
   if (url.pathname === '/api/about') {
     const about = {
       service: { name: 'disc-native-probe', version: '0.8.0', build: 'mock', api: 1, uptime: 3600, supervised: true },
-      image: { schema: 1, variant: 'usb-engineering', firmwareVersion: '2.57', page: BUNDLE },
-      page: { source: 'card', release: BUNDLE },
+      image: {
+        schema: 1,
+        variant: 'usb-engineering',
+        firmwareVersion: '2.57',
+        app: { name: 'Disc Player', version: null },
+      },
+      page: { source: 'card', app: 'Disc Player', version: '2026.09.29' },
       card: { owned: true },
       database: {
         state: 'ok',
@@ -721,13 +729,23 @@ const server = createServer((request, response) => {
     if (!page) return send(response, 403, 'Stock request not admitted by the catalog\n')
     return send(response, 200, JSON.stringify(page.rows), 'application/json', { 'total-num': String(page.total) })
   }
-  const prefix = `/releases/${BUNDLE}/`
-  const path =
-    url.pathname === '/' ? 'index.html' : url.pathname.startsWith(prefix) ? url.pathname.slice(prefix.length) : null
-  const body = path ? releaseFile(path) : null
+  // The reviewed catalogs come from the service (the image's, or the card's override).
+  if (url.pathname.startsWith('/api/contract/')) {
+    const name = url.pathname.slice(14)
+    if (!['compatibility.json', 'commands.json'].includes(name)) return send(response, 404, 'No such catalog\n')
+    return send(response, 200, readFileSync(new URL(name, FIXTURES)), 'application/json', {
+      'X-Catalog-Source': 'image',
+    })
+  }
+  if (url.pathname.startsWith('/api/')) return send(response, 404, 'Not found\n')
+  const own = '/apps/Disc%20Player/'
+  const relative = url.pathname.startsWith(own) ? url.pathname.slice(own.length) : url.pathname.slice(1)
+  const path = relative === '' ? 'index.html' : relative
+  const body = path.split('/').some((part) => part.startsWith('.')) ? null : appFile(path)
   if (!body) return send(response, 404, 'Not found\n')
-  const cache = path === 'index.html' ? {} : { 'Cache-Control': 'public, max-age=31536000, immutable' }
-  return send(response, 200, body, TYPES[extname(path)] ?? 'application/octet-stream', cache)
+  return send(response, 200, body, TYPES[extname(path)] ?? 'application/octet-stream', {
+    'Cache-Control': caching(path),
+  })
 })
 
 const sockets = new WebSocketServer({ noServer: true, maxPayload: 65535 })

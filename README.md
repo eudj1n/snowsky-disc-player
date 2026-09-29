@@ -54,9 +54,10 @@ playing on the DISC; nothing streams to the browser.
 
 ## Install on the memory card
 
-Releases are published to the card with the service's publisher; nothing is
-flashed. The [release guide](docs/release.md) has the exact steps: build,
-prepare a release for the player's firmware, copy it to the card, eject.
+Disc Player is a folder you copy onto the card; nothing is flashed. Put the
+player in USB storage mode (or use a card reader), copy the `Disc Player`
+folder from the release zip into `Apps/` on the card, replacing the old one,
+and eject. The [release guide](docs/release.md) has the details.
 
 ## Use
 

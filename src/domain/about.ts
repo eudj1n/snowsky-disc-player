@@ -8,8 +8,9 @@ export interface About {
   build: string
   uptime: number
   supervised: boolean
-  image: { variant: string | null; firmware: string | null; page: string | null } | null
-  page: { source: 'card' | 'image' | 'embedded'; release: string | null }
+  image: { variant: string | null; firmware: string | null } | null
+  /** The default app serving the page (combined-009) and its version from its app.json. */
+  page: { source: 'card' | 'image' | 'embedded'; version: string | null }
   cardOwned: boolean
   database: {
     state: string
@@ -38,12 +39,10 @@ export function parseAbout(value: unknown): About | null {
     build: text(service.build) ?? 'unknown',
     uptime: number(service.uptime) ?? 0,
     supervised: service.supervised === true,
-    image: image
-      ? { variant: text(image.variant), firmware: text(image.firmwareVersion), page: text(image.page) }
-      : null,
+    image: image ? { variant: text(image.variant), firmware: text(image.firmwareVersion) } : null,
     page: {
       source: page.source === 'card' || page.source === 'image' ? page.source : 'embedded',
-      release: text(page.release),
+      version: text(page.version),
     },
     cardOwned: (v.card as Record<string, unknown> | undefined)?.owned === true,
     database: database

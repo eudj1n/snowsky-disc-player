@@ -1475,6 +1475,25 @@ browser on its own.
       queue after a pause; a seek right after a selection (delay, what is
       heard).
 
+## Disc Player as an app (combined-009, owner 2026-09-29)
+
+- [x] The page is the app `Apps/Disc Player/` on the card, served at `/`
+      and at `/apps/Disc%20Player/`; a release is a zip a user copies there
+      (the owner: release IDs and `active.json` never helped; anyone can
+      publish an app). The page reads the reviewed catalogs at
+      `/api/contract/` (the image's, or the card's `.disc/catalog` where
+      admitted), keeps its own `origins.json`, builds with relative
+      references only (`check-bundle.mjs` mirrors the service's app rules)
+      and `npm run release` packs `work/disc-player-<version>.zip` with the
+      service's `app_bundle.py`. The mock gateway serves the build as the
+      app, with the gateway's caching; About shows the app's version.
+      Evidence (2026-09-29): `npm run check` 234 passed, the full mock
+      suite 143 passed (59 emulator-only skipped), `npm run release` packed
+      87 files; the service's host tests and guest acceptance with the probe
+      as `Apps/Disc Player` passed (service `a64ce31`).
+- [ ] Emulator acceptance with the zip installed into the guest card's
+      `Apps/Disc Player` (combined-009 stage 8).
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

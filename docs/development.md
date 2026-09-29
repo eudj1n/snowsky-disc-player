@@ -16,7 +16,7 @@ Node.js 20.19+ (CI uses 24). Install once with `npm ci`.
 | `npm run build`                   | Production build, then the SD bundle contract check                                                          |
 | `npm run check`                   | All of the above except e2e; this is what CI runs first                                                      |
 | `npm run e2e`                     | Playwright against the mock gateway (build first), desktop and phone                                         |
-| `npm run release`                 | Prepares an SD release with the service publisher ([release](release.md))                                    |
+| `npm run release`                 | Packs the Disc Player app as a zip with the service's tool ([release](release.md))                           |
 
 ## Seeing the interface without touching the player
 
@@ -59,8 +59,9 @@ the page as if it came from the card. Nothing is written to the card.
 - **Components** (`tests/unit/components/`, happy-dom): props in, events out,
   text rendering of untrusted metadata, accessibility labels.
 - **Browser** (`tests/e2e/`, Playwright): the built dist served by
-  `tests/e2e/mock-gateway.mjs` exactly like the gateway serves a release
-  (index at `/`, files under `/releases/<id>/`, the same CSP), checking CSP
+  `tests/e2e/mock-gateway.mjs` like the gateway serves the Disc Player app
+  (at `/` and `/apps/Disc%20Player/`, the same CSP and caching, the catalogs at
+  `/api/contract/`), checking CSP
   errors, language adoption, connect/identity, pairing + toggle with a fresh
   read, and a narrow viewport. To run the same tests against the emulator or a
   player that already serves this build:
@@ -93,9 +94,9 @@ emulator from snowsky-disc-service booted and USB power emulated:
 C=$(python3 -c "import json;print(json.load(open('../snowsky-disc-service/work/emulator.json'))['id'])")-emu
 tests/e2e/emulator/media.sh $C                      # tagged tones on the guest card
 npm run build && DISC_SERVICE_DIR=../snowsky-disc-service npm run release
-docker cp work/release-<timestamp>/www $C:/work/player-release
-docker exec $C python3 /platform/scripts/webroot_bundle.py publish \
-  --prepared /work/player-release --card /tmp/sdcard --confirm-card-write --prune
+docker cp work/disc-player-<version>.zip $C:/work/disc-player.zip
+docker exec $C python3 /platform/scripts/app_bundle.py install \
+  --app /work/disc-player.zip --card /tmp/sdcard --confirm-card-write
 E2E_ACCEPTANCE=emulator E2E_BASE_URL=http://127.0.0.1:17870 E2E_SERIAL=00000000000000 \
   npx playwright test --project=desktop
 tests/e2e/emulator/media.sh $C remove               # then rescan:
@@ -105,12 +106,12 @@ docker exec $C python3 -B /platform/tests/integration/prepare_guest.py
 The last step leaves the CI album paused, as the service fixture expects;
 delete any playlist a failed run left behind before rescanning.
 
-`--prune` keeps only the release that was active before (for rollback): a
-guest card once filled up with releases and the service stopped recording
-plays (2026-09-29). The publisher now refuses, writing nothing, when the card
-could not keep 8 MiB free for the service's database afterwards, and a guest
-set up since then has about 224 MB more room (snowsky-disc-service
-`docs/development.md`). Never prune on the owner's card unless asked.
+Since combined-009 an installation replaces `Apps/Disc Player` whole, so
+nothing accumulates on the guest card (a card once filled up with releases and
+the service stopped recording plays, 2026-09-29). The tool refuses, writing
+nothing, when the card could not keep 8 MiB free for the service's database
+afterwards, and a guest set up since then has about 224 MB more room
+(snowsky-disc-service `docs/development.md`).
 
 ## CI
 

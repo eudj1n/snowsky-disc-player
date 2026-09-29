@@ -39,11 +39,14 @@ messages. UI strings live in paired `en`/`ru` dictionaries.
 - **Gateway CSP.** Pages are served with `default-src 'self'`: no inline
   scripts, styles or event handlers, no `data:` URLs, no CDNs or web fonts,
   no `eval`. Keep `v-html` out (lint enforces it).
-- **SD bundle contract.** `npm run build` checks the dist against it:
-  allowed extensions, 4 MiB per file, 16 MiB and 124 files per release,
-  depth 4, `[A-Za-z0-9_.-]` names, root-absolute references in `index.html`,
-  relative references elsewhere. Do not weaken `scripts/check-bundle.mjs`
-  without the matching service change.
+- **The rules for apps on the card** (combined-009: the page is the app
+  `Apps/Disc Player/`, served at `/` and at `/apps/Disc%20Player/`).
+  `npm run build` checks the dist against them: web types only, 4 MiB per
+  file, 32 MiB and 512 files, depth 6, `[A-Za-z0-9_.-]` names not starting
+  with a dot, relative references everywhere (`/api/…` stays absolute), no
+  catalogs in the build (the reviewed ones come from the service at
+  `/api/contract/`). Do not weaken `scripts/check-bundle.mjs` without the
+  matching service change.
 - **Layers.** `domain` and `gateway` are plain TypeScript; `ui` primitives
   know no domain; `components` take domain objects via props and emit
   intents; `panels`/views wire `stores`; only `stores` use the gateway. ESLint

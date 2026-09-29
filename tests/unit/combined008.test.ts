@@ -160,16 +160,21 @@ describe("stock's queue when a scan dropped it", () => {
 describe('diagnostics and the audio route', () => {
   it('reads the about document and ignores what it does not know', () => {
     const about = parseAbout({
-      service: { version: '0.8.0', build: 'abc', uptime: 9, supervised: true },
-      image: { variant: 'usb-engineering', firmwareVersion: '2.57', page: '0123456789abcdef' },
-      page: { source: 'image', release: '0123456789abcdef' },
+      service: { version: '0.9.0', build: 'abc', uptime: 9, supervised: true },
+      image: {
+        variant: 'usb-engineering',
+        firmwareVersion: '2.57',
+        app: { name: 'Disc Player', version: '2026.09.29' },
+      },
+      page: { source: 'image', app: 'Disc Player', version: '2026.09.29' },
       card: { owned: true },
       database: { state: 'ok', schema: 4, bytes: 1, plays: 2, records: 3, trash: 0 },
       restarts: ['1 restarted after signal 11', 5],
       log: [{ t: 1, m: 'Skip rule: skipped to the next track' }, { t: 2 }],
       future: {},
     })
-    expect(about?.page).toEqual({ source: 'image', release: '0123456789abcdef' })
+    // combined-009: the default app and its version (app.json).
+    expect(about?.page).toEqual({ source: 'image', version: '2026.09.29' })
     expect(about?.restarts).toEqual(['1 restarted after signal 11'])
     expect(about?.log).toEqual([{ at: 1, message: 'Skip rule: skipped to the next track' }])
     expect(parseAbout({ nothing: true })).toBeNull()
