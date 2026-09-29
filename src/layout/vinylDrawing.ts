@@ -1,6 +1,7 @@
 /**
  * One frame of the visualizer (owner, 2026-09-29: like the SNOWSKY DISC
- * itself, a vinyl record whose label is the cover, combined with a VJ-style
+ * itself, a vinyl record whose label is the cover, whole, without a spindle
+ * hole, as the player's own label-screen; combined with a VJ-style
  * ring of glowing dots). The record: black, its grooves catching a still
  * light as the label turns, groups of grooves lit by the music, the whole
  * disc breathing with the bass. Around it a thin waveform hugs the edge and
@@ -115,11 +116,6 @@ function drawRecord(context: CanvasRenderingContext2D, frame: VinylFrame, disc: 
   context.beginPath()
   context.arc(0, 0, label, 0, 2 * Math.PI)
   context.stroke()
-  // The spindle.
-  context.fillStyle = '#0e100f'
-  context.beginPath()
-  context.arc(0, 0, Math.max(2, label * 0.07), 0, 2 * Math.PI)
-  context.fill()
 }
 
 export function drawVinyl(context: CanvasRenderingContext2D, frame: VinylFrame): void {

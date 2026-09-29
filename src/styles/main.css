@@ -190,6 +190,9 @@
   --soft: #efeee9;
   --hover: #e9e9e1;
   --selected: #e5e7dc;
+  /* Placeholder records (2026-09-29): a flat vinyl and the faint rings of its grooves. */
+  --vinyl: #1f1f21;
+  --groove: #ffffff17;
   --secondary: #626d57;
   --banner: #f0f1e9;
   --banner-ink: #707b60;
@@ -240,6 +243,8 @@
   --surface: #121110;
   --raised: #201e1b;
   --soft: #262320;
+  --vinyl: #0d0d0e;
+  --groove: #ffffff12;
   --hover: #2f2b27;
   --selected: #3a3530;
   --secondary: #d0c8be;

@@ -1349,13 +1349,20 @@ started:
       confirmed by the player's state. Needs control (paired); otherwise
       nothing is sent. Unit test (a paused player gets nothing), a mock
       browser test and emulator acceptance on stock.
-- [ ] Rethink the artwork placeholders (owner, 2026-09-29): the sleeves of
+- [x] Rethink the artwork placeholders (owner, 2026-09-29): the sleeves of
       artists, albums and tracks without artwork look apart from the player,
       with volume (gradients, a glow, scan lines) and colours not its own
       (six earthy palettes, a serif monogram). Options to be shown as mock-ups
       before any change: flat surfaces in the theme's own tones with the
       project's ringed-disc mark, a flat vinyl for albums with a round
-      monogram for artists, or flat tints from the page's tokens.
+      monogram for artists, or flat tints from the page's tokens. The owner
+      chose the flat vinyl, whole (no hole) and with the letters centred:
+      albums, tracks, playlists and genres show a flat black record on the
+      theme's surface, two faint groove rings and a label in one of six page
+      colours (coral accent, sage, sand, clay, stone, moss) with the title's
+      letters (left out on list-row sizes); artists a round monogram, the
+      colour faint over the surface and the letters in it. Same hash and
+      palette count as before; the visualizer's label lost its spindle too.
 
 ## Requests for the next service build
 
