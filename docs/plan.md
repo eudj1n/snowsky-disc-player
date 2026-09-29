@@ -480,6 +480,16 @@ check`, the full mock suite (97) and the emulator acceptance of this exact
   `95a93be3653aac77`, `a3ec52396ac2b620` and `e5d649e7a7275102` remain until
   the owner asks.
 
+- 2026-09-29: `8c9f84b28dcb4152` (commit `23e9828`: a lyrics pause in the
+  panel as karaoke's three dots) published on PLAY at the owner's request
+  after `npm run check` (234 unit tests) and the mock browser tests of lyrics
+  and karaoke (10), a display-only batch; all 94 files identical after the
+  write, no AppleDouble files. At the owner's request the older releases
+  were removed from the card (`42d6711790fcb1e1`, `44d8fc9cf06ef9c3`,
+  `784edefa1737c1cd`, `95a93be3653aac77`, `a3ec52396ac2b620`,
+  `ba54bc396cf11ef1`, `e5d649e7a7275102`; 31 MB of releases down to 7 MB);
+  `b0e1397308ce91cb` stays for rollback.
+
 ## Combined-006 client (round 7)
 
 Built on snowsky-disc-service `1074215` (media, current lyrics, image types,
