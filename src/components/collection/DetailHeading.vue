@@ -7,7 +7,8 @@
  * sleeve palette) sits behind it, and a quiet rule separates it from the
  * content below. Once the header has scrolled away, a compact bar keeps the
  * page's context at the top: small cover, name (back to the top), the
- * `sticky` slot's line and one play/pause button (owner, round 14, option A). */
+ * `sticky` slot's line and one play/pause button (owner, round 14, option A).
+ * The `artwork` slot replaces the sleeve in both places (a genre's records). */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { sleeve, SLEEVE_TONES } from '../../domain/artwork'
 import UiIcon from '../../ui/UiIcon.vue'
@@ -90,7 +91,9 @@ function toTop(): void {
       class="aspect-square w-220 shrink-0 overflow-hidden shadow-[0_12px_40px_#25341515] rail:w-165 phone:mx-auto phone:mb-25 phone:w-200"
       :class="artist ? 'rounded-full' : 'rounded-12'"
     >
-      <Artwork :title="title" :artist="artist" :cover="cover" tone @tone="(color) => (observed = color)" />
+      <slot name="artwork">
+        <Artwork :title="title" :artist="artist" :cover="cover" tone @tone="(color) => (observed = color)" />
+      </slot>
     </div>
     <!-- As tall as the sleeve: the kind on its top edge, the actions on its bottom edge. -->
     <div class="flex min-h-220 min-w-0 flex-1 flex-col rail:min-h-165 phone:min-h-0">
@@ -131,7 +134,7 @@ function toTop(): void {
             class="mx-auto flex h-62 max-w-1680 items-center gap-14 px-44 wide:px-60 compact:px-26 phone:h-56 phone:gap-11 phone:px-18 listening:px-30"
           >
             <span class="size-40 shrink-0 overflow-hidden phone:size-36" :class="artist ? 'rounded-full' : 'rounded-6'">
-              <Artwork :title="title" :artist="artist" :cover="cover" />
+              <slot name="artwork"><Artwork :title="title" :artist="artist" :cover="cover" /></slot>
             </span>
             <div class="min-w-0 flex-1">
               <button

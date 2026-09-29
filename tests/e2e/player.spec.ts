@@ -188,15 +188,19 @@ test('browses genres, narrows mixed albums and filters tracks by genre', async (
   await page.goto('/#/genres')
   // A genre tile shows two of its albums as records, round whatever the tile's shape.
   const jazz = page.getByRole('link', { name: /^Jazz\b/ })
-  const records = jazz.locator('[aria-hidden=true]')
-  await expect(records).toHaveCount(2)
-  for (const record of await records.all()) {
-    const box = await record.boundingBox()
-    expect(box && Math.abs(box.width - box.height)).toBeLessThanOrEqual(1)
+  const round = async (records: Locator) => {
+    await expect(records).toHaveCount(2)
+    for (const record of await records.all()) {
+      const box = await record.boundingBox()
+      expect(box && Math.abs(box.width - box.height)).toBeLessThanOrEqual(1)
+    }
   }
+  await round(jazz.getByTestId('genre-record'))
   await jazz.click()
   await expect(page).toHaveURL(/#\/genre\/Jazz$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Jazz' })).toBeVisible()
+  // Its heading's sleeve shows the same two records, not an album's placeholder.
+  await round(page.getByTestId('genre-record'))
   await expect(page.getByRole('list', { name: 'Artists' }).getByRole('heading', { name: 'Mira Sol' })).toBeVisible()
   // The heading counts the genre's artists too; an artist's card counts albums, as its page shows them.
   await expect(page.getByRole('main')).toContainText(/\d+ albums? · \d+ artists? · \d+ tracks?/)
@@ -1200,6 +1204,10 @@ test('collapses the sidebar to its icon rail and remembers it', async ({ page },
   expect(toggle && edge && Math.abs(toggle.x + toggle.width / 2 - (edge.x + edge.width))).toBeLessThanOrEqual(1)
   await page.getByRole('button', { name: 'Collapse sidebar' }).click()
   await expect.poll(width).toBe(74)
+  // The rail's icons start below the toggle, under the top bar's line.
+  const expand = await page.getByRole('button', { name: 'Expand sidebar' }).boundingBox()
+  const home = await sidebar.getByRole('link', { name: 'Home', exact: true }).boundingBox()
+  expect(expand && home && home.y - (expand.y + expand.height)).toBeGreaterThanOrEqual(8)
   await expect(sidebar.getByRole('link', { name: 'Albums' })).toHaveAttribute('title', 'Albums')
   await page.reload()
   // Applied before paint by theme.js, then kept by the store.

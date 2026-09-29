@@ -4,24 +4,16 @@ import { computed } from 'vue'
 import GenreGrid from '../components/genre/GenreGrid.vue'
 import GenreTile from '../components/genre/GenreTile.vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
-import { albumScope } from '../domain/album'
 import { sortGenres } from '../domain/genre'
 import { filterBy } from '../domain/search'
 import { locale, t } from '../i18n'
-import { albumCover } from '../stores/enrichment'
-import { albums, genres } from '../stores/library'
+import { genres } from '../stores/library'
 import { ui } from '../stores/ui'
 import UiSkeleton from '../ui/UiSkeleton.vue'
 import { countLine, genreRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
+import { genreRecords } from './genreRecords'
 
-/** A genre's first three albums as records, with their covers where known (asked for otherwise). */
-function records(titles: readonly string[]): { title: string; cover: Blob | null }[] {
-  return titles.slice(0, 3).map((title) => {
-    const album = albums.value.find((item) => item.title === title)
-    return { title, cover: album ? albumCover(album, albumScope(album)) : null }
-  })
-}
 const searching = computed(() => ui.query.trim() !== '')
 const items = computed(() =>
   sortGenres(
@@ -50,7 +42,7 @@ const items = computed(() =>
         :name="genre.name"
         :to="genreRoute(genre.name)"
         :caption="`${t('album_count', { count: genre.albums.length })} · ${t('track_count', { count: genre.trackCount })}`"
-        :records="records(genre.albums)"
+        :records="genreRecords(genre.albums)"
       />
     </GenreGrid>
   </CollectionGate>

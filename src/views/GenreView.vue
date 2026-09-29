@@ -5,7 +5,8 @@
  * Playback stays in the stock genre scope (reference genre playback); albums
  * that also hold other genres open narrowed to this one. The heading counts
  * albums, artists and tracks; an artist's card counts its albums, as its page
- * shows them (owner, 2026-09-29). Artists leave the
+ * shows them (owner, 2026-09-29). The heading's sleeve is the genre's records,
+ * as its tile shows them (owner, 2026-09-29). Artists leave the
  * genre scope, as in the reference.
  */
 import { computed } from 'vue'
@@ -14,6 +15,7 @@ import CoverCard from '../components/collection/CoverCard.vue'
 import CoverCardSkeleton from '../components/collection/CoverCardSkeleton.vue'
 import CoverRow from '../components/collection/CoverRow.vue'
 import DetailHeading from '../components/collection/DetailHeading.vue'
+import GenreRecords from '../components/genre/GenreRecords.vue'
 import SectionHeading from '../components/common/SectionHeading.vue'
 import TrackTiles from '../components/track/TrackTiles.vue'
 import { albumScope, albumTracks, type Album } from '../domain/album'
@@ -32,6 +34,7 @@ import UiSkeleton from '../ui/UiSkeleton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { albumLines, albumRoute, artistRoute, genreAlbumRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
+import { genreRecords } from './genreRecords'
 import { useHeadingAction } from './headingAction'
 import { playFrom } from './playAlbum'
 import { toggleCurrent } from './trackRows'
@@ -48,6 +51,8 @@ const tracks = computed(() => genreTracks(collection.value, name.value))
 const literal = computed(() => (genre.value ? playableGenre(tracks.value, genre.value) : name.value))
 const spellings = computed(() => (genre.value && genre.value.variants.length > 1 ? genre.value.variants : null))
 const searching = computed(() => ui.query.trim() !== '')
+/** The heading's sleeve: two of its albums' records, as its tile shows them. */
+const records = computed(() => genreRecords(genre.value?.albums ?? []))
 const latest = computed(() =>
   filterBy(recentlyAdded(tracks.value, searching.value ? tracks.value.length : LATEST), ui.query, (track) => [
     track.title,
@@ -147,6 +152,9 @@ function playAlbum(item: Album): void {
         :sticky-action="loading ? null : heading.action.value"
         @sticky="heading.run"
       >
+        <template #artwork>
+          <GenreRecords :name="shown" :records="records" layout="square" class="relative size-full" />
+        </template>
         <template #sticky>{{ facts }}</template>
         <template #meta>
           <span v-if="loading" class="inline-block h-10 w-140 animate-pulse rounded-4 bg-soft align-middle" />

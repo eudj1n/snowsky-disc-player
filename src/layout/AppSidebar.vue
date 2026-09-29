@@ -37,7 +37,7 @@ const label = () =>
       class="px-12 pt-18 pb-38 text-8 font-bold tracking-[1.7px] text-muted compact:text-7 compact:tracking-[1px] slim:hidden"
       >YOUR MUSIC. YOUR SPACE.</span
     >
-    <nav class="slim:mt-35 phone:m-0 phone:flex phone:h-full phone:justify-around">
+    <nav class="slim:mt-55 wide:slim:mt-63 phone:m-0 phone:flex phone:h-full phone:justify-around">
       <template v-for="section in SECTIONS" :key="section.name">
         <p
           v-if="section.name === 'albums' || section.name === 'card'"

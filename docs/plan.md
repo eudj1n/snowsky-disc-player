@@ -1398,6 +1398,13 @@ started:
       the cover is the row's button with play on hover, the playing row shows
       its pulsing mark and, on hover, pause or resume (the same guarded
       toggle as the bar); no separate play column. Mock browser tests.
+- [x] The collapsed sidebar's icons start below the toggle, under the top
+      bar's line (owner, 2026-09-29: the toggle crowded Home); the mock
+      browser test checks the gap (it was an overlap of 7.5 px).
+- [x] A genre page's heading shows the genre's records instead of an album's
+      placeholder (owner, 2026-09-29): its tint, two of its albums' records
+      across the square sleeve, as in the compact bar too; tiles and heading
+      share one component. Mock browser test.
 
 ## Requests for the next service build
 
