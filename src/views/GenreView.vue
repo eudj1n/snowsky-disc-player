@@ -23,6 +23,7 @@ import { recentlyAdded, type Track } from '../domain/track'
 import type { SelectionTarget, TrackKey } from '../gateway/selection'
 import { t } from '../i18n'
 import { albumCover, coverFor } from '../stores/enrichment'
+import { artistImage } from '../stores/artistPictures'
 import { albums, artists as allArtists, genres, titleGroups, tracks as collection } from '../stores/library'
 import { isPlaying, playback } from '../stores/playback'
 import { openTrackMenu, ui } from '../stores/ui'
@@ -221,6 +222,7 @@ function playAlbum(item: Album): void {
           role="listitem"
           artist
           :title="artist.name"
+          :cover="artistImage(artist.name)"
           :to="artistRoute(artist.name)"
           :lines="[{ text: artistLine(artist) }]"
           :open-label="t('open_item', { name: artist.name })"

@@ -6,6 +6,7 @@ import CoverGrid from '../components/collection/CoverGrid.vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
+import { artistImage } from '../stores/artistPictures'
 import { artists } from '../stores/library'
 import { artistPinnedAt, isPinnedArtist, pinnedFirst } from '../stores/pins'
 import { ui } from '../stores/ui'
@@ -42,6 +43,7 @@ const items = computed(() =>
         :title="artist.name"
         :to="artistRoute(artist.name)"
         artist
+        :cover="artistImage(artist.name)"
         :pinned-label="isPinnedArtist(artist.name) ? t('pinned_mark') : null"
         :open-label="t('open_item', { name: artist.name })"
         :play-label="artist.literal ? t('play_item', { name: artist.name }) : null"

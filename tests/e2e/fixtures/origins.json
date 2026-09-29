@@ -28,6 +28,21 @@
       "origin": "https://lrclib.net",
       "directives": ["connect-src"],
       "purpose": "Synchronised lyrics by artist, title, album and duration."
+    },
+    "wikidata": {
+      "origin": "https://www.wikidata.org",
+      "directives": ["connect-src"],
+      "purpose": "An artist's image (property P18) when MusicBrainz links Wikidata but no image."
+    },
+    "commons": {
+      "origin": "https://commons.wikimedia.org",
+      "directives": ["connect-src"],
+      "purpose": "Image information of an artist's photo on Wikimedia Commons: its thumbnail, author and licence."
+    },
+    "wikimedia_upload": {
+      "origin": "https://upload.wikimedia.org",
+      "directives": ["connect-src", "img-src"],
+      "purpose": "The artist photo's thumbnail itself, read as bytes (drawn on a canvas)."
     }
   }
 }

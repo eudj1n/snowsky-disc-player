@@ -35,6 +35,9 @@ playing on the DISC; nothing streams to the browser.
 > - find a cover for an album that has none on Cover Art Archive and save it
 >   into the album's folder (Cover Art Archive's images are served by
 >   archive.org, which some networks cannot reach);
+> - find an artist's photo on Wikimedia Commons, shown with its author and
+>   licence and kept in your browser; artists without one show the cover of
+>   their most played album;
 > - watch what plays in this browser as a disc: the cover turns, its ring
 >   pulses with the bass and the spectrum spreads around it, full screen.
 >

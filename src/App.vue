@@ -28,6 +28,7 @@ import './stores/disliked'
 import './stores/pins'
 import { connection, probeGateway, resumeAfterReload } from './stores/connection'
 import { loadEnrichment } from './stores/enrichment'
+import { loadArtistPictures } from './stores/artistPictures'
 import { loadCollection, loadLibraryFacts, loadSavedCollection } from './stores/library'
 import { playerVisible } from './stores/playback'
 import { setQuery, ui } from './stores/ui'
@@ -57,6 +58,7 @@ function skipToContent(event: MouseEvent): void {
 onMounted(async () => {
   document.addEventListener('keydown', handleShortcut)
   void loadEnrichment()
+  void loadArtistPictures()
   if (await probeGateway()) {
     // A tab that was connected before its reload takes control back (reads only).
     void resumeAfterReload()

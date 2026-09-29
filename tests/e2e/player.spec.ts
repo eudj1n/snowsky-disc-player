@@ -1343,6 +1343,75 @@ test('finds a cover on Cover Art Archive for an album without one and saves it i
   await disconnect(page)
 })
 
+test("finds an artist's photo on Wikimedia Commons, credits it, and lets an album cover stand in", async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  const asked: URL[] = []
+  const cors = { 'Access-Control-Allow-Origin': '*' }
+  await page.route('https://musicbrainz.org/ws/2/**', async (route) => {
+    const url = new URL(route.request().url())
+    asked.push(url)
+    await route.fulfill({
+      headers: cors,
+      json:
+        url.pathname === '/ws/2/artist/'
+          ? { artists: [{ id: 'northline', name: 'Northline', score: 100 }] }
+          : {
+              relations: [
+                { type: 'image', url: { resource: 'https://commons.wikimedia.org/wiki/File:Northline_live.jpg' } },
+              ],
+            },
+    })
+  })
+  await page.route('https://commons.wikimedia.org/**', (route) =>
+    route.fulfill({
+      headers: cors,
+      json: {
+        query: {
+          pages: {
+            '1': {
+              imageinfo: [
+                {
+                  thumburl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/n/nl/Northline_live.jpg/500px.jpg',
+                  descriptionurl: 'https://commons.wikimedia.org/wiki/File:Northline_live.jpg',
+                  extmetadata: {
+                    Artist: { value: '<a href="https://example.org">P.B. Rage</a>' },
+                    LicenseShortName: { value: 'CC BY-SA 2.0' },
+                    LicenseUrl: { value: 'https://creativecommons.org/licenses/by-sa/2.0' },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      },
+    }),
+  )
+  await page.route('https://upload.wikimedia.org/**', (route) =>
+    route.fulfill({ headers: cors, contentType: 'image/png', path: 'tests/e2e/fixtures/cover.png' }),
+  )
+  await english(page)
+  // Without a photo, the cover of an album of the artist stands in on the Artists page.
+  await page.goto('/#/artists')
+  await expect(page.getByRole('article').filter({ hasText: 'Mira Sol' }).first().locator('canvas')).toBeVisible({
+    timeout: 15_000,
+  })
+  expect(asked).toHaveLength(0)
+  await page.goto('/#/artist/Northline')
+  await page.getByTestId('photo-find').click()
+  const credit = page.getByTestId('photo-credit')
+  await expect(credit).toContainText('Photo: P.B. Rage · CC BY-SA 2.0 · Wikimedia Commons · kept in this browser', {
+    timeout: 15_000,
+  })
+  expect(asked[0]?.searchParams.get('query')).toBe('artist:"Northline"')
+  await expect(page.getByTestId('photo-find')).toHaveCount(0)
+  // Kept in this browser across a reload; removable.
+  await page.reload()
+  await expect(credit).toBeVisible({ timeout: 15_000 })
+  await page.getByTestId('photo-remove').click()
+  await expect(credit).toHaveCount(0)
+  await expect(page.getByTestId('photo-find')).toBeVisible()
+})
+
 test('highlights a karaoke line without word timings whole, without a sweep', async ({ page }) => {
   test.skip(external, 'Needs the mock collection')
   test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
@@ -1550,7 +1619,8 @@ test('remembers a file the media route could not measure instead of asking on ev
       ((await (await request.get('/__mock/info-reads?title=Last%20Exit')).json()) as { reads: number }).reads
     const before = await reads()
     expect(before).toBeGreaterThan(0)
-    // A reload and another visit ask for it no more.
+    // A later visit asks for it no more (the browser writes the miss down right after showing it).
+    await page.waitForTimeout(500)
     await page.reload()
     await page.goto('/#/albums')
     await page.goto('/#/card')

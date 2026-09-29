@@ -1105,7 +1105,19 @@ plus macOS leftovers on the Card page. The page's part:
       service's origins admit archive.org and its hosts for fetch (card-only,
       snowsky-disc-service `774f35e`). Unit tests, a mock browser test (the
       unreachable archive, then a saved cover) and emulator acceptance with
-      the providers stubbed in the browser):
+      the providers stubbed in the browser; step 3, artist photos, done
+      2026-09-29: an artist page offers "Find a photo on Wikimedia Commons";
+      the artist's name goes to MusicBrainz, whose artist links a Commons
+      image (else a Wikidata item whose image, P18, is used); Commons gives
+      the 500 px thumbnail, author and licence, shown under the heading
+      ("Photo: author · licence · Wikimedia Commons · kept in this browser",
+      linking the file page and the licence) with "Remove photo". Photos stay
+      in this browser (IndexedDB); the card is untouched. Without a photo,
+      artist cards and the artist heading show the cover of the artist's
+      most played album (else its latest), preferring one whose cover is
+      known. Origins added card-only (snowsky-disc-service `3e95405`). Unit
+      tests, a mock browser test on desktop and phone and emulator
+      acceptance of the service's policy):
       MusicBrainz with Cover Art Archive (tags, years, album artists,
       covers) and LRCLIB (synced lyrics for karaoke), each off by default
       (track names leave the network), results offered, not applied
@@ -1227,8 +1239,11 @@ first, then layout, then style.
       leaves out albums so named (title or lead artist) and albums known to
       have no cover, and picks among albums with a known cover when this
       browser knows any. Covers are judged from what this browser already
-      knows, so choosing reads nothing; the choice stays while it qualifies,
-      so the hero does not change as covers arrive. Unit tests.
+      knows, so choosing reads nothing; the choice stays for the page's
+      session, so the hero never changes under the pointer, and an album
+      found to have no cover meanwhile is left out from the next load (a
+      mock browser test caught the hero switching as covers arrived). Unit
+      tests.
 - [x] Karaoke without word timings highlights the current line only, with
       no sweep across its words. A line without word timings (a plain LRC,
       or an unstamped line of an enhanced one) is now lit whole from its

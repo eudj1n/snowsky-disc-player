@@ -22,6 +22,13 @@ import type { SelectionTarget } from '../gateway/selection'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
 import { albumCover, albumYear, coverFor } from '../stores/enrichment'
+import {
+  artistImage,
+  artistPhotosAllowed,
+  artistPictures,
+  forgetArtistPicture,
+  lookUpArtistPicture,
+} from '../stores/artistPictures'
 import { history, loadHistory } from '../stores/history'
 import { albums, artists, tracks } from '../stores/library'
 import { isPinnedArtist, pins, togglePinArtist } from '../stores/pins'
@@ -100,6 +107,17 @@ const hotTitleTo = (track: Track) => (track.album ? albumRoute(track.album, trac
 const hotSubtitle = (track: Track) =>
   track.artist === name.value && track.album ? { text: track.album, to: hotTitleTo(track) } : null
 
+/* A photo from Wikimedia Commons (2026-09-29): found on request, kept in this browser, credited. */
+const picture = computed(() => artistPictures.pictures[name.value] ?? null)
+const photoMessage = computed(() => {
+  const search = artistPictures.search
+  if (search.name !== name.value) return null
+  if (search.status === 'searching') return t('photo_searching')
+  if (search.status === 'missing') return t('photo_missing')
+  if (search.status === 'failed') return t('photo_failed')
+  return null
+})
+
 function lines(album: Album) {
   return withYear(artistAlbumLines(album, name.value), albumYear(album, scopeOf(album)))
 }
@@ -113,6 +131,7 @@ function lines(album: Album) {
         :title="creditLabel(name)"
         :kind="t('kind_artist')"
         artist
+        :cover="artistImage(name)"
         :sticky-action="loading || !playable ? null : heading.action.value"
         @sticky="heading.run"
       >
@@ -138,7 +157,50 @@ function lines(album: Album) {
           :disabled="pins.busy"
           @click="togglePinArtist(name)"
         />
+        <UiCircleButton
+          v-if="artistPhotosAllowed() && name && !picture"
+          icon="image"
+          :label="t('photo_find')"
+          data-testid="photo-find"
+          :disabled="artistPictures.search.name === name && artistPictures.search.status === 'searching'"
+          @click="lookUpArtistPicture(name)"
+        />
       </DetailHeading>
+      <p v-if="photoMessage" class="-mt-8 mb-20 text-12 text-secondary" role="status" data-testid="photo-status">
+        {{ photoMessage }}
+        <span v-if="artistPictures.search.status === 'searching'" class="block text-10 text-muted">{{
+          t('photo_note')
+        }}</span>
+      </p>
+      <p v-if="picture" class="-mt-8 mb-20 text-11 text-muted" data-testid="photo-credit">
+        {{ t('photo_credit') }}:
+        <a
+          v-if="picture.page"
+          :href="picture.page"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-secondary underline-offset-3 hover:text-ink hover:underline"
+          >{{ picture.author ?? t('photo_source') }}</a
+        ><template v-else>{{ picture.author ?? t('photo_source') }}</template
+        ><template v-if="picture.license">
+          ·
+          <a
+            v-if="picture.licenseUrl"
+            :href="picture.licenseUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="underline-offset-3 hover:text-ink hover:underline"
+            >{{ picture.license }}</a
+          ><template v-else>{{ picture.license }}</template></template
+        >
+        · {{ t('photo_source') }} · {{ t('photo_kept') }}
+        <UiTextButton
+          class="ml-6 inline-flex! align-baseline text-11"
+          data-testid="photo-remove"
+          @click="forgetArtistPicture(name)"
+          >{{ t('photo_remove') }}</UiTextButton
+        >
+      </p>
     </template>
     <template #skeleton>
       <CoverGrid><CoverCardSkeleton v-for="n in 4" :key="n" /></CoverGrid>

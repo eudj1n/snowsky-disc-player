@@ -560,6 +560,55 @@ test("finds a cover on Cover Art Archive and saves it into the album's folder th
   expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])
 })
 
+test("finds an artist's photo on Wikimedia Commons within the service's policy", async ({ page }) => {
+  // The providers are stubbed in the browser; the service's policy (the release's origins) must admit them.
+  const cors = { 'Access-Control-Allow-Origin': '*' }
+  await page.route('https://musicbrainz.org/ws/2/**', (route) =>
+    route.fulfill({
+      headers: cors,
+      json:
+        new URL(route.request().url()).pathname === '/ws/2/artist/'
+          ? { artists: [{ id: 'lumen', name: 'Lumen', score: 100 }] }
+          : { relations: [{ type: 'wikidata', url: { resource: 'https://www.wikidata.org/wiki/Q42' } }] },
+    }),
+  )
+  await page.route('https://www.wikidata.org/**', (route) =>
+    route.fulfill({
+      headers: cors,
+      json: { entities: { Q42: { claims: { P18: [{ mainsnak: { datavalue: { value: 'Lumen.jpg' } } }] } } } },
+    }),
+  )
+  await page.route('https://commons.wikimedia.org/**', (route) =>
+    route.fulfill({
+      headers: cors,
+      json: {
+        query: {
+          pages: {
+            '1': {
+              imageinfo: [
+                {
+                  thumburl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/l/lu/Lumen.jpg/500px-Lumen.jpg',
+                  extmetadata: { Artist: { value: 'A Photographer' }, LicenseShortName: { value: 'CC BY 4.0' } },
+                },
+              ],
+            },
+          },
+        },
+      },
+    }),
+  )
+  await page.route('https://upload.wikimedia.org/**', (route) =>
+    route.fulfill({ headers: cors, contentType: 'image/png', path: 'tests/e2e/fixtures/cover.png' }),
+  )
+  const errors = watchErrors(page)
+  await english(page)
+  await page.goto('/#/artist/Lumen')
+  await page.getByTestId('photo-find').click({ timeout: 60_000 })
+  await expect(page.getByTestId('photo-credit')).toContainText('A Photographer · CC BY 4.0', { timeout: 30_000 })
+  await page.getByTestId('photo-remove').click()
+  expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])
+})
+
 test('removes a favorite that is not playing from its row on stock', async ({ page }) => {
   await english(page)
   await connectAndPair(page)
