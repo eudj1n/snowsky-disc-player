@@ -43,6 +43,11 @@
       "origin": "https://upload.wikimedia.org",
       "directives": ["connect-src", "img-src"],
       "purpose": "The artist photo's thumbnail itself, read as bytes (drawn on a canvas)."
+    },
+    "wikimedia_thumb": {
+      "origin": "https://thumb.wikimedia.org",
+      "directives": ["connect-src", "img-src"],
+      "purpose": "Commons now serves an image's thumbnails from this host; the artist photo's thumbnail is read as bytes."
     }
   }
 }

@@ -1137,7 +1137,13 @@ plus macOS leftovers on the Card page. The page's part:
       most played album (else its latest), preferring one whose cover is
       known. Origins added card-only (snowsky-disc-service `3e95405`). Unit
       tests, a mock browser test on desktop and phone and emulator
-      acceptance of the service's policy):
+      acceptance of the service's policy. Owner's first try on the player
+      (Mylène Farmer): Commons found the photo but now gives thumbnails from
+      `thumb.wikimedia.org`, which the page refused, reporting no photo; the
+      page takes thumbnails from that host (admitted card-only,
+      snowsky-disc-service `4ed73f5`) and falls back to the original on the
+      upload host where a release does not admit it; the owner's exact
+      answer is a unit test):
       MusicBrainz with Cover Art Archive (tags, years, album artists,
       covers) and LRCLIB (synced lyrics for karaoke), each off by default
       (track names leave the network), results offered, not applied

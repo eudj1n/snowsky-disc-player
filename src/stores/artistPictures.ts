@@ -12,7 +12,7 @@ import { albumScope, recentAlbums, type Album } from '../domain/album'
 import { credits } from '../domain/artist'
 import { mostPlayed } from '../domain/history'
 import { findArtist } from '../gateway/musicbrainz'
-import { commonsImage, imageBytes, wikidataImage } from '../gateway/wikimedia'
+import { commonsImage, hostOf, imageBytes, wikidataImage } from '../gateway/wikimedia'
 import { cacheGet, cacheSet } from '../lib/idb'
 import { originAllowed } from './connection'
 import { albumCover, albumCoverState } from './enrichment'
@@ -59,9 +59,21 @@ async function saveIndex(): Promise<void> {
   await cacheSet(INDEX, index)
 }
 
-/** The release's origins admit MusicBrainz, Commons and its upload host (Wikidata is used when also admitted). */
+/** The release's origin names of the hosts Commons serves pictures from. */
+const PICTURE_ORIGINS: Record<string, string> = {
+  'thumb.wikimedia.org': 'wikimedia_thumb',
+  'upload.wikimedia.org': 'wikimedia_upload',
+}
+const pictureHostAllowed = (url: string): boolean => {
+  const name = PICTURE_ORIGINS[hostOf(url)]
+  return name !== undefined && originAllowed(name)
+}
+
+/** The release's origins admit MusicBrainz, Commons and a picture host (Wikidata is used when also admitted). */
 export const artistPhotosAllowed = (): boolean =>
-  ['musicbrainz', 'commons', 'wikimedia_upload'].every((name) => originAllowed(name))
+  originAllowed('musicbrainz') &&
+  originAllowed('commons') &&
+  Object.values(PICTURE_ORIGINS).some((name) => originAllowed(name))
 
 /** Looks the artist's photo up (its name leaves the network) and keeps it in this browser. */
 export async function lookUpArtistPicture(name: string): Promise<void> {
@@ -72,7 +84,9 @@ export async function lookUpArtistPicture(name: string): Promise<void> {
     const file =
       links?.commonsFile ?? (links?.wikidata && originAllowed('wikidata') ? await wikidataImage(links.wikidata) : null)
     const image = file ? await commonsImage(file) : null
-    const blob = image ? await imageBytes(image.url) : null
+    // The thumbnail where its host is admitted, else the original on the upload host.
+    const url = image?.urls.find(pictureHostAllowed)
+    const blob = url ? await imageBytes(url) : null
     if (state.search.name !== name) return
     if (!image || !blob) {
       state.search = { name, status: 'missing' }

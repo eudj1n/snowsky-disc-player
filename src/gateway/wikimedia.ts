@@ -10,10 +10,19 @@
 import { coverType, MAX_COVER_BYTES } from './artwork'
 
 const TIMEOUT_MS = 20_000
+/** Hosts Commons serves pictures from. */
+export const WIKIMEDIA_HOSTS = new Set(['thumb.wikimedia.org', 'upload.wikimedia.org'])
+export const hostOf = (url: string): string => {
+  try {
+    return new URL(url).protocol === 'https:' ? new URL(url).hostname : ''
+  } catch {
+    return ''
+  }
+}
 
 export interface CommonsImage {
-  /** The thumbnail to read. */
-  url: string
+  /** Where the picture can be read, best first: the 500 px thumbnail, then the original. */
+  urls: string[]
   /** The file's page on Commons, for the attribution link. */
   page: string | null
   author: string | null
@@ -69,15 +78,18 @@ export async function commonsImage(file: string, fetchImpl: typeof fetch = fetch
   } | null
   const info = Object.values(data?.query?.pages ?? {})[0]?.imageinfo?.[0]
   if (!info) return null
-  const url = typeof info.thumburl === 'string' ? info.thumburl : typeof info.url === 'string' ? info.url : null
-  if (!url || !url.startsWith('https://upload.wikimedia.org/')) return null
+  // Thumbnails now come from thumb.wikimedia.org, originals from upload.wikimedia.org (owner's try, 2026-09-29).
+  const urls = [info.thumburl, info.url].filter(
+    (url): url is string => typeof url === 'string' && WIKIMEDIA_HOSTS.has(hostOf(url)),
+  )
+  if (!urls.length) return null
   const meta = (info.extmetadata ?? {}) as Record<string, { value?: unknown } | undefined>
   const field = (name: string) => {
     const value = meta[name]?.value
     return typeof value === 'string' && value.trim() !== '' ? plainText(value) : null
   }
   return {
-    url,
+    urls,
     page: typeof info.descriptionurl === 'string' ? info.descriptionurl : null,
     author: field('Artist'),
     license: field('LicenseShortName'),

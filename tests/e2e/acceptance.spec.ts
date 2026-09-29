@@ -587,7 +587,7 @@ test("finds an artist's photo on Wikimedia Commons within the service's policy",
             '1': {
               imageinfo: [
                 {
-                  thumburl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/l/lu/Lumen.jpg/500px-Lumen.jpg',
+                  thumburl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/l/lu/Lumen.jpg/500px-Lumen.jpg',
                   extmetadata: { Artist: { value: 'A Photographer' }, LicenseShortName: { value: 'CC BY 4.0' } },
                 },
               ],
@@ -597,7 +597,7 @@ test("finds an artist's photo on Wikimedia Commons within the service's policy",
       },
     }),
   )
-  await page.route('https://upload.wikimedia.org/**', (route) =>
+  await page.route('https://thumb.wikimedia.org/**', (route) =>
     route.fulfill({ headers: cors, contentType: 'image/png', path: 'tests/e2e/fixtures/cover.png' }),
   )
   const errors = watchErrors(page)

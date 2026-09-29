@@ -1377,7 +1377,9 @@ test("finds an artist's photo on Wikimedia Commons, credits it, and lets an albu
             '1': {
               imageinfo: [
                 {
-                  thumburl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/n/nl/Northline_live.jpg/500px.jpg',
+                  // Commons serves thumbnails from thumb.wikimedia.org (the owner's first try, 2026-09-29).
+                  thumburl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/n/nl/Northline_live.jpg/500px.jpg',
+                  url: 'https://upload.wikimedia.org/wikipedia/commons/n/nl/Northline_live.jpg',
                   descriptionurl: 'https://commons.wikimedia.org/wiki/File:Northline_live.jpg',
                   extmetadata: {
                     Artist: { value: '<a href="https://example.org">P.B. Rage</a>' },
@@ -1392,9 +1394,12 @@ test("finds an artist's photo on Wikimedia Commons, credits it, and lets an albu
       },
     }),
   )
-  await page.route('https://upload.wikimedia.org/**', (route) =>
-    route.fulfill({ headers: cors, contentType: 'image/png', path: 'tests/e2e/fixtures/cover.png' }),
-  )
+  const pictureHosts: string[] = []
+  for (const host of ['https://thumb.wikimedia.org/**', 'https://upload.wikimedia.org/**'])
+    await page.route(host, (route) => {
+      pictureHosts.push(new URL(route.request().url()).hostname)
+      return route.fulfill({ headers: cors, contentType: 'image/png', path: 'tests/e2e/fixtures/cover.png' })
+    })
   await english(page)
   // Without a photo, the cover of an album of the artist stands in on the Artists page.
   await page.goto('/#/artists')
@@ -1409,6 +1414,7 @@ test("finds an artist's photo on Wikimedia Commons, credits it, and lets an albu
     timeout: 15_000,
   })
   expect(asked[0]?.searchParams.get('query')).toBe('artist:"Northline"')
+  expect(pictureHosts).toEqual(['thumb.wikimedia.org'])
   await expect(page.getByTestId('photo-find')).toHaveCount(0)
   // Kept in this browser across a reload; removable.
   await page.reload()

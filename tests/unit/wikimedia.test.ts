@@ -61,7 +61,10 @@ describe("an artist's photo", () => {
               '-1': {
                 imageinfo: [
                   {
-                    thumburl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Band.jpg/500px-Band.jpg',
+                    // As Commons answers since 2026: thumbnails on thumb.wikimedia.org, the original on upload.
+                    thumburl:
+                      'https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b1/Band.jpg/500px-Band.jpg?utm_source=commons.wikimedia.org',
+                    url: 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Band.jpg',
                     descriptionurl: 'https://commons.wikimedia.org/wiki/File:Band_1992.jpg',
                     extmetadata: {
                       Artist: { value: '<a href="https://example.org/p">P.B. Rage</a> from USA' },
@@ -79,7 +82,10 @@ describe("an artist's photo", () => {
     expect(await wikidataImage('Q1', fetchImpl)).toBe('Band 1992.jpg')
     expect(await wikidataImage('not-an-item', fetchImpl)).toBeNull()
     expect(await commonsImage('Band 1992.jpg', fetchImpl)).toEqual({
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Band.jpg/500px-Band.jpg',
+      urls: [
+        'https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b1/Band.jpg/500px-Band.jpg?utm_source=commons.wikimedia.org',
+        'https://upload.wikimedia.org/wikipedia/commons/b/b1/Band.jpg',
+      ],
       page: 'https://commons.wikimedia.org/wiki/File:Band_1992.jpg',
       author: 'P.B. Rage from USA',
       license: 'CC BY-SA 2.0',
@@ -99,6 +105,48 @@ describe("an artist's photo", () => {
     expect(
       await imageBytes('https://upload.wikimedia.org/x.svg', () => Promise.resolve(new Response('<svg/>'))),
     ).toBeNull()
+  })
+
+  it("reads the owner's real Commons answer: a thumbnail on thumb.wikimedia.org, a red-linked author", async () => {
+    const answer = {
+      continue: { iistart: '2020-12-16T18:38:16Z', continue: '||' },
+      query: {
+        pages: {
+          '92854049': {
+            pageid: 92854049,
+            ns: 6,
+            title: 'File:Mylène farmer Live 2019 (cropped).jpg',
+            imagerepository: 'local',
+            imageinfo: [
+              {
+                thumburl:
+                  'https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d3/Myl%C3%A8ne_farmer_Live_2019_%28cropped%29.jpg/500px-Myl%C3%A8ne_farmer_Live_2019_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+                thumbwidth: 500,
+                thumbheight: 641,
+                url: 'https://upload.wikimedia.org/wikipedia/commons/d/d3/Myl%C3%A8ne_farmer_Live_2019_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original',
+                descriptionurl: 'https://commons.wikimedia.org/wiki/File:Myl%C3%A8ne_farmer_Live_2019_(cropped).jpg',
+                extmetadata: {
+                  Artist: {
+                    value:
+                      '<a href="//commons.wikimedia.org/w/index.php?title=User:Boydu90&amp;action=edit&amp;redlink=1" class="new" title="User:Boydu90 (page does not exist)">Boydu90</a>',
+                    source: 'commons-desc-page',
+                  },
+                  LicenseShortName: { value: 'CC BY-SA 4.0', source: 'commons-desc-page', hidden: '' },
+                  LicenseUrl: { value: 'https://creativecommons.org/licenses/by-sa/4.0', source: 'commons-desc-page' },
+                },
+              },
+            ],
+          },
+        },
+      },
+    }
+    const image = await commonsImage('Mylène farmer Live 2019 (cropped).jpg', () =>
+      Promise.resolve(Response.json(answer)),
+    )
+    expect(image?.urls[0]?.startsWith('https://thumb.wikimedia.org/')).toBe(true)
+    expect(image?.urls[1]?.startsWith('https://upload.wikimedia.org/')).toBe(true)
+    expect(image?.author).toBe('Boydu90')
+    expect(image?.license).toBe('CC BY-SA 4.0')
   })
 
   it('turns the HTML Commons keeps for authors into plain text', () => {
