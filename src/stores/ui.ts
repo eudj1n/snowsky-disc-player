@@ -44,6 +44,8 @@ const state = reactive({
   playlistDialog: null as PlaylistDialog | null,
   /** Karaoke: the current lyrics full screen (round 16). */
   karaoke: false,
+  /** The visualizer: what plays in this browser, drawn full screen (2026-09-29). */
+  visualizer: false,
 })
 export const ui = readonly(state)
 
@@ -60,6 +62,10 @@ export function openDialog(name: DialogName): void {
 
 export function setKaraoke(open: boolean): void {
   state.karaoke = open
+}
+
+export function setVisualizer(open: boolean): void {
+  state.visualizer = open
 }
 
 export function closeDialog(): void {

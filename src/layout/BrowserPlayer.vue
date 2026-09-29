@@ -1,14 +1,15 @@
 <script setup lang="ts">
 /**
  * What plays in this browser (combined-008), independent of the player: a
- * small bar above the player's, with play/pause, next and stop. The player
- * itself is not touched.
+ * small bar above the player's, with play/pause, next, the visualizer
+ * (2026-09-29) and stop. The player itself is not touched.
  */
 import { computed } from 'vue'
 import { t } from '../i18n'
 import { browserPlayback, browserTrack, nextInBrowser, stopInBrowser, toggleBrowser } from '../stores/browser'
 import UiIcon from '../ui/UiIcon.vue'
 import UiIconButton from '../ui/UiIconButton.vue'
+import { openVisualizer } from './visualizer'
 import { timeLabel } from '../domain/track'
 
 const track = browserTrack
@@ -37,6 +38,12 @@ const hasNext = computed(() => browserPlayback.index + 1 < browserPlayback.queue
       @click="toggleBrowser"
     />
     <UiIconButton icon="next" :label="t('next_track')" :disabled="!hasNext" @click="nextInBrowser" />
+    <UiIconButton
+      icon="visualizer"
+      :label="t('visualizer_open')"
+      data-testid="visualizer-open"
+      @click="openVisualizer"
+    />
     <UiIconButton icon="stop" :label="t('browser_stop')" data-testid="browser-stop" @click="stopInBrowser" />
   </section>
 </template>

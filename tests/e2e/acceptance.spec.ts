@@ -613,7 +613,7 @@ test('moves a folder to the trash and back, and macOS leftovers too, on stock', 
   await disconnect(page)
 })
 
-test('plays card files in this browser through the audio route, a CUE track from its offset, on stock', async ({
+test('plays card files in this browser through the audio route, a CUE track from its offset, with the visualizer, on stock', async ({
   page,
 }) => {
   const errors = watchErrors(page)
@@ -625,6 +625,12 @@ test('plays card files in this browser through the audio route, a CUE track from
   await expect(bar.getByTestId('browser-toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 30_000 })
   // The position moves: the browser decodes the FLAC from byte ranges of the card file.
   await expect(bar).toContainText(/· 0:0[2-9]/, { timeout: 20_000 })
+  // The visualizer's analyser hears the card's FLAC through the same route.
+  await bar.getByTestId('visualizer-open').click()
+  const visualizer = page.getByRole('dialog', { name: 'Visualizer' })
+  await expect(visualizer).toHaveAttribute('data-live', 'true', { timeout: 15_000 })
+  await page.keyboard.press('Escape')
+  await expect(visualizer).toBeHidden()
   await bar.getByTestId('browser-stop').click()
   await expect(bar).toBeHidden()
 

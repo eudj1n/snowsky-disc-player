@@ -1027,19 +1027,34 @@ plus macOS leftovers on the Card page. The page's part:
       offset in the image; a small bar pauses, skips and stops it. FLAC, MP3
       and AAC play everywhere, ALAC only in Safari, DSD and APE not at all
       (the page says so when the browser refuses). Mock browser test.
-- [ ] A visualizer next to karaoke (owner's question about Visicality): with
-      the audio file in the browser, its spectrum is computed ahead and drawn
-      synced to the player's position, full screen for a TV. Our own canvas
-      code: Visicality has no license, so only its ideas are used. First
-      step (owner, 2026-09-29): only for playing in this browser, where the
-      sound is the browser's own: its audio element feeds a Web Audio
-      analyser, so the picture is exactly in time, no second stream crosses
-      the Wi-Fi and a TV or laptop works as the speaker with the picture on
-      screen; full screen, opened from the browser bar and the Lyrics tab
-      while the browser plays. The renderer takes any analyser, so the
-      player's own playback can follow later: the browser then plays the same
-      file silently and follows the player's position (resynced at track
-      changes, seeks and pauses), instead of decoding whole files ahead.
+- [x] A visualizer next to karaoke (owner's question about Visicality): our
+      own canvas code (Visicality has no license, so only its ideas are
+      used). First step (owner, 2026-09-29): only for playing in this
+      browser, where the sound is the browser's own: its audio element feeds
+      a Web Audio analyser, so the picture is exactly in time, no second
+      stream crosses the Wi-Fi and a TV or laptop works as the speaker with
+      the picture on screen. First design (owner, 2026-09-29: "in the style
+      of the Disc project, a ring or a disc", after Visicality's circular
+      designs): the project's ringed-disc mark brought to life. The cover
+      turns slowly as a disc with the mark's hole, its grooves light with
+      groups of bands, the mark's white ring pulses with the bass and the
+      spectrum (48 logarithmic bands) spreads from the ring in mirrored
+      spokes, low notes at the bottom, high ones meeting at the top, with
+      falling peak marks. Full screen from a button on the browser bar or
+      the V key while the browser plays; Space pauses and the right arrow
+      skips this browser's playback (not the player's); Esc, V, the close
+      button, leaving full screen or the end of browser playback close it;
+      controls hide while idle; reduced motion stops the turning and the
+      pulse. The Lyrics tab keeps karaoke only: it belongs to the player's
+      track, not the browser's. Evidence: unit tests for the spectrum and
+      the drawing, a mock browser test (the mock's audio became quiet tones)
+      on desktop and phone, and emulator acceptance where the analyser hears
+      the guest card's FLAC through the audio route. Later: more designs,
+      and the player's own playback (the browser plays the same file
+      silently and follows the player's position, resynced at track
+      changes, seeks and pauses). Known cost: once opened, the page's audio
+      plays through the Web Audio graph, which a phone may suspend in the
+      background; playing again resumes it.
 - [ ] Now Playing without duplicated controls (owner, 2026-09-29, agreed):
       the side panel gets two tabs instead of three. "Now": cover, title,
       artists and album with links, a tag block (format and quality, bit

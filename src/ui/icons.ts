@@ -43,6 +43,9 @@ export const ICON_PATHS = {
   pin: 'M9 3h6l-1 6 3 3H7l3-3Z M12 12v9',
   trash: 'M4 7h16 M10 11v6 M14 11v6 M6 7l1 13h10l1-13 M9 7V4h6v3',
   headphones: 'M4 17v-5a8 8 0 0 1 16 0v5 M4 15h3v6H4Z M17 15h3v6h-3Z',
+  /* The visualizer (2026-09-29): the ringed disc sending out spokes of sound. */
+  visualizer:
+    'M8 12a4 4 0 1 0 8 0a4 4 0 1 0-8 0Z M12 11.9v.2 M12 6V2.5 M16.2 7.8l1.4-1.4 M18 12h4 M16.2 16.2l2.1 2.1 M12 18v2 M7.8 16.2l-2.5 2.5 M6 12H3 M7.8 7.8 6.4 6.4',
   stop: 'M6 6h12v12H6Z',
   'sidebar-collapse':
     'M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z M9.5 4v16 M16 9.5 13.5 12l2.5 2.5',

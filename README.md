@@ -25,7 +25,9 @@ playing on the DISC; nothing streams to the browser.
 > - pick up where the player stopped: after its queue ended or USB storage
 >   mode, the bar shows the remembered track and Play continues it;
 > - sing along in karaoke: synced lyrics full screen, word by word where the
->   lyrics file has word timings.
+>   lyrics file has word timings;
+> - watch what plays in this browser as a disc: the cover turns, its ring
+>   pulses with the bass and the spectrum spreads around it, full screen.
 >
 > Covers and durations appear as tracks play: the player's library keeps
 > neither for most files.

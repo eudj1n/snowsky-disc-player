@@ -509,6 +509,10 @@ export const ru: Messages = {
   browser_playing: 'В этом браузере',
   browser_stop: 'Остановить воспроизведение в браузере',
   browser_play_unsupported: 'Этот браузер не может воспроизвести этот файл.',
+  visualizer: 'Визуализация',
+  visualizer_open: 'Визуализация: звук на весь экран (V)',
+  visualizer_close: 'Выйти из визуализации (Esc)',
+  visualizer_unavailable: 'Этот браузер не умеет анализировать звук, поэтому диск не движется.',
   trash_tab: 'Корзина',
   trash_nothing: 'Корзина пуста. Всё, что вы туда переместите, можно восстановить.',
   trash_total: {

@@ -81,6 +81,17 @@ The service's own state (combined-008) has stores of its own:
 `stores/browser.ts`, which plays card files in an `Audio` element through
 the media route, a CUE track from its offset, without touching the player.
 
+The visualizer (`layout/VisualizerMode.vue`) draws what plays in this
+browser. Its first opening (a click or the V key, since browsers start audio
+only from the user's own action) routes the `Audio` element through a Web
+Audio `AnalyserNode` (`browserAnalyser()`), which stays in place from then
+on. The numbers are pure (`domain/spectrum.ts`: logarithmic bands, eased
+levels, falling peaks, mirrored spokes, grooves) and the painting is one
+function over a 2D context (`layout/discDrawing.ts`), so both are unit
+tested without a browser; the renderer takes any analyser, so the player's
+own playback can feed it later. Karaoke and the visualizer share
+`layout/fullscreenOverlay.ts` for entering and leaving full screen.
+
 ## Build and serving constraints
 
 - **CSP** `default-src 'self'` on every page: no inline script/style/handlers,

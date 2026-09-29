@@ -73,9 +73,21 @@ function guarded(request, response) {
   player.seen.add(id)
   return true
 }
-/** A small WAV (thirty seconds of 8 kHz silence) standing in for every card audio file. */
+/**
+ * A small WAV standing in for every card audio file: thirty seconds at 8 kHz
+ * of three quiet tones (bass, middle, a pulsing high one), so the visualizer's
+ * analyser hears something.
+ */
 const WAV = (() => {
-  const data = Buffer.alloc(8000 * 30, 0x80)
+  const data = Buffer.alloc(8000 * 30)
+  for (let i = 0; i < data.length; i++) {
+    const at = i / 8000
+    const tone =
+      0.22 * Math.sin(2 * Math.PI * 110 * at) +
+      0.16 * Math.sin(2 * Math.PI * 440 * at) +
+      0.12 * (0.5 + 0.5 * Math.sin(2 * Math.PI * 2 * at)) * Math.sin(2 * Math.PI * 1500 * at)
+    data[i] = Math.round(128 + 127 * tone)
+  }
   const header = Buffer.alloc(44)
   header.write('RIFF', 0)
   header.writeUInt32LE(36 + data.length, 4)

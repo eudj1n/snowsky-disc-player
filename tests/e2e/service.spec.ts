@@ -185,6 +185,40 @@ test('plays a track in this browser, pauses and stops it', async ({ page }) => {
   expect(errors).toEqual([])
 })
 
+test('draws what plays in this browser as the disc visualizer', async ({ page }) => {
+  const errors = watchErrors(page)
+  await english(page)
+  await page.goto('/#/album/Blue%20Hours/Mira%20Sol')
+  await page.getByTestId('album-browser').click()
+  const bar = page.getByTestId('browser-player')
+  await expect(bar.getByTestId('browser-toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 10_000 })
+  await bar.getByTestId('visualizer-open').click()
+  const visualizer = page.getByRole('dialog', { name: 'Visualizer' })
+  await expect(visualizer).toBeVisible()
+  await expect(visualizer).toContainText(await bar.locator('strong').innerText())
+  // The analyser hears the mock's tones and the canvas fills the screen.
+  await expect(visualizer).toHaveAttribute('data-live', 'true', { timeout: 10_000 })
+  const box = await page.getByTestId('visualizer-canvas').boundingBox()
+  expect(box?.width).toBe(page.viewportSize()?.width)
+  // Space pauses this browser's playback, not the player's.
+  await page.keyboard.press('Space')
+  await expect(visualizer.getByTestId('visualizer-toggle')).toHaveAttribute('aria-label', 'Play')
+  await visualizer.getByTestId('visualizer-toggle').click()
+  await expect(visualizer.getByTestId('visualizer-toggle')).toHaveAttribute('aria-label', 'Pause')
+  await page.keyboard.press('Escape')
+  await expect(visualizer).toBeHidden()
+  // V opens it again; stopping the browser's playback closes it.
+  await page.keyboard.press('v')
+  await expect(visualizer).toBeVisible()
+  await page.keyboard.press('v')
+  await expect(visualizer).toBeHidden()
+  await bar.getByTestId('browser-stop').click()
+  await expect(bar).toBeHidden()
+  await page.keyboard.press('v')
+  await expect(visualizer).toBeHidden()
+  expect(errors).toEqual([])
+})
+
 test("shows the service's diagnostics in the connection dialog", async ({ page }) => {
   await english(page)
   await openConnection(page)
