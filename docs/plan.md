@@ -469,6 +469,17 @@ check`, the full mock suite (97) and the emulator acceptance of this exact
   `42d6711790fcb1e1`, `44d8fc9cf06ef9c3`, `784edefa1737c1cd`,
   `95a93be3653aac77` and `a3ec52396ac2b620` remain until the owner asks.
 
+- 2026-09-29: `b0e1397308ce91cb` (commit `03bd9be`: the collapsed sidebar's
+  icons below the toggle, a genre's records in its page heading) published
+  on PLAY at the owner's request. A cosmetic batch (owner, 2026-09-29: no
+  full runs for cosmetic changes): `npm run check` (233 unit tests) and the
+  mock browser tests of the pages with a heading and the sidebar (53); no
+  emulator acceptance, as nothing reached the gateway contract. All 94 files
+  identical after the write, no AppleDouble files. `ba54bc396cf11ef1` stays
+  for rollback; `42d6711790fcb1e1`, `44d8fc9cf06ef9c3`, `784edefa1737c1cd`,
+  `95a93be3653aac77`, `a3ec52396ac2b620` and `e5d649e7a7275102` remain until
+  the owner asks.
+
 ## Combined-006 client (round 7)
 
 Built on snowsky-disc-service `1074215` (media, current lyrics, image types,

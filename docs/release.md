@@ -27,8 +27,18 @@ publish command.
 
 Publish the prepared release on the emulator's disposable card from the
 service checkout and run the browser tests against it (see
-[development](development.md#tests)). Only a release that passed there goes
-to the physical card.
+[development](development.md#tests)). A batch that reaches the gateway or
+the stock protocol passes there before it goes to the physical card; the
+checks before a publication follow what the batch changed (owner,
+2026-09-29):
+
+| The batch changed                                                       | Before the card                                                   |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Styles and markup only                                                  | `npm run check` and the mock browser tests of the touched screens |
+| Behavior on the page (stores, new requests, controls)                   | also the full mock suite                                          |
+| The gateway contract, CSP or `origins.json`, player commands, the files | also the emulator acceptance of this exact release, as above      |
+
+Larger batches and the day's last release get the full set.
 
 ## Publish on the player (operator step)
 
