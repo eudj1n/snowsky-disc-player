@@ -177,6 +177,30 @@ export function dotsProgress(progress: number): [number, number, number] {
   return [dot(0), dot(1), dot(2)]
 }
 
+/** The stamp of the first timed line after `active`, where the current line ends; null after the last one. */
+export function nextLineMs(lines: readonly LyricLine[], active: number): number | null {
+  for (let index = active + 1; index < lines.length; index++) {
+    const ms = lines[index]?.timeMs
+    if (ms !== null && ms !== undefined) return ms
+  }
+  return null
+}
+
+/**
+ * The three dots of the current pause (karaoke and the lyrics panel): how far
+ * each is filled, measured to the next line in full; null when the current
+ * line is sung, or there is none.
+ */
+export function pauseDots(
+  lines: readonly LyricLine[],
+  active: number,
+  positionMs: number | null,
+): [number, number, number] | null {
+  const line = lines[active]
+  if (!line || !silentLine(line)) return null
+  return dotsProgress(lineProgress(line, nextLineMs(lines, active), positionMs, Infinity))
+}
+
 /** The lines karaoke shows around the current one: `before` sung, the current and `after` coming. */
 export function karaokeRange(
   total: number,

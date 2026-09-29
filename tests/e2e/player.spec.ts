@@ -1565,6 +1565,11 @@ test('sings along in karaoke: word timings sweep the current line and at most se
   await expect(title).toHaveText('Still Here', { timeout: 15_000 })
   await page.getByRole('button', { name: 'Lyrics' }).filter({ visible: true }).first().click()
   const panel = page.getByRole('complementary', { name: 'Player view' })
+  // The panel shows a pause as karaoke does: three dots, not a note.
+  const pause = page.getByTestId('lyrics').locator('[data-line="4"]')
+  await expect(pause.getByTestId('lyrics-pause').locator('span')).toHaveCount(3)
+  await expect(pause).toHaveAttribute('aria-label', 'Go to this line')
+  await expect(page.getByTestId('lyrics')).not.toContainText('♪')
   await panel.getByTestId('karaoke-open').click()
   const karaoke = page.getByTestId('karaoke')
   await expect(karaoke).toBeVisible()

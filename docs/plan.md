@@ -1416,6 +1416,11 @@ started:
       placeholder (owner, 2026-09-29): its tint, two of its albums' records
       across the square sleeve, as in the compact bar too; tiles and heading
       share one component. Mock browser test.
+- [x] The lyrics panel shows a pause (an empty line, or a note or dots in the
+      LRC) as three dots instead of a note, as karaoke does (owner,
+      2026-09-29); the current pause fills them in turn with the accent until
+      the next line. Both share `pauseDots` in the lyrics domain. Unit test
+      and the karaoke mock browser test.
 
 ## Requests for the next service build
 

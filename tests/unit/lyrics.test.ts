@@ -4,7 +4,9 @@ import {
   dotsProgress,
   karaokeRange,
   lineProgress,
+  nextLineMs,
   parseLyrics,
+  pauseDots,
   silentLine,
   wordProgress,
 } from '../../src/domain/lyrics'
@@ -101,6 +103,21 @@ describe('lyrics', () => {
     expect(dotsProgress(0)).toEqual([0, 0, 0])
     expect(dotsProgress(0.5)).toEqual([1, 0.5, 0])
     expect(dotsProgress(1)).toEqual([1, 1, 1])
+  })
+
+  it('fills the current pause to the next timed line and leaves sung lines without dots', () => {
+    const lines = [
+      { timeMs: 0, text: 'Sung' },
+      { timeMs: 3000, text: '♪' },
+      { timeMs: null, text: 'Untimed' },
+      { timeMs: 9000, text: 'Next' },
+    ]
+    // The untimed line is skipped: the pause runs from 3 s to 9 s.
+    expect(nextLineMs(lines, 1)).toBe(9000)
+    expect(nextLineMs(lines, 3)).toBeNull()
+    expect(pauseDots(lines, 1, 6000)).toEqual([1, 0.5, 0])
+    expect(pauseDots(lines, 0, 1000)).toBeNull()
+    expect(pauseDots(lines, -1, 0)).toBeNull()
   })
 
   it('shows two sung lines, the current one and four to come', () => {

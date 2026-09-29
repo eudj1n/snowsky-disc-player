@@ -2,10 +2,13 @@
 /**
  * Lyrics of the current track. Synced lyrics highlight the line being sung
  * and keep it in view (unless the listener scrolled in the last few seconds);
- * a line can be clicked to seek there. Plain lyrics read as text.
+ * a line can be clicked to seek there. A pause (an empty line, or a note or
+ * dots in the LRC) shows three dots, as karaoke does (owner, 2026-09-29): the
+ * current pause fills them in turn until the next line. Plain lyrics read as
+ * text.
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type DeepReadonly } from 'vue'
-import { activeLine, livePosition, type Lyrics } from '../../domain/lyrics'
+import { activeLine, livePosition, pauseDots, silentLine, type Lyrics } from '../../domain/lyrics'
 
 const props = defineProps<{
   lyrics: DeepReadonly<Lyrics> | null
@@ -34,6 +37,14 @@ watch(
 onBeforeUnmount(() => clearInterval(clock))
 const position = computed(() => livePosition(props.positionMs, props.positionAt ?? null, now.value, props.playing))
 const active = computed(() => (props.lyrics ? activeLine(props.lyrics as Lyrics, position.value) : -1))
+const pause = computed(() =>
+  props.lyrics ? pauseDots((props.lyrics as Lyrics).lines, active.value, position.value) : null,
+)
+/** A dot of a pause, from the line's colour towards the accent as it fills. */
+const dot = (progress: number) => ({
+  backgroundColor: `color-mix(in srgb, var(--accent) ${String(Math.round(progress * 100))}%, currentColor)`,
+  transform: `scale(${String(0.72 + 0.28 * progress)})`,
+})
 let touchedAt = 0
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 
@@ -72,13 +83,27 @@ watch(
         type="button"
         :data-line="index"
         :aria-current="index === active ? 'true' : undefined"
-        :aria-label="line.text ? undefined : seekLabel"
+        :aria-label="silentLine(line) ? seekLabel : undefined"
         :disabled="!seekable || line.timeMs === null"
         class="phone:text-16 block w-full rounded-8 px-6 py-5 text-left text-17 leading-[1.45] font-semibold tracking-[-0.2px] text-muted/70 transition-[color,opacity,transform,translate,scale,rotate] duration-300 hover:enabled:text-secondary aria-[current=true]:text-ink motion-reduce:transition-none"
         :class="index < active ? 'opacity-60' : ''"
         @click="line.timeMs !== null && emit('seek', line.timeMs)"
       >
-        {{ line.text || '♪' }}
+        <span
+          v-if="silentLine(line)"
+          class="inline-flex h-[1.45em] items-center gap-[0.34em] align-top"
+          data-testid="lyrics-pause"
+        >
+          <span
+            v-for="(filled, at) in index === active && pause ? pause : [0, 0, 0]"
+            :key="at"
+            class="inline-block size-[0.3em] rounded-full"
+            :class="{ 'motion-safe:animate-pulse': index === active && filled > 0 && filled < 1 }"
+            :data-fill="index === active ? filled.toFixed(2) : undefined"
+            :style="dot(filled)"
+          />
+        </span>
+        <template v-else>{{ line.text }}</template>
       </button>
     </template>
     <div v-else class="text-14 leading-[1.7] whitespace-pre-line text-secondary">

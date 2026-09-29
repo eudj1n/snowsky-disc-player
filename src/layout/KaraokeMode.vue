@@ -16,8 +16,9 @@ import {
   activeLine,
   dotsProgress,
   karaokeRange,
-  lineProgress,
   livePosition,
+  nextLineMs,
+  pauseDots,
   silentLine,
   wordProgress,
   type LyricLine,
@@ -72,13 +73,7 @@ const position = computed(() =>
 )
 const active = computed(() => (lyrics.lyrics ? activeLine(lyrics.lyrics as Lyrics, position.value) : -1))
 const range = computed(() => karaokeRange(lines.value.length, active.value))
-const nextMs = computed(() => {
-  for (let index = active.value + 1; index < lines.value.length; index++) {
-    const ms = lines.value[index]?.timeMs
-    if (ms !== null && ms !== undefined) return ms
-  }
-  return null
-})
+const nextMs = computed(() => nextLineMs(lines.value, active.value))
 /** The current line's timed words with how much of each is sung; none for a line without word timings. */
 const sung = computed(() => {
   const line = lines.value[active.value]
@@ -91,11 +86,7 @@ const sung = computed(() => {
  * fill one after another until the next line, like the sung words; the dot
  * filling now twinkles. Before the first line the intro counts down the same way.
  */
-const pause = computed(() => {
-  const line = lines.value[active.value]
-  if (!line || !silentLine(line)) return null
-  return dotsProgress(lineProgress(line, nextMs.value, position.value, Infinity))
-})
+const pause = computed(() => pauseDots(lines.value, active.value, position.value))
 const intro = computed(() => {
   const first = lines.value[0]?.timeMs
   if (!synced.value || active.value !== -1 || first === null || first === undefined || first < 3000) return null
