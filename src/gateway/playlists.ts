@@ -13,9 +13,11 @@
  *    member multiset (add, remove). Anything else is `uncertain`; nothing is
  *    retried.
  *
- * Adding always uses the whole library (`all/song`) as the source, so any
- * track from any view can be added by its unique position there; several
- * tracks become ordered, non-overlapping ranges. Deleting a playlist is not in
+ * Adding takes the tracks by their unique positions in a source list:
+ * their album (`album/song`) when they all share one, otherwise the whole
+ * library (`all/song`), which the reference used for every add (owner,
+ * 2026-09-29: reading the whole library three times per add was most of the
+ * traffic). Several tracks become ordered, non-overlapping ranges. Deleting a playlist is not in
  * the reference session: it follows the same pattern and needs emulator
  * acceptance before release.
  */
@@ -208,15 +210,39 @@ export function deletePlaylist(deps: EditDeps, name: string): Promise<EditOutcom
   })
 }
 
+/** A track to add: its key and, when known, its album, which narrows the source list. */
+export type PlaylistTrack = TrackKey & { album?: string | null }
+
+interface AddSource {
+  category: Category
+  filters: CatalogFilters
+  headers: Record<string, string>
+}
+
+/** The tracks' album when they share one (and its name fits a header), otherwise the whole library. */
+export function addSource(tracks: readonly PlaylistTrack[]): AddSource {
+  const albums = new Set(tracks.map((track) => track.album ?? null))
+  const album = albums.size === 1 ? [...albums][0] : null
+  if (album) {
+    try {
+      return { category: 'album/song', filters: { album }, headers: { album: nameHeader(album) } }
+    } catch {
+      // A name too long for a header: the whole library still holds the tracks.
+    }
+  }
+  return { category: 'all/song', filters: {}, headers: {} }
+}
+
 /** Adds library tracks to a playlist; refuses tracks already in it. */
-export function addTracks(deps: EditDeps, playlist: string, tracks: readonly TrackKey[]): Promise<EditOutcome> {
+export function addTracks(deps: EditDeps, playlist: string, tracks: readonly PlaylistTrack[]): Promise<EditOutcome> {
   return edit(deps, async () => {
     if (!tracks.length) return 'invalid'
     nameHeader(playlist)
     const lists = await stable(deps.http, 'custom')
     const position = positionOf(lists, playlist)
     const members = await stable(deps.http, 'custom/song', { listId: position })
-    const source = await stable(deps.http, 'all/song')
+    const from = addSource(tracks)
+    const source = await stable(deps.http, from.category, from.filters)
     const picked = tracks.map((track) => find(source, track))
     const memberKeys = new Set(members.map(key))
     if (picked.some((index) => memberKeys.has(key(source[index] ?? { name: '', author: null })))) return 'duplicate'
@@ -227,14 +253,14 @@ export function addTracks(deps: EditDeps, playlist: string, tracks: readonly Tra
       write: {
         route: '/add_custom_list/',
         method: 'POST',
-        headers: { type: 'all/song', dst_list_id: String(position) },
+        headers: { type: from.category, dst_list_id: String(position), ...from.headers },
         body: JSON.stringify(ranges),
       },
       recheck: async () => {
         if (!sameRows(await catalogRows(deps.http, 'custom', {}, MAX_ROWS), lists)) throw new Changed()
         if (!sameRows(await catalogRows(deps.http, 'custom/song', { listId: position }, MAX_ROWS), members))
           throw new Changed()
-        if (!sameRows(await catalogRows(deps.http, 'all/song', {}, MAX_ROWS), source)) throw new Changed()
+        if (!sameRows(await catalogRows(deps.http, from.category, from.filters, MAX_ROWS), source)) throw new Changed()
       },
       confirm: async () => {
         const after = await stable(deps.http, 'custom')

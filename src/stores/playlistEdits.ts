@@ -1,8 +1,9 @@
 /**
  * Playlist changes through the single operation lease (pacing, scan guard,
  * one attempt), with the reference outcomes as toasts. A confirmed or
- * uncertain change refreshes the collection so lists and counts show what the
- * player now holds.
+ * uncertain change re-reads what it touched (the playlists or the favorites,
+ * with the counts), so lists and counts show what the player now holds
+ * without reloading the whole collection (owner, 2026-09-29).
  */
 import { reactive, readonly } from 'vue'
 import {
@@ -14,11 +15,12 @@ import {
   renamePlaylist,
   type EditDeps,
   type EditOutcome,
+  type PlaylistTrack,
 } from '../gateway/playlists'
 import type { TrackKey } from '../gateway/selection'
 import type { MessageKey } from '../i18n'
 import { http } from './connection'
-import { loadCollection } from './library'
+import { refreshFavorites, refreshPlaylists } from './library'
 import { run } from './operation'
 import { pairingToken } from './pairing'
 import { playback } from './playback'
@@ -49,7 +51,10 @@ export function playlistMessage(result: PlaylistResult): [MessageKey, boolean] {
   return MESSAGES[result]
 }
 
-async function change(name: string, task: (deps: EditDeps) => Promise<EditOutcome>): Promise<PlaylistResult> {
+async function change(
+  name: 'playlist' | 'favorite',
+  task: (deps: EditDeps) => Promise<EditOutcome>,
+): Promise<PlaylistResult> {
   const token = pairingToken()
   if (!token) return 'no-session'
   const result = await run(name, async (context) => {
@@ -58,7 +63,7 @@ async function change(name: string, task: (deps: EditDeps) => Promise<EditOutcom
   })
   if (result === 'confirmed' || result === 'uncertain') {
     state.revision++
-    await loadCollection(true)
+    await (name === 'favorite' ? refreshFavorites() : refreshPlaylists())
   }
   const [key, error] = MESSAGES[result]
   toast(key, error)
@@ -68,7 +73,7 @@ async function change(name: string, task: (deps: EditDeps) => Promise<EditOutcom
 export const createPlaylistNamed = (name: string) => change('playlist', (deps) => createPlaylist(deps, name))
 export const renamePlaylistTo = (name: string, next: string) =>
   change('playlist', (deps) => renamePlaylist(deps, name, next))
-export const addToPlaylist = (playlist: string, tracks: readonly TrackKey[]) =>
+export const addToPlaylist = (playlist: string, tracks: readonly PlaylistTrack[]) =>
   change('playlist', (deps) => addTracks(deps, playlist, tracks))
 /** Removes a track from the built-in favorites (not the playing one: that uses 0104). */
 export const removeFromFavorites = (track: TrackKey) => change('favorite', (deps) => removeFavorite(deps, track))

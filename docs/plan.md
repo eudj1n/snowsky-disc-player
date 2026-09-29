@@ -1140,6 +1140,43 @@ Without a new image (card-only, can come first):
 - [ ] Add a cover or an LRC where a track or an album has none, through the
       existing upload route (it admits those names and never overwrites).
 
+## Owner's polishing notes (2026-09-29), card-only
+
+In the order agreed for work: what loads the player or blocks its control
+first, then layout, then style.
+
+- [x] Adding a track to a playlist sends many requests: check the flow for
+      a full resync and read back only the edited playlist. Found: each add
+      read the whole library (`all/song`, page by page) three times to find
+      the tracks' positions, and every playlist or favorites change then
+      reloaded the whole collection. Now tracks of one album are taken from
+      that album's list (`album/song`, which the reviewed catalog already
+      admits; the whole library stays the source for tracks of several
+      albums), and a change re-reads only the playlists or the favorites
+      with the counts, keeping the saved copy in step. Unit tests; emulator
+      acceptance adds an album to a playlist this way on stock.
+- [ ] Play, pause and the other actions freeze and lock the controls,
+      track rows included: make the wait softer while keeping one command
+      at a time and no replay after an uncertain outcome.
+- [ ] Space on the Card page is measured again on every visit without a
+      card change or a reconnect: keep the measurement until the card
+      changes.
+- [ ] The album grid switches from 4 to 8 columns when the queue panel
+      opens: at most 4 columns, even on a large screen.
+- [ ] The Home hero offers no unknown artist or unknown album and no album
+      without a cover.
+- [ ] Karaoke without word timings highlights the current line only, with
+      no sweep across its words.
+- [ ] The heart sits before the duration in track tables, so the gap reads
+      as a column, not as padding.
+- [ ] A genre page names its number of artists in the heading, and its
+      Artists shelf counts albums, not tracks (inside, the artist shows
+      albums).
+- [ ] The Hi-Res badge: square corners, black text on yellow, after the
+      Hi-Res Audio mark.
+- [ ] Play album, Play artist and Play genre: a crisper label and icon, and
+      a hover that changes the background instead of moving the button.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

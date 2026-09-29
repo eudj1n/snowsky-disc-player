@@ -17,6 +17,17 @@ const LIBRARY: Row[] = [
   { name: 'Orbit', author: 'Forma' },
   { name: 'Still Here', author: 'Forma' },
 ]
+const ALBUM_OF: Record<string, string> = {
+  Волны: 'Море',
+  'Тихий океан': 'Море',
+  Orbit: 'Inner Space',
+  'Still Here': 'Inner Space',
+}
+/** Stock's source list for an add or a read: one album's tracks, or the whole library. */
+const sourceRows = (headers: Record<string, string>) =>
+  headers.type === 'album/song'
+    ? LIBRARY.filter((row) => ALBUM_OF[row.name] === decodeURIComponent(headers.album ?? ''))
+    : LIBRARY
 
 /** A tiny stateful stock behind the gateway: lists by position, members, library. */
 function stock(options: { ignoreWrites?: boolean; status?: number } = {}) {
@@ -44,7 +55,7 @@ function stock(options: { ignoreWrites?: boolean; status?: number } = {}) {
         }
         if (path === '/add_custom_list/') {
           const list = lists[Number(headers.dst_list_id)]
-          for (const [first, last] of body) list?.members.push(...LIBRARY.slice(first, last + 1))
+          for (const [first, last] of body) list?.members.push(...sourceRows(headers).slice(first, last + 1))
         }
         if (path === '/song_category_tree/' && headers.type === 'custom') lists.splice(body[0]?.[0] ?? -1, 1)
         if (path === '/song_category_tree/' && headers.type === 'love/song') favorites.splice(body[0]?.[0] ?? -1, 1)
@@ -62,7 +73,7 @@ function stock(options: { ignoreWrites?: boolean; status?: number } = {}) {
           ? (lists[Number(headers.src_list_id)]?.members ?? [])
           : headers.type === 'love/song'
             ? favorites
-            : LIBRARY
+            : sourceRows(headers)
     const start = Number(headers['start-pos'])
     const page = rows.slice(start, start + Number(headers['num-max']))
     return new Response(JSON.stringify(page), { headers: { 'total-num': String(rows.length) } })
@@ -112,6 +123,34 @@ describe('guarded playlist editing', () => {
     expect(lists[1]?.members).toHaveLength(3)
     expect(await addTracks(deps, 'Evening', [{ title: 'Волны', artist: 'Берег' }])).toBe('duplicate')
     expect(writes).toHaveLength(1)
+  })
+
+  it("takes tracks of one album from that album's list, not the whole library", async () => {
+    const { lists, writes, deps } = stock()
+    const reads: string[] = []
+    const read = deps.http.stockRead.bind(deps.http)
+    deps.http.stockRead = (path, headers) => {
+      reads.push(headers?.type ?? '')
+      return read(path, headers)
+    }
+    const tracks = [
+      { title: 'Still Here', artist: 'Forma', album: 'Inner Space' },
+      { title: 'Orbit', artist: 'Forma', album: 'Inner Space' },
+    ]
+    expect(await addTracks(deps, 'Road trip', tracks)).toBe('confirmed')
+    expect(writes[0]?.headers).toMatchObject({ type: 'album/song', album: 'Inner%20Space', dst_list_id: '1' })
+    expect(writes[0]?.body).toBe('[[0,1]]')
+    expect(lists[1]?.members.map((row) => row.name)).toEqual(['Orbit', 'Still Here'])
+    expect(reads).not.toContain('all/song')
+    // Tracks of two albums, or without one, still come from the whole library.
+    const mixed = [
+      { title: 'Волны', artist: 'Берег', album: 'Море' },
+      { title: 'Orbit', artist: 'Forma', album: 'Inner Space' },
+    ]
+    expect(await addTracks(deps, 'Road trip', mixed)).toBe('duplicate')
+    expect(await addTracks(deps, 'Evening', [{ title: 'Тихий океан', artist: 'Берег', album: null }])).toBe('confirmed')
+    expect(writes[1]?.headers).toMatchObject({ type: 'all/song' })
+    expect(reads).toContain('all/song')
   })
 
   it('removes one member and deletes a list, files untouched (delete_source 0)', async () => {

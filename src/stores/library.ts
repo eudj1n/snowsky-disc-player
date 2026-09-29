@@ -7,7 +7,7 @@
  * latest addition, highest ID from library_summary): while the signature is
  * unchanged, the page opens from the cache without paging the player.
  */
-import { computed, reactive, readonly } from 'vue'
+import { computed, reactive, readonly, toRaw } from 'vue'
 import { groupAlbums, groupReleases } from '../domain/album'
 import { groupArtists } from '../domain/artist'
 import { groupGenres } from '../domain/genre'
@@ -179,13 +179,48 @@ export async function loadCollection(force = false): Promise<void> {
   }
 }
 
-/** Re-reads only the favorites, after a like or unlike of the playing track. */
+/**
+ * The collection's saved copy in step with what a refresh re-read, under the
+ * signature of fresh counts, so the next visit neither reloads everything
+ * nor shows the old lists.
+ */
+async function resave(): Promise<void> {
+  let summary: LibrarySummary | null
+  try {
+    summary = librarySummary(await http.data('library_summary'))
+  } catch {
+    return
+  }
+  if (!summary) return
+  state.summary = summary
+  await cacheSet(SNAPSHOT, {
+    signature: librarySignature(summary),
+    savedAt: Date.now(),
+    tracks: toRaw(state.tracks),
+    favorites: toRaw(state.favorites),
+    playlists: toRaw(state.playlists),
+  })
+}
+
+/** Re-reads only the favorites, after a like or unlike, or a favorite removed from its row. */
 export async function refreshFavorites(): Promise<void> {
   if (state.source !== 'player') return
   try {
     state.favorites = await pages('favorites')
+    await resave()
   } catch {
     // The next collection load catches up: the favorites count is part of its signature.
+  }
+}
+
+/** Re-reads only the playlists (names, positions, member counts), after a playlist change. */
+export async function refreshPlaylists(): Promise<void> {
+  if (state.source !== 'player') return
+  try {
+    state.playlists = playlistRows(await http.data('playlists'))
+    await resave()
+  } catch {
+    // The next collection load catches up: the playlist count is part of its signature.
   }
 }
 
