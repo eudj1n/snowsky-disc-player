@@ -1104,7 +1104,13 @@ Without a new image (card-only, can come first):
       dimmed and not playable, as in Apple Music and Yandex Music, their
       heart and menu (only what needs no file) still working. Unit tests and
       mock browser tests (119 passed); published on the owner's card as release
-      `95a93be3653aac77` (the previous `784edefa1737c1cd` kept).
+      `95a93be3653aac77` (the previous `784edefa1737c1cd` kept). Fix
+      (2026-09-29, found by emulator acceptance): stock gives an album the
+      credit of the track it scanned first, a guest's joint credit included,
+      so an album of Lumen's with Kestrel on one track was headed "Lumen &
+      Kestrel" and the rule hid the guest's row and named Lumen on the
+      others. The rows now leave out the credit more than half of the
+      tracks carry (the heading's when none does, as on a compilation).
 - [x] Owner's review of the layout (2026-09-28): the sidebar toggle is a
       round button on the sidebar's edge, after Reddit, that stays in place
       while the page scrolls; the search takes the whole free width of the

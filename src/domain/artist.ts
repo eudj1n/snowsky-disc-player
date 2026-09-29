@@ -41,6 +41,25 @@ export function sameCredit(a: string, b: string): boolean {
   return left.size === new Set(right).size && right.every((name) => left.has(name))
 }
 
+/**
+ * The credit more than half of an album's tracks carry, in any order of its
+ * artists, or null. Stock gives an album the credit of the track it scanned
+ * first, a guest's joint credit included ("A;B" on an album of A's): the rows
+ * leave out this lead credit instead, so only the guest's rows name who plays.
+ */
+export function leadCredit(credits: readonly (string | null)[]): string | null {
+  const counts = new Map<string, { credit: string; count: number }>()
+  for (const credit of credits) {
+    if (credit === null) continue
+    const key = [...creditArtists(credit)].sort().join(';')
+    const entry = counts.get(key) ?? { credit, count: 0 }
+    entry.count++
+    counts.set(key, entry)
+  }
+  for (const { credit, count } of counts.values()) if (count * 2 > credits.length) return credit
+  return null
+}
+
 /** Whether a credit names this artist, alone or jointly. */
 export const credits = (credit: string | null, name: string) => credit !== null && creditArtists(credit).includes(name)
 

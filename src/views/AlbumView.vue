@@ -17,7 +17,7 @@ import SectionHeading from '../components/common/SectionHeading.vue'
 import TrackList from '../components/track/TrackList.vue'
 import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
 import { albumScope, albumTracks, albumsBy, byTrackNumber, discOf, recentAlbums } from '../domain/album'
-import { creditArtists, creditLabel, creditSeparator, sameCredit } from '../domain/artist'
+import { creditArtists, creditLabel, creditSeparator, leadCredit, sameCredit } from '../domain/artist'
 import { filterBy } from '../domain/search'
 import type { SelectionTarget, TrackKey } from '../gateway/selection'
 import { t } from '../i18n'
@@ -76,6 +76,11 @@ const tracks = computed(() =>
 const credits = computed(() => [
   ...new Set((scope.value ? [scope.value] : (group.value?.artists ?? [])).flatMap(creditArtists)),
 ])
+/** The credit rows leave out: the one most tracks carry, else the heading's (a guest's rows keep theirs). */
+const ownCredit = computed(
+  () =>
+    leadCredit(tracks.value.map((track) => track.artist)) ?? (credits.value.length ? credits.value.join(';') : null),
+)
 const year = computed(() => (group.value ? albumYear(group.value, scope.value) : null))
 /** "FLAC 24/96" and whether it is Hi-Res, from the first track's file. */
 const quality = computed(() => {
@@ -270,7 +275,7 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
       v-bind="trackRowProps"
       lead="number"
       :tracks="items"
-      :own-credit="credits.length ? credits.join(';') : null"
+      :own-credit="ownCredit"
       :show-album="false"
       :disc-of="discOf"
       :disc-label="(disc: number) => t('disc_number', { number: disc })"

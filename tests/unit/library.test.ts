@@ -342,8 +342,15 @@ describe('releases', () => {
 
 describe('joint artist credits', () => {
   it('splits on semicolons only and counts each artist', async () => {
-    const { creditArtists, creditLabel, credits, groupArtists, sameCredit } = await import('../../src/domain/artist')
+    const { creditArtists, creditLabel, credits, groupArtists, leadCredit, sameCredit } =
+      await import('../../src/domain/artist')
     expect(creditArtists('Alpha; Beta')).toEqual(['Alpha', 'Beta'])
+    // An album of Lumen's with Kestrel as a guest on one track, whatever stock credits the album with.
+    expect(leadCredit(['Lumen;Kestrel', 'Lumen', 'Lumen', 'Lumen'])).toBe('Lumen')
+    expect(leadCredit(['A; B', 'B;A', 'C'])).toBe('A; B')
+    // A compilation has no lead: every row names its artist.
+    expect(leadCredit(['A', 'B', 'C', 'A'])).toBeNull()
+    expect(leadCredit([null, null])).toBeNull()
     expect(creditArtists('Alpha;Beta;Alpha')).toEqual(['Alpha', 'Beta'])
     expect(creditArtists('AC/DC')).toEqual(['AC/DC'])
     expect(creditArtists('Simon & Garfunkel')).toEqual(['Simon & Garfunkel'])
