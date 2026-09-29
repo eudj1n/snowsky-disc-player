@@ -438,6 +438,16 @@ check`, the full mock suite (97) and the emulator acceptance of this exact
   for rollback; `784edefa1737c1cd` and `95a93be3653aac77` are still on the
   card (removal only at the owner's request).
 
+- 2026-09-29: `44d8fc9cf06ef9c3` (commit `d27e4b9`, with the service's
+  origins catalog `4ed73f5`: the queue marks the playing track as playback
+  moves, artist photos read from Commons' thumbnail host) published on PLAY
+  at the owner's request after `npm run check` (230 unit tests), the full
+  mock suite (140) and emulator acceptance of this exact release through the
+  MIPS service (the queue, the remembered track and every enrichment case);
+  all 92 files identical after the write, no AppleDouble files.
+  `a3ec52396ac2b620` stays for rollback; `42d6711790fcb1e1`,
+  `784edefa1737c1cd` and `95a93be3653aac77` remain until the owner asks.
+
 ## Combined-006 client (round 7)
 
 Built on snowsky-disc-service `1074215` (media, current lyrics, image types,
@@ -1296,6 +1306,18 @@ first, then layout, then style.
       pill button draws play and pause solid, antialiases its label (light
       type on the dark green), and hovering changes only its background
       (the secondary one too).
+
+Owner's notes after release `44d8fc9cf06ef9c3` (2026-09-29), recorded, not
+started:
+
+- [ ] Full-screen karaoke looks like the side panel's lyrics: the current line
+      white among grey ones, most visibly for lyrics without word timings
+      (today they are lit whole in the accent colour).
+- [ ] Lyrics that the tags hold as plain text (no timings) still offer the
+      LRCLIB lookup for synced lyrics; check the order shown: a `.lrc` file
+      first, then the embedded tags.
+- [ ] Starting playback in this browser pauses the player (a guarded pause
+      only while it plays, confirmed like any command).
 
 ## Requests for the next service build
 
