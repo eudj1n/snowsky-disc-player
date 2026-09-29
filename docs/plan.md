@@ -448,6 +448,18 @@ check`, the full mock suite (97) and the emulator acceptance of this exact
   `a3ec52396ac2b620` stays for rollback; `42d6711790fcb1e1`,
   `784edefa1737c1cd` and `95a93be3653aac77` remain until the owner asks.
 
+- 2026-09-29: `e5d649e7a7275102` (commit `2676925`: karaoke lines as the side
+  panel shows them, synced lyrics offered beside plain ones with a saved
+  `.lrc` winning, the player paused when this browser plays, the vinyl
+  visualizer, the flat vinyl placeholders, queue rows like track rows, the
+  sidebar toggle on the lines) published on PLAY at the owner's request
+  after `npm run check` (233 unit tests), the full mock suite (143) and the
+  full emulator acceptance of this exact release through the MIPS service
+  (27); all 92 files identical after the write, no AppleDouble files.
+  `44d8fc9cf06ef9c3` stays for rollback; `42d6711790fcb1e1`,
+  `784edefa1737c1cd`, `95a93be3653aac77` and `a3ec52396ac2b620` remain until
+  the owner asks.
+
 ## Combined-006 client (round 7)
 
 Built on snowsky-disc-service `1074215` (media, current lyrics, image types,
