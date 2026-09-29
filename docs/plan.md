@@ -1209,10 +1209,15 @@ first, then layout, then style.
       albums). The heading reads "albums · artists · tracks"; an artist's
       card counts all its albums, the number its page shows (tracks only
       for an artist without albums). Mock browser test.
-- [ ] The Hi-Res badge: square corners, black text on yellow, after the
-      Hi-Res Audio mark.
-- [ ] Play album, Play artist and Play genre: a crisper label and icon, and
-      a hover that changes the background instead of moving the button.
+- [x] The Hi-Res badge: square corners, black text on yellow, after the
+      Hi-Res Audio mark. One `UiHiResBadge` (black type on the mark's gold,
+      the same in both themes) in the album heading and the Now Playing
+      details.
+- [x] Play album, Play artist and Play genre: a crisper label and icon, and
+      a hover that changes the background instead of moving the button. The
+      pill button draws play and pause solid, antialiases its label (light
+      type on the dark green), and hovering changes only its background
+      (the secondary one too).
 
 ## Requests for the next service build
 
