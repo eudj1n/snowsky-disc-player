@@ -428,7 +428,44 @@
   }
 }
 
+/*
+ * The player carrying out a command (2026-09-29): after a moment (a quick
+ * command shows nothing), a short accent line runs along the bar's top edge.
+ */
+.player-working {
+  opacity: 0;
+  animation: player-working-show 0s 300ms forwards;
+}
+.player-working::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  width: 30%;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: player-working-run 1.2s ease-in-out infinite;
+}
+@keyframes player-working-show {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes player-working-run {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(340%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  /* Without motion the line stays still across the edge. */
+  .player-working {
+    opacity: 0.6;
+  }
+  .player-working::before {
+    width: 100%;
+  }
   *,
   *::before,
   *::after {

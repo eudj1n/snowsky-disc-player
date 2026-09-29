@@ -13,7 +13,6 @@ import { openPlaylistDialog, openTrackMenu, ui } from '../stores/ui'
 import { playlistEdits } from '../stores/playlistEdits'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { selection } from '../stores/selection'
 import { useHeadingAction } from './headingAction'
 import { playFrom } from './playAlbum'
 import CollectionGate from './CollectionGate.vue'
@@ -47,7 +46,7 @@ const searching = computed(() => ui.query.trim() !== '')
 const heading = useHeadingAction({
   owns: (track) => (tracks.value ?? []).some((item) => item.path === track.path),
   label: () => t('listen_playlist'),
-  disabled: () => !tracks.value?.length || !playlist.value || selection.busy,
+  disabled: () => !tracks.value?.length || !playlist.value,
   play: () => void (playlist.value && playFrom({ kind: 'playlist', name: playlist.value.name })),
 })
 const items = computed(() =>
@@ -75,7 +74,7 @@ const unavailable = (track: { path: string | null }) =>
         </template>
         <UiPillButton
           icon="play"
-          :disabled="loading || !tracks?.length || !playlist || selection.busy"
+          :disabled="loading || !tracks?.length || !playlist"
           @click="playlist && playFrom({ kind: 'playlist', name: playlist.name })"
           >{{ t('listen_playlist') }}</UiPillButton
         >

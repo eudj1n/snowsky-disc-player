@@ -9,6 +9,7 @@ import { ensureControl } from './ensureControl'
 const MESSAGES: Record<string, [MessageKey, boolean]> = {
   playing: ['done_verified_on_disc', false],
   busy: ['please_wait_for_the_current_request', false],
+  dropped: ['waiting_dropped', true],
   changed: ['selection_changed', true],
   ambiguous: ['selection_ambiguous', true],
   unavailable: ['selection_unavailable', true],
@@ -17,7 +18,10 @@ const MESSAGES: Record<string, [MessageKey, boolean]> = {
 
 export async function playFrom(target: SelectionTarget): Promise<void> {
   if (!(await ensureControl())) return
-  const [key, error] = MESSAGES[await play(target)] ??
+  const outcome = await play(target)
+  // A newer play took this one's place while it waited: only the newer one reports.
+  if (outcome === 'superseded') return
+  const [key, error] = MESSAGES[outcome] ??
     MESSAGES.uncertain ?? ['result_unconfirmed_the_command_was_not_retried', true]
   toast(key, error)
 }

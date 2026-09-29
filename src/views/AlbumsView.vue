@@ -16,7 +16,6 @@ import { albumPinnedAt, isPinnedAlbum, pinnedFirst } from '../stores/pins'
 import { ui } from '../stores/ui'
 import { albumCardRoute, albumLines, countLine, genreAlbumRoute } from './captions'
 import { playAlbumCard, playFrom } from './playAlbum'
-import { selection } from '../stores/selection'
 import CollectionGate from './CollectionGate.vue'
 import { useGenreFilter } from './genreFilter'
 import GenreFilter from '../components/genre/GenreFilter.vue'
@@ -83,7 +82,6 @@ const sorts = computed(() => ALBUM_SORTS.map((value) => ({ value, text: t(`sort_
         :lines="albumLines(album)"
         :open-label="t('open_item', { name: album.title })"
         :play-label="t('play_item', { name: album.title })"
-        :play-disabled="selection.busy"
         @play="
           genre && mixed(album) ? playFrom({ kind: 'genreAlbum', genre, album: album.title }) : playAlbumCard(album)
         "

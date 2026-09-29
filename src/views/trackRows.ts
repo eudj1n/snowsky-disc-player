@@ -10,9 +10,7 @@ import { commandCatalog, connection } from '../stores/connection'
 import { controlsReady, favoriteTrack, toggleFavorite, transport } from '../stores/controls'
 import { coverFor } from '../stores/enrichment'
 import { isFavorite } from '../stores/favorites'
-import { operation } from '../stores/operation'
 import { isPlaying, playback } from '../stores/playback'
-import { selection } from '../stores/selection'
 import { openPlaylistDialog } from '../stores/ui'
 import { artistRoute, trackAlbumRoute } from './captions'
 
@@ -25,7 +23,6 @@ export const trackRowProps = computed(() => ({
   currentCue: playback.current.track?.cue === true,
   playing: isPlaying.value,
   coverOf: coverFor,
-  disabled: selection.busy,
   playLabel: t('play_label'),
   // The current row pauses or resumes rather than starting the track again.
   pauseLabel: t('pause'),
@@ -43,10 +40,10 @@ export const trackRowProps = computed(() => ({
     addAny: t('add_to_favorites'),
   },
   // Any library row can be favorited where the service and the card admit it (next image).
-  favoriteAddable: favoritesAddable.value && controlsReady.value && !operation.busy,
+  favoriteAddable: favoritesAddable.value && controlsReady.value,
   onLove: onRowLove,
-  favoriteRemovable: favoritesRemovable.value && controlsReady.value && !operation.busy,
-  favoriteDisabled: !controlsReady.value || operation.busy || typeof playback.current.favorite !== 'boolean',
+  favoriteRemovable: favoritesRemovable.value && controlsReady.value,
+  favoriteDisabled: !controlsReady.value || typeof playback.current.favorite !== 'boolean',
 }))
 
 /** The catalog on the card admits removing favorites (love/song, service combined-006). */

@@ -283,7 +283,7 @@ function addHere(): void {
         :is="canPlay(row) ? 'button' : 'span'"
         :type="canPlay(row) ? 'button' : undefined"
         :aria-label="canPlay(row) ? playLabel(row) : undefined"
-        :disabled="canPlay(row) ? !ready || operation.busy : undefined"
+        :disabled="canPlay(row) ? !ready : undefined"
         class="relative grid size-36 shrink-0 place-items-center overflow-hidden rounded-6 p-0"
         :class="row.entry.folder || !row.track ? 'bg-soft text-secondary' : ''"
         @click="canPlay(row) && activate(row)"

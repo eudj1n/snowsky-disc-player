@@ -11,7 +11,6 @@ import { ui, openPlaylistDialog } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
 import { countLine, playlistLines, playlistRoute } from './captions'
 import { playFrom } from './playAlbum'
-import { selection } from '../stores/selection'
 import CollectionGate from './CollectionGate.vue'
 
 const searching = computed(() => ui.query.trim() !== '')
@@ -48,7 +47,6 @@ const skeletonCards = computed(() => Math.max(1, Math.min(library.summary?.playl
         :lines="playlistLines(playlist)"
         :open-label="t('open_item', { name: playlist.name })"
         :play-label="t('play_item', { name: playlist.name })"
-        :play-disabled="selection.busy"
         @play="playFrom({ kind: 'playlist', name: playlist.name })"
       />
     </CoverGrid>

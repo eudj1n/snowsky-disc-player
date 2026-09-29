@@ -23,7 +23,6 @@ import { t } from '../i18n'
 import { albumCover, coverFor } from '../stores/enrichment'
 import { albums, genres, titleGroups, tracks as collection } from '../stores/library'
 import { isPlaying, playback } from '../stores/playback'
-import { selection } from '../stores/selection'
 import { openTrackMenu, ui } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiSkeleton from '../ui/UiSkeleton.vue'
@@ -101,7 +100,7 @@ function target(track?: TrackKey & { genre?: string | null }): SelectionTarget {
 const heading = useHeadingAction({
   owns: (track) => tracks.value.some((item) => item.path === track.path),
   label: () => t('play_genre'),
-  disabled: () => !tracks.value.length || selection.busy,
+  disabled: () => !tracks.value.length,
   play: () => void playFrom(target()),
 })
 function playAlbum(item: Album): void {
@@ -143,7 +142,7 @@ function playAlbum(item: Album): void {
             {{ t('track_count', { count: tracks.length }) }}</template
           >
         </template>
-        <UiPillButton icon="play" :disabled="loading || !tracks.length || selection.busy" @click="playFrom(target())">{{
+        <UiPillButton icon="play" :disabled="loading || !tracks.length" @click="playFrom(target())">{{
           t('play_genre')
         }}</UiPillButton>
       </DetailHeading>
@@ -183,7 +182,6 @@ function playAlbum(item: Album): void {
         :pause-label="t('pause')"
         :title-to="titleTo"
         :artist-to="artistTo"
-        :disabled="selection.busy"
         @play="(index) => latest[index] && playFrom(target(latest[index]))"
         @menu="(index, anchor) => latest[index] && openTrackMenu(latest[index], target(latest[index]), anchor)"
       />
@@ -201,7 +199,6 @@ function playAlbum(item: Album): void {
           :lines="albumLines(item)"
           :open-label="t('open_item', { name: item.title })"
           :play-label="t('play_item', { name: item.title })"
-          :play-disabled="selection.busy"
           @play="playAlbum(item)"
         />
       </CoverRow>
@@ -219,7 +216,6 @@ function playAlbum(item: Album): void {
           :lines="[{ text: t('track_count', { count: artist.trackCount }) }]"
           :open-label="t('open_item', { name: artist.name })"
           :play-label="artist.literal ? t('play_item', { name: artist.name }) : null"
-          :play-disabled="selection.busy"
           @play="playFrom({ kind: 'artist', artist: artist.name })"
         />
       </CoverRow>

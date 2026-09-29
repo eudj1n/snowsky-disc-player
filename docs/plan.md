@@ -1155,9 +1155,19 @@ first, then layout, then style.
       albums), and a change re-reads only the playlists or the favorites
       with the counts, keeping the saved copy in step. Unit tests; emulator
       acceptance adds an album to a playlist this way on stock.
-- [ ] Play, pause and the other actions freeze and lock the controls,
+- [x] Play, pause and the other actions freeze and lock the controls,
       track rows included: make the wait softer while keeping one command
-      at a time and no replay after an uncertain outcome.
+      at a time and no replay after an uncertain outcome. Found: every
+      operation (2.1 s pacing, the send and the readback) disabled the
+      transport, modes, volume, seek, hearts, play buttons and all track
+      rows, and a press meanwhile was refused with "Please wait". Now nothing
+      is disabled: a press while the player works waits in one slot (a newer
+      press takes its place) and runs after the current operation with its
+      own pacing and preflight; it is dropped unsent, with a message, when
+      that operation ended uncertain. Mode changes decide on/off when they
+      run. The player bar shows a thin working line after 300 ms. Unit tests
+      of the slot and a mock browser test (two quick Next presses, controls
+      and rows enabled meanwhile).
 - [ ] Space on the Card page is measured again on every visit without a
       card change or a reconnect: keep the measurement until the card
       changes.

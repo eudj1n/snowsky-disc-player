@@ -17,7 +17,6 @@ import { t } from '../i18n'
 import { albumCover, coverFor } from '../stores/enrichment'
 import { albums, loadRecentlyPlayed, tracks } from '../stores/library'
 import { isPlaying, playback } from '../stores/playback'
-import { selection } from '../stores/selection'
 import { openTrackMenu, ui } from '../stores/ui'
 import { filterBy } from '../domain/search'
 import UiSkeleton from '../ui/UiSkeleton.vue'
@@ -85,7 +84,6 @@ const artistTo = (name: string) => artistRoute(name)
       :pause-label="t('pause')"
       :title-to="titleTo"
       :artist-to="artistTo"
-      :disabled="selection.busy"
       @play="(index) => newTracks[index] && playFrom({ kind: 'library', track: newTracks[index] })"
       @menu="
         (index, anchor) =>
@@ -106,7 +104,6 @@ const artistTo = (name: string) => artistRoute(name)
         :lines="albumLines(album)"
         :open-label="t('open_item', { name: album.title })"
         :play-label="t('play_item', { name: album.title })"
-        :play-disabled="selection.busy"
         @play="playAlbumCard(album)"
       />
     </CoverRow>
@@ -123,7 +120,6 @@ const artistTo = (name: string) => artistRoute(name)
         :pause-label="t('pause')"
         :title-to="titleTo"
         :artist-to="artistTo"
-        :disabled="selection.busy"
         @play="(index) => played[index] && playFrom({ kind: 'library', track: played[index] })"
         @menu="
           (index, anchor) =>

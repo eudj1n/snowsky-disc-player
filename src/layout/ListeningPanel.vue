@@ -17,7 +17,6 @@ import { connection } from '../stores/connection'
 import { selectInQueue } from '../stores/controls'
 import { coverFor } from '../stores/enrichment'
 import { observations } from '../stores/observations'
-import { operation } from '../stores/operation'
 import { isPlaying, playback } from '../stores/playback'
 import { loadQueue, queue } from '../stores/queue'
 import { lyrics } from '../stores/lyrics'
@@ -239,7 +238,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         :current="queue.current"
         :playing="isPlaying"
         :select-label="t('select_in_queue')"
-        :disabled="!player.ready.value || operation.busy || queue.status !== 'ready'"
+        :disabled="!player.ready.value || queue.status !== 'ready'"
         @select="(index) => selectInQueue(queue.items, index)"
       />
     </div>

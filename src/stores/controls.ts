@@ -59,7 +59,17 @@ const RESULT: Record<Outcome, [MessageKey, boolean]> = {
   uncertain: ['result_unconfirmed_the_command_was_not_retried', true],
 }
 
-function report(result: Outcome | 'busy' | 'no-session', quiet = false): void {
+type Waited = 'busy' | 'no-session' | 'superseded' | 'dropped'
+const waited = (result: unknown): result is Waited =>
+  result === 'busy' || result === 'no-session' || result === 'superseded' || result === 'dropped'
+
+function report(result: Outcome | Waited, quiet = false): void {
+  // A newer press took this one's place: it says nothing of its own.
+  if (result === 'superseded') return
+  if (result === 'dropped') {
+    toast('waiting_dropped', true)
+    return
+  }
   if (result === 'busy') {
     toast('please_wait_for_the_current_request')
     return
@@ -89,10 +99,14 @@ export async function transport(action: TransportAction): Promise<void> {
     else toast('remembered_play_first')
     return
   }
-  const result = await run('transport', async (context) => {
-    await context.pace()
-    return transportAction(context, action)
-  })
+  const result = await run(
+    'transport',
+    async (context) => {
+      await context.pace()
+      return transportAction(context, action)
+    },
+    { wait: true },
+  )
   await refreshPlayback()
   // Transport is frequent: only problems get a toast.
   report(result, true)
@@ -107,8 +121,8 @@ export async function transport(action: TransportAction): Promise<void> {
  */
 async function resumeRemembered(kept: Remembered): Promise<void> {
   const outcome = await play(resumeTarget(kept, sourceOfContext(kept.context)))
-  if (outcome === 'busy') {
-    report('busy')
+  if (waited(outcome)) {
+    report(outcome)
     return
   }
   if (outcome !== 'playing') {
@@ -127,10 +141,14 @@ async function resumeRemembered(kept: Remembered): Promise<void> {
 
 export async function changeVolume(value: number): Promise<void> {
   if (!paired()) return
-  const result = await run('volume', async (context) => {
-    await context.pace()
-    return setVolume(context, value)
-  })
+  const result = await run(
+    'volume',
+    async (context) => {
+      await context.pace()
+      return setVolume(context, value)
+    },
+    { wait: true },
+  )
   // Observe the new level before reporting it: a Mute pressed right after the
   // toast must remember this level, not the one it replaced.
   await refreshVolume()
@@ -164,13 +182,16 @@ async function refreshVolume(): Promise<void> {
 
 export async function toggleMode(kind: 'shuffle' | 'repeat'): Promise<void> {
   if (!paired()) return
-  const current = observations.mode
   const on = kind === 'shuffle' ? MODE.random : MODE.repeatList
-  const wanted = current === on ? MODE.listOnce : on
-  const result = await run('mode', async (context) => {
-    await context.pace()
-    return setMode(context, wanted)
-  })
+  const result = await run(
+    'mode',
+    async (context) => {
+      await context.pace()
+      // Decided when it runs: a press waiting behind another mode change toggles its result.
+      return setMode(context, observations.mode === on ? MODE.listOnce : on)
+    },
+    { wait: true },
+  )
   report(result)
 }
 
@@ -179,10 +200,14 @@ export async function toggleFavorite(): Promise<void> {
   const current = playback.current
   if (typeof current.favorite !== 'boolean') return
   const displayed = identityOf(current)
-  const result = await run('favorite', async (context) => {
-    await context.pace()
-    return setFavorite(context, !current.favorite, displayed)
-  })
+  const result = await run(
+    'favorite',
+    async (context) => {
+      await context.pace()
+      return setFavorite(context, !current.favorite, displayed)
+    },
+    { wait: true },
+  )
   report(result)
   await refreshPlayback()
   // The Favorites view and row hearts read the list, not the playing record.
@@ -204,18 +229,22 @@ export async function favoriteTrack(track: {
   if (!paired() || !token) return
   let result
   try {
-    result = await run('favorite', async (context) => {
-      await context.pace()
-      context.guard()
-      context.attempted()
-      return http.favorite(track.id, token)
-    })
+    result = await run(
+      'favorite',
+      async (context) => {
+        await context.pace()
+        context.guard()
+        context.attempted()
+        return http.favorite(track.id, token)
+      },
+      { wait: true },
+    )
   } catch (error) {
     if (error instanceof ScanObserved) toast('closed_scanning', true)
     else toast('result_unconfirmed_the_command_was_not_retried', true)
     return
   }
-  if (result === 'busy' || result === 'no-session') {
+  if (waited(result)) {
     report(result)
     return
   }
@@ -242,11 +271,15 @@ export async function seekTo(seconds: number, displayed: string): Promise<void> 
   const position = timeLabel(positionMs)
   state.pendingSeek = null
   state.seekFeedback = { key: 'seek_sending', position }
-  const result = await run('seek', async (context) => {
-    await context.pace()
-    return seekOnce(context, displayed, playback.current.track?.durationMs ?? null, positionMs)
-  })
-  if (result === 'busy' || result === 'no-session') {
+  const result = await run(
+    'seek',
+    async (context) => {
+      await context.pace()
+      return seekOnce(context, displayed, playback.current.track?.durationMs ?? null, positionMs)
+    },
+    { wait: true },
+  )
+  if (waited(result)) {
     state.seekFeedback = null
     report(result)
     return
@@ -283,10 +316,14 @@ export function reconcileSeek(now = Date.now()): void {
 
 export async function selectInQueue(displayed: readonly CatalogRow[], index: number): Promise<void> {
   if (!paired()) return
-  const result = await run('queue', async (context) => {
-    await context.pace()
-    return selectQueueRow({ ...context, http }, displayed, index)
-  })
+  const result = await run(
+    'queue',
+    async (context) => {
+      await context.pace()
+      return selectQueueRow({ ...context, http }, displayed, index)
+    },
+    { wait: true },
+  )
   report(result)
   await refreshPlayback()
   void loadQueue()

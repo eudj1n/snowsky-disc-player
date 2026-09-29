@@ -364,6 +364,29 @@ test.describe('player controls on the mock', () => {
     await expect(button).not.toHaveAttribute('aria-pressed', before ?? '', { timeout: 15_000 })
   }
 
+  test('keeps the controls usable while the player confirms, and a press meanwhile follows', async ({ page }) => {
+    await english(page)
+    await connectAndPair(page)
+    await page.goto('/#/album/Blue%20Hours/Mira%20Sol')
+    await page.getByRole('button', { name: 'Play Almost Sunday' }).click()
+    const title = page.getByTestId('track-title')
+    await expect(title).toHaveText('Almost Sunday', { timeout: 15_000 })
+    const player = page.getByRole('region', { name: 'Player' })
+    const next = player.getByRole('button', { name: 'Next track' })
+    const working = page.getByTestId('player-working')
+    // Nothing locks while the player confirms: a second press waits its turn (pacing) and follows.
+    await next.click()
+    await expect(working).toBeAttached()
+    await expect(next).toBeEnabled()
+    await expect(page.getByTestId('toggle')).toBeEnabled()
+    await expect(page.getByRole('button', { name: 'Play Window Seat' })).toBeEnabled()
+    await next.click()
+    await expect(title).toHaveText('An Open Door', { timeout: 20_000 })
+    await expect(working).toHaveCount(0, { timeout: 15_000 })
+    await expect(page.getByRole('status').filter({ hasText: 'Please wait' })).toHaveCount(0)
+    await disconnect(page)
+  })
+
   test('volume, modes and favorite are sent once and verified', async ({ page }, info) => {
     await english(page)
     await connectAndPair(page)

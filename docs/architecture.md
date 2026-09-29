@@ -67,7 +67,12 @@ with a fresh request ID followed by a fresh read, uncertain outcomes surfaced
 and never retried, no automatic reconnect.
 
 `src/stores/operation.ts` holds the single operation lease: a second request
-while one runs is refused (`busy`), not queued. Each operation receives the
+while one runs is refused (`busy`), except the player's controls and playing
+from the collection, which wait (2026-09-29). One request waits at most: a
+newer one supersedes it, it starts after the running operation with its own
+pacing and preflight, and it is dropped unsent when that operation ended
+uncertain or failed. Nothing is disabled while an operation runs; the player
+bar shows a thin working line instead. Each operation receives the
 session, the mutation pacer (2.1 s between mutations, counted from connect),
 a scan guard that throws once `a60a`/`a622` scan activity was observed, and an
 `attempted` marker set right before the one send. `src/stores/observations.ts`

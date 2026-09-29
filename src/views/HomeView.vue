@@ -29,7 +29,6 @@ import { history, loadHistory, recentSourcesShown } from '../stores/history'
 import { isDisliked } from '../stores/disliked'
 import { albums, featuredAlbum, tracks } from '../stores/library'
 import { isPinnedAlbum, pins } from '../stores/pins'
-import { selection } from '../stores/selection'
 import { openTrackMenu, ui } from '../stores/ui'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { albumCardRoute, albumLines, artistRoute, countLine } from './captions'
@@ -103,7 +102,6 @@ const heroLines = computed<[string, string]>(() =>
         :lines="albumLines(album)"
         :open-label="t('open_item', { name: album.title })"
         :play-label="t('play_item', { name: album.title })"
-        :play-disabled="selection.busy"
         @play="playAlbumCard(album)"
       />
     </CoverGrid>
@@ -126,7 +124,7 @@ const heroLines = computed<[string, string]>(() =>
         "
         :artist-to="artistRoute"
         :action="t('play_album')"
-        :action-disabled="!featured || selection.busy"
+        :action-disabled="!featured"
         :loading="loading"
         @play="featured && playAlbumAction(featured.title, albumScope(featured))"
       />
@@ -154,7 +152,6 @@ const heroLines = computed<[string, string]>(() =>
           :lines="albumLines(album)"
           :open-label="t('open_item', { name: album.title })"
           :play-label="t('play_item', { name: album.title })"
-          :play-disabled="selection.busy"
           @play="playAlbumCard(album)"
         />
       </CoverRow>
@@ -185,7 +182,6 @@ const heroLines = computed<[string, string]>(() =>
           :cover="tile.cover"
           :open-label="t('open_item', { name: tile.title })"
           :play-label="tile.play ? t('play_item', { name: tile.title }) : null"
-          :play-disabled="selection.busy"
           @play="tile.play && playFrom(tile.play)"
         />
       </div>
@@ -204,7 +200,6 @@ const heroLines = computed<[string, string]>(() =>
           :lines="albumLines(album)"
           :open-label="t('open_item', { name: album.title })"
           :play-label="t('play_item', { name: album.title })"
-          :play-disabled="selection.busy"
           @play="playAlbumCard(album)"
         />
       </CoverRow>
@@ -223,7 +218,6 @@ const heroLines = computed<[string, string]>(() =>
         :lines="albumLines(album)"
         :open-label="t('open_item', { name: album.title })"
         :play-label="t('play_item', { name: album.title })"
-        :play-disabled="selection.busy"
         @play="playAlbumCard(album)"
       />
     </CoverGrid>

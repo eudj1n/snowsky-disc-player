@@ -29,7 +29,6 @@ import { albums, artists, genres, titleGroups, tracks as collection } from '../s
 import { playInBrowser } from '../stores/browser'
 import { connection } from '../stores/connection'
 import { isPinnedAlbum, pins, togglePinAlbum } from '../stores/pins'
-import { selection } from '../stores/selection'
 import { openPlaylistDialog, openTrackMenu, ui } from '../stores/ui'
 import UiCircleButton from '../ui/UiCircleButton.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
@@ -164,7 +163,7 @@ const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums
 const heading = useHeadingAction({
   owns: (track) => tracks.value.some((item) => item.path === track.path),
   label: () => t('play_album'),
-  disabled: () => !tracks.value.length || selection.busy,
+  disabled: () => !tracks.value.length,
   play: () => void playFrom(target()),
 })
 const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:text-ink focus-visible:underline'
@@ -209,7 +208,7 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
             </template>
           </template>
         </template>
-        <UiPillButton icon="play" :disabled="loading || !tracks.length || selection.busy" @click="playFrom(target())">{{
+        <UiPillButton icon="play" :disabled="loading || !tracks.length" @click="playFrom(target())">{{
           t('play_album')
         }}</UiPillButton>
         <UiCircleButton
@@ -303,7 +302,6 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
           :lines="withYear([], albumYear(album, shelfScope(album, shelf.artist)))"
           :open-label="t('open_item', { name: album.title })"
           :play-label="t('play_item', { name: album.title })"
-          :play-disabled="selection.busy"
           @play="playAlbumCard(album, shelfScope(album, shelf.artist))"
         />
       </CoverRow>
@@ -321,7 +319,6 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
           :lines="artist.albumCount ? [{ text: t('album_count', { count: artist.albumCount }) }] : []"
           :open-label="t('open_item', { name: artist.name })"
           :play-label="artist.literal ? t('play_item', { name: artist.name }) : null"
-          :play-disabled="selection.busy"
           @play="playFrom({ kind: 'artist', artist: artist.name })"
         />
       </CoverRow>

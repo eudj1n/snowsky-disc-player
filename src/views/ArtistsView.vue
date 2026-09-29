@@ -11,7 +11,6 @@ import { artistPinnedAt, isPinnedArtist, pinnedFirst } from '../stores/pins'
 import { ui } from '../stores/ui'
 import { artistRoute, countLine } from './captions'
 import { playFrom } from './playAlbum'
-import { selection } from '../stores/selection'
 import CollectionGate from './CollectionGate.vue'
 
 const searching = computed(() => ui.query.trim() !== '')
@@ -46,7 +45,6 @@ const items = computed(() =>
         :pinned-label="isPinnedArtist(artist.name) ? t('pinned_mark') : null"
         :open-label="t('open_item', { name: artist.name })"
         :play-label="artist.literal ? t('play_item', { name: artist.name }) : null"
-        :play-disabled="selection.busy"
         @play="playFrom({ kind: 'artist', artist: artist.name })"
       />
     </CoverGrid>

@@ -26,7 +26,6 @@ import { history, loadHistory } from '../stores/history'
 import { albums, artists, tracks } from '../stores/library'
 import { isPinnedArtist, pins, togglePinArtist } from '../stores/pins'
 import { isPlaying, playback } from '../stores/playback'
-import { selection } from '../stores/selection'
 import { openTrackMenu, ui } from '../stores/ui'
 import UiCircleButton from '../ui/UiCircleButton.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
@@ -69,7 +68,7 @@ const playable = computed(() => artists.value.some((artist) => artist.name === n
 const heading = useHeadingAction({
   owns: (track) => credits(track.artist, name.value),
   label: () => t('play_item', { name: creditLabel(name.value) }),
-  disabled: () => selection.busy,
+  disabled: () => false,
   play: () => void playFrom({ kind: 'artist', artist: name.value }),
 })
 /** The artist's most played tracks (each at most once), from the service's play history. */
@@ -126,7 +125,7 @@ function lines(album: Album) {
           v-if="playable"
           icon="play"
           data-testid="play-artist"
-          :disabled="loading || selection.busy"
+          :disabled="loading"
           @click="playFrom({ kind: 'artist', artist: name })"
           >{{ t('play_artist') }}</UiPillButton
         >
@@ -158,7 +157,6 @@ function lines(album: Album) {
         :title-to="hotTitleTo"
         :subtitle-of="hotSubtitle"
         :artist-to="artistRoute"
-        :disabled="selection.busy"
         @play="(index) => hot[index] && playFrom(hotTarget(hot[index]))"
         @menu="(index, anchor) => hot[index] && openTrackMenu(hot[index], hotTarget(hot[index]), anchor)"
       />
@@ -182,7 +180,6 @@ function lines(album: Album) {
             :lines="lines(album)"
             :open-label="t('open_item', { name: album.title })"
             :play-label="t('play_item', { name: album.title })"
-            :play-disabled="selection.busy"
             @play="playAlbumCard(album, scopeOf(album))"
           />
         </CoverGrid>

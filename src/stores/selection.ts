@@ -7,10 +7,15 @@ import { refreshPlayback } from './playback'
 import { loadQueue } from './queue'
 
 export type { SelectionOutcome, SelectionTarget }
-/** Views disable playback buttons while any device operation runs. */
+/** The running device operation, for views that show it. */
 export const selection = operation
 
-export async function play(target: SelectionTarget): Promise<SelectionOutcome | 'busy'> {
+/**
+ * Plays a source. A request made while another operation runs waits for it
+ * (one slot, the newest request wins; owner, 2026-09-29), so rows and play
+ * buttons stay usable while the player confirms.
+ */
+export async function play(target: SelectionTarget): Promise<SelectionOutcome | 'busy' | 'superseded' | 'dropped'> {
   const code =
     target.kind === 'folder'
       ? target.file === undefined
@@ -21,12 +26,16 @@ export async function play(target: SelectionTarget): Promise<SelectionOutcome | 
         : '0100'
   const entry = commandCatalog()?.records[code]
   if (!pairing.paired || connection.identity?.compatible !== true || entry?.kind !== 'mutation') return 'unavailable'
-  const outcome = await run('selection', async (context) => {
-    await context.pace()
-    return selectSource({ ...context, http, timeoutMs: entry.timeout_ms }, target)
-  })
+  const outcome = await run(
+    'selection',
+    async (context) => {
+      await context.pace()
+      return selectSource({ ...context, http, timeoutMs: entry.timeout_ms }, target)
+    },
+    { wait: true },
+  )
   if (outcome === 'no-session') return 'unavailable'
-  if (outcome === 'busy') return 'busy'
+  if (outcome === 'busy' || outcome === 'superseded' || outcome === 'dropped') return outcome
   await refreshPlayback()
   if (outcome === 'playing') void loadQueue()
   return outcome

@@ -15,7 +15,6 @@ import { playInBrowser } from '../stores/browser'
 import { connection } from '../stores/connection'
 import { library, trackByPath } from '../stores/library'
 import { disliked, isDisliked, toggleDislike } from '../stores/disliked'
-import { selection } from '../stores/selection'
 import { closeTrackMenu, openPlaylistDialog, ui } from '../stores/ui'
 import { backdropDismissal, trackOpen } from '../ui/dialogs'
 import UiIcon from '../ui/UiIcon.vue'
@@ -40,7 +39,7 @@ const items = computed<{ id: string; icon: IconName; label: string; enabled: boo
     id: 'play',
     icon: 'play',
     label: t('play_label'),
-    enabled: menu.value?.play != null && !selection.busy && onCard.value,
+    enabled: menu.value?.play != null && onCard.value,
   },
   {
     id: 'add',

@@ -264,6 +264,7 @@ export const en = {
   selection_ambiguous: 'This track appears more than once on DISC, so it cannot be selected safely.',
   selection_unavailable: 'Connect and pair this browser to play from the collection.',
   please_wait_for_the_current_request: 'Please wait for the current request.',
+  waiting_dropped: 'Not sent: the command before it has an unconfirmed result.',
   result_unconfirmed_the_command_was_not_retried: 'Result unconfirmed. The command was not retried.',
   pair_to_control: "Pair this browser with the player's serial number to control playback.",
 

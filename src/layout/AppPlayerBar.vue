@@ -2,6 +2,8 @@
 /**
  * Reference bottom player: current track and favorite, transport, modes and
  * timeline, output and volume, queue. Shown only while a track is observed.
+ * While the player carries out a command, a thin line runs along its top
+ * edge; nothing is locked (a press meanwhile waits its turn; 2026-09-29).
  */
 import { computed } from 'vue'
 import NowPlayingSummary from '../components/player/NowPlayingSummary.vue'
@@ -11,6 +13,7 @@ import { t } from '../i18n'
 import { connection } from '../stores/connection'
 import { coverFor } from '../stores/enrichment'
 import { observations } from '../stores/observations'
+import { operation } from '../stores/operation'
 import { playback } from '../stores/playback'
 import { togglePanel, ui } from '../stores/ui'
 import { creditArtists, creditLabel } from '../domain/artist'
@@ -52,6 +55,12 @@ const labels = computed(() => ({
     :aria-label="t('player')"
     class="fixed inset-x-0 bottom-0 z-30 grid min-h-(--player) grid-cols-[minmax(230px,1fr)_minmax(270px,1.2fr)_minmax(210px,1fr)] items-center gap-25 border-t border-line bg-player-bg px-28 py-15 backdrop-blur-[22px] compact:grid-cols-[1fr_1fr_.65fr] compact:gap-15 compact:px-20 rail:grid-cols-[1fr_1fr_32px] rail:gap-14 phone:bottom-58 phone:min-h-78 phone:grid-cols-[1fr_78px_28px] phone:gap-10 phone:px-14 phone:pt-11 phone:pb-14"
   >
+    <span
+      v-if="operation.busy"
+      aria-hidden="true"
+      data-testid="player-working"
+      class="player-working pointer-events-none absolute inset-x-0 -top-px h-2 overflow-hidden"
+    />
     <NowPlayingSummary
       :open-label="t('open_now_playing')"
       :expanded="ui.panel === 'now'"
