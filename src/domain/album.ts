@@ -148,6 +148,36 @@ export function albumScope(album: Album): string | null {
   return album.trackArtists.length === 1 ? (album.trackArtists[0] ?? null) : null
 }
 
+/** Stock's names for missing tags (strings of the V2.57 mq_player), compared without case. */
+const STOCK_UNKNOWN = new Set(['unknown artist', 'unknown album', 'unknown genre'])
+export const stockUnknown = (name: string | null | undefined): boolean =>
+  !name || STOCK_UNKNOWN.has(name.trim().toLowerCase())
+
+export type CoverState = 'found' | 'missing' | 'unknown'
+
+/**
+ * The Home hero's album (owner, 2026-09-29): never one named by stock's
+ * placeholders (the title or the lead artist) and never one known to have no
+ * cover; among albums with a known cover when there are any. The previous
+ * choice stays while it qualifies, so the hero does not change as covers
+ * arrive.
+ */
+export function featuredChoice(
+  albums: readonly Album[],
+  cover: (album: Album) => CoverState,
+  seed: number,
+  previous: string | null,
+): Album | null {
+  const named = albums.filter(
+    (album) => !stockUnknown(album.title) && !stockUnknown(album.artists[0]) && cover(album) !== 'missing',
+  )
+  const kept = previous === null ? undefined : named.find((album) => album.key === previous)
+  if (kept) return kept
+  const covered = named.filter((album) => cover(album) === 'found')
+  const pool = covered.length ? covered : named
+  return pool[Math.floor(seed * pool.length)] ?? null
+}
+
 /** A title group's tracks, narrowed to one literal track artist when scoped. */
 export function albumTracks<T extends LibraryTrack>(tracks: readonly T[], title: string, artist: string | null): T[] {
   return tracks.filter((track) => track.album === title && (artist === null || track.artist === artist))

@@ -8,7 +8,7 @@
  * unchanged, the page opens from the cache without paging the player.
  */
 import { computed, reactive, readonly, toRaw } from 'vue'
-import { groupAlbums, groupReleases } from '../domain/album'
+import { albumScope, featuredChoice, groupAlbums, groupReleases } from '../domain/album'
 import { groupArtists } from '../domain/artist'
 import { groupGenres } from '../domain/genre'
 import { librarySignature, type LibrarySummary } from '../domain/library'
@@ -20,7 +20,7 @@ import { adoptBattery, adoptOnlineOptions } from './playerOptions'
 import { adoptPlayerLanguage } from '../i18n'
 import { cacheGet, cacheSet } from '../lib/idb'
 import { http } from './connection'
-import { enrichment, wantDurations } from './enrichment'
+import { albumCoverState, enrichment, wantDurations } from './enrichment'
 
 /** Same bound as the reference Library synchronization. */
 export const MAX_TRACKS = 10_000
@@ -85,11 +85,13 @@ export const trackByPath = computed(
   () => new Map(state.tracks.flatMap((track) => (track.path ? [[track.path, track] as const] : []))),
 )
 
-/** One album chosen at random per page load for the Home hero. */
+/** One album chosen at random per page load for the Home hero: named and with a cover (domain featuredChoice). */
 const seed = Math.random()
+let featuredKey: string | null = null
 export const featuredAlbum = computed(() => {
-  const list = albums.value
-  return list.length ? (list[Math.floor(seed * list.length)] ?? null) : null
+  const chosen = featuredChoice(albums.value, (album) => albumCoverState(album, albumScope(album)), seed, featuredKey)
+  featuredKey = chosen?.key ?? null
+  return chosen
 })
 
 async function pages(query: string, params: Record<string, number> = {}): Promise<LibraryTrack[]> {

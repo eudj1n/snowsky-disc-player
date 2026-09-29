@@ -1184,8 +1184,14 @@ first, then layout, then style.
       filled the grid with as many 145px columns as fit; a column is now at
       least a quarter of the grid (less the widest gaps), so 4 at most and
       fewer in a narrow window. Mock browser test at 1920 and 1280 px.
-- [ ] The Home hero offers no unknown artist or unknown album and no album
-      without a cover.
+- [x] The Home hero offers no unknown artist or unknown album and no album
+      without a cover. Stock names missing tags "Unknown Artist", "Unknown
+      album" and "Unknown genre" (strings of the V2.57 `mq_player`); the hero
+      leaves out albums so named (title or lead artist) and albums known to
+      have no cover, and picks among albums with a known cover when this
+      browser knows any. Covers are judged from what this browser already
+      knows, so choosing reads nothing; the choice stays while it qualifies,
+      so the hero does not change as covers arrive. Unit tests.
 - [ ] Karaoke without word timings highlights the current line only, with
       no sweep across its words.
 - [ ] The heart sits before the duration in track tables, so the gap reads

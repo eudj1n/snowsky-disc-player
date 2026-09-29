@@ -324,6 +324,23 @@ export function albumCover(
   return cover
 }
 
+/**
+ * Whether a release's cover is known, without reading anything: found before
+ * (kept in this browser), recently missing, or not asked yet.
+ */
+export function albumCoverState(
+  album: { title: string; trackArtists: readonly string[] },
+  artist: string | null = null,
+): 'found' | 'missing' | 'unknown' {
+  const member = artist
+    ? (state.scopedCovers[scopeKey(album.title, artist)] ??
+      (album.trackArtists.length <= 1 ? state.albumCovers[album.title] : undefined))
+    : state.albumCovers[album.title]
+  if (member) return 'found'
+  const key = artist ? scopeKey(album.title, artist) : JSON.stringify([album.title])
+  return recent(noCover[key]) ? 'missing' : 'unknown'
+}
+
 function rememberDuration(track: Track): void {
   // A CUE track's duration belongs to the track, not to the file it shares.
   if (!track.path || track.cue || !track.durationMs || state.durations[track.path] === track.durationMs) return
