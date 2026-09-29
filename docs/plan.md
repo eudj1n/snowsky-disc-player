@@ -1204,9 +1204,11 @@ first, then layout, then style.
       in code as custom properties, so the heart column needs no set of
       classes of its own. Mock browser test of its place at three desktop
       widths and on a phone.
-- [ ] A genre page names its number of artists in the heading, and its
+- [x] A genre page names its number of artists in the heading, and its
       Artists shelf counts albums, not tracks (inside, the artist shows
-      albums).
+      albums). The heading reads "albums · artists · tracks"; an artist's
+      card counts all its albums, the number its page shows (tracks only
+      for an artist without albums). Mock browser test.
 - [ ] The Hi-Res badge: square corners, black text on yellow, after the
       Hi-Res Audio mark.
 - [ ] Play album, Play artist and Play genre: a crisper label and icon, and

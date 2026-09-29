@@ -3,7 +3,9 @@
  * One genre, like New: its latest tracks as tiles (the whole list is Tracks
  * filtered by the genre), its albums as a shelf and its artists below.
  * Playback stays in the stock genre scope (reference genre playback); albums
- * that also hold other genres open narrowed to this one. Artists leave the
+ * that also hold other genres open narrowed to this one. The heading counts
+ * albums, artists and tracks; an artist's card counts its albums, as its page
+ * shows them (owner, 2026-09-29). Artists leave the
  * genre scope, as in the reference.
  */
 import { computed } from 'vue'
@@ -21,7 +23,7 @@ import { recentlyAdded, type Track } from '../domain/track'
 import type { SelectionTarget, TrackKey } from '../gateway/selection'
 import { t } from '../i18n'
 import { albumCover, coverFor } from '../stores/enrichment'
-import { albums, genres, titleGroups, tracks as collection } from '../stores/library'
+import { albums, artists as allArtists, genres, titleGroups, tracks as collection } from '../stores/library'
 import { isPlaying, playback } from '../stores/playback'
 import { openTrackMenu, ui } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
@@ -58,8 +60,21 @@ const shelf = computed(() =>
     ...album.artists,
   ]),
 )
-const artists = computed(() =>
-  filterBy(genreArtists(collection.value, name.value), ui.query, (artist) => [artist.name]),
+const genreArtistList = computed(() => genreArtists(collection.value, name.value))
+const artists = computed(() => filterBy(genreArtistList.value, ui.query, (artist) => [artist.name]))
+/** An artist's albums as its page shows them (all of them, owner 2026-09-29), else its tracks here. */
+const albumCounts = computed(() => new Map(allArtists.value.map((artist) => [artist.name, artist.albumCount])))
+const artistLine = (artist: { name: string; trackCount: number }) => {
+  const albums = albumCounts.value.get(artist.name) ?? 0
+  return albums ? t('album_count', { count: albums }) : t('track_count', { count: artist.trackCount })
+}
+/** Albums, artists and tracks of the genre, for its heading. */
+const facts = computed(() =>
+  [
+    t('album_count', { count: genre.value?.albums.length ?? 0 }),
+    t('artist_count', { count: genreArtistList.value.length }),
+    t('track_count', { count: tracks.value.length }),
+  ].join(' · '),
 )
 const count = computed(() => latest.value.length + shelf.value.length + artists.value.length)
 const current = computed(() => playback.current.track?.path ?? null)
@@ -131,16 +146,10 @@ function playAlbum(item: Album): void {
         :sticky-action="loading ? null : heading.action.value"
         @sticky="heading.run"
       >
-        <template #sticky
-          >{{ t('album_count', { count: genre?.albums.length ?? 0 }) }} ·
-          {{ t('track_count', { count: tracks.length }) }}</template
-        >
+        <template #sticky>{{ facts }}</template>
         <template #meta>
           <span v-if="loading" class="inline-block h-10 w-140 animate-pulse rounded-4 bg-soft align-middle" />
-          <template v-else
-            >{{ t('album_count', { count: genre?.albums.length ?? 0 }) }} ·
-            {{ t('track_count', { count: tracks.length }) }}</template
-          >
+          <template v-else>{{ facts }}</template>
         </template>
         <UiPillButton icon="play" :disabled="loading || !tracks.length" @click="playFrom(target())">{{
           t('play_genre')
@@ -213,7 +222,7 @@ function playAlbum(item: Album): void {
           artist
           :title="artist.name"
           :to="artistRoute(artist.name)"
-          :lines="[{ text: t('track_count', { count: artist.trackCount }) }]"
+          :lines="[{ text: artistLine(artist) }]"
           :open-label="t('open_item', { name: artist.name })"
           :play-label="artist.literal ? t('play_item', { name: artist.name }) : null"
           @play="playFrom({ kind: 'artist', artist: artist.name })"

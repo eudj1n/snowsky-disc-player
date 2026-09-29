@@ -81,6 +81,12 @@ export const ru: Messages = {
   open_item: 'Открыть {name}',
   track_count: { one: '{count} трек', few: '{count} трека', many: '{count} треков', other: '{count} трека' },
   album_count: { one: '{count} альбом', few: '{count} альбома', many: '{count} альбомов', other: '{count} альбома' },
+  artist_count: {
+    one: '{count} исполнитель',
+    few: '{count} исполнителя',
+    many: '{count} исполнителей',
+    other: '{count} исполнителя',
+  },
   more_by: 'Другие альбомы: {artist}',
   on_this_album: 'На этом альбоме',
   sidebar_collapse: 'Свернуть боковую панель',

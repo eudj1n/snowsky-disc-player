@@ -177,6 +177,11 @@ test('browses genres, narrows mixed albums and filters tracks by genre', async (
   await expect(page).toHaveURL(/#\/genre\/Jazz$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Jazz' })).toBeVisible()
   await expect(page.getByRole('list', { name: 'Artists' }).getByRole('heading', { name: 'Mira Sol' })).toBeVisible()
+  // The heading counts the genre's artists too; an artist's card counts albums, as its page shows them.
+  await expect(page.getByRole('main')).toContainText(/\d+ albums? · \d+ artists? · \d+ tracks?/)
+  await expect(
+    page.getByRole('list', { name: 'Artists' }).getByRole('listitem').filter({ hasText: 'Mira Sol' }),
+  ).toContainText(/\d+ albums?$/)
   await page
     .getByRole('list', { name: 'Albums' })
     .getByRole('heading', { name: 'Velvet Season' })

@@ -81,6 +81,7 @@ export const en = {
   open_item: 'Open {name}',
   track_count: { one: '{count} track', other: '{count} tracks' },
   album_count: { one: '{count} album', other: '{count} albums' },
+  artist_count: { one: '{count} artist', other: '{count} artists' },
   more_by: 'More by {artist}',
   on_this_album: 'On this album',
   sidebar_collapse: 'Collapse sidebar',
