@@ -9,20 +9,13 @@
  * technology. The letters leave tiny sleeves (list rows) to the colour alone.
  */
 import { computed } from 'vue'
-import { sleeve, SLEEVE_INK, SLEEVE_TONES } from '../../domain/artwork'
+import { sleeve } from '../../domain/artwork'
+import SleeveRecord from './SleeveRecord.vue'
+import { sleeveColours } from './sleeveColours'
 
 const props = withDefaults(defineProps<{ title: string | null; artist?: boolean }>(), { artist: false })
-const shape = computed(() => sleeve(props.title))
-const colours = computed(() => {
-  const label = SLEEVE_TONES[shape.value.palette] ?? SLEEVE_TONES[0]
-  return {
-    '--label': label,
-    '--label-ink': SLEEVE_INK[shape.value.palette] ?? '#fff',
-    // A monogram: the colour faint over the theme's surface, its letters in the colour.
-    '--tint': `color-mix(in srgb, ${label} 22%, var(--soft))`,
-    '--tint-ink': `color-mix(in srgb, ${label} 78%, var(--ink))`,
-  }
-})
+const letters = computed(() => sleeve(props.title).letters)
+const colours = computed(() => sleeveColours(props.title))
 </script>
 
 <template>
@@ -36,15 +29,8 @@ const colours = computed(() => {
     <span
       v-if="artist"
       class="text-[30cqw] leading-none font-[700] tracking-[-0.04em] text-(--tint-ink) @max-[48px]:hidden"
-      >{{ shape.letters }}</span
+      >{{ letters }}</span
     >
-    <span v-else class="relative grid size-[84%] place-items-center rounded-full bg-(--vinyl)">
-      <span class="absolute inset-[9%] rounded-full shadow-[0_0_0_1px_var(--groove)]" />
-      <span class="absolute inset-[20%] rounded-full shadow-[0_0_0_1px_var(--groove)]" />
-      <span
-        class="relative grid size-[40%] place-items-center rounded-full bg-(--label) text-[11cqw] leading-none font-[700] tracking-[-0.02em] text-(--label-ink)"
-        ><span class="@max-[64px]:hidden">{{ shape.letters }}</span></span
-      >
-    </span>
+    <SleeveRecord v-else :letters="letters" class="relative h-[84%]" />
   </div>
 </template>

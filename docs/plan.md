@@ -1375,6 +1375,13 @@ started:
       letters (left out on list-row sizes); artists a round monogram, the
       colour faint over the surface and the letters in it. Same hash and
       palette count as before; the visualizer's label lost its spindle too.
+      Genre tiles (owner, 2026-09-29, after the flat records squashed into
+      ovals on the wide tiles: an album is a record, a genre a collection):
+      the genre's colour faint over the surface, two of its albums' records,
+      a larger and a smaller one, against the top edge, their labels the
+      albums' covers (else their colours), turning a little on hover; the
+      name and counts across the band below, never cut. Records keep their
+      square in any box. Text on light tints (sand, moss) takes more ink.
 - [x] The sidebar toggle sits where the sidebar's edge meets the top bar's
       bottom line (owner, 2026-09-29), at the top of the page; checked in the
       mock browser test to a pixel.

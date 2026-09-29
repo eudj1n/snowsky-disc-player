@@ -186,7 +186,15 @@ test('browses genres, narrows mixed albums and filters tracks by genre', async (
   test.skip(external, 'Needs the mock collection')
   await english(page)
   await page.goto('/#/genres')
-  await page.getByRole('link', { name: /^Jazz\b/ }).click()
+  // A genre tile shows two of its albums as records, round whatever the tile's shape.
+  const jazz = page.getByRole('link', { name: /^Jazz\b/ })
+  const records = jazz.locator('[aria-hidden=true]')
+  await expect(records).toHaveCount(2)
+  for (const record of await records.all()) {
+    const box = await record.boundingBox()
+    expect(box && Math.abs(box.width - box.height)).toBeLessThanOrEqual(1)
+  }
+  await jazz.click()
   await expect(page).toHaveURL(/#\/genre\/Jazz$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Jazz' })).toBeVisible()
   await expect(page.getByRole('list', { name: 'Artists' }).getByRole('heading', { name: 'Mira Sol' })).toBeVisible()
