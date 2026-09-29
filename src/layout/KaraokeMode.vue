@@ -2,9 +2,10 @@
 /**
  * Karaoke (owner, round 16): the current track's lyrics full screen in a large
  * font, at most seven lines (two sung, the current one, four to come). The
- * current line fills as it is sung: word by word (or syllable by syllable)
- * where the LRC has word timings, otherwise across the line until the next
- * one. Plain lyrics read large without a highlight. Space and the arrows keep
+ * current line fills as it is sung, word by word (or syllable by syllable),
+ * where the LRC has word timings; a line without them is highlighted whole
+ * (owner, 2026-09-29: no sweep across words it does not time). Plain lyrics
+ * read large without a highlight. Space and the arrows keep
  * their shortcuts; Esc, the close button or leaving full screen close it.
  * Controls and the pointer hide while the listener only listens.
  */
@@ -78,7 +79,7 @@ const nextMs = computed(() => {
   }
   return null
 })
-/** The current line as parts with how much of each is sung (words, or the whole line). */
+/** The current line as parts with how much of each is sung (timed words, or the whole line at once). */
 const sung = computed(() => {
   const line = lines.value[active.value]
   if (!line) return []
@@ -86,7 +87,7 @@ const sung = computed(() => {
     const progress = wordProgress(line, nextMs.value, position.value)
     return line.words.map((word, index) => ({ text: word.text, progress: progress[index] ?? 0 }))
   }
-  return [{ text: line.text, progress: lineProgress(line, nextMs.value, position.value) }]
+  return [{ text: line.text, progress: 1 }]
 })
 /*
  * Pauses (an empty line, or a note or dots in the LRC) show three dots that

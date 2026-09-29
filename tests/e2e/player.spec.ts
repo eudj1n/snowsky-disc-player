@@ -1144,6 +1144,31 @@ test('offers the tones of the theme in effect and keeps the chosen palettes', as
   await expect(html).not.toHaveAttribute('data-light-palette', /.+/)
 })
 
+test('highlights a karaoke line without word timings whole, without a sweep', async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/album/Inner%20Space/Forma')
+  const title = page.getByTestId('track-title')
+  // The mock is shared by both projects: start the track from its beginning.
+  if ((await title.count()) && (await title.textContent())?.trim() === 'Weightless') {
+    await page.getByRole('button', { name: 'Play Orbit' }).click()
+    await expect(title).toHaveText('Orbit', { timeout: 15_000 })
+  }
+  await page.getByRole('button', { name: 'Play Weightless' }).click()
+  await expect(title).toHaveText('Weightless', { timeout: 15_000 })
+  await page.getByRole('button', { name: 'Lyrics' }).filter({ visible: true }).first().click()
+  await page.getByRole('complementary', { name: 'Player view' }).getByTestId('karaoke-open').click()
+  const current = page.getByTestId('karaoke').locator('[aria-current=true]')
+  await expect(current).toHaveText('Weightless, first line', { timeout: 15_000 })
+  // Five seconds long, it is lit whole from its start: one part, fully sung.
+  await expect(current.locator('span')).toHaveCount(1)
+  await expect(current.locator('span')).toHaveAttribute('data-progress', '1.00')
+  await page.keyboard.press('Escape')
+  await disconnect(page)
+})
+
 test('sings along in karaoke: word timings sweep the current line and at most seven lines show', async ({ page }) => {
   test.skip(external, 'Needs the mock collection')
   test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
