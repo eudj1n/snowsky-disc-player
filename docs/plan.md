@@ -1432,6 +1432,40 @@ started:
       the next line. Both share `pauseDots` in the lyrics domain. Unit test
       and the karaoke mock browser test.
 
+## Owner idea (2026-09-29): switch playback between the player and this browser
+
+Not started (owner: a question to think through first). The bar's "ON DISC"
+becomes a switch, DISC or this browser, in place of playing an album in the
+browser on its own.
+
+- [ ] Player to browser: read the current track, its queue position (`a202`
+      `pos_id`) and the queue; pause with confirmation (`pauseIfPlaying`) and
+      read the position again; the browser takes the queue's paths (a CUE
+      track from its offset) and starts there through the audio route. The
+      player keeps its queue, paused. About 1 to 2 s of silence.
+- [ ] Browser to player: (A) the queue taken from the player, only moved
+      within: read the player's queue, compare its hash with the snapshot,
+      select the position (`0100 <pos> 0000`, as a queue row does) and seek;
+      (B) a stock context played in the browser (album, artist, genre,
+      playlist, favorites, folder): play that context on the player from the
+      track through the guarded selections and seek. A mixed queue of its own
+      is out: stock cannot build one, so the browser does not offer one
+      either (owner, 2026-09-29), and no M3U list is needed.
+- [ ] Every step confirmed by a read; an unconfirmed pause never starts the
+      browser; no replay; the player started by hand while the browser plays
+      pauses the browser. The player starts a selected track from its
+      beginning and then seeks (whole seconds), so a short start is heard;
+      muting it around the switch is out (two more commands, and an
+      unconfirmed restore would leave it silent).
+- [ ] Plays in this browser go into the play history (owner, 2026-09-29):
+      the observer sees only the player's open files, so the page applies its
+      rule (30 s, or half with at least 5 s; a CUE image per track) and sends
+      each play to a history route of the next image (see below).
+- [ ] First, research on the guest (service plan): the queue over a long
+      pause, sleep and a restart with memory play; `0100` on the current
+      queue after a pause; a seek right after a selection (delay, what is
+      heard).
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
@@ -1507,6 +1541,10 @@ image; card-only items (catalog or query additions) are marked as such.
       `"history": true`. The diagnostics should report a failed write (and
       a card too full to write), so the page can say why Recently played
       stands still. Needs a new image.
+- [ ] **Record plays in this browser in the play history** (owner,
+      2026-09-29, with the player/browser switch): the observer never sees
+      files the audio route serves. A history write route with the SN, a
+      fresh request ID and pacing (see the service plan). Needs a new image.
 
 ## Later
 
