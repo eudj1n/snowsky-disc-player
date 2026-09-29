@@ -610,7 +610,9 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
       playback added no rows) and so does the owner's player (empty on
       2026-09-25). The shelf and the order stay hidden until another source
       of history exists.
-- [ ] Our own play history (deferred by the owner, 2026-09-26): the page
+- [x] (Done with combined-007/008: the service's observer records plays with
+      their context on the card; the shelves use it.) Our own play history
+      (deferred by the owner, 2026-09-26): the page
       recording the plays it observes (30 s or half the track, this browser
       only), a service-side recorder in the next image, or both. The shelf and
       the order are built and stay hidden until then.
@@ -656,7 +658,8 @@ artist keeps only the first. Accepted on the V2.57 guest (14 desktop tests).
       this page). A recorder can store each play as track + context + time +
       time listened, so "Recently played" can list what the listener started
       (album, artist, genre, playlist) and "Most played" can count tracks.
-- [ ] Contextual "Recently played" with the next service image (owner,
+- [x] (Done with combined-007/008, checked by the owner 2026-09-27.)
+      Contextual "Recently played" with the next service image (owner,
       2026-09-26): what the listener started, not loose tracks, and no mix
       of card shapes. How others do it: Apple Music's Recently Played lists
       only started albums, playlists and stations, with a separate track
@@ -770,7 +773,8 @@ All of it degrades to the earlier behavior on images without the new routes
 - [x] MP3 and AAC details through the media route: years, discs, covers and
       lyrics as for FLAC; the album quality label uses the media bitrate
       ("MP3 320 kbps").
-- [ ] Service playlists (card-only, owner liked the idea): a queue of one's
+- [x] (Superseded 2026-09-29: a queue of one's own is an internal M3U list
+      of combined-009.) Service playlists (card-only, owner liked the idea): a queue of one's
       own kept as a managed stock playlist that the page fills and starts;
       additions reach playback when it is started again. Design to be agreed.
 - Research first: live queue edits (see the service plan).
@@ -823,7 +827,9 @@ recorded for later.
        and the emulator acceptance through the MIPS service (21 desktop tests
        passed, the new one measuring every guest file); screenshots in light,
        dark and on a phone.
-2. [ ] Smart playlists kept as managed stock playlists (the earlier "service
+2. [x] (Superseded 2026-09-29: automatic playlists are external M3U lists of
+       combined-009, shown and played by the player itself.) Smart playlists
+       kept as managed stock playlists (the earlier "service
        playlists"): by genre, decade (tag years), most played, not played for a
        while, recently added; the page creates and refreshes them with the
        admitted playlist routes and never touches the owner's own lists.
@@ -859,7 +865,8 @@ recorded for later.
        temperature and cycles in a tooltip; a "not resampled" mark when the
        output rate matches the file; the upload bound (1 GiB in the catalog,
        stock allows 2 GiB − 1).
-8. [ ] Pinned albums and pinned artists (owner): keep chosen albums and
+8. [x] (Done: pins on the card store, 2026-09-28.) Pinned albums and pinned
+       artists (owner): keep chosen albums and
        artists at hand, for example at the top of Home and of their lists.
        Where pins live (this browser, or the card so every browser shares
        them) to be decided.
@@ -1275,7 +1282,8 @@ Without a new image (card-only, can come first):
       (today's, the smallest), 115 % and 130 %, scaling the whole interface
       (CSS `zoom`, sizes are in pixels), for TV browsers with a remote; check
       arrow-key navigation and a clearly visible focus ring there.
-- [ ] Add a cover or an LRC where a track or an album has none, through the
+- [x] (Done 2026-09-29: covers from Cover Art Archive and lyrics from LRCLIB
+      saved beside the tracks.) Add a cover or an LRC where a track or an album has none, through the
       existing upload route (it admits those names and never overwrites).
 
 ## Owner's polishing notes (2026-09-29), card-only
@@ -1461,7 +1469,8 @@ browser on its own.
       the observer sees only the player's open files, so the page applies its
       rule (30 s, or half with at least 5 s; a CUE image per track) and sends
       each play to a history route of the next image (see below).
-- [ ] First, research on the guest (service plan): the queue over a long
+- [x] (Done 2026-09-29, service `docs/m3u.md`; the player powers off after
+      its timer only on battery, owner.) First, research on the guest (service plan): the queue over a long
       pause, sleep and a restart with memory play; `0100` on the current
       queue after a pause; a seek right after a selection (delay, what is
       heard).
@@ -1519,7 +1528,8 @@ image; card-only items (catalog or query additions) are marked as such.
       and the current-track unlike (`0104`) removed the row again. Not
       checked: the player's own favorites screen (it reads the same table)
       and a write racing stock's own writes.
-- [ ] Favorite any track through the service (next image, needs the owner's
+- [x] (Done in combined-007, `favorite_add`.) Favorite any track through the
+      service (next image, needs the owner's
       decision): one reviewed data-level mutation that runs the stock
       screen's own statement for a SONG.ID (and its delete by MY_LOVE.ID),
       under the usual mutation guards, refused during scans, confirmed by
@@ -1527,7 +1537,8 @@ image; card-only items (catalog or query additions) are marked as such.
       stock database.
 - [ ] _(card-only)_ Revisit the upload bound: the catalog allows 1 GiB per
       file, the reference 2 GiB − 1; the UI uses the catalog value.
-- [ ] **Serve the page's files ahead of media reads.** Found on the guest
+- [x] (Combined-009: eight workers.) **Serve the page's files ahead of media
+      reads.** Found on the guest
       (2026-09-29): during acceptance a lazily loaded view (a JavaScript
       chunk of the release) stayed unanswered for over five seconds while
       the gateway's few workers were busy with media reads and the session,
@@ -1535,7 +1546,8 @@ image; card-only items (catalog or query additions) are marked as such.
       a separate lane for static files; the owner's player may show the
       same under load (compare the ERR_CONTENT_LENGTH_MISMATCH seen on
       2026-09-27). Needs a new image.
-- [ ] **Say when the play history cannot be written.** Found on the guest
+- [x] (Combined-009: `historyWrites` and the diagnostics' `writes`.) **Say
+      when the play history cannot be written.** Found on the guest
       (2026-09-29): its 38 MB card filled up and the service silently
       recorded no plays for an hour while `/api/health` still said
       `"history": true`. The diagnostics should report a failed write (and
