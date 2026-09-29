@@ -1077,6 +1077,17 @@ plus macOS leftovers on the Card page. The page's part:
       changes, seeks and pauses). Known cost: once opened, the page's audio
       plays through the Web Audio graph, which a phone may suspend in the
       background; playing again resumes it.
+      Redesign (owner, 2026-09-29: like the SNOWSKY DISC itself, a vinyl
+      record, or like a VJ visualizer, or both): the record is black with
+      fine grooves catching a still light (brighter with the bass) and lit by
+      groups of bands, the cover is its turning label (one turn in 8 s),
+      the disc breathes with the bass; around it mirrored spokes of glowing
+      dots rise with each band, their colours sweeping round from the
+      cover's own hue (the accent's without a cover) and drifting slowly,
+      and a thin waveform hugs the disc's edge. Reduced motion keeps the
+      record still and drops the waveform and the drift. Unit tests of the
+      geometry, dots, hues and waveform; the mock and emulator browser tests
+      of the visualizer unchanged.
 - [x] Now Playing without duplicated controls (owner, 2026-09-29, agreed):
       the side panel gets two tabs instead of three. "Now": cover, title,
       artists and album with links, a tag block (format and quality, bit

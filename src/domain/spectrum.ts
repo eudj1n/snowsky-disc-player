@@ -87,3 +87,37 @@ export function groupLevels(levels: readonly number[], groups: number): number[]
     return run.reduce((sum, level) => sum + level, 0) / run.length
   })
 }
+
+/** How many dots a spoke of the dotted ring shows for a level: at least one faint dot, at most `max`. */
+export const dotCount = (level: number, max: number): number => Math.max(1, Math.min(max, Math.round(level * max)))
+
+/**
+ * The hue of a spoke around the dotted ring (after the owner's VJ example,
+ * 2026-09-29): a sweep of `span` degrees around the circle from the cover's
+ * own hue, mirrored like the spokes and drifting slowly with time.
+ */
+export function spokeHue(base: number, index: number, count: number, seconds: number, span = 220): number {
+  const half = Math.max(1, Math.floor(count / 2))
+  const along = (index % half) / half
+  return (((base + along * span + seconds * 6) % 360) + 360) % 360
+}
+
+/** The hue (0–360) of an RGB colour; grey gives the fallback. */
+export function hueOf(red: number, green: number, blue: number, fallback = 12): number {
+  const max = Math.max(red, green, blue)
+  const min = Math.min(red, green, blue)
+  const delta = max - min
+  if (delta < 8) return fallback
+  const hue =
+    max === red ? ((green - blue) / delta) % 6 : max === green ? (blue - red) / delta + 2 : (red - green) / delta + 4
+  return (hue * 60 + 360) % 360
+}
+
+/** A waveform (bytes around 128) cut to `points` values from -1 to 1, for the ring along the disc's edge. */
+export function waveRing(bytes: ArrayLike<number>, points: number): number[] {
+  if (!bytes.length) return new Array<number>(points).fill(0)
+  return Array.from(
+    { length: points },
+    (_, index) => ((bytes[Math.floor((index * bytes.length) / points)] ?? 128) - 128) / 128,
+  )
+}

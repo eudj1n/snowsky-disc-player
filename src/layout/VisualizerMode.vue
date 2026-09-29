@@ -1,10 +1,11 @@
 <script setup lang="ts">
 /**
- * The visualizer (owner, 2026-09-29): what plays in this browser drawn as the
- * project's ringed disc. The cover turns as a disc whose grooves light with
- * the music, the mark's ring pulses with the bass and the spectrum spreads
- * from it in mirrored spokes, low notes at the bottom and high ones meeting at
- * the top (Visicality's circular designs gave the idea; the code is ours).
+ * The visualizer (owner, 2026-09-29): what plays in this browser drawn like
+ * the SNOWSKY DISC itself, a vinyl record whose turning label is the cover,
+ * its grooves catching a still light and lit by the music, breathing with the
+ * bass, ringed by mirrored spokes of glowing dots whose colours sweep round
+ * from the cover's hue (after the owner's VJ example) and a waveform along
+ * its edge; low notes at the bottom, high ones meeting at the top.
  * The sound comes from the browser's own audio element through a Web Audio
  * analyser, so the picture is exactly in time. Space pauses, the right arrow
  * skips; Esc, V, the close button or leaving full screen close it, and so does
@@ -14,20 +15,31 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import CoverCanvas from '../components/artwork/CoverCanvas.vue'
-import { bandLevels, fallingPeaks, groupLevels, logBands, loudest, type Band } from '../domain/spectrum'
+import {
+  bandLevels,
+  fallingPeaks,
+  groupLevels,
+  hueOf,
+  logBands,
+  loudest,
+  waveRing,
+  type Band,
+} from '../domain/spectrum'
 import { timeLabel } from '../domain/track'
 import { t } from '../i18n'
 import { browserAnalyser, browserPlayback, browserTrack, nextInBrowser, toggleBrowser } from '../stores/browser'
 import { coverFor } from '../stores/enrichment'
 import UiIcon from '../ui/UiIcon.vue'
-import { discGeometry, drawDisc } from './discDrawing'
+import { drawVinyl, vinylGeometry } from './vinylDrawing'
 import { closeVisualizer, toggleVisualizerFullscreen } from './visualizer'
 
 const IDLE_MS = 3000
 const BANDS = 48
+/** Points of the waveform along the disc's edge. */
+const WAVE_POINTS = 160
 const GROOVES = 7
-/** One turn of the disc while playing. */
-const TURN_MS = 24_000
+/** One turn of the label while playing: calmer than a record's 33⅓ rpm. */
+const TURN_MS = 8_000
 
 // Going elsewhere (the browser's back button, a link) or stopping leaves the visualizer.
 const route = useRoute()
@@ -52,12 +64,35 @@ const analyser = browserAnalyser()
 const live = ref(false)
 
 let image: ImageBitmap | null = null
+/** The colours start from the cover's own hue (else the accent's). */
+let accentHue = 12
+let hue = accentHue
+function coverHue(bitmap: ImageBitmap): number {
+  const probe = document.createElement('canvas')
+  probe.width = 8
+  probe.height = 8
+  const context = probe.getContext('2d', { willReadFrequently: true })
+  if (!context) return accentHue
+  context.drawImage(bitmap, 0, 0, 8, 8)
+  const pixels = context.getImageData(0, 0, 8, 8).data
+  let red = 0
+  let green = 0
+  let blue = 0
+  for (let i = 0; i < pixels.length; i += 4) {
+    red += pixels[i] ?? 0
+    green += pixels[i + 1] ?? 0
+    blue += pixels[i + 2] ?? 0
+  }
+  const n = pixels.length / 4
+  return hueOf(red / n, green / n, blue / n, accentHue)
+}
 watch(
   cover,
   async (blob) => {
     const next = blob ? await createImageBitmap(blob).catch(() => null) : null
     image?.close()
     image = next
+    hue = next ? coverHue(next) : accentHue
   },
   { immediate: true },
 )
@@ -65,6 +100,8 @@ watch(
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
 let accent = '#f35c3f'
 let bins: Uint8Array<ArrayBuffer> | null = null
+let samples: Uint8Array<ArrayBuffer> | null = null
+const opened = performance.now()
 let bands: Band[] = []
 let peaks: number[] = []
 let rotation = 0
@@ -79,28 +116,35 @@ function render(now: number): void {
   const elapsed = Math.min(100, now - last)
   last = now
   let levels: number[] = new Array<number>(BANDS).fill(0)
+  let wave: number[] = []
   if (analyser) {
     if (!bins || bins.length !== analyser.frequencyBinCount) {
       bins = new Uint8Array(analyser.frequencyBinCount)
       bands = logBands(analyser.frequencyBinCount, analyser.context.sampleRate, BANDS)
     }
+    if (!samples || samples.length !== analyser.fftSize) samples = new Uint8Array(analyser.fftSize)
     analyser.getByteFrequencyData(bins)
+    analyser.getByteTimeDomainData(samples)
     levels = bandLevels(bins, bands)
+    wave = waveRing(samples, WAVE_POINTS)
   }
   peaks = fallingPeaks(peaks, levels, elapsed)
   if (!live.value && loudest(levels) > 0.05) live.value = true
   if (playing.value && !reduced) rotation = (rotation + (2 * Math.PI * elapsed) / TURN_MS) % (2 * Math.PI)
   const bass = levels.slice(0, 6).reduce((sum, level) => sum + level, 0) / 6
-  drawDisc(context, {
+  drawVinyl(context, {
     width: element.width,
     height: element.height,
     levels,
     peaks,
     grooves: groupLevels(levels, GROOVES),
+    wave: reduced ? [] : wave,
     pulse: reduced ? 0 : bass,
     rotation,
+    seconds: reduced ? 0 : (now - opened) / 1000,
     cover: image,
     coverSize: image ? { width: image.width, height: image.height } : null,
+    hue,
     accent,
   })
 }
@@ -119,8 +163,8 @@ const discBottom = ref('70%')
 function place(): void {
   const element = canvas.value
   if (!element) return
-  const { cy, ring, reach } = discGeometry(element.clientWidth, element.clientHeight)
-  discBottom.value = `${String(Math.round(cy + ring + reach * 0.35))}px`
+  const { cy, ringStart, reach } = vinylGeometry(element.clientWidth, element.clientHeight)
+  discBottom.value = `${String(Math.round(cy + ringStart + reach * 0.4))}px`
 }
 
 /* Controls and the pointer hide after a few quiet seconds while playing. */
@@ -159,6 +203,9 @@ function onKey(event: KeyboardEvent): void {
 onMounted(() => {
   root.value?.focus({ preventScroll: true })
   accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || accent
+  const [, r, g, b] = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(accent) ?? []
+  if (r && g && b) accentHue = hueOf(parseInt(r, 16), parseInt(g, 16), parseInt(b, 16), accentHue)
+  if (!image) hue = accentHue
   window.addEventListener('keydown', onKey, { capture: true })
   document.addEventListener('fullscreenchange', onFullscreen)
   if (canvas.value) {
