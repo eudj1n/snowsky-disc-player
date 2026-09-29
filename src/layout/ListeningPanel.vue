@@ -26,7 +26,8 @@ import { tracks } from '../stores/library'
 import { observations } from '../stores/observations'
 import { isPlaying, playback } from '../stores/playback'
 import { loadQueue, queue } from '../stores/queue'
-import { lyrics } from '../stores/lyrics'
+import { lookUpLyrics, lyrics, lyricsLookupAvailable, saveFoundLyrics, setAutoLookup } from '../stores/lyrics'
+import UiPillButton from '../ui/UiPillButton.vue'
 import { playerOptions } from '../stores/playerOptions'
 import { closePanel, showPanelSection, ui } from '../stores/ui'
 import { disliked, isDisliked, toggleDislike } from '../stores/disliked'
@@ -105,14 +106,29 @@ const lyricsMessage = computed(() => {
   if (lyrics.status === 'unavailable') return t('lyrics_unavailable')
   return t('lyrics_none')
 })
+/** LRCLIB: offered for a track without lyrics, and what it found waits to be saved (2026-09-29). */
+const lookupOffered = computed(() => lyricsLookupAvailable())
+const lookupMessage = computed(() =>
+  lyrics.lookup === 'searching'
+    ? t('lrclib_searching')
+    : lyrics.lookup === 'missing'
+      ? t('lrclib_missing')
+      : lyrics.lookup === 'instrumental'
+        ? t('lrclib_instrumental')
+        : lyrics.lookup === 'failed'
+          ? t('lrclib_failed')
+          : null,
+)
 const lyricsSource = computed(() =>
-  lyrics.source === 'sidecar'
-    ? t('lyrics_source_sidecar')
-    : lyrics.source === 'embedded'
-      ? t('lyrics_source_embedded')
-      : lyrics.source === 'player'
-        ? t(playerOptions.onlineLyrics ? 'lyrics_source_player_online' : 'lyrics_source_player')
-        : null,
+  lyrics.source === 'lrclib'
+    ? t('lyrics_source_lrclib')
+    : lyrics.source === 'sidecar'
+      ? t('lyrics_source_sidecar')
+      : lyrics.source === 'embedded'
+        ? t('lyrics_source_embedded')
+        : lyrics.source === 'player'
+          ? t(playerOptions.onlineLyrics ? 'lyrics_source_player_online' : 'lyrics_source_player')
+          : null,
 )
 const queueHint = computed(() => {
   if (connection.connection !== 'connected') return t('connect_your_disc')
@@ -281,6 +297,36 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
             link-class="hover:text-ink hover:underline"
           />
         </p>
+      </div>
+      <div v-if="lookupOffered || lyrics.source === 'lrclib'" class="shrink-0 px-24 pb-12" data-testid="lyrics-lookup">
+        <UiPillButton
+          v-if="lyrics.source === 'lrclib'"
+          variant="secondary"
+          :disabled="lyrics.saving"
+          data-testid="lyrics-save"
+          @click="saveFoundLyrics"
+          >{{ t('lyrics_save') }}</UiPillButton
+        >
+        <template v-else>
+          <p v-if="lookupMessage" class="mt-0 mb-8 text-11 text-secondary" role="status">{{ lookupMessage }}</p>
+          <UiPillButton
+            v-if="lyrics.lookup !== 'searching'"
+            variant="secondary"
+            data-testid="lyrics-find"
+            @click="lookUpLyrics"
+            >{{ t('lrclib_find') }}</UiPillButton
+          >
+          <p class="mt-8 mb-6 text-10 leading-[1.5] text-muted">{{ t('lrclib_note') }}</p>
+          <label class="flex items-center gap-8 text-11 text-secondary">
+            <input
+              type="checkbox"
+              :checked="lyrics.autoLookup"
+              data-testid="lyrics-auto"
+              @change="setAutoLookup(($event.target as HTMLInputElement).checked)"
+            />
+            {{ t('lrclib_auto') }}
+          </label>
+        </template>
       </div>
       <LyricsView
         :lyrics="lyrics.lyrics"

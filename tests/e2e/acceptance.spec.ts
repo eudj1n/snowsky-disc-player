@@ -487,6 +487,39 @@ test('shows card covers, file durations and both kinds of lyrics on stock', asyn
   expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])
 })
 
+test('looks lyrics up on LRCLIB and saves them beside the track through the service on stock', async ({ page }) => {
+  // LRCLIB's answer is stubbed in the browser; the service's policy (the release's origins)
+  // must admit the request, and its upload route writes the .lrc the media route then reads.
+  await page.route('https://lrclib.net/api/**', (route) =>
+    route.fulfill({
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      json: new URL(route.request().url()).pathname.endsWith('/search')
+        ? [{ syncedLyrics: '[00:00.00]Crossing, found online\n[00:10.00]Crossing, second line', duration: 25 }]
+        : { syncedLyrics: '[00:00.00]Crossing, found online\n[00:10.00]Crossing, second line', duration: 25 },
+    }),
+  )
+  const errors = watchErrors(page)
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/album/Harbor/Kestrel')
+  await verified(page, () => page.getByRole('button', { name: 'Play Crossing' }).click())
+  await expect(page.getByTestId('track-title')).toHaveText('Crossing', { timeout: 30_000 })
+  await page.getByRole('button', { name: 'Lyrics' }).filter({ visible: true }).first().click()
+  const panel = page.getByRole('complementary', { name: 'Player view' })
+  await panel.getByTestId('lyrics-find').click({ timeout: 30_000 })
+  const lyrics = page.getByTestId('lyrics')
+  await expect(lyrics).toContainText('Crossing, found online', { timeout: 30_000 })
+  await panel.getByTestId('lyrics-save').click()
+  await expect(lyrics).toContainText('From the .lrc file beside the track', { timeout: 30_000 })
+  await page.reload()
+  await page.getByRole('button', { name: 'Lyrics' }).filter({ visible: true }).first().click()
+  await expect(page.getByTestId('lyrics')).toContainText('Crossing, found online', { timeout: 30_000 })
+  await expect(page.getByTestId('lyrics')).toContainText('From the .lrc file beside the track')
+  await page.keyboard.press('Escape')
+  await disconnect(page)
+  expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])
+})
+
 test('removes a favorite that is not playing from its row on stock', async ({ page }) => {
   await english(page)
   await connectAndPair(page)

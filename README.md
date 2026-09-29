@@ -29,6 +29,9 @@ playing on the DISC; nothing streams to the browser.
 >   mode, the bar shows the remembered track and Play continues it;
 > - sing along in karaoke: synced lyrics full screen, word by word where the
 >   lyrics file has word timings;
+> - find lyrics for a track that has none on LRCLIB (only when you ask, or
+>   automatically once you switch that on) and save them beside the track on
+>   the card;
 > - watch what plays in this browser as a disc: the cover turns, its ring
 >   pulses with the bass and the spectrum spreads around it, full screen.
 >

@@ -1081,7 +1081,17 @@ plus macOS leftovers on the Card page. The page's part:
       fill their placeholders (the paused seek showed "{position}"). Unit
       tests for the facts; mock browser tests on desktop and phone (136
       passed); emulator acceptance with the controls from the bar.
-- [ ] Enrichment providers once the card catalog allows their origins:
+- [ ] Enrichment providers once the card catalog allows their origins
+      (step 1, LRCLIB, done 2026-09-29: the page reads its release's
+      `origins.json` and offers "Find lyrics on LRCLIB" in the Lyrics tab of
+      a track without lyrics of its own, not for CUE tracks; an automatic
+      lookup is a per-browser switch, off by default; the request is a plain
+      GET of the artist, title, album and length, exact first, then a search
+      within three seconds of the length; what it finds shows as "not on the
+      card yet" until "Save to the card" uploads it beside the track as its
+      `.lrc` through the guarded upload route, which never overwrites; unit
+      tests, a mock browser test and emulator acceptance with LRCLIB stubbed
+      in the browser and the real service's policy, upload and media route):
       MusicBrainz with Cover Art Archive (tags, years, album artists,
       covers) and LRCLIB (synced lyrics for karaoke), each off by default
       (track names leave the network), results offered, not applied

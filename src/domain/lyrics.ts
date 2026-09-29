@@ -187,3 +187,18 @@ export function karaokeRange(
   const center = Math.max(active, 0)
   return { from: Math.max(center - before, 0), to: Math.min(center + after, total - 1), center }
 }
+
+/**
+ * Where a track's own lyrics go on the card: a same-stem `.lrc` beside the
+ * audio file, which the media route reads first. Card-relative, as uploads
+ * take it; null for a path outside the card or without a name.
+ */
+export function sidecarPath(path: string, root = '/tmp/sdcard/'): string | null {
+  if (!path.startsWith(root)) return null
+  const relative = path.slice(root.length)
+  const slash = relative.lastIndexOf('/')
+  const name = relative.slice(slash + 1)
+  const dot = name.lastIndexOf('.')
+  if (dot <= 0) return null
+  return `${relative.slice(0, slash + 1)}${name.slice(0, dot)}.lrc`
+}

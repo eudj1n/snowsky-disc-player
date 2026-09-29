@@ -64,6 +64,25 @@ async function releaseJson<T>(name: string): Promise<T> {
   return (await response.json()) as T
 }
 
+/** One reviewed external origin of the release (origins.json, combined-008). */
+export interface ReleaseOrigin {
+  origin: string
+  directives: string[]
+}
+
+/**
+ * The release's reviewed external origins, which the service adds to the
+ * page's policy; null when the release has none (the page stays same-origin).
+ */
+export async function loadOrigins(): Promise<Record<string, ReleaseOrigin> | null> {
+  try {
+    const catalog = await releaseJson<{ origins?: Record<string, ReleaseOrigin> }>('origins.json')
+    return catalog.origins && typeof catalog.origins === 'object' ? catalog.origins : null
+  } catch {
+    return null
+  }
+}
+
 export const loadCompatibility = (): Promise<Compatibility> => releaseJson<Compatibility>('compatibility.json')
 export const loadCommands = (): Promise<CommandCatalog> => releaseJson<CommandCatalog>('commands.json')
 

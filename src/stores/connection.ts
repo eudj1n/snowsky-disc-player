@@ -9,6 +9,8 @@ import { GatewayHttp } from '../gateway/http'
 import {
   isCompatible,
   loadCommands,
+  loadOrigins,
+  type ReleaseOrigin,
   loadCompatibility,
   type CommandCatalog,
   type Compatibility,
@@ -87,6 +89,12 @@ export function commandCatalog(): CommandCatalog | null {
   return catalog.value
 }
 
+const origins = shallowRef<Record<string, ReleaseOrigin> | null>(null)
+/** Whether the release's reviewed origins let the page reach this provider (fetch). */
+export function originAllowed(name: string): boolean {
+  return origins.value?.[name]?.directives.includes('connect-src') === true
+}
+
 /** Stores that need the session (pairing, playback) register here. */
 export function onSessionOpened(listener: (session: GatewaySession) => void): void {
   openedListeners.add(listener)
@@ -108,9 +116,10 @@ export async function probeGateway(): Promise<boolean> {
     state.notice = 'gateway_unreachable'
     return false
   }
-  const [profile, commands] = await Promise.allSettled([loadCompatibility(), loadCommands()])
+  const [profile, commands, reachable] = await Promise.allSettled([loadCompatibility(), loadCommands(), loadOrigins()])
   if (profile.status === 'fulfilled') compatibility = profile.value
   if (commands.status === 'fulfilled') catalog.value = commands.value
+  if (reachable.status === 'fulfilled') origins.value = reachable.value
   return true
 }
 

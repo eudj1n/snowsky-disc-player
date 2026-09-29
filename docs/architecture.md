@@ -86,6 +86,13 @@ The service's own state (combined-008) has stores of its own:
 `stores/browser.ts`, which plays card files in an `Audio` element through
 the media route, a CUE track from its offset, without touching the player.
 
+External providers are reached only through origins the release's reviewed
+`origins.json` names (the service adds them to the page's policy; the page
+reads the same file through `loadOrigins()` and `originAllowed()` before
+offering a provider). `gateway/lrclib.ts` asks LRCLIB for a track's lyrics
+with plain GETs; `stores/lyrics.ts` offers the lookup for a track without
+lyrics and saves what it found beside the track through the upload route.
+
 The listening panel (`layout/ListeningPanel.vue`) has two tabs. Now shows
 the track's head (`components/player/NowPlayingDetails.vue`, whose controls
 render only on phones, where the panel is a full-screen player and the bar is

@@ -38,7 +38,26 @@ const DELAY = Number(process.env.MOCK_GATEWAY_DELAY ?? 0)
 // Since combined-008 the player's serial number is the only credential; the emulator's all-zero SN stands in.
 const SERIAL = process.env.MOCK_GATEWAY_SERIAL ?? '00000000000000'
 const credential = (value) => value === SERIAL
-const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'"
+/**
+ * The page policy with the release's reviewed origins (fixtures/origins.json, a copy of the
+ * service's firmware/origins catalog), as the service builds it since combined-008.
+ */
+const CSP = (() => {
+  const { origins } = JSON.parse(readFileSync(new URL('./fixtures/origins.json', import.meta.url), 'utf8'))
+  const of = (directive) =>
+    Object.values(origins)
+      .filter((entry) => entry.directives.includes(directive))
+      .map((entry) => entry.origin)
+  const images = of('img-src')
+  return [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self'",
+    ["connect-src 'self'", ...of('connect-src')].join(' '),
+    ...(images.length ? [["img-src 'self'", ...images].join(' ')] : []),
+    "frame-ancestors 'none'",
+  ].join('; ')
+})()
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript',
@@ -247,7 +266,8 @@ function admitted(request) {
   return !origin || origin === `http://${request.headers.host}`
 }
 function releaseFile(path) {
-  if (['compatibility.json', 'commands.json'].includes(path)) return readFileSync(new URL(path, FIXTURES))
+  if (['compatibility.json', 'commands.json', 'origins.json'].includes(path))
+    return readFileSync(new URL(path, FIXTURES))
   const file = normalize(join(DIST, path))
   if (path === 'index.html' && !existsSync(file)) {
     // No build yet (dev:mock): the dev server only needs the active release id.
@@ -617,7 +637,8 @@ const server = createServer((request, response) => {
     const chunks = []
     request.on('data', (chunk) => chunks.push(chunk))
     request.on('end', () => {
-      const bytes = Buffer.concat(chunks).length
+      const body = Buffer.concat(chunks)
+      const bytes = body.length
       // A "Busy Once" file is refused before it is stored the first time only.
       if (path.includes('Busy Once') && !busyOnce.has(path)) {
         busyOnce.add(path)
@@ -626,7 +647,8 @@ const server = createServer((request, response) => {
       if (TRACKS.some((track) => track.PATH === path) || player.uploads.some((upload) => upload.path === path)) {
         return send(response, 409, 'File already exists; no overwrite\n')
       }
-      player.uploads.push({ path, bytes })
+      // A lyrics file keeps its text: the media route serves it beside its track.
+      player.uploads.push({ path, bytes, text: path.toLowerCase().endsWith('.lrc') ? body.toString('utf8') : null })
       listed = null
       send(response, 201, JSON.stringify({ path, bytes, indexed: false }), 'application/json')
     })
@@ -638,6 +660,12 @@ const server = createServer((request, response) => {
     const match = /^\/api\/media\/(info|cover|lyrics)(\/.+)$/.exec(url.pathname)
     if (!match) return send(response, 404, 'Unknown media route\n')
     const mediaFile = decodeURIComponent(match[2])
+    if (match[1] === 'lyrics') {
+      const stem = mediaFile.replace(/\.[^./]+$/, '')
+      const sidecar = player.uploads.find((upload) => upload.text !== null && upload.path === `${stem}.lrc`)
+      if (sidecar?.text)
+        return send(response, 200, sidecar.text, 'text/plain; charset=utf-8', { 'X-Lyrics-Source': 'sidecar' })
+    }
     if (match[1] === 'info') {
       player.infoReads.set(mediaFile, (player.infoReads.get(mediaFile) ?? 0) + 1)
       if (player.infoMissing.has(mediaFile)) return send(response, 404, 'No such file\n')

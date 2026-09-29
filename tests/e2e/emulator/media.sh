@@ -26,6 +26,8 @@ tone 'Lumen - Harbor' 'a Pier.flac' 'Pier' 3 Harbor Lumen Ambient 330
 tone 'Lumen - Harbor' 'b Low Tide.flac' 'Low Tide' 2 Harbor Lumen Ambient 392
 tone 'Lumen - Harbor' 'c Harbor Light.flac' 'Harbor Light' 1 Harbor Lumen Ambient 440
 tone 'Kestrel - Harbor' 'a Crossing.flac' 'Crossing' 1 Harbor Kestrel Jazz 494
+# Crossing has no lyrics: the LRCLIB case saves one beside it; a rerun starts without it again.
+rm -f "$root/Kestrel - Harbor/a Crossing.lrc"
 tone 'Kestrel - Harbor' 'b Salt.flac' 'Salt' 2 Harbor Kestrel Jazz 523
 tone 'Lumen - Night Lines' 'a Signal.flac' 'Signal' 1 'Night Lines' Lumen Jazz 587
 tone 'Lumen - Night Lines' 'b Streetlight.flac' 'Streetlight' 2 'Night Lines' Lumen Jazz 659

@@ -1222,6 +1222,68 @@ test('offers the tones of the theme in effect and keeps the chosen palettes', as
   await expect(html).not.toHaveAttribute('data-light-palette', /.+/)
 })
 
+test('finds lyrics on LRCLIB for a track without any and saves them beside it', async ({ page }, info) => {
+  test.skip(external, 'Needs the mock collection')
+  test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
+  // The saved file stays in the shared mock: once, on desktop.
+  test.skip(info.project.name === 'phone', 'Runs once: the saved lyrics stay in the shared mock')
+  const asked: URL[] = []
+  await page.route('https://lrclib.net/api/**', async (route) => {
+    const url = new URL(route.request().url())
+    asked.push(url)
+    const headers = { 'Access-Control-Allow-Origin': '*' }
+    if (url.pathname !== '/api/get') return route.fulfill({ status: 404, headers, json: { code: 404 } })
+    await route.fulfill({
+      headers,
+      json: {
+        syncedLyrics: '[00:00.00]Orbit, a line found online\n[00:06.00]Orbit, the next one',
+        plainLyrics: 'Orbit, a line found online\nOrbit, the next one',
+        instrumental: false,
+        duration: 200,
+      },
+    })
+  })
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/album/Inner%20Space/Forma')
+  const title = page.getByTestId('track-title')
+  if ((await title.count()) && (await title.textContent())?.trim() === 'Orbit') {
+    await page.getByRole('button', { name: 'Play Weightless' }).click()
+    await expect(title).toHaveText('Weightless', { timeout: 15_000 })
+  }
+  await page.getByRole('button', { name: 'Play Orbit' }).click()
+  await expect(title).toHaveText('Orbit', { timeout: 15_000 })
+  await page.getByRole('button', { name: 'Lyrics' }).filter({ visible: true }).first().click()
+  const panel = page.getByRole('complementary', { name: 'Player view' })
+  // Offered once the track has no lyrics of its own (stock's text is awaited for a few seconds);
+  // nothing leaves the network until asked, the automatic lookup being off by default.
+  await expect(panel.getByTestId('lyrics-find')).toBeVisible({ timeout: 20_000 })
+  await expect(panel.getByTestId('lyrics-auto')).not.toBeChecked()
+  expect(asked).toHaveLength(0)
+  await panel.getByTestId('lyrics-find').click()
+  const lyrics = page.getByTestId('lyrics')
+  await expect(lyrics).toContainText('Orbit, a line found online')
+  await expect(lyrics).toContainText('From LRCLIB, not on the card yet')
+  expect(Object.fromEntries(asked[0]?.searchParams ?? [])).toMatchObject({
+    artist_name: 'Forma',
+    track_name: 'Orbit',
+    album_name: 'Inner Space',
+  })
+  await panel.getByTestId('lyrics-save').click()
+  await expect(page.getByRole('status').filter({ hasText: 'Saved beside the track as its .lrc file.' })).toBeAttached({
+    timeout: 15_000,
+  })
+  await expect(lyrics).toContainText('From the .lrc file beside the track')
+  // Read back from the card after a reload: the media route serves the saved file.
+  await page.reload()
+  await page.getByRole('button', { name: 'Lyrics' }).filter({ visible: true }).first().click()
+  await expect(page.getByTestId('lyrics')).toContainText('Orbit, a line found online', { timeout: 15_000 })
+  await expect(page.getByTestId('lyrics')).toContainText('From the .lrc file beside the track')
+  await expect(page.getByTestId('lyrics-find')).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await disconnect(page)
+})
+
 test('highlights a karaoke line without word timings whole, without a sweep', async ({ page }) => {
   test.skip(external, 'Needs the mock collection')
   test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
