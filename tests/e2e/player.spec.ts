@@ -417,6 +417,24 @@ test.describe('player controls on the mock', () => {
     await disconnect(page)
   })
 
+  test('pauses the player when playback starts in this browser', async ({ page }) => {
+    await english(page)
+    await connectAndPair(page)
+    await page.goto('/#/album/Afterglow/Mira%20Sol')
+    const toggle = page.getByTestId('toggle')
+    if ((await toggle.getAttribute('aria-label')) !== 'Pause') {
+      await page.getByRole('button', { name: 'Play album' }).click()
+      await expect(toggle).toHaveAttribute('aria-label', 'Pause', { timeout: 15_000 })
+    }
+    await page.getByTestId('album-browser').click()
+    await expect(page.getByTestId('browser-player')).toBeVisible()
+    // The player pauses (a guarded toggle, confirmed); the browser keeps playing.
+    await expect(toggle).toHaveAttribute('aria-label', 'Play', { timeout: 15_000 })
+    await expect(page.getByTestId('browser-toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 15_000 })
+    await page.getByTestId('browser-stop').click()
+    await disconnect(page)
+  })
+
   test('keeps at most four album columns with the listening panel open on a large screen', async ({ page }, info) => {
     test.skip(info.project.name === 'phone', 'The listening panel reserves space from 1200px')
     await page.setViewportSize({ width: 1920, height: 1080 })

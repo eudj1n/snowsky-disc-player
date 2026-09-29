@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { importable, isAudio, validPath, validSelection } from '../../src/domain/imports'
 import { muteStep, UNMUTE_FALLBACK } from '../../src/domain/player'
-import { seek, setFavorite, setMode, setVolume, identityOf } from '../../src/gateway/controls'
+import { pauseIfPlaying, seek, setFavorite, setMode, setVolume, identityOf } from '../../src/gateway/controls'
 import { parsePlayback } from '../../src/gateway/playback'
 import { encodeRecord } from '../../src/gateway/record'
 import { scanLibrary } from '../../src/gateway/scan'
@@ -167,6 +167,23 @@ describe('current-state operations', () => {
     expect(await setMode(deps(s), 1)).toBe('confirmed')
     expect(await setMode(deps(s), 1)).toBe('already')
     expect(socket.sent.filter((d) => d.startsWith('0102'))).toEqual(['0102000C0001'])
+  })
+
+  it('pauses only a playing player, deciding on the state read right before', async () => {
+    let state = 0
+    const { socket, session: s } = await session((data) => {
+      if (data === '02020008') return [a202(state)]
+      if (data.startsWith('0201')) state = state === 0 ? 1 : 0
+      return []
+    })
+    const toggles = () => socket.sent.filter((data) => data.startsWith('0201')).length
+    expect(await pauseIfPlaying(deps(s))).toBe('confirmed')
+    expect(state).toBe(1)
+    expect(toggles()).toBe(1)
+    // Already paused: nothing is sent, so the toggle cannot start it again.
+    expect(await pauseIfPlaying(deps(s))).toBe('already')
+    expect(toggles()).toBe(1)
+    expect(state).toBe(1)
   })
 
   it('refuses a favorite when the displayed track differs', async () => {

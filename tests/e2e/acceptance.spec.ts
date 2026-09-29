@@ -803,6 +803,23 @@ test('plays card files in this browser through the audio route, a CUE track from
   expect(errors).toEqual([])
 })
 
+test('pauses stock when playback starts in this browser', async ({ page }) => {
+  const errors = watchErrors(page)
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/album/Harbor/Kestrel')
+  await verified(page, () => page.getByRole('button', { name: 'Play album' }).click())
+  const toggle = page.getByTestId('toggle')
+  await expect(toggle).toHaveAttribute('aria-label', 'Pause', { timeout: 30_000 })
+  await page.getByTestId('album-browser').click()
+  await expect(page.getByTestId('browser-toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 30_000 })
+  // Stock pauses: a guarded toggle, sent only while it played, confirmed by its own state.
+  await expect(toggle).toHaveAttribute('aria-label', 'Play', { timeout: 30_000 })
+  await page.getByTestId('browser-stop').click()
+  await disconnect(page)
+  expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])
+})
+
 test("shows the running service's diagnostics on stock", async ({ page }) => {
   await english(page)
   await openConnection(page)

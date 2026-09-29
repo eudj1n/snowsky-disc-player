@@ -81,7 +81,11 @@ async function send(deps: ControlDeps, tag: string, payload: string): Promise<bo
   return outcome.status !== 'unsent'
 }
 
-export async function transportAction(deps: ControlDeps, action: TransportAction): Promise<Outcome> {
+export async function transportAction(
+  deps: ControlDeps,
+  action: TransportAction,
+  onlyWhilePlaying = false,
+): Promise<Outcome> {
   const { now, sleep, timeout } = clock(deps)
   let before: Playback & { track: Track }
   try {
@@ -89,6 +93,8 @@ export async function transportAction(deps: ControlDeps, action: TransportAction
   } catch {
     return 'not-sent'
   }
+  // A pause is a toggle sent only to a playing player, decided on this very observation.
+  if (onlyWhilePlaying && before.state !== 'playing') return 'already'
   const payload = action === 'toggle' ? '0000' : action === 'next' ? '0001' : '0002'
   const wanted = before.state === 'playing' ? 'paused' : 'playing'
   const ticks = collect(deps.session, 'a103')
@@ -119,6 +125,14 @@ export async function transportAction(deps: ControlDeps, action: TransportAction
     ticks.stop()
   }
 }
+
+/**
+ * Pauses the player only while it plays (owner, 2026-09-29: playing in this
+ * browser pauses it). Stock has one toggle (0201 0000), so the state is read
+ * right before sending and nothing is sent unless it plays; the pause is
+ * confirmed like any toggle.
+ */
+export const pauseIfPlaying = (deps: ControlDeps): Promise<Outcome> => transportAction(deps, 'toggle', true)
 
 export async function setVolume(deps: ControlDeps, value: number): Promise<Outcome> {
   if (!Number.isInteger(value) || value < 0 || value > 120) throw new RangeError('Volume outside 0..120')

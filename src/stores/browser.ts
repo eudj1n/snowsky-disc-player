@@ -8,10 +8,15 @@
  * The visualizer (2026-09-29) listens to the same element through a Web Audio
  * analyser, made on its first opening: a click, since browsers start audio
  * only from one. From then on the element plays through that graph.
+ *
+ * Starting or resuming playback here pauses the player when it plays (owner,
+ * 2026-09-29), with a guarded pause in the background; the browser's own
+ * sound starts at once, inside the listener's click.
  */
 import { computed, reactive, readonly } from 'vue'
 import type { Track } from '../domain/track'
 import { audioUrl } from '../gateway/media'
+import { pausePlayer } from './controls'
 import { toast } from './ui'
 
 interface BrowserTrack {
@@ -137,6 +142,7 @@ export function playInBrowser(
   )
   state.index = Math.min(from, state.queue.length - 1)
   start()
+  void pausePlayer()
 }
 
 export function toggleBrowser(): void {
@@ -144,6 +150,7 @@ export function toggleBrowser(): void {
   if (audio.paused) {
     wakeGraph()
     void audio.play()
+    void pausePlayer()
   } else audio.pause()
 }
 

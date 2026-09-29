@@ -1329,8 +1329,15 @@ started:
       overwritten. Unit test of the header, a mock browser test (plain tags,
       then the saved `.lrc` after a reload) and emulator acceptance (a plain
       `.lrc` replaced, the old one in the trash).
-- [ ] Starting playback in this browser pauses the player (a guarded pause
-      only while it plays, confirmed like any command).
+- [x] Starting playback in this browser pauses the player (a guarded pause
+      only while it plays, confirmed like any command). Starting or resuming
+      playback here pauses a playing player in the background (the
+      browser's sound starts at once, inside the click): stock has one
+      toggle, so the state is read right before sending and nothing is sent
+      unless it plays; the pause waits its turn like any press and is
+      confirmed by the player's state. Needs control (paired); otherwise
+      nothing is sent. Unit test (a paused player gets nothing), a mock
+      browser test and emulator acceptance on stock.
 
 ## Requests for the next service build
 

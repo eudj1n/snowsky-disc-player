@@ -11,6 +11,7 @@ import {
   setFavorite,
   setMode,
   setVolume,
+  pauseIfPlaying,
   transportAction,
   type Outcome,
   type SeekOutcome,
@@ -109,6 +110,25 @@ export async function transport(action: TransportAction): Promise<void> {
   )
   await refreshPlayback()
   // Transport is frequent: only problems get a toast.
+  report(result, true)
+}
+
+/**
+ * Pauses the player when it plays (owner, 2026-09-29: playing in this browser
+ * pauses the player). Needs control; it waits its turn like any press, reads
+ * the state right before sending and says nothing unless it fails.
+ */
+export async function pausePlayer(): Promise<void> {
+  if (!pairing.paired || connection.connection !== 'connected' || playback.current.state !== 'playing') return
+  const result = await run(
+    'transport',
+    async (context) => {
+      await context.pace()
+      return pauseIfPlaying(context)
+    },
+    { wait: true },
+  )
+  await refreshPlayback()
   report(result, true)
 }
 
