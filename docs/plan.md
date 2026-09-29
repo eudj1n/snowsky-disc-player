@@ -1498,8 +1498,11 @@ browser on its own.
       `keepEarlyAddress()` applies the last early change once the router is
       ready. On the guest the Home-then-route navigation failed 5 of 20
       times before and 0 of 40 after; a mock test delays the Home chunk.
-- [ ] Emulator acceptance with the zip installed into the guest card's
-      `Apps/Disc Player` (combined-009 stage 8).
+- [x] Emulator acceptance with the zip installed into the guest card's
+      `Apps/Disc Player` (combined-009 stage 8, 2026-09-29): release
+      `2026.09.29-f4ca12d` (zip `34035a35…`) on the service's MIPS build
+      `a64ce31ab892`, 34 desktop cases passed, 27 of them on stock. The same
+      zip is the image's own Disc Player in the combined-009 candidate.
 
 ## Requests for the next service build
 
