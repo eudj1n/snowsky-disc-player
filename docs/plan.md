@@ -426,6 +426,18 @@ check`, the full mock suite (97) and the emulator acceptance of this exact
       durations, lyrics, favorite removal, playlists by `LIST_ID`, albums and
       discs, SN pairing) were not reported one by one.
 
+- 2026-09-29: `a3ec52396ac2b620` (commit `e7abd5b`, with the service's
+  origins catalog `3e95405`: the disc visualizer, the owner's eleven
+  polishing notes, Now Playing with two tabs and a full-screen player on
+  phones, LRCLIB lyrics, Cover Art Archive covers, Wikimedia artist photos)
+  published on PLAY at the owner's request after `npm run check` (226 unit
+  tests), the full mock suite (140) and the emulator acceptance through the
+  MIPS service (25 tests, on the build just before the Home hero change,
+  which the mock suite covers); all 92 files identical to the prepared
+  release after the write, no AppleDouble files. `42d6711790fcb1e1` stays
+  for rollback; `784edefa1737c1cd` and `95a93be3653aac77` are still on the
+  card (removal only at the owner's request).
+
 ## Combined-006 client (round 7)
 
 Built on snowsky-disc-service `1074215` (media, current lyrics, image types,
