@@ -39,6 +39,8 @@ interface EnrichmentModel {
   qualities: Record<string, { sampleRate: number; bitDepth: number | null; bitRate?: number | null }>
   /** Track path → its size and format as measured (card space view). */
   files: Record<string, FileFacts>
+  /** Track path → when the media route last gave no size for it (gone or unreadable). */
+  unmeasured: Record<string, number>
   /** Metadata reads queued or under way. */
   pending: number
 }
@@ -51,6 +53,7 @@ const state = reactive<EnrichmentModel>({
   years: {},
   qualities: {},
   files: {},
+  unmeasured: {},
   pending: 0,
 })
 export const enrichment = readonly(state)
@@ -67,6 +70,7 @@ const NO_YEAR = 'enrichment:no-year'
 const QUALITIES = 'enrichment:qualities'
 const NO_QUALITY = 'enrichment:no-quality'
 const FILES = 'enrichment:files'
+const NO_SIZE = 'enrichment:no-size'
 const RECHECK_MS = 7 * 86_400_000
 let noCover: Record<string, number> = {}
 let noDuration: Record<string, number> = {}
@@ -84,6 +88,7 @@ export async function loadEnrichment(): Promise<void> {
   state.qualities = (await cacheGet<EnrichmentModel['qualities']>(QUALITIES)) ?? {}
   noQuality = (await cacheGet<Record<string, number>>(NO_QUALITY)) ?? {}
   state.files = (await cacheGet<Record<string, FileFacts>>(FILES)) ?? {}
+  state.unmeasured = (await cacheGet<Record<string, number>>(NO_SIZE)) ?? {}
   for (const path of new Set([...Object.values(state.albumCovers), ...Object.values(state.scopedCovers)])) {
     const blob = await cacheGet<Blob>(coverKey(path))
     if (blob) state.covers[path] = blob
@@ -165,6 +170,7 @@ let found: Record<string, number> = {}
 let foundYears: Record<string, number> = {}
 let foundQualities: EnrichmentModel['qualities'] = {}
 let foundFiles: Record<string, FileFacts> = {}
+let missedFiles: Record<string, number> = {}
 let flush: ReturnType<typeof setTimeout> | undefined
 function saveInfo(): void {
   flush = undefined
@@ -172,10 +178,12 @@ function saveInfo(): void {
   Object.assign(state.years, foundYears)
   Object.assign(state.qualities, foundQualities)
   Object.assign(state.files, foundFiles)
+  Object.assign(state.unmeasured, missedFiles)
   found = {}
   foundYears = {}
   foundQualities = {}
   foundFiles = {}
+  missedFiles = {}
   void cacheSet(DURATIONS, { ...state.durations })
   void cacheSet(NO_DURATION, { ...noDuration })
   void cacheSet(YEARS, { ...state.years })
@@ -183,6 +191,7 @@ function saveInfo(): void {
   void cacheSet(QUALITIES, { ...state.qualities })
   void cacheSet(NO_QUALITY, { ...noQuality })
   void cacheSet(FILES, { ...state.files })
+  void cacheSet(NO_SIZE, { ...state.unmeasured })
 }
 
 /** One metadata read of a file: its duration and the year of its tags, whichever are missing. */
@@ -201,6 +210,8 @@ function wantInfo(path: string): void {
           bitDepth: info.bitDepth,
           bitRate: info.bitRate,
         }
+      // No size (the file is gone or unreadable): not asked again on every visit to Space.
+      else missedFiles[path] = Date.now()
       if (info?.durationMs) found[path] = info.durationMs
       else noDuration[path] = Date.now()
       if (info?.year) foundYears[path] = info.year
@@ -234,16 +245,26 @@ export function wantDurations(tracks: readonly Pick<Track, 'path' | 'durationMs'
   }
 }
 
-/** Queues a metadata read for every track whose file is not measured yet (card space). */
+/** The media route gave no size for this file within the last week (owner, 2026-09-29). */
+export const sizeUnreadable = (path: string): boolean => recent(state.unmeasured[path])
+
+/**
+ * Queues a metadata read for every track whose file is not measured yet (card
+ * space). A file the route gave no size for is asked again after a week, not
+ * on every visit.
+ */
 export function wantSizes(tracks: readonly Pick<Track, 'path'>[]): void {
   if (!connection.media) return
-  for (const track of tracks) if (track.path && !state.files[track.path]) wantInfo(track.path)
+  for (const track of tracks)
+    if (track.path && !state.files[track.path] && !sizeUnreadable(track.path)) wantInfo(track.path)
 }
 
-/** Forgets the measured files so the card space view reads them again. */
+/** Forgets the measured (and unreadable) files so the card space view reads them again. */
 export async function forgetSizes(): Promise<void> {
   state.files = {}
+  state.unmeasured = {}
   await cacheSet(FILES, {})
+  await cacheSet(NO_SIZE, {})
 }
 
 /**

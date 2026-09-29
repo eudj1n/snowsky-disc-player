@@ -404,6 +404,12 @@ export const ru: Messages = {
   space_measuring: 'Измеряю коллекцию, файлов: {done} из {total}',
   space_measure_note: 'Размеры читаются из файлов один раз и запоминаются в этом браузере.',
   space_measure_again: 'Измерить заново',
+  space_unreadable: {
+    one: '{count} файл не прочитан',
+    few: '{count} файла не прочитаны',
+    many: '{count} файлов не прочитано',
+    other: '{count} файла не прочитано',
+  },
   space_other_note: 'Другие файлы: обложки, тексты, сама страница и всё, чего нет в библиотеке.',
   space_by_format: 'По форматам',
   space_albums: 'Самые большие альбомы',

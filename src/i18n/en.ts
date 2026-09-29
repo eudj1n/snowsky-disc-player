@@ -402,6 +402,7 @@ export const en = {
   space_measuring: 'Measuring the collection: {done} of {total} files',
   space_measure_note: 'Sizes are read from the files once and remembered in this browser.',
   space_measure_again: 'Measure again',
+  space_unreadable: { one: '{count} file could not be read', other: '{count} files could not be read' },
   space_other_note: 'Other files: covers, lyrics, the page itself and anything the library does not index.',
   space_by_format: 'By format',
   space_albums: 'Largest albums',

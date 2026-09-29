@@ -110,6 +110,10 @@ const player = {
   summaryBusy: 0,
   /** Stock has no queue table (/__mock/queue-dropped): the queue read fails like a busy database. */
   queueDropped: false,
+  /** Paths whose media info answers 404, as a file gone from the card (/__mock/info-missing). */
+  infoMissing: new Set(),
+  /** Media info reads per path, for tests that count them (/__mock/info-reads). */
+  infoReads: new Map(),
   state: 1,
   list: TRACKS.filter((track) => track.ALBUM === 'Afterglow'),
   index: 0,
@@ -526,6 +530,21 @@ const server = createServer((request, response) => {
     player.summaryBusy = Number(url.searchParams.get('times') ?? 0)
     return send(response, 204, '')
   }
+  // A library file whose media info answers 404 (gone from the card); an empty title clears the list.
+  if (url.pathname === '/__mock/info-missing' && request.method === 'POST') {
+    const title = url.searchParams.get('title') ?? ''
+    if (!title) player.infoMissing.clear()
+    for (const track of TRACKS) if (track.TITLE === title) player.infoMissing.add(track.PATH)
+    return send(response, 204, '')
+  }
+  if (url.pathname === '/__mock/info-reads' && request.method === 'GET') {
+    const title = url.searchParams.get('title') ?? ''
+    const reads = TRACKS.filter((track) => track.TITLE === title).reduce(
+      (sum, track) => sum + (player.infoReads.get(track.PATH) ?? 0),
+      0,
+    )
+    return send(response, 200, JSON.stringify({ reads }), 'application/json')
+  }
   if (url.pathname === '/__mock/silent' && request.method === 'POST') {
     player.silent = true
     player.state = 1
@@ -618,7 +637,12 @@ const server = createServer((request, response) => {
     if (url.pathname === '/api/media/current-lyrics') return send(response, 204, '')
     const match = /^\/api\/media\/(info|cover|lyrics)(\/.+)$/.exec(url.pathname)
     if (!match) return send(response, 404, 'Unknown media route\n')
-    const result = mediaRoute(match[1], decodeURIComponent(match[2]))
+    const mediaFile = decodeURIComponent(match[2])
+    if (match[1] === 'info') {
+      player.infoReads.set(mediaFile, (player.infoReads.get(mediaFile) ?? 0) + 1)
+      if (player.infoMissing.has(mediaFile)) return send(response, 404, 'No such file\n')
+    }
+    const result = mediaRoute(match[1], mediaFile)
     if (result.cover) return send(response, 200, readFileSync(new URL('cover.png', FIXTURES)), 'image/png')
     return send(response, result.status, result.body, result.type ?? 'text/plain; charset=utf-8', result.headers ?? {})
   }

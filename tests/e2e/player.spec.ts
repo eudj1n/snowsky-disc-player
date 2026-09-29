@@ -1287,6 +1287,33 @@ test('shows what takes space on the card by format, album and artist', async ({ 
   await expect(page).toHaveURL(/#\/album\/Blue%20Hours/)
 })
 
+test('remembers a file the media route could not measure instead of asking on every visit', async ({
+  page,
+  request,
+}) => {
+  test.skip(external, 'Needs the mock gateway')
+  await request.post('/__mock/info-missing?title=Last%20Exit')
+  try {
+    await english(page)
+    await page.goto('/#/card')
+    await expect(page.getByText(/^Measured (\d+) of \d+ files · 1 file could not be read$/)).toBeVisible({
+      timeout: 30_000,
+    })
+    const reads = async () =>
+      ((await (await request.get('/__mock/info-reads?title=Last%20Exit')).json()) as { reads: number }).reads
+    const before = await reads()
+    expect(before).toBeGreaterThan(0)
+    // A reload and another visit ask for it no more.
+    await page.reload()
+    await page.goto('/#/albums')
+    await page.goto('/#/card')
+    await expect(page.getByText(/· 1 file could not be read$/)).toBeVisible({ timeout: 30_000 })
+    expect(await reads()).toBe(before)
+  } finally {
+    await request.post('/__mock/info-missing?title=')
+  }
+})
+
 test('counts the tracks while the summary answers busy, and reads the summary again on opening', async ({
   page,
   request,

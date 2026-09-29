@@ -17,7 +17,7 @@ import { albumSpace, artistSpace, byFormat, cardUsage, duplicates, playsByPath, 
 import { locale, t } from '../i18n'
 import { connection } from '../stores/connection'
 import { device, refreshDevice } from '../stores/device'
-import { albumCover, enrichment, forgetSizes, wantSizes } from '../stores/enrichment'
+import { albumCover, enrichment, forgetSizes, sizeUnreadable, wantSizes } from '../stores/enrichment'
 import { history, loadHistory } from '../stores/history'
 import { loadTrash, trash } from '../stores/trash'
 import { albums, library, tracks } from '../stores/library'
@@ -47,9 +47,13 @@ const measuredFiles = computed(() =>
     return file ? [file] : []
   }),
 )
+/** Files the media route gave no size for lately (gone from the card or unreadable): not asked on every visit. */
+const unreadable = computed(
+  () => withPath.value.filter((track) => !enrichment.files[track.path] && sizeUnreadable(track.path)).length,
+)
 const music = computed(() => measuredFiles.value.reduce((sum, file) => sum + file.bytes, 0))
-const measuring = computed(() => enrichment.pending > 0 && measuredFiles.value.length < withPath.value.length)
-const complete = computed(() => measuredFiles.value.length >= withPath.value.length)
+const complete = computed(() => measuredFiles.value.length + unreadable.value >= withPath.value.length)
+const measuring = computed(() => enrichment.pending > 0 && !complete.value)
 
 const usage = computed(() => cardUsage(device.facts?.card ?? null, music.value))
 const level = computed(() => (device.facts?.card ? (cardSpace(device.facts.card)?.level ?? 'ok') : 'ok'))
@@ -95,7 +99,8 @@ const meta = computed(() => {
   const total = withPath.value.length
   if (!connection.media) return t('space_needs_media')
   const done = Math.min(measuredFiles.value.length, total)
-  return t(measuring.value ? 'space_measuring' : 'space_measured', { done, total })
+  const measured = t(measuring.value ? 'space_measuring' : 'space_measured', { done, total })
+  return unreadable.value ? `${measured} · ${t('space_unreadable', { count: unreadable.value })}` : measured
 })
 
 function measure(): void {

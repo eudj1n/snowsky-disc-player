@@ -1168,9 +1168,17 @@ first, then layout, then style.
       run. The player bar shows a thin working line after 300 ms. Unit tests
       of the slot and a mock browser test (two quick Next presses, controls
       and rows enabled meanwhile).
-- [ ] Space on the Card page is measured again on every visit without a
+- [x] Space on the Card page is measured again on every visit without a
       card change or a reconnect: keep the measurement until the card
-      changes.
+      changes. Found: measured sizes were already kept in this browser, but
+      a file the media route gave no size for (gone from the card while the
+      library still lists it, or unreadable) was never remembered, so every
+      visit asked for it again and showed "Measuring". Such a file is now
+      remembered for a week like a missing duration or year, counted as
+      "could not be read" next to the measured ones, and "Measure again"
+      forgets it too. The cache belongs to one address: the page opened by
+      another name or IP measures again. Mock browser test with a file whose
+      info answers 404, over a reload.
 - [ ] The album grid switches from 4 to 8 columns when the queue panel
       opens: at most 4 columns, even on a large screen.
 - [ ] The Home hero offers no unknown artist or unknown album and no album
