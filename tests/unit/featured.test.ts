@@ -42,9 +42,13 @@ describe('the Home hero', () => {
     expect(featuredChoice(albums.slice(0, 4), cover, 0.99, null)?.title).toBe('Blue Hours')
   })
 
-  it('keeps its choice while it qualifies, so arriving covers do not change it', () => {
+  it('keeps its choice for the session, so the hero never changes under the pointer', () => {
     expect(featuredChoice(albums, cover, 0, 'Night Lines')?.title).toBe('Night Lines')
-    // Known to have no cover after all: another one takes its place.
-    expect(featuredChoice(albums, cover, 0, 'Harbor')?.title).toBe('Blue Hours')
+    // Found to have no cover meanwhile: kept now, left out from the next load (no previous choice).
+    expect(featuredChoice(albums, cover, 0, 'Harbor')?.title).toBe('Harbor')
+    expect(featuredChoice(albums, cover, 0.5, null)?.title).toBe('Blue Hours')
+    // A choice gone from the library (or a placeholder name) is replaced.
+    expect(featuredChoice(albums, cover, 0, 'Gone')?.title).toBe('Blue Hours')
+    expect(featuredChoice(albums, cover, 0, 'Unknown album')?.title).toBe('Blue Hours')
   })
 })

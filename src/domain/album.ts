@@ -159,8 +159,10 @@ export type CoverState = 'found' | 'missing' | 'unknown'
  * The Home hero's album (owner, 2026-09-29): never one named by stock's
  * placeholders (the title or the lead artist) and never one known to have no
  * cover; among albums with a known cover when there are any. The previous
- * choice stays while it qualifies, so the hero does not change as covers
- * arrive.
+ * choice stays for the page's session while it is named and in the library,
+ * so the hero never changes under the pointer as covers arrive; an album
+ * found to have no cover meanwhile is left out from the next load on (the
+ * miss is remembered in the browser).
  */
 export function featuredChoice(
   albums: readonly Album[],
@@ -168,13 +170,12 @@ export function featuredChoice(
   seed: number,
   previous: string | null,
 ): Album | null {
-  const named = albums.filter(
-    (album) => !stockUnknown(album.title) && !stockUnknown(album.artists[0]) && cover(album) !== 'missing',
-  )
+  const named = albums.filter((album) => !stockUnknown(album.title) && !stockUnknown(album.artists[0]))
   const kept = previous === null ? undefined : named.find((album) => album.key === previous)
   if (kept) return kept
-  const covered = named.filter((album) => cover(album) === 'found')
-  const pool = covered.length ? covered : named
+  const offered = named.filter((album) => cover(album) !== 'missing')
+  const covered = offered.filter((album) => cover(album) === 'found')
+  const pool = covered.length ? covered : offered
   return pool[Math.floor(seed * pool.length)] ?? null
 }
 
