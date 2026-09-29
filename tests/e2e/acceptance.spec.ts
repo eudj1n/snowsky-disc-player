@@ -825,9 +825,10 @@ test("shows the running service's diagnostics on stock", async ({ page }) => {
   await openConnection(page)
   const diagnostics = page.getByRole('dialog').getByTestId('diagnostics')
   await diagnostics.getByText('Diagnostics', { exact: true }).click()
-  await expect(diagnostics).toContainText(/0\.8\.0 · build [0-9a-f]{12}/, { timeout: 15_000 })
-  await expect(diagnostics).toContainText('from the card')
-  await expect(diagnostics).toContainText(/ok, schema 4/)
+  await expect(diagnostics).toContainText(/0\.9\.0 · build [0-9a-f]{12}/, { timeout: 15_000 })
+  // The app installed into Apps/Disc Player names its version (combined-009).
+  await expect(diagnostics).toContainText(/from the card · \d{4}\.\d{2}\.\d{2}-[0-9a-f]{7}/)
+  await expect(diagnostics).toContainText(/ok, schema 5/)
   await page.keyboard.press('Escape')
 })
 

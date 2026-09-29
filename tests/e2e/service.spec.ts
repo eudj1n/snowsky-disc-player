@@ -226,7 +226,7 @@ test("shows the service's diagnostics in the connection dialog", async ({ page }
   await diagnostics.getByText('Diagnostics', { exact: true }).click()
   await expect(diagnostics).toContainText('0.8.0 · build mock')
   await expect(diagnostics).toContainText('usb-engineering · 2.57')
-  await expect(diagnostics).toContainText('from the card')
+  await expect(diagnostics).toContainText('from the card · 2026.09.29')
   await expect(diagnostics).toContainText('ok, schema 4')
   await expect(diagnostics).toContainText('restarted after signal 11')
   await expect(diagnostics).toContainText('Skip rule: skipped to the next track')

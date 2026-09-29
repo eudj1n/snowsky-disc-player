@@ -170,8 +170,7 @@ const status = computed(() => {
         </template>
         <dt class="text-muted">{{ t('about_page') }}</dt>
         <dd class="m-0">
-          {{ t(PAGE_SOURCE[about.about.page.source]) }}
-          <template v-if="about.about.page.version"> · {{ about.about.page.version }}</template>
+          {{ [t(PAGE_SOURCE[about.about.page.source]), about.about.page.version].filter(Boolean).join(' · ') }}
         </dd>
         <template v-if="database">
           <dt class="text-muted">{{ t('about_database') }}</dt>
