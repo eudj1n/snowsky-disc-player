@@ -651,6 +651,18 @@ export const en = {
   forget_serial: 'Forget serial number',
   pair: 'Pair',
   paired: 'This browser is paired.',
+  // The hosted page (GitHub Pages prototype, 2026-09-30).
+  hosted_title: 'Find your DISC',
+  hosted_unsupported:
+    'This browser cannot reach a player on your network from a website. Open this site in Chrome or Edge, or open the player’s own page: http://ingenic.local:7870',
+  hosted_denied:
+    'Local network access is blocked for this site. Allow it in the site settings (the icon left of the address), then reload the page.',
+  hosted_not_found:
+    'No player answered at {address}. Check that DISC is on and on the same Wi-Fi, allow local network access when the browser asks, or enter the player’s address.',
+  hosted_address: 'Player address',
+  hosted_address_save: 'Use',
+  hosted_address_invalid: 'Enter a name or an IP address, such as ingenic.local or 192.168.1.20.',
+  hosted_address_hint: 'By default {default}. If the name is not found, enter the player’s IP address.',
   // Global search and its palette (owner, 2026-09-30).
   open_track: 'Show the track',
   breadcrumbs: 'You are here',

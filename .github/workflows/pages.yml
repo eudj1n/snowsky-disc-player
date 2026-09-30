@@ -1,0 +1,39 @@
+name: Pages
+
+# The hosted prototype (2026-09-30): the same app built for a public HTTPS site.
+# It reaches DISC on the visitor's own network through the browser's Local
+# Network Access; the player admits this site's origin from its hosted.json.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build:hosted
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist-hosted
+      - id: deployment
+        uses: actions/deploy-pages@v4

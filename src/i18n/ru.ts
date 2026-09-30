@@ -696,6 +696,18 @@ export const ru: Messages = {
   forget_serial: 'Забыть серийный номер',
   pair: 'Сохранить',
   paired: 'Этот браузер сопряжён.',
+  // The hosted page (GitHub Pages prototype, 2026-09-30).
+  hosted_title: 'Найдём ваш DISC',
+  hosted_unsupported:
+    'Этот браузер не умеет обращаться с сайта к плееру в вашей сети. Откройте сайт в Chrome или Edge либо страницу самого плеера: http://ingenic.local:7870',
+  hosted_denied:
+    'Доступ к локальной сети для этого сайта запрещён. Разрешите его в настройках сайта (значок слева от адреса) и обновите страницу.',
+  hosted_not_found:
+    'Плеер не ответил по адресу {address}. Проверьте, что DISC включён и в той же сети Wi-Fi, разрешите доступ к локальной сети, когда браузер спросит, или укажите адрес плеера.',
+  hosted_address: 'Адрес плеера',
+  hosted_address_save: 'Подключить',
+  hosted_address_invalid: 'Введите имя или IP-адрес, например ingenic.local или 192.168.1.20.',
+  hosted_address_hint: 'По умолчанию {default}. Если имя не находится, укажите IP-адрес плеера.',
   // Global search and its palette (owner, 2026-09-30).
   open_track: 'Показать трек',
   breadcrumbs: 'Вы здесь',

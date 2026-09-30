@@ -1844,6 +1844,28 @@ bar, the crumbs, the search, the phone layout and the track panel (89 passed,
 `2026.09.30-ae14729` (97 files); the catalog already current; the card
 ejected.
 
+## Hosted prototype (2026-09-30, owner): the page on a public HTTPS site
+
+Instead of USB (FiiO's web tool drives USB DACs; the DISC's USB modes have no
+control interface), Chrome's Local Network Access: after the user allows
+local network access, an HTTPS page may call the player at `ingenic.local`
+or its IP. The service admits the site's exact origin from its reviewed
+`hosted.json` (service repository, `docs/local-network-access.md`).
+
+- [x] The hosted build (`npm run build:hosted`): the gateway's address
+      (`ingenic.local:7870` or the user's), `targetAddressSpace: 'local'` on
+      requests, audio with CORS, and the reason for a silent player (access
+      denied, a browser without it, no answer) beside the address field.
+      Evidence: `tests/unit/address.test.ts`; in Chrome 154 against the
+      emulator the hosted build connected, paired and played on the player
+      and in the browser through a `.local` stand-in, and explained the
+      denied and not-found cases.
+- [x] A Pages workflow (`.github/workflows/pages.yml`) that publishes the
+      hosted build.
+- [ ] The public repository and the first deployment (the owner's go-ahead).
+- [ ] The real player: an image with `hosted.json` (its own authorization),
+      then Chrome on desktop and Android at `ingenic.local` and at an IP.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

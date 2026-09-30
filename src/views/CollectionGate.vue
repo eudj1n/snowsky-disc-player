@@ -10,6 +10,8 @@ import ConnectCard from '../components/connection/ConnectCard.vue'
 import OfflineNotice from '../components/connection/OfflineNotice.vue'
 import EmptyState from '../components/common/EmptyState.vue'
 import HomeIntro from '../components/home/HomeIntro.vue'
+import { hosted } from '../gateway/address'
+import HostedPlayer from './HostedPlayer.vue'
 import { locale, t } from '../i18n'
 import { connection, probeGateway } from '../stores/connection'
 import { setImportDestination } from '../stores/imports'
@@ -57,7 +59,11 @@ const loading = computed(
 <template>
   <template v-if="connection.gateway === false && library.source !== 'saved'">
     <HomeIntro :eyebrow="t('your_music_your_space')" :title="t('welcome_back')" />
-    <EmptyState icon="device" :title="t('it_starts_with_your_disc')" :text="t('connect_your_player_to_explore')">
+    <!-- The hosted page says why the player is silent and where it looks for it (2026-09-30). -->
+    <EmptyState v-if="hosted" icon="device" :title="t('hosted_title')">
+      <div class="mx-auto max-w-460"><HostedPlayer explain /></div>
+    </EmptyState>
+    <EmptyState v-else icon="device" :title="t('it_starts_with_your_disc')" :text="t('connect_your_player_to_explore')">
       <ConnectCard :action="t('connect_your_player')" @open="openDialog('connection')" />
     </EmptyState>
   </template>

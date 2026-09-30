@@ -5,6 +5,7 @@
  * Older images do not serve them; health reports `media: true` when they do.
  */
 import { coverType, MAX_COVER_BYTES } from './artwork'
+import { gatewayUrl } from './address'
 import type { GatewayHttp } from './http'
 
 export interface MediaInfo {
@@ -48,7 +49,7 @@ export function mediaPath(path: string): string {
 
 /** The audio file itself for this browser (combined-008): the service answers byte ranges. */
 export function audioUrl(path: string): string {
-  return `/api/media/audio${mediaPath(path)}`
+  return gatewayUrl(`/api/media/audio${mediaPath(path)}`)
 }
 
 const count = (value: unknown) => (typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : null)

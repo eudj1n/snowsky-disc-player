@@ -14,6 +14,7 @@ Node.js 20.19+ (CI uses 24). Install once with `npm ci`.
 | `npm run typecheck`               | `vue-tsc` for the app and unit tests, `tsc` for configs and e2e                                              |
 | `npm test`                        | Vitest unit and component tests                                                                              |
 | `npm run build`                   | Production build, then the SD bundle contract check                                                          |
+| `npm run build:hosted`            | The hosted build for a public HTTPS site (`dist-hosted/`, `VITE_HOSTED=1`; see below)                        |
 | `npm run check`                   | All of the above except e2e; this is what CI runs first                                                      |
 | `npm run e2e`                     | Playwright against the mock gateway (build first), desktop and phone                                         |
 | `npm run release`                 | Packs the Disc Player app as a zip with the service's tool ([release](release.md))                           |
@@ -121,6 +122,29 @@ afterwards, and a guest set up since then has about 224 MB more room
 `.github/workflows/ci.yml` runs `format:check`, `lint`, `typecheck`, `test`,
 `build` (with the bundle check), then Playwright against the mock gateway. No
 player, emulator, sibling checkout or secret is needed in CI.
+
+`.github/workflows/pages.yml` publishes `npm run build:hosted` to GitHub Pages
+on pushes to `main` (the prototype of 2026-09-30).
+
+## The hosted build
+
+The same app for a public HTTPS site instead of the card. It reaches DISC on
+the visitor's network through Chrome's Local Network Access: the browser asks
+the user once for local network access, and the player admits the site's
+exact origin from its reviewed `hosted.json` (service repository,
+`docs/gateway-contract.md`). The gateway's address is `ingenic.local:7870`
+unless the user enters another (`src/gateway/address.ts`); a silent player
+is explained by the permission's state (`src/stores/localAccess.ts`,
+`src/views/HostedPlayer.vue`). Safari and iOS have no Local Network Access:
+they use the page on the card.
+
+To try it against the emulator without publishing anything: serve
+`dist-hosted/` over HTTPS on a local port, list that origin on the guest with
+a card `hosted.json` (or `DISC_GUEST_EXTRA_ARGS=--cors-origin …` of the
+service's `scripts/guest-service.sh`), and start Chrome with
+`--ip-address-space-overrides=<page>=public,<gateway>=local` and a
+`--host-resolver-rules` name ending in `.local` for the gateway, as the
+service's `docs/local-network-access.md` records.
 
 ## Project layout
 

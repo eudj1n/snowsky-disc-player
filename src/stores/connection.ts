@@ -5,6 +5,7 @@
  */
 import { reactive, readonly, shallowRef } from 'vue'
 import type { ConnectionState, PlayerIdentity } from '../domain/player'
+import { gatewayFetch, gatewaySocketUrl } from '../gateway/address'
 import { GatewayHttp } from '../gateway/http'
 import {
   isCompatible,
@@ -37,7 +38,7 @@ const CLOSE_NOTICES: Partial<Record<CloseReason, ConnectionNotice>> = {
   scanning: 'closed_scanning',
 }
 
-export const http = new GatewayHttp()
+export const http = new GatewayHttp((input, init) => gatewayFetch(input, init))
 
 let session: GatewaySession | null = null
 let compatibility: Compatibility | null = null
@@ -170,10 +171,6 @@ export async function resumeAfterReload(pause = RESUME_PAUSE_MS): Promise<void> 
   }
 }
 
-function socketUrl(): string {
-  return `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/websocket`
-}
-
 export async function connect(): Promise<void> {
   if (state.connection !== 'disconnected') return
   state.notice = null
@@ -184,7 +181,7 @@ export async function connect(): Promise<void> {
       state.connection = 'disconnected'
       return
     }
-    const opened = await GatewaySession.open(socketUrl())
+    const opened = await GatewaySession.open(gatewaySocketUrl())
     session = opened.session
     // Reduce a202 records from the start, so every later listener reads the merged state.
     trackPlayback(session)

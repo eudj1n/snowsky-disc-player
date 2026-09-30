@@ -8,6 +8,7 @@
  * reply after the body started is uncertain and is never retried.
  */
 import { CARD_ROOT } from '../domain/imports'
+import { gatewayUrl } from './address'
 import { requestId as newRequestId } from './ids'
 
 export type UploadOutcome = 'confirmed' | 'exists' | 'not-sent' | 'uncertain'
@@ -49,7 +50,7 @@ export function uploadFile(request: UploadRequest): Promise<UploadOutcome> {
   return new Promise((resolve) => {
     const xhr = request.xhr?.() ?? new XMLHttpRequest()
     let started = false
-    xhr.open('POST', uploadUrl(request.path))
+    xhr.open('POST', gatewayUrl(uploadUrl(request.path)))
     xhr.timeout = 330_000
     xhr.setRequestHeader('X-Disc-Token', request.token)
     xhr.setRequestHeader('X-Disc-Request', newRequestId())

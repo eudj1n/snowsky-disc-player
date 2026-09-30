@@ -9,6 +9,7 @@
  * development the Vite proxy serves the gateway's Disc Player origins.json
  * (see vite.config.ts).
  */
+import { gatewayUrl } from './address'
 export interface Compatibility {
   schema: number
   api: number
@@ -62,7 +63,7 @@ async function json<T>(url: URL | string, name: string): Promise<T> {
   return (await response.json()) as T
 }
 
-const contractJson = <T>(name: string): Promise<T> => json<T>(`/api/contract/${name}`, name)
+const contractJson = <T>(name: string): Promise<T> => json<T>(gatewayUrl(`/api/contract/${name}`), name)
 
 /** One reviewed external origin of the app (its origins.json). */
 export interface ReleaseOrigin {

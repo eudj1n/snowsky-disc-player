@@ -1,4 +1,5 @@
 dist/
+dist-hosted/
 node_modules/
 work/
 test-results/

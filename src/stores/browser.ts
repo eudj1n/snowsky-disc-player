@@ -27,6 +27,7 @@ import { nextIndex, playableIn, previousIndex, type Repeat } from '../domain/bro
 import { playCounts, type PlayContext } from '../domain/history'
 import type { PlaybackSource } from '../domain/playback'
 import type { Track } from '../domain/track'
+import { hosted } from '../gateway/address'
 import { audioUrl } from '../gateway/media'
 import type { SelectionTarget } from '../gateway/selection'
 import { readPreference, writePreference } from '../lib/storage'
@@ -144,6 +145,8 @@ async function report(path: string, cueTitle: string | null, heard: number): Pro
 function element(): HTMLAudioElement {
   if (audio) return audio
   audio = new Audio()
+  // A hosted page plays the player's files cross-origin: with CORS, so the visualizer's analyser hears them.
+  if (hosted) audio.crossOrigin = 'anonymous'
   audio.preload = 'auto'
   audio.volume = state.volume / 100
   audio.addEventListener('playing', () => (state.playing = true))

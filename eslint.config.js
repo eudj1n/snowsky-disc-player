@@ -48,7 +48,7 @@ const boundaries = [
 ]
 
 export default tseslint.config(
-  { ignores: ['dist/', 'node_modules/', 'work/', 'test-results/', 'playwright-report/'] },
+  { ignores: ['dist/', 'dist-hosted/', 'node_modules/', 'work/', 'test-results/', 'playwright-report/'] },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   ...vue.configs['flat/recommended'],

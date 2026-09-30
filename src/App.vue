@@ -34,6 +34,7 @@ import { output } from './stores/output'
 import { playerVisible } from './stores/playback'
 import { ui } from './stores/ui'
 import { handleShortcut } from './views/shortcuts'
+import { readLocalAccess } from './stores/localAccess'
 
 /** The bar shows while the player has a track, and always on this browser's side: it holds the switch back. */
 const barVisible = computed(() => playerVisible.value || output.side === 'browser')
@@ -52,6 +53,7 @@ function skipToContent(event: MouseEvent): void {
 
 onMounted(async () => {
   document.addEventListener('keydown', handleShortcut)
+  void readLocalAccess()
   void loadEnrichment()
   void loadArtistPictures()
   if (await probeGateway()) {

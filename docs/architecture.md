@@ -147,6 +147,12 @@ shows them.
   (`base: './'`); `/api/…` stays absolute. The app's own `origins.json` is
   fetched relative to the script (`new URL('..', import.meta.url)`); the
   reviewed catalogs come from the service at `/api/contract/`.
+- **Hosted build** (`VITE_HOSTED=1`, 2026-09-30): the same app on a public
+  HTTPS site. `src/gateway/address.ts` prefixes `/api/…` with the player's
+  address (`http://ingenic.local:7870` or the user's), declares
+  `targetAddressSpace: 'local'` on its requests and builds the WebSocket
+  address; browser audio plays with `crossorigin` so the visualizer hears
+  it. The page on the card keeps relative, same-origin paths.
 - **Routing** uses the URL hash (`#/albums?artist=…`): the gateway has no
   history fallback for unknown paths, and query strings on `/` are ignored by
   the gateway, so navigation state lives in the hash.

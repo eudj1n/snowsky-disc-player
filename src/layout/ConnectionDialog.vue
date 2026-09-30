@@ -19,6 +19,8 @@ import { playerOptions } from '../stores/playerOptions'
 import { forgetToken, pairing, saveToken } from '../stores/pairing'
 import { closeDialog, ui } from '../stores/ui'
 import UiDialog from '../ui/UiDialog.vue'
+import { hosted } from '../gateway/address'
+import HostedPlayer from '../views/HostedPlayer.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 
@@ -112,6 +114,8 @@ const status = computed(() => {
     wide
     @close="closeDialog"
   >
+    <!-- The hosted page: which player it talks to on the local network (2026-09-30). -->
+    <HostedPlayer v-if="hosted" class="mt-18" />
     <div class="my-22 flex items-center gap-22 narrow:gap-16">
       <span
         aria-hidden="true"
