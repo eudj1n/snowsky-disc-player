@@ -1443,29 +1443,61 @@ started:
 
 ## Owner idea (2026-09-29): switch playback between the player and this browser
 
-Not started (owner: a question to think through first). The bar's "ON DISC"
-becomes a switch, DISC or this browser, in place of playing an album in the
-browser on its own.
+The owner's decisions (2026-09-30), after a check of what combined-009 already
+offers (no new image is needed):
 
-- [ ] Player to browser: read the current track, its queue position (`a202`
-      `pos_id`) and the queue; pause with confirmation (`pauseIfPlaying`) and
-      read the position again; the browser takes the queue's paths (a CUE
-      track from its offset) and starts there through the audio route. The
-      player keeps its queue, paused. About 1 to 2 s of silence.
-- [ ] Browser to player: (A) the queue taken from the player, only moved
-      within: read the player's queue, compare its hash with the snapshot,
-      select the position (`0100 <pos> 0000`, as a queue row does) and seek;
-      (B) a stock context played in the browser (album, artist, genre,
-      playlist, favorites, folder): play that context on the player from the
-      track through the guarded selections and seek. A mixed queue of its own
-      is out: stock cannot build one, so the browser does not offer one
-      either (owner, 2026-09-29), and no M3U list is needed.
-- [ ] Every step confirmed by a read; an unconfirmed pause never starts the
-      browser; no replay; the player started by hand while the browser plays
-      pauses the browser. The player starts a selected track from its
-      beginning and then seeks (whole seconds), so a short start is heard;
-      muting it around the switch is out (two more commands, and an
-      unconfirmed restore would leave it silent).
+- One switch point: an icon in the bar, the player or this browser, in place
+  of "ON DISC". It chooses where music plays: with the browser chosen, every
+  play action (albums, tracks, artists, genres, playlists, favorites, folders,
+  lists, queue rows) and the bar and Now tab work on the browser; with the
+  player, as before. The separate "Play in this browser" entries go.
+- Switching carries the track, its position and its queue both ways. The seek
+  that follows the page's own selection goes at once, not after the 2.1 s
+  pacing, so about 80 ms of silence instead of the track's first seconds
+  (service `docs/m3u.md`).
+- The browser repeats the queue or one track as the player does; shuffle is
+  not carried over in this first version.
+- Accepted for now: a paused player on battery powers off after its timer and
+  the browser's sound, which comes from the player, stops (the owner keeps the
+  player on power while using it); a track split between the two may count
+  twice or not at all in the history (exact counting needs an image).
+- A position the page never saw (the player was paused before the page
+  connected) comes from the player's resume point when it keeps one, else the
+  track starts from its beginning.
+- A file the browser cannot play (APE, DSD; ALAC outside Safari) is found by
+  its name before switching: the switch is refused with the reason and the
+  player keeps playing. In the browser's queue such files are skipped, and a
+  decoding error moves on to the next track; a network error (the player off
+  or away) stops with the reason instead.
+
+Earlier notes, still valid:
+
+- Player to browser: read the current track, its queue position (`a202`
+  `pos_id`) and the queue; pause with confirmation (`pauseIfPlaying`) and
+  read the position again; the browser takes the queue's paths (a CUE track
+  from its offset) and starts there through the audio route. The player keeps
+  its queue, paused.
+- Browser to player: (A) the queue taken from the player, only moved within:
+  read the player's queue, compare its hash with the snapshot, select the
+  position (`0100 <pos> 0000`, as a queue row does) and seek; (B) a context
+  played in the browser (album, artist, genre, playlist, favorites, folder,
+  list): play that context on the player from the track through the guarded
+  selections and seek.
+- Every step confirmed by a read; an unconfirmed pause never starts the
+  browser; no replay; the player started by hand while the browser plays
+  pauses the browser and the switch returns to the player.
+
+Stages:
+
+- [ ] The browser engine: a start position, previous, seek, volume, repeat,
+      skipping files it cannot play, the context it plays for the way back.
+- [ ] The bar and the Now tab show and control whichever side plays; every
+      play action follows the chosen side; the "Play in this browser" entries
+      and the separate browser card go.
+- [ ] The switch both ways with confirmations, the immediate seek after the
+      page's own selection, and the refusals with reasons.
+- [ ] The icon in the bar, tests on the mock, then the emulator acceptance
+      (it sends player commands) before the owner's card.
 - [x] Plays in this browser go into the play history (owner, 2026-09-29;
       done 2026-09-30 on combined-009): the observer sees only the player's
       open files, so the page applies its rule (30 s, or half with at least
