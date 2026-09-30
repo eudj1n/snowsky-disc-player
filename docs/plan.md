@@ -1610,6 +1610,10 @@ Player` replaced by `2026.09.30-325ebae` (94 files) and
       the last one's tracks for last. A card catalog from before the periods
       refuses the two fields: the record is then stored without them. A list
       not on the player opens as a preview from the Playlists section too.
+      Checks (2026-09-30): `npm run check` 257 unit tests, the mock suite
+      157 passed, the emulator acceptance with release
+      `2026.09.30-fb3183f` and the service's card catalogs (store
+      `e05292f5…`): 35 desktop cases, 28 on stock.
 
 ## Requests for the next service build
 
