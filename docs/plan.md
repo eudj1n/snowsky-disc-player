@@ -1637,7 +1637,10 @@ Player` replaced by `2026.09.30-325ebae` (94 files) and
       Checks with the list's name above (2026-09-30): `npm run check` 259
       unit tests, the mock suite 158 passed, the emulator acceptance with
       release `2026.09.30-2c05bcb`: 37 desktop cases, 30 on stock (the
-      repeat cycle, and "Playlist: <name>" for a list's play).
+      repeat cycle, and "Playlist: <name>" for a list's play). On the owner's card
+      (2026-09-30, their go-ahead): `Apps/Disc Player` replaced by
+      `2026.09.30-2c05bcb` (92 files); the catalog already current; the
+      card ejected.
 
 ## Requests for the next service build
 
