@@ -1753,6 +1753,42 @@ whole. On the owner's card (2026-09-30, their go-ahead): `Apps/Disc Player`
 replaced by `2026.09.30-4e5070d` (90 files); the catalog already current;
 the card ejected.
 
+## Owner topics (2026-09-30, night): search, track panel, placeholders, actions, header, card-only
+
+Discussed before work; the owner accepted the recommendations as a whole.
+Order: actions first (quick, quieter headings), then search and the header,
+the track panel, placeholders, the sticky bar.
+
+- [ ] Rare actions behind a round "⋯" button, in the heading and in the rows
+      of the Playlists page: an automatic list's period (day, week, month),
+      "Update now" and "Remove from the player"; a playlist's rename and
+      delete. The rows say how a list is kept ("updated daily · Sep 30").
+- [ ] One search for the whole collection instead of a filter of the current
+      section: a compact search pill in the top bar (and `/`, ⌘K) opens a
+      palette with instant results by kind (top result, tracks, albums,
+      artists, playlists and lists, genres; the section you came from first)
+      and commands (go to a section, theme, add music, sound, switch to the
+      browser); "All results" opens a search page. Case, diacritics and
+      ё/е do not matter; a start of a word ranks first. Phones: the icon
+      opens search full screen.
+- [ ] The top bar holds breadcrumbs (in place of the "← back" links), the
+      search pill and one settings icon. The appearance dialog becomes
+      Settings and takes the interface language; adding music moves to the
+      Card section (with a command and the empty collection's button), its
+      progress to a badge on the sidebar's Card; refreshing the collection
+      to the palette and the connection dialog; sound settings to the player
+      bar beside the volume.
+- [ ] A click on a track's title opens the track in the side panel (a full
+      sheet on phones): cover, links, the facts block, lyrics, and Play on
+      the chosen side, favorite, add to playlist, dislike, open its folder;
+      a link returns to what plays. Double click and Enter play.
+- [ ] One placeholder system: genres and own playlists show a 2×2 mosaic of
+      their albums' covers where covers are known; otherwise genres take
+      album-like cards (records fanned on a square sleeve, the name below)
+      and artists' circles take the records' label style.
+- [ ] The compact bar that pins over a detail page takes the album's top
+      colour (see-through, blurred); the player bar stays neutral.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
