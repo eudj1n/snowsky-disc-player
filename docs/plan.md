@@ -1832,9 +1832,9 @@ ejected.
       crumbs start where the content does and the buttons end where it
       ends; they were 16 px left of it on wide screens. Evidence: e2e
       "searches the whole collection…" measures it at 1600 and 1280 px.
-- [ ] The top bar's empty left on a section's own page (desktop): options
-      proposed to the owner (back and forward arrows, the section's name,
-      the player's state); waiting for the choice.
+- [x] The top bar's empty left on a section's own page (desktop): back and
+      forward arrows, the section's name or the player's state were
+      proposed; the owner keeps it empty for now (2026-09-30).
 
 ## Requests for the next service build
 
