@@ -266,7 +266,7 @@ function addHere(): void {
         t('files_create')
       }}</UiPillButton>
       <UiTextButton class="text-12" @click="naming = false">{{ t('files_cancel') }}</UiTextButton>
-      <span v-if="problem" role="alert" class="w-full text-11 text-accent">{{ t(PROBLEM[problem]) }}</span>
+      <span v-if="problem" role="alert" class="w-full text-11 text-notice">{{ t(PROBLEM[problem]) }}</span>
     </form>
   </div>
   <p v-if="!ready" class="mt-0 mb-14 text-11 text-muted">{{ t('files_pair') }}</p>

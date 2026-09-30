@@ -1273,6 +1273,35 @@ test("keeps every control of the phone's mini player on the screen", async ({ pa
   }
 })
 
+test("follows the system's contrast and transparency settings", async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'One browser is enough for media features')
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  await connectAndPair(page)
+  const note = page.getByText(/^In this section/)
+  const bar = page.getByRole('region', { name: 'Player' })
+  await page.goto('/#/tracks')
+  await expect(note).toBeVisible()
+  const color = () => note.evaluate((element) => getComputedStyle(element).color)
+  const usual = await color()
+  await expect(bar).toHaveCSS('backdrop-filter', /blur/)
+
+  // More contrast pulls secondary text toward the ink.
+  await page.emulateMedia({ contrast: 'more' })
+  await expect.poll(color).not.toBe(usual)
+  await page.emulateMedia({ contrast: null })
+  await expect.poll(color).toBe(usual)
+
+  // Less transparency: a solid player bar without blur.
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('Emulation.setEmulatedMedia', {
+    features: [{ name: 'prefers-reduced-transparency', value: 'reduce' }],
+  })
+  await expect(bar).toHaveCSS('backdrop-filter', 'none')
+  const paper = await page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor)
+  await expect(bar).toHaveCSS('background-color', paper)
+})
+
 test('draws select arrows inside the rounded edge', async ({ page }) => {
   await english(page)
   await page.goto('/#/tracks')

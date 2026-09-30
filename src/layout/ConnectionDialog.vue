@@ -154,7 +154,7 @@ const status = computed(() => {
         </dd>
       </div>
     </dl>
-    <p v-if="connection.notice" role="status" class="-mt-8 mb-16 text-12 text-accent" data-testid="notice">
+    <p v-if="connection.notice" role="status" class="-mt-8 mb-16 text-12 text-notice" data-testid="notice">
       {{ t(connection.notice) }}
     </p>
     <div class="flex items-center justify-between gap-14">
@@ -192,7 +192,7 @@ const status = computed(() => {
         </template>
         <template v-if="writes">
           <dt class="text-muted">{{ t('about_writes') }}</dt>
-          <dd class="m-0" :class="{ 'text-accent': writes.failing }" data-testid="about-writes">{{ writes.text }}</dd>
+          <dd class="m-0" :class="{ 'text-notice': writes.failing }" data-testid="about-writes">{{ writes.text }}</dd>
         </template>
         <dt class="text-muted">{{ t('about_restarts') }}</dt>
         <dd class="m-0">

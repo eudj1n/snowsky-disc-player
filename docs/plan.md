@@ -1660,9 +1660,7 @@ new setting is the text size. See docs/typography.md.
       7 px (fixed 78 px and 28 px columns); the columns now take their
       buttons' width and the seek times keep the bar's side padding.
 - [x] The system font stack covers Windows 11, Android and Linux and colour emoji; the whole page is antialiased; four weights (400, 500, 600, 700) instead of eight; the unused Georgia token is gone.
-- [ ] Secondary text passes 4.5:1 in every light palette, also on a
-      selected row; more contrast and less transparency follow the system
-      settings; the player bar no longer shows the list through it.
+- [x] Secondary text passes 4.5:1 in every light palette, also on a selected row (secondary text slightly darker in Sage and Paper too); small notices use a darker coral; more contrast and less transparency follow the system settings; the player bar is 97 % opaque with a 30 px blur and no longer shows the list through it.
 - [ ] Names from the collection keep their order next to numbers (bidi
       isolation) and names with kana or hangul get their language, so
       Japanese titles are drawn with Japanese glyph forms.

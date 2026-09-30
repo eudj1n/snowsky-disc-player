@@ -43,7 +43,7 @@ function submit(): void {
           class="w-full min-w-0 rounded-10 border border-line bg-raised p-12 text-14 text-ink outline-offset-3 focus:border-secondary aria-invalid:border-accent"
         />
       </label>
-      <p v-if="invalid" role="status" class="m-0 text-12 text-accent">
+      <p v-if="invalid" role="status" class="m-0 text-12 text-notice">
         {{ t('serial_invalid') }}
       </p>
       <UiPillButton type="submit" variant="secondary" class="self-end">{{ t('pair') }}</UiPillButton>

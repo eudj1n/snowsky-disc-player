@@ -172,7 +172,7 @@ const heroLines = computed<[string, string]>(() =>
     <p
       v-if="connection.historyWrites === 'failing'"
       role="status"
-      class="m-0 rounded-12 bg-soft px-14 py-10 text-12 text-accent"
+      class="m-0 rounded-12 bg-soft px-14 py-10 text-12 text-notice"
       data-testid="history-failing"
     >
       {{ t('history_writes_failing') }}

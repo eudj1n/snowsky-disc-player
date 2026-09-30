@@ -196,7 +196,7 @@ function openNew(): void {
                 item.phase === 'done'
                   ? 'text-secondary'
                   : ['uncertain', 'not-sent'].includes(item.phase)
-                    ? 'text-accent'
+                    ? 'text-notice'
                     : 'text-muted'
               "
               >{{
@@ -224,7 +224,7 @@ function openNew(): void {
           </p>
           <p
             v-if="['uncertain', 'not-sent'].includes(item.phase)"
-            class="mt-4 mb-0 flex flex-wrap items-center gap-x-10 pl-25 text-11 text-accent"
+            class="mt-4 mb-0 flex flex-wrap items-center gap-x-10 pl-25 text-11 text-notice"
           >
             {{ t(PHASE[item.phase]) }}
             <UiTextButton class="text-11" :disabled="imports.transferring" @click="retryItem(item.id)">{{

@@ -171,7 +171,7 @@ watch(
               : bytes(music)
           }}
         </strong>
-        <span v-if="usage" class="text-12" :class="level === 'ok' ? 'text-muted' : 'font-semibold text-accent'">
+        <span v-if="usage" class="text-12" :class="level === 'ok' ? 'text-muted' : 'font-semibold text-notice'">
           {{ t('card_free_short', { free: bytes(usage.free) }) }}
         </span>
       </div>

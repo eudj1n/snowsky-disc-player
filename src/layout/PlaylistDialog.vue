@@ -170,7 +170,7 @@ async function submit(): Promise<void> {
       <p v-if="dialog.mode !== 'unfavorite'" class="mt-0 mb-18 text-11 leading-[1.6] text-muted">
         {{ t('playlist_no_files') }}
       </p>
-      <p v-if="feedback" role="status" class="mt-0 mb-14 text-11 text-accent" data-testid="playlist-feedback">
+      <p v-if="feedback" role="status" class="mt-0 mb-14 text-11 text-notice" data-testid="playlist-feedback">
         {{ feedback }}
       </p>
       <div class="flex items-center justify-end gap-10">

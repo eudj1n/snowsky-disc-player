@@ -55,3 +55,25 @@ Four weights, each with one job:
 Intermediate weights (550, 620, 650, 750) are not used: static faces snap
 them to their neighbours, and 750 became Black on Windows. The light weight
 remains only for the "···" glyph of the row menus.
+
+## Contrast and transparency
+
+Every text colour keeps 4.5:1 on its grounds in all eight palettes,
+secondary text (`--muted`, `--secondary`) also on a selected row, and
+`tests/unit/contrast.test.mjs` checks it against the stylesheets. Small
+notices and errors use `--notice` (`text-notice`), the coral darkened to
+`#b3432d` in the light theme; the accent itself stays for icons, the heart and
+the word mark's period.
+
+There are no page switches for contrast or transparency (owner, 2026-09-30);
+the page follows the system:
+
+- **More contrast** (`prefers-contrast: more`) pulls secondary text and lines
+  toward the ink of the palette in effect (`--contrast-muted`,
+  `--contrast-secondary`, `--contrast-line`, read by the theme colours as
+  fallbacks).
+- **Reduce transparency** (`prefers-reduced-transparency: reduce`) makes the
+  player bar solid and drops every backdrop blur.
+
+Otherwise the player bar is 97 % opaque with a 30 px blur and more
+saturation, so the list no longer reads through it.

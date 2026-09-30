@@ -161,20 +161,21 @@
 /* Theme colors resolve at use site, so the dark overrides below apply. */
 @theme inline {
   --color-paper: var(--paper);
-  --color-line: var(--line);
+  --color-line: var(--contrast-line, var(--line));
   --color-ink: var(--ink);
   --color-surface: var(--surface);
   --color-raised: var(--raised);
   --color-soft: var(--soft);
   --color-hover: var(--hover);
   --color-selected: var(--selected);
-  --color-secondary: var(--secondary);
+  --color-secondary: var(--contrast-secondary, var(--secondary));
   --color-banner: var(--banner);
   --color-banner-ink: var(--banner-ink);
   --color-progress-bg: var(--progress-bg);
   --color-progress-fill: var(--progress-fill);
-  --color-player-bg: var(--player-bg);
-  --color-muted: var(--muted);
+  --color-player-bg: var(--solid-player, var(--player-bg));
+  --color-muted: var(--contrast-muted, var(--muted));
+  --color-notice: var(--notice);
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
   --color-strong: var(--strong);
@@ -197,17 +198,21 @@
   /* Placeholder records (2026-09-29): a flat vinyl and the faint rings of its grooves. */
   --vinyl: #1f1f21;
   --groove: #ffffff17;
-  --secondary: #626d57;
+  --secondary: #606a55;
   --banner: #f0f1e9;
-  --banner-ink: #707b60;
+  --banner-ink: #677158;
   --progress-bg: #e0e5d6;
   --progress-fill: #6b7959;
-  --player-bg: #fbfcf8ee;
-  --muted: #82847b;
+  --player-bg: #fbfcf8f7;
+  /* Secondary text: at least 4.5:1 on the page and on a selected row (docs/typography.md). */
+  --muted: #666861;
   /* A filling card: amber below a quarter free (critical uses the accent). */
   --caution: #c98a1c;
   --accent: #f35c3f;
   --accent-ink: #21140f;
+  /* Notices and errors in small text: the coral darkened to 4.5:1 on light grounds. The
+   * accent is the same in every palette, so this is a theme token, not a palette one. */
+  --notice: #b3432d;
   /* Primary buttons (play), pressed filters, decorative art. */
   --strong: #30362b;
   --strong-hover: #3b4335;
@@ -244,6 +249,7 @@
   --line: #33302c;
   --muted: #a59e96;
   --accent: #ff795a;
+  --notice: #ff795a;
   --surface: #121110;
   --raised: #201e1b;
   --soft: #262320;
@@ -314,6 +320,30 @@
 @media (max-width: 540px) {
   :root[data-player='hidden'] {
     --player: 58px;
+  }
+}
+
+/*
+ * System settings, never page switches (owner, 2026-09-30): more contrast pulls secondary
+ * text and lines toward the ink of whatever palette is in effect, and less transparency
+ * makes the player bar solid and drops every backdrop blur. The theme colours read these
+ * through fallbacks (`--color-muted` above), so the palettes' own selectors need no copies.
+ */
+@media (prefers-contrast: more) {
+  :root {
+    --contrast-muted: color-mix(in srgb, var(--muted), var(--ink) 50%);
+    --contrast-secondary: color-mix(in srgb, var(--secondary), var(--ink) 40%);
+    --contrast-line: color-mix(in srgb, var(--line), var(--ink) 25%);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --solid-player: var(--paper);
+  }
+  *,
+  ::before,
+  ::after {
+    backdrop-filter: none !important;
   }
 }
 

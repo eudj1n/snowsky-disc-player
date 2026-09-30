@@ -31,7 +31,9 @@ and dropped the pure black palette so that each theme has four.
 | Dark  | Graphite      | `graphite`      | Neutral cool dark grey                       |
 | Dark  | Espresso      | `espresso`      | Brown, cream buttons                         |
 
-The coral accent (`--accent`) stays in every palette.
+The coral accent (`--accent`) stays in every palette. Text colours keep 4.5:1 on their grounds in every
+palette (`tests/unit/contrast.test.mjs`); see docs/typography.md for the
+notice colour and the system contrast and transparency settings.
 
 ![Light palettes on the home page](images/light-palettes-home.png)
 ![Dark palettes on the home page](images/dark-palettes-home.png)
