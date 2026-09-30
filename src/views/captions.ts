@@ -63,3 +63,7 @@ export function playlistLines(playlist: Playlist): CardLine[] {
 export function countLine(searching: boolean, count: number): string {
   return `${t(searching ? 'found' : 'in_this_section')}: ${count}`
 }
+
+/** The back link above a detail heading: a small pill on the controls' ground, legible over album colours. */
+export const BACK_LINK =
+  'rounded-full bg-(--control-ground) px-12 py-6 text-footnote text-secondary shadow-[inset_0_0_0_1px_var(--control-edge)] backdrop-blur-[10px]'

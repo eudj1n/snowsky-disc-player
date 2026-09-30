@@ -171,8 +171,6 @@
 }
 .album-colours {
   background: linear-gradient(180deg, var(--head-a) 0%, var(--head-b) 52%, transparent 100%);
-  /* The sides fade out, so the colour has no edge where the page's padding ends. */
-  mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
   transition:
     --head-a 0.7s,
     --head-b 0.7s,
@@ -186,6 +184,10 @@
   .album-colours {
     opacity: 0.45;
   }
+}
+/* Over the colours the top bar keeps no rule, so the page reads as one. */
+#workspace:has(> .album-colours) > header {
+  border-bottom-color: transparent;
 }
 @media (prefers-reduced-motion: reduce) {
   .album-colours {
@@ -328,6 +330,11 @@
   --hero-from: #202b27;
   --hero-mid: #263129;
   --toast: #2e3829;
+  /* The ground of small controls (round buttons, the back link): the theme's own, a little
+   * see-through, with a hairline edge, so they read the same over any album's colours
+   * (owner, 2026-09-30: controls stay stable). */
+  --control-ground: color-mix(in srgb, var(--soft) 88%, transparent);
+  --control-edge: color-mix(in srgb, var(--ink) 11%, transparent);
   /* Layout: sidebar width and bottom player height per breakpoint. */
   --sidebar: 224px;
   --player: 100px;

@@ -39,7 +39,7 @@ import { pairing } from '../stores/pairing'
 import UiCircleButton from '../ui/UiCircleButton.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumCardRoute, albumRoute, artistAlbumLines, artistRoute, withYear } from './captions'
+import { albumCardRoute, albumRoute, artistAlbumLines, artistRoute, BACK_LINK, withYear } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { useHeadingAction } from './headingAction'
 import { playAlbumCard, playFrom } from './playAlbum'
@@ -140,9 +140,7 @@ function lines(album: Album) {
 <template>
   <CollectionGate :count="items.length + joined.length" :searching="searching" empty-key="search_empty_albums">
     <template #heading="{ loading }">
-      <UiTextButton class="text-footnote" @click="router.push('/artists')"
-        >← {{ t('back_to_collection') }}</UiTextButton
-      >
+      <UiTextButton :class="BACK_LINK" @click="router.push('/artists')">← {{ t('back_to_collection') }}</UiTextButton>
       <DetailHeading
         :title="creditLabel(name)"
         :kind="t('kind_artist')"

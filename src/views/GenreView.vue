@@ -32,7 +32,7 @@ import { openTrackMenu, ui } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiSkeleton from '../ui/UiSkeleton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumLines, albumRoute, artistRoute, genreAlbumRoute } from './captions'
+import { albumLines, albumRoute, artistRoute, BACK_LINK, genreAlbumRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { genreRecords } from './genreRecords'
 import { useHeadingAction } from './headingAction'
@@ -145,7 +145,7 @@ function playAlbum(item: Album): void {
 <template>
   <CollectionGate :count="count" :searching="searching" empty-key="search_empty_tracks">
     <template #heading="{ loading }">
-      <UiTextButton class="text-footnote" @click="router.push('/genres')">← {{ t('back_to_genres') }}</UiTextButton>
+      <UiTextButton :class="BACK_LINK" @click="router.push('/genres')">← {{ t('back_to_genres') }}</UiTextButton>
       <DetailHeading
         :title="shown"
         :kind="t('kind_genre')"

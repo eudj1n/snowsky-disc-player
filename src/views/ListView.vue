@@ -8,6 +8,7 @@
  * (`?kind=`, from Home) shows what it would hold; listening writes it to the
  * player first (owner, 2026-09-30: one tap).
  */
+import { BACK_LINK } from './captions'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ListArt from '../components/artwork/ListArt.vue'
@@ -109,9 +110,7 @@ async function remove(): Promise<void> {
     :ready="entries !== null || (autoPlaylists.available && !list)"
   >
     <template #heading="{ loading }">
-      <UiTextButton class="text-footnote" @click="router.push('/playlists')"
-        >← {{ t('back_to_collection') }}</UiTextButton
-      >
+      <UiTextButton :class="BACK_LINK" @click="router.push('/playlists')">← {{ t('back_to_collection') }}</UiTextButton>
       <DetailHeading
         :title="name"
         :kind="t('kind_auto_playlist')"

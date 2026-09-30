@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Custom playlist detail: its tracks in stock list order (data level). */
+import { BACK_LINK } from './captions'
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DetailHeading from '../components/collection/DetailHeading.vue'
@@ -60,9 +61,7 @@ const unavailable = (track: { path: string | null }) =>
 <template>
   <CollectionGate :count="items.length" :searching="searching" empty-key="search_empty_tracks" :ready="tracks !== null">
     <template #heading="{ loading }">
-      <UiTextButton class="text-footnote" @click="router.push('/playlists')"
-        >← {{ t('back_to_collection') }}</UiTextButton
-      >
+      <UiTextButton :class="BACK_LINK" @click="router.push('/playlists')">← {{ t('back_to_collection') }}</UiTextButton>
       <DetailHeading
         :title="playlist?.name ?? ''"
         :kind="t('kind_playlist')"

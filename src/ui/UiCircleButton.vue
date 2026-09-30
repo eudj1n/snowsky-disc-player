@@ -20,7 +20,7 @@ withDefaults(defineProps<{ icon: IconName; label: string; pressed?: boolean | un
     :title="label"
     :aria-pressed="pressed"
     :disabled="disabled"
-    class="inline-flex size-40 shrink-0 items-center justify-center rounded-full bg-soft text-ink transition-colors duration-150 hover:enabled:bg-hover disabled:opacity-50 aria-pressed:text-accent [&>svg]:size-17"
+    class="inline-flex size-40 shrink-0 items-center justify-center rounded-full bg-(--control-ground) text-ink shadow-[inset_0_0_0_1px_var(--control-edge),0_1px_3px_#0000001a] backdrop-blur-[10px] transition-colors duration-150 hover:enabled:bg-hover disabled:opacity-50 aria-pressed:text-accent [&>svg]:size-17"
   >
     <UiIcon :name="icon" />
   </button>

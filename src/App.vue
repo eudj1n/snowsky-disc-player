@@ -90,7 +90,7 @@ watchEffect(() => {
   <SidebarToggle />
   <div
     id="workspace"
-    class="ml-(--sidebar) min-h-screen pb-(--player) listening:mr-380"
+    class="relative isolate ml-(--sidebar) min-h-screen pb-(--player) listening:mr-380"
     :class="{ 'listening-open': ui.panel }"
   >
     <AppTopbar />

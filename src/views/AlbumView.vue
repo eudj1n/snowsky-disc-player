@@ -42,7 +42,7 @@ import UiCircleButton from '../ui/UiCircleButton.vue'
 import UiHiResBadge from '../ui/UiHiResBadge.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumCardRoute, albumRoute, artistRoute, genreRoute, withYear } from './captions'
+import { albumCardRoute, albumRoute, artistRoute, BACK_LINK, genreRoute, withYear } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
 import { useHeadingAction } from './headingAction'
@@ -225,7 +225,7 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
 <template>
   <CollectionGate :count="items.length" :searching="searching" empty-key="search_empty_tracks">
     <template #heading="{ loading }">
-      <UiTextButton class="text-footnote" @click="back"
+      <UiTextButton :class="BACK_LINK" @click="back"
         >← {{ scope ? creditLabel(scope) : t('back_to_collection') }}</UiTextButton
       >
       <DetailHeading

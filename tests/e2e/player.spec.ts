@@ -818,11 +818,16 @@ test.describe('player controls on the mock', () => {
     await english(page)
     await connectAndPair(page)
     await page.goto('/#/album/Inner%20Space/Forma')
-    // The heading's gradient: the cover's colours fitted to each theme, set once the cover decoded.
-    const heading = page.getByTestId('album-colours').locator('xpath=..')
-    await expect.poll(() => heading.getAttribute('style'), { timeout: 15_000 }).toMatch(/--head-a: #[0-9a-f]{6}/)
-    const lightFirst = (await heading.getAttribute('style'))?.match(/--head-a: (#[0-9a-f]{6})/)?.[1]
-    await expect(page.getByTestId('album-colours')).toHaveCSS('background-image', /linear-gradient/)
+    // The heading's gradient: the cover's colours fitted to each theme, set once the cover decoded,
+    // from the workspace's top edge down to the heading's rule, across the whole workspace.
+    const layer = page.getByTestId('album-colours')
+    await expect.poll(() => layer.getAttribute('style'), { timeout: 15_000 }).toMatch(/--head-a: #[0-9a-f]{6}/)
+    const lightFirst = (await layer.getAttribute('style'))?.match(/--head-a: (#[0-9a-f]{6})/)?.[1]
+    await expect(layer).toHaveCSS('background-image', /linear-gradient/)
+    const box = await layer.boundingBox()
+    const workspace = await page.locator('#workspace').boundingBox()
+    expect(box && workspace && Math.abs(box.y - workspace.y)).toBeLessThanOrEqual(1)
+    expect(box && workspace && Math.abs(box.width - workspace.width)).toBeLessThanOrEqual(1)
     // The Play button keeps the theme's colour (owner: controls stay stable).
     const play = page.getByRole('button', { name: 'Play album' })
     const strong = await page.evaluate(() =>

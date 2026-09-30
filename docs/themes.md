@@ -71,7 +71,11 @@ only; controls keep the theme's colours on every album (owner: "the button
 must stay stable so the user does not look for it"):
 
 - Detail headings (album, artist, genre, playlist): a gradient of the two
-  colours behind the heading, fading into the page. Each colour is fitted to
+  colours from the page's top edge, under the top bar (which then drops its
+  rule), across the whole workspace, fading out at the heading's rule. Round
+  buttons and the back link keep one ground over any colour
+  (`--control-ground`, `--control-edge`: the theme's own, a little
+  see-through, with a hairline edge). Each colour is fitted to
   each theme in OKLCH (light and soft in the light theme, dark in the dark
   one) so the theme's own text keeps 4.5:1 on it; a page without a cover
   takes the sleeve's colour.
