@@ -49,7 +49,7 @@ the page as if it came from the card. Nothing is written to the card.
 
 - **Player** — put `DISC_GATEWAY=http://<player-ip>:7870` in `.env.local`
   (ignored by git) and run `npm run dev`. Reads work at once; controls need
-  the card token. The player's gateway must have the engineering LAN marker.
+  pairing with the player's serial number.
 
 ## Tests
 

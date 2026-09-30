@@ -4,7 +4,7 @@
 Browser (this app, served from the SD card)
     | same origin: /api/health, /api/data, /api/stock, WS /api/websocket
 DISC service gateway (native, inside the player)      snowsky-disc-service
-    | reviewed catalogs, token, request IDs, one owner
+    | reviewed catalogs, serial number, request IDs, one owner
 Stock FiiO services (TCP 12100, HTTP 12103, SQLite)
 ```
 
@@ -16,7 +16,7 @@ the gateway, and the gateway is the only thing it trusts.
 
 | Layer                 | Folder                                  | Knows                                                                                                                                 | Never                           |
 | --------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| Domain                | `src/domain`                            | Plain types and pure helpers: `Track`, `Playback`, `PlayerIdentity`, `LibrarySummary`, pairing token rules, formatting                | Vue, transport, UI              |
+| Domain                | `src/domain`                            | Plain types and pure helpers: `Track`, `Playback`, `PlayerIdentity`, `LibrarySummary`, pairing serial number rules, formatting        | Vue, transport, UI              |
 | Gateway               | `src/gateway`                           | Wire formats and the gateway contract: record framing, the owner session, HTTP data/stock calls, release files, mapping wire → domain | Vue, app state, UI              |
 | Stores                | `src/stores`                            | Reactive app state and actions built on the gateway: connection, pairing, playback, library, appearance                               | Presentation                    |
 | UI primitives         | `src/ui`                                | Buttons, cards, fields, selects, icons, status dots, notices: text and values via props                                               | Domain objects, stores, gateway |
@@ -152,5 +152,5 @@ a single artist, and for a track only from the same folder).
 
 `GatewaySession.open` takes a socket factory and `GatewayHttp` takes a fetch
 function, so unit tests script the player. `tests/e2e/mock-gateway.mjs`
-serves a built release exactly like the gateway (paths, CSP, owner, token,
+serves a built release exactly like the gateway (paths, CSP, owner, serial number,
 request-ID replay) for browser tests in CI.

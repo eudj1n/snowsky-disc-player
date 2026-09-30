@@ -30,13 +30,13 @@ page records how the app uses it; `src/gateway/` is the only code that does.
 - An unanswered `0202` means _unknown_; the session stays open. Any other
   unanswered request retires the session, because records carry no request
   IDs and a late reply could answer a newer request.
-- Mutations: `token:<card token>` once per session, then `request:<fresh id>`
+- Mutations: `token:<serial number>` once per session (see Pairing), then `request:<fresh id>`
   before each mutation record. The outcome is `replied`, `sent` (no reply
   expected), `uncertain` or `unsent`. `replied` is still not a confirmation:
   read the state again. `uncertain` is shown and never retried.
 - Close codes: 1000 client, 1002 framing, 1007 malformed record, 1008 not
-  admitted or revoked (wrong/missing token, replayed request ID, card marker
-  removed), 1009 oversize, 1011 stock ended. The app never reconnects by
+  admitted or revoked (wrong or missing serial number, replayed request ID),
+  1009 oversize, 1011 stock ended. The app never reconnects by
   itself.
 - A second owner gets HTTP 409 on the WebSocket upgrade; the app checks
   `controlActive` in health first and explains it.

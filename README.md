@@ -18,11 +18,9 @@ playing on the DISC; nothing streams to the browser.
 >   disc and track, file size and folder, how often it was played) with the
 >   whole queue below it; on a phone the panel is a full-screen player;
 > - adjust gain, balance, the DAC filter and DRE;
-> - add music: upload files or album folders, then let the player scan.
->
+> - add music: upload files or album folders, then let the player scan;
 > - see what takes space on the player's card: music by format, the largest
->   albums and artists, and possible duplicates in two folders.
->
+>   albums and artists, and possible duplicates in two folders;
 > - browse the card's folders, play a folder or a file, create a folder and
 >   add music straight into it;
 > - pick up where the player stopped: after its queue ended or USB storage
@@ -38,18 +36,24 @@ playing on the DISC; nothing streams to the browser.
 > - find an artist's photo on Wikimedia Commons, shown with its author and
 >   licence and kept in your browser; artists without one show the cover of
 >   their most played album;
-> - watch what plays in this browser as a disc: the cover turns, its ring
->   pulses with the bass and the spectrum spreads around it, full screen.
+> - see what you played last, on the player and in this browser;
+> - listen to automatic playlists made from your listening (Most played,
+>   Daily mix, Recently added, Not played lately, and one artist's most
+>   played), redrawn each day, week or month and kept on the player;
+> - listen in this browser instead of on the player, and watch what plays
+>   there as a disc: the cover turns, its ring pulses with the bass and the
+>   spectrum spreads around it, full screen;
+> - choose a light or dark theme in four tones each, and the text size.
 >
 > Covers and durations appear as tracks play: the player's library keeps
 > neither for most files.
 
 ## Requirements
 
-- A SNOWSKY DISC with firmware V2.57 and the DISC service engineering image
-  installed ([snowsky-disc-service](https://github.com/eudj1n/snowsky-disc-service)).
-- The engineering LAN marker and a pairing token on the PLAY memory card, as
-  described by the service.
+- A SNOWSKY DISC with firmware V2.57 and the DISC service image installed
+  ([snowsky-disc-service](https://github.com/eudj1n/snowsky-disc-service));
+  combined-009 or later for every feature.
+- The player on your Wi-Fi network (set up on the player itself).
 - A current desktop or mobile browser on the same network as the player.
 
 ## Install on the memory card
@@ -64,8 +68,10 @@ and eject. The [release guide](docs/release.md) has the details.
 1. Open `http://<player-ip>:7870/` in a browser on the same network.
 2. Press **Connect**. Only one client can control the player at a time; if the
    FiiO app or another page is connected, disconnect it first.
-3. To control playback, open **Pairing** and paste the token from the
-   `DISC_WEB_TOKEN` file on the memory card. It is stored in this browser only.
+3. To control playback, open **Pairing** and enter the player's serial number
+   (SN, under About device on the player). It is kept in this browser only.
+   After five wrong attempts the player refuses pairing from that device for
+   ten minutes.
 
 The interface starts in the player's own language when it is Russian or
 English and remembers your choice of language, appearance and text size
