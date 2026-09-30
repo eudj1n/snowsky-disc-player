@@ -1670,7 +1670,10 @@ Checks (2026-09-30): `npm run check` with 273 unit tests; the mock suite
 text size 134 passed and `player.spec.ts` re-run whole after a test fix
 (its "Large" button also matched "Extra large") 143 passed, 9 skipped; the
 emulator acceptance with release `2026.09.30-a247c0e`: 38 desktop cases, 28
-on stock, 76 skipped; the guest cleaned up and rescanned.
+on stock, 76 skipped; the guest cleaned up and rescanned. On the owner's card
+(2026-09-30, their go-ahead): `Apps/Disc Player` replaced by
+`2026.09.30-a247c0e` (92 files); the catalog already current; the card
+ejected.
 
 ## Requests for the next service build
 
