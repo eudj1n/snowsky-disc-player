@@ -1727,6 +1727,15 @@ twelve covers of their player and chose:
 - [x] The Now Playing panel on a background from the cover's colours, darkened, with light text and see-through cards (`.on-cover`, `src/stores/nowColours.ts`).
 - [x] Karaoke over blurred colours of the cover.
 
+Checks (2026-09-30) of release `2026.09.30-4e5070d`, which also carries the
+switch between the player and this browser, the Now tab's pinned list and
+the lyrics' alignment: `npm run check` with 280 unit tests; the mock suite
+164 passed, 68 skipped; the emulator acceptance 38 desktop cases, 28 on
+stock. Two earlier runs broke on the guest, not the page: its two-hour boot
+ended during the first, and the second met a folder the interrupted run had
+left; the guest was booted again, its test media reset and the run repeated
+whole.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
