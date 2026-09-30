@@ -728,12 +728,15 @@ test.describe('player controls on the mock', () => {
     await expect(dialog).toBeHidden({ timeout: 20_000 })
     await expect(page.getByRole('row')).toHaveCount(3)
 
-    await page.getByRole('button', { name: 'Rename' }).click()
+    // Rare actions are behind "⋯" (owner, 2026-09-30).
+    await page.getByTestId('playlist-actions').click()
+    await page.getByRole('menuitem', { name: 'Rename' }).click()
     await dialog.getByLabel('Playlist name').fill(`${name} R`)
     await dialog.getByRole('button', { name: 'Save' }).click()
     await expect(page.getByRole('heading', { level: 1, name: `${name} R` })).toBeVisible({ timeout: 20_000 })
 
-    await page.getByRole('button', { name: 'Delete', exact: true }).click()
+    await page.getByTestId('playlist-actions').click()
+    await page.getByRole('menuitem', { name: 'Delete' }).click()
     await dialog.getByRole('button', { name: 'Delete', exact: true }).click()
     await expect(page).toHaveURL(/#\/playlists$/, { timeout: 20_000 })
     await expect(page.getByRole('heading', { name: `${name} R`, exact: true })).toHaveCount(0)

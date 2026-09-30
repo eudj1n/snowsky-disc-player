@@ -12,6 +12,7 @@ import { t } from '../i18n'
 import { library, loadPlaylistTracks, trackByPath } from '../stores/library'
 import { openPlaylistDialog, openTrackMenu, ui } from '../stores/ui'
 import { playlistEdits } from '../stores/playlistEdits'
+import UiActionMenu from '../ui/UiActionMenu.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { useHeadingAction } from './headingAction'
@@ -79,17 +80,20 @@ const unavailable = (track: { path: string | null }) =>
           @click="playlist && playFrom({ kind: 'playlist', name: playlist.name })"
           >{{ t('listen_playlist') }}</UiPillButton
         >
-        <UiPillButton
-          variant="secondary"
+        <!-- Renaming and deleting are rare: behind "⋯" (owner, 2026-09-30). -->
+        <UiActionMenu
+          :label="t('more_actions')"
           :disabled="loading || !playlist"
-          @click="playlist && openPlaylistDialog({ mode: 'rename', playlist: playlist.name })"
-          >{{ t('rename') }}</UiPillButton
-        >
-        <UiTextButton
-          :disabled="loading || !playlist"
-          @click="playlist && openPlaylistDialog({ mode: 'delete', playlist: playlist.name })"
-          >{{ t('delete') }}</UiTextButton
-        >
+          :items="[
+            { id: 'rename', label: t('rename'), icon: 'pencil' },
+            { id: 'delete', label: t('delete'), icon: 'trash', danger: true },
+          ]"
+          data-testid="playlist-actions"
+          @choose="
+            (id) =>
+              playlist && openPlaylistDialog({ mode: id === 'rename' ? 'rename' : 'delete', playlist: playlist.name })
+          "
+        />
       </DetailHeading>
     </template>
     <template #skeleton>

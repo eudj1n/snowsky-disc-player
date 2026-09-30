@@ -11,20 +11,15 @@ import SectionHeading from '../components/common/SectionHeading.vue'
 import { GLOBAL_KINDS, type AutoPlaylist, type GlobalKind } from '../domain/autoPlaylists'
 import { listBackground, shortDay } from '../domain/listArt'
 import { locale, t } from '../i18n'
-import {
-  autoPlaylists,
-  autoPreviews,
-  kindList,
-  makeKindList,
-  refreshAutoPlaylists,
-  removeAutoList,
-} from '../stores/autoPlaylists'
+import { autoPlaylists, autoPreviews, kindList, makeKindList, refreshAutoPlaylists } from '../stores/autoPlaylists'
 import { pairing } from '../stores/pairing'
 import UiIconButton from '../ui/UiIconButton.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
+import UiActionMenu from '../ui/UiActionMenu.vue'
 import { artistRoute } from './captions'
 import { CARD_ROW } from './cardRows'
+import { autoListItems, keptLabel, onAutoListAction } from './autoListActions'
 import { playFrom } from './playAlbum'
 
 interface Row {
@@ -48,7 +43,9 @@ const rowRoute = (row: Row) =>
 function rowFacts(row: Row): string {
   const tracks = row.list ? count(row.list) : row.kind ? autoPreviews.value[row.kind].length : null
   const parts = tracks === null ? [] : [t('track_count', { count: tracks })]
-  if (row.list?.written) parts.push(t('auto_updated_on', { date: shortDay(row.list.written, locale.value) }))
+  // How it is kept, and the day it was last drawn (owner, 2026-09-30).
+  if (row.list) parts.push(keptLabel(row.list))
+  if (row.list?.written) parts.push(shortDay(row.list.written, locale.value))
   return parts.join(' · ')
 }
 const count = (list: AutoPlaylist) => autoPlaylists.entries[list.name]?.length ?? null
@@ -60,9 +57,6 @@ const updated = computed(() =>
         time: new Intl.DateTimeFormat(locale.value, { timeStyle: 'short' }).format(autoPlaylists.refreshedAt),
       }),
 )
-function remove(list: AutoPlaylist): void {
-  if (confirm(t('auto_remove_confirm', { name: list.name }))) void removeAutoList(list)
-}
 </script>
 
 <template>
@@ -112,12 +106,11 @@ function remove(list: AutoPlaylist): void {
             :disabled="busy || !count(row.list)"
             @click="row.list && playFrom({ kind: 'list', scope: 'external', name: row.list.name })"
           />
-          <UiIconButton
-            icon="trash"
-            :label="`${t('auto_remove')}: ${row.list.name}`"
-            :disabled="busy"
-            class="opacity-60 hover:opacity-100 [&>svg]:size-16"
-            @click="row.list && remove(row.list)"
+          <UiActionMenu
+            :label="`${t('more_actions')}: ${row.list.name}`"
+            :items="autoListItems(row.list, busy)"
+            data-testid="auto-row-actions"
+            @choose="(id) => row.list && onAutoListAction(row.list, id)"
           />
         </template>
         <UiPillButton

@@ -49,6 +49,10 @@ export const ICON_PATHS = {
   /* The visualizer (2026-09-29): the ringed disc sending out spokes of sound. */
   visualizer:
     'M8 12a4 4 0 1 0 8 0a4 4 0 1 0-8 0Z M12 11.9v.2 M12 6V2.5 M16.2 7.8l1.4-1.4 M18 12h4 M16.2 16.2l2.1 2.1 M12 18v2 M7.8 16.2l-2.5 2.5 M6 12H3 M7.8 7.8 6.4 6.4',
+  /* Rare actions (2026-09-30): three dots, a check for the chosen option, a pencil for renaming. */
+  more: 'M4.8 12a1.2 1.2 0 1 0 2.4 0a1.2 1.2 0 1 0-2.4 0Z M10.8 12a1.2 1.2 0 1 0 2.4 0a1.2 1.2 0 1 0-2.4 0Z M16.8 12a1.2 1.2 0 1 0 2.4 0a1.2 1.2 0 1 0-2.4 0Z',
+  check: 'M5 12.5 10 17.5 19 7',
+  pencil: 'M4 20h4L19 9l-4-4L4 16Z M13.5 6.5l4 4',
   /* The switch between the player (device) and this browser (2026-09-30): a browser window. */
   browser: 'M4 4h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z M3 9h18 M6.5 6.5h.01 M9.5 6.5h.01',
   'sidebar-collapse':

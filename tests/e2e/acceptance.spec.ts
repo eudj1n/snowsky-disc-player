@@ -216,7 +216,8 @@ test('creates, fills, plays, trims, renames and deletes a playlist on stock', as
   })
   await expect(page.getByRole('row')).toHaveCount(1, { timeout: 30_000 })
   await verified(page, async () => {
-    await page.getByRole('button', { name: 'Rename' }).click()
+    await page.getByTestId('playlist-actions').click()
+    await page.getByRole('menuitem', { name: 'Rename' }).click()
     await dialog.getByLabel('Playlist name').fill(`${name} R`)
     await dialog.getByRole('button', { name: 'Save' }).click()
   })
@@ -227,7 +228,8 @@ test('creates, fills, plays, trims, renames and deletes a playlist on stock', as
   await verified(page, () => page.getByRole('button', { name: 'Play album' }).click())
   await page.goto(playlistUrl)
   await verified(page, async () => {
-    await page.getByRole('button', { name: 'Delete', exact: true }).click()
+    await page.getByTestId('playlist-actions').click()
+    await page.getByRole('menuitem', { name: 'Delete' }).click()
     await dialog.getByRole('button', { name: 'Delete', exact: true }).click()
   })
   await expect(page).toHaveURL(/#\/playlists$/, { timeout: 30_000 })
@@ -904,7 +906,8 @@ test('keeps an artist’s most played on the player as an M3U list and plays it 
   }
   // Removed again: the file and the store's record.
   page.once('dialog', (dialog) => void dialog.accept())
-  await row.getByRole('button', { name: `Remove: ${name}` }).click()
+  await row.getByRole('button', { name: `More actions: ${name}` }).click()
+  await page.getByRole('menuitem', { name: 'Remove from the player' }).click()
   await expect(row).toHaveCount(0, { timeout: 30_000 })
   expect((await read()).status()).toBe(404)
   await disconnect(page)

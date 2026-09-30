@@ -1759,10 +1759,7 @@ Discussed before work; the owner accepted the recommendations as a whole.
 Order: actions first (quick, quieter headings), then search and the header,
 the track panel, placeholders, the sticky bar.
 
-- [ ] Rare actions behind a round "⋯" button, in the heading and in the rows
-      of the Playlists page: an automatic list's period (day, week, month),
-      "Update now" and "Remove from the player"; a playlist's rename and
-      delete. The rows say how a list is kept ("updated daily · Sep 30").
+- [x] Rare actions behind a round "⋯" button (`src/ui/UiActionMenu.vue`), in the heading and in the rows of the Playlists page: an automatic list's period (day, week, month; a check marks the chosen one), "Update now" and "Remove from the player"; a playlist's rename and delete. The rows say how a list is kept ("updated daily · Sep 30").
 - [ ] One search for the whole collection instead of a filter of the current
       section: a compact search pill in the top bar (and `/`, ⌘K) opens a
       palette with instant results by kind (top result, tracks, albums,
@@ -1782,10 +1779,7 @@ the track panel, placeholders, the sticky bar.
       sheet on phones): cover, links, the facts block, lyrics, and Play on
       the chosen side, favorite, add to playlist, dislike, open its folder;
       a link returns to what plays. Double click and Enter play.
-- [ ] One placeholder system: genres and own playlists show a 2×2 mosaic of
-      their albums' covers where covers are known; otherwise genres take
-      album-like cards (records fanned on a square sleeve, the name below)
-      and artists' circles take the records' label style.
+- [ ] (On hold: the owner will discuss placeholders separately, 2026-09-30.) One placeholder system: genres and own playlists show a 2×2 mosaic of their albums' covers where covers are known; otherwise genres take album-like cards (records fanned on a square sleeve, the name below) and artists' circles take the records' label style.
 - [ ] The compact bar that pins over a detail page takes the album's top
       colour (see-through, blurred); the player bar stays neutral.
 

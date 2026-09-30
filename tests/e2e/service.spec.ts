@@ -340,8 +340,8 @@ test('keeps automatic playlists on the player: an artist’s most played and the
     const row = (kind: string) => section.locator(`li[data-kind="${kind}"]`)
     await row('most_played').getByRole('button', { name: 'Add to the player' }).click()
     await expect(row('most_played')).toContainText(/Most played\s*\d+ tracks?/)
-    // A list on the player names the day it was drawn; one not added opens as a preview, as from Home.
-    await expect(row('most_played')).toContainText(/updated [A-Z][a-z]{2} \d{1,2}/)
+    // A list on the player says how it is kept and the day it was drawn; one not added opens as a preview, as from Home.
+    await expect(row('most_played')).toContainText(/updated daily · [A-Z][a-z]{2} \d{1,2}/)
     await row('daily_mix').getByRole('link', { name: 'Daily mix' }).click()
     await expect(page).toHaveURL(/#\/list\/Daily%20mix\?kind=daily_mix$/)
     await expect(page.getByRole('table').getByRole('row').nth(1)).toBeVisible()
@@ -349,11 +349,12 @@ test('keeps automatic playlists on the player: an artist’s most played and the
     // A list with nothing to hold yet cannot be added.
     await expect(row('not_played_lately')).toContainText('0 tracks')
     await expect(row('not_played_lately').getByRole('button', { name: 'Add to the player' })).toBeDisabled()
-    // Its page: how often it changes (kept in the store) and drawing it again now.
+    // Its page: how often it changes (kept in the store) and drawing it again now, behind "⋯".
     await row('most_played').getByRole('link', { name: 'Most played', exact: true }).click()
     await expect(page.getByRole('main')).toContainText(/updated [A-Z][a-z]{2} \d{1,2}/)
-    await expect(page.getByTestId('list-period')).toHaveValue('day')
-    await page.getByTestId('list-period').selectOption('week')
+    await page.getByTestId('list-actions').click()
+    await expect(page.getByRole('menuitemradio', { name: 'Every day' })).toHaveAttribute('aria-checked', 'true')
+    await page.getByRole('menuitemradio', { name: 'Every week' }).click()
     await expect
       .poll(async () => {
         const doc = (await (await request.get('/api/store/auto_playlists/records')).json()) as {
@@ -362,9 +363,11 @@ test('keeps automatic playlists on the player: an artist’s most played and the
         return doc.records.find((record) => record.value.name === 'Most played')?.value.period
       })
       .toBe('week')
-    await page.getByTestId('list-refresh').click()
+    await page.getByTestId('list-actions').click()
+    await page.getByRole('menuitem', { name: 'Update now' }).click()
     await expect(status(page, 'Automatic playlists are up to date')).toBeVisible()
     await page.goto('/#/playlists')
+    await expect(row('most_played')).toContainText('updated weekly')
     await expect(row('artist_most_played')).toContainText('Most played · Forma')
     expect(await lists()).toEqual(['Most played', 'Most played · Forma'])
 
@@ -415,7 +418,8 @@ test('keeps automatic playlists on the player: an artist’s most played and the
     await page.goto('/#/playlists')
     // Removed after a confirmation: the file and the record go.
     page.once('dialog', (dialog) => void dialog.accept())
-    await row('recently_added').getByRole('button', { name: 'Remove: Recently added' }).click()
+    await row('recently_added').getByRole('button', { name: 'More actions: Recently added' }).click()
+    await page.getByRole('menuitem', { name: 'Remove from the player' }).click()
     await expect(status(page, '“Recently added” is removed from the player')).toBeVisible()
     await expect(row('recently_added').getByRole('button', { name: 'Add to the player' })).toBeVisible()
     expect(await lists()).toEqual(['Daily mix', 'Most played', 'Most played · Forma'])

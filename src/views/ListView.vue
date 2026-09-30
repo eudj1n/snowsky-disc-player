@@ -18,22 +18,17 @@ import { listArtists, listBackground, shortDay } from '../domain/listArt'
 import { filterBy } from '../domain/search'
 import type { LibraryTrack } from '../domain/track'
 import { locale, t } from '../i18n'
-import {
-  autoPlaylists,
-  autoPreviews,
-  refreshAutoPlaylists,
-  removeAutoList,
-  setAutoPeriod,
-} from '../stores/autoPlaylists'
-import { GLOBAL_KINDS, PERIODS, type GlobalKind, type RotationPeriod } from '../domain/autoPlaylists'
+import { autoPlaylists, autoPreviews } from '../stores/autoPlaylists'
+import { GLOBAL_KINDS, type GlobalKind } from '../domain/autoPlaylists'
 import { trackByPath } from '../stores/library'
 import { openTrackMenu, ui } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
-import UiSelect from '../ui/UiSelect.vue'
+import UiActionMenu from '../ui/UiActionMenu.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import CollectionGate from './CollectionGate.vue'
 import { useHeadingAction } from './headingAction'
 import { listenToKind } from './autoLists'
+import { autoListItems, onAutoListAction } from './autoListActions'
 import { playFrom } from './playAlbum'
 import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
 
@@ -95,10 +90,10 @@ async function listen(position?: number): Promise<void> {
   const made = await listenToKind(kind, position)
   if (made) await router.replace({ name: 'list', params: { name: made } })
 }
-async function remove(): Promise<void> {
-  if (!list.value || !confirm(t('auto_remove_confirm', { name: name.value }))) return
-  await removeAutoList(list.value)
-  if (!autoPlaylists.lists.some((item) => item.name === name.value)) await router.push('/playlists')
+async function onAction(id: string): Promise<void> {
+  if (!list.value) return
+  const removed = await onAutoListAction(list.value, id)
+  if (removed && !autoPlaylists.lists.some((item) => item.name === name.value)) await router.push('/playlists')
 }
 </script>
 
@@ -136,27 +131,14 @@ async function remove(): Promise<void> {
           @click="listen()"
           >{{ t('listen_playlist') }}</UiPillButton
         >
-        <!-- How long it stays as written, and drawing it again now (owner, 2026-09-30). -->
-        <UiSelect v-if="list" size="sm">
-          <select
-            :value="list.period ?? 'day'"
-            :aria-label="t('auto_period')"
-            :disabled="autoPlaylists.busy || autoPlaylists.refreshing"
-            data-testid="list-period"
-            class="rounded-18 border border-line bg-soft py-9 pl-12 text-footnote text-secondary"
-            @change="list && setAutoPeriod(list, ($event.target as HTMLSelectElement).value as RotationPeriod)"
-          >
-            <option v-for="period in PERIODS" :key="period" :value="period">{{ t(`auto_period_${period}`) }}</option>
-          </select>
-        </UiSelect>
-        <UiTextButton
+        <!-- How often it is drawn, updating and removing it: rare, behind "⋯" (owner, 2026-09-30). -->
+        <UiActionMenu
           v-if="list"
-          :disabled="autoPlaylists.busy || autoPlaylists.refreshing"
-          data-testid="list-refresh"
-          @click="refreshAutoPlaylists(true, name)"
-          >{{ t('auto_refresh') }}</UiTextButton
-        >
-        <UiTextButton v-if="list" :disabled="autoPlaylists.busy" @click="remove">{{ t('auto_remove') }}</UiTextButton>
+          :label="t('more_actions')"
+          :items="autoListItems(list, autoPlaylists.busy || autoPlaylists.refreshing)"
+          data-testid="list-actions"
+          @choose="onAction"
+        />
       </DetailHeading>
     </template>
     <TrackList
