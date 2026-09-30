@@ -241,7 +241,7 @@ function contextMenu(event: MouseEvent, index: number): void {
     />
     <template v-for="(track, index) in rows" :key="`${track.path ?? ''}#${index}`">
       <div v-if="discHeadings.has(index)" role="row" class="pt-18 pb-6">
-        <span role="rowheader" class="text-10 font-semibold tracking-[1.8px] text-muted uppercase">{{
+        <span role="rowheader" class="text-caption2 font-semibold tracking-caps text-muted uppercase">{{
           discHeadings.get(index)
         }}</span>
       </div>
@@ -298,7 +298,7 @@ function contextMenu(event: MouseEvent, index: number): void {
             type="button"
             :aria-label="leadLabel(track)"
             :disabled="disabled"
-            class="grid h-24 w-full place-items-center p-0 text-11 text-muted tabular-nums hover:enabled:text-ink"
+            class="grid h-24 w-full place-items-center p-0 text-footnote text-muted tabular-nums hover:enabled:text-ink"
             @click="activate(track, index)"
           >
             <UiNowPlaying
@@ -316,10 +316,12 @@ function contextMenu(event: MouseEvent, index: number): void {
               :class="{ '!stroke-[2.6]': pauses(track) }"
             />
           </button>
-          <span v-else class="text-11 text-muted tabular-nums" :class="dim(track)">{{ numberOf(track, index) }}</span>
+          <span v-else class="text-footnote text-muted tabular-nums" :class="dim(track)">{{
+            numberOf(track, index)
+          }}</span>
         </span>
         <div role="cell" class="min-w-0" :class="dim(track)">
-          <strong class="block truncate font-medium"
+          <strong class="block truncate text-body font-medium"
             >{{ track.title
             }}<span v-if="unavailable(track) && unavailableLabel" class="sr-only"
               >, {{ unavailableLabel }}</span
@@ -328,15 +330,20 @@ function contextMenu(event: MouseEvent, index: number): void {
           <template v-if="hidesArtist(track)" />
           <span
             v-else-if="track.artist && artistTo(track.artist)"
-            class="mt-5 block max-w-full truncate text-11 text-muted"
+            class="mt-5 block max-w-full truncate text-footnote text-muted"
           >
             <ArtistCredit :credit="track.artist" :to="artistTo" :link-class="LINK" />
           </span>
-          <small v-else class="mt-5 block truncate text-11 text-muted">{{
+          <small v-else class="mt-5 block truncate text-footnote text-muted">{{
             track.artist ? creditLabel(track.artist) : '—'
           }}</small>
         </div>
-        <span v-if="album" role="cell" class="min-w-0 truncate text-11 text-muted phone:hidden" :class="dim(track)">
+        <span
+          v-if="album"
+          role="cell"
+          class="min-w-0 truncate text-footnote text-muted phone:hidden"
+          :class="dim(track)"
+        >
           <template v-if="albumNote && albumNote(track)">
             <RouterLink
               v-if="albumNote(track)?.to"
@@ -411,16 +418,20 @@ function contextMenu(event: MouseEvent, index: number): void {
             </span>
           </template>
         </span>
-        <span v-if="duration" role="cell" class="text-right text-11 text-muted tabular-nums" :class="dim(track)">{{
-          formatDuration(track.durationMs) ?? '—:—'
-        }}</span>
+        <span
+          v-if="duration"
+          role="cell"
+          class="text-right text-footnote text-muted tabular-nums"
+          :class="dim(track)"
+          >{{ formatDuration(track.durationMs) ?? '—:—' }}</span
+        >
         <span v-if="menuLabel !== null" role="cell" class="flex justify-end">
           <button
             type="button"
             data-track-menu
             :aria-label="`${menuLabel}: ${track.title}`"
             aria-haspopup="menu"
-            class="grid size-27 place-items-center rounded-full text-24 leading-none font-light tracking-[1px] text-secondary hover:bg-hover hover:text-ink"
+            class="grid size-27 place-items-center rounded-full text-[24px] leading-none font-light tracking-[1px] text-secondary hover:bg-hover hover:text-ink"
             @click="emit('menu', index, $event.currentTarget as HTMLElement)"
           >
             ⋯

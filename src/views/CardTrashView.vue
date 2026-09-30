@@ -49,12 +49,12 @@ async function empty(): Promise<void> {
   <ViewHeading :eyebrow="t('your_player')" :title="t('card_section')" :meta="meta">
     <CardTabs current="trash" :trash="connection.trash" />
   </ViewHeading>
-  <p v-if="!connection.trash" role="status" class="text-12 text-muted">{{ t('about_unavailable') }}</p>
+  <p v-if="!connection.trash" role="status" class="text-footnote text-muted">{{ t('about_unavailable') }}</p>
   <template v-else>
     <RescanNote />
     <section :aria-label="t('trash_tab')" class="mb-32">
       <div class="mb-12 flex flex-wrap items-center justify-between gap-10">
-        <h2 class="m-0 text-17 font-semibold">{{ t('trash_tab') }}</h2>
+        <h2 class="m-0 text-title3 font-semibold">{{ t('trash_tab') }}</h2>
         <UiPillButton
           v-if="entries.length"
           icon="trash"
@@ -65,7 +65,9 @@ async function empty(): Promise<void> {
           >{{ t('trash_empty_all') }}</UiPillButton
         >
       </div>
-      <p v-if="!entries.length" class="text-12 text-muted" data-testid="trash-nothing">{{ t('trash_nothing') }}</p>
+      <p v-if="!entries.length" class="text-footnote text-muted" data-testid="trash-nothing">
+        {{ t('trash_nothing') }}
+      </p>
       <ul v-else class="m-0 list-none p-0" data-testid="trash-list">
         <li
           v-for="entry in entries"
@@ -77,29 +79,29 @@ async function empty(): Promise<void> {
             <UiIcon :name="entry.kind === 'file' ? 'music' : 'folder'" class="size-16" />
           </span>
           <div class="min-w-0 flex-1">
-            <strong class="block truncate text-13 font-semibold">{{ name(entry) }}</strong>
-            <p class="m-0 mt-2 truncate text-11 text-muted">
+            <strong class="block truncate text-body font-semibold">{{ name(entry) }}</strong>
+            <p class="m-0 mt-2 truncate text-footnote text-muted">
               {{ from(entry) }} · {{ when(entry) }}
               <template v-if="!entry.complete"> · {{ t('trash_interrupted') }}</template>
             </p>
           </div>
-          <span class="w-72 shrink-0 text-right text-12 font-semibold text-secondary tabular-nums">{{
+          <span class="w-72 shrink-0 text-right text-body font-semibold text-secondary tabular-nums">{{
             bytes(entry.bytes)
           }}</span>
-          <UiTextButton class="text-12" :disabled="trash.busy" @click="restoreEntry(entry.id)">{{
+          <UiTextButton class="text-footnote" :disabled="trash.busy" @click="restoreEntry(entry.id)">{{
             t('trash_restore')
           }}</UiTextButton>
-          <UiTextButton class="text-12" :disabled="trash.busy" @click="purge(entry)">{{
+          <UiTextButton class="text-footnote" :disabled="trash.busy" @click="purge(entry)">{{
             t('trash_delete')
           }}</UiTextButton>
         </li>
       </ul>
     </section>
     <section :aria-label="t('leftovers_title')" data-testid="leftovers">
-      <h2 class="m-0 mb-6 text-17 font-semibold">{{ t('leftovers_title') }}</h2>
-      <p class="m-0 mb-12 max-w-640 text-12 leading-[1.6] text-muted">{{ t('leftovers_hint') }}</p>
+      <h2 class="m-0 mb-6 text-title3 font-semibold">{{ t('leftovers_title') }}</h2>
+      <p class="m-0 mb-12 max-w-640 text-footnote leading-[1.55] text-muted">{{ t('leftovers_hint') }}</p>
       <div v-if="trash.leftovers && trash.leftovers.files" class="flex flex-wrap items-center gap-12">
-        <span class="text-13">{{
+        <span class="text-body">{{
           t('leftovers_found', { count: trash.leftovers.files, size: bytes(trash.leftovers.bytes) })
         }}</span>
         <UiPillButton
@@ -111,7 +113,7 @@ async function empty(): Promise<void> {
           >{{ t('move_to_trash') }}</UiPillButton
         >
       </div>
-      <p v-else class="m-0 text-12 text-muted">{{ t('leftovers_none') }}</p>
+      <p v-else class="m-0 text-footnote text-muted">{{ t('leftovers_none') }}</p>
     </section>
   </template>
 </template>

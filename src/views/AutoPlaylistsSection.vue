@@ -69,9 +69,9 @@ function remove(list: AutoPlaylist): void {
   <section :aria-label="t('auto_section')" data-testid="auto-playlists">
     <SectionHeading :title="t('auto_section')" :subtitle="t('auto_section_note')">
       <div class="flex shrink-0 items-center gap-10">
-        <span v-if="updated" class="text-11 text-muted phone:hidden">{{ updated }}</span>
+        <span v-if="updated" class="text-footnote text-muted phone:hidden">{{ updated }}</span>
         <UiTextButton
-          class="text-12"
+          class="text-footnote"
           :disabled="busy || !autoPlaylists.lists.length"
           data-testid="auto-refresh"
           @click="refreshAutoPlaylists(true)"
@@ -92,10 +92,10 @@ function remove(list: AutoPlaylist): void {
         </span>
         <div class="min-w-0 flex-1">
           <!-- A list not added yet opens as a preview, as from Home (owner, 2026-09-30). -->
-          <RouterLink :to="rowRoute(row)" class="block truncate text-13 font-semibold hover:underline">{{
+          <RouterLink :to="rowRoute(row)" class="block truncate text-body font-semibold hover:underline">{{
             rowTitle(row)
           }}</RouterLink>
-          <p class="m-0 mt-2 truncate text-11 text-muted">
+          <p class="m-0 mt-2 truncate text-footnote text-muted">
             {{ rowFacts(row) }}
             <template v-if="row.artist">
               ·

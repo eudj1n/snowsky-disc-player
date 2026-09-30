@@ -67,17 +67,17 @@ function choose(event: Event): void {
   <section class="py-16" :aria-label="t('eq_title')">
     <div class="flex flex-wrap items-center justify-between gap-12">
       <div>
-        <strong class="block text-13">{{ t('eq_title') }}</strong>
-        <small class="text-11 text-muted">{{ t('eq_note') }}</small>
+        <strong class="block text-body">{{ t('eq_title') }}</strong>
+        <small class="text-footnote text-muted">{{ t('eq_note') }}</small>
       </div>
-      <label class="flex items-center gap-8 text-11 text-muted">
+      <label class="flex items-center gap-8 text-footnote text-muted">
         <span>{{ t('eq_preset') }}</span>
         <UiSelect>
           <select
             :value="state?.preset ?? ''"
             :disabled="locked || !state"
             :aria-label="t('eq_preset')"
-            class="rounded-10 border border-line bg-raised py-9 pl-12 text-12 text-ink"
+            class="rounded-10 border border-line bg-raised py-9 pl-12 text-body text-ink"
             @change="choose"
           >
             <option v-if="state && !known" :value="state.preset" disabled>
@@ -97,7 +97,7 @@ function choose(event: Event): void {
     </div>
 
     <template v-if="state">
-      <p class="mt-10 mb-0 text-11 text-muted">
+      <p class="mt-10 mb-0 text-footnote text-muted">
         {{ isUserPreset(state.preset) ? t('eq_slot_init') : t('eq_select_user') }}
       </p>
       <div
@@ -105,7 +105,7 @@ function choose(event: Event): void {
         :class="{ 'opacity-60': !editable }"
       >
         <div v-for="band in bands" :key="band.position" class="flex flex-col items-center gap-6">
-          <output class="text-10 text-muted tabular-nums">{{ signed(band.gain) }}</output>
+          <output class="text-caption2 text-muted tabular-nums">{{ signed(band.gain) }}</output>
           <input
             v-model.number="band.gain"
             type="range"
@@ -117,12 +117,12 @@ function choose(event: Event): void {
             class="seek-slider h-110 w-18 [--seek-direction:to_top] [direction:rtl] [writing-mode:vertical-lr]"
             :style="{ '--seek-fill': `${((band.gain + 12) / 24) * 100}%` }"
           />
-          <span class="text-10 text-secondary tabular-nums">{{ label(band.frequency) }}</span>
+          <span class="text-caption text-secondary tabular-nums">{{ label(band.frequency) }}</span>
         </div>
       </div>
 
       <div class="mt-14 flex items-center gap-12">
-        <span class="w-120 shrink-0 text-11 text-muted">{{ t('eq_master') }}</span>
+        <span class="w-120 shrink-0 text-footnote text-muted">{{ t('eq_master') }}</span>
         <input
           v-model.number="master"
           type="range"
@@ -134,14 +134,14 @@ function choose(event: Event): void {
           class="seek-slider flex-1"
           :style="{ '--seek-fill': `${((master + 24) / 36) * 100}%` }"
         />
-        <output class="w-40 text-right text-11 tabular-nums">{{ signed(master) }}</output>
+        <output class="w-40 text-right text-footnote tabular-nums">{{ signed(master) }}</output>
       </div>
 
-      <details class="mt-12 text-11">
+      <details class="mt-12 text-footnote">
         <summary class="cursor-pointer text-secondary">{{ t('eq_fine') }}</summary>
         <div class="mt-10 grid grid-cols-[auto_1fr_1fr] items-center gap-x-12 gap-y-6">
           <template v-for="band in bands" :key="band.position">
-            <span class="text-11 text-muted">{{ t('eq_band', { n: band.position + 1 }) }}</span>
+            <span class="text-footnote text-muted">{{ t('eq_band', { n: band.position + 1 }) }}</span>
             <label class="flex items-center gap-6">
               <span class="sr-only">{{ t('eq_frequency') }}</span>
               <input
@@ -152,7 +152,7 @@ function choose(event: Event): void {
                 step="1"
                 :disabled="!editable"
                 :aria-label="`${t('eq_band', { n: band.position + 1 })}: ${t('eq_frequency')}`"
-                class="w-full rounded-8 border border-line bg-paper px-8 py-5 text-11 tabular-nums"
+                class="w-full rounded-8 border border-line bg-paper px-8 py-5 text-footnote tabular-nums"
               />
             </label>
             <label class="flex items-center gap-6">
@@ -165,7 +165,7 @@ function choose(event: Event): void {
                 step="0.1"
                 :disabled="!editable"
                 :aria-label="`${t('eq_band', { n: band.position + 1 })}: ${t('eq_q')}`"
-                class="w-full rounded-8 border border-line bg-paper px-8 py-5 text-11 tabular-nums"
+                class="w-full rounded-8 border border-line bg-paper px-8 py-5 text-footnote tabular-nums"
               />
             </label>
           </template>

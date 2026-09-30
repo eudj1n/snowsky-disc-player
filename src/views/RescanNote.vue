@@ -22,7 +22,7 @@ watch(
     v-if="trash.rescan"
     role="status"
     data-testid="trash-rescan"
-    class="mb-16 flex flex-wrap items-center gap-12 rounded-12 border border-line bg-raised px-16 py-12 text-12"
+    class="mb-16 flex flex-wrap items-center gap-12 rounded-12 border border-line bg-raised px-16 py-12 text-footnote"
   >
     <span class="min-w-0 flex-1">{{ t('trash_rescan') }}</span>
     <UiPillButton icon="refresh" variant="secondary" :disabled="imports.scan.phase === 'scanning'" @click="startScan">{{

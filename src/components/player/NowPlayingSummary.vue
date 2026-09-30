@@ -54,14 +54,12 @@ const emit = defineEmits<{ open: [opener: HTMLElement]; favorite: [] }>()
       <RouterLink
         v-if="titleTo"
         :to="titleTo"
-        class="block w-fit max-w-full truncate text-11 font-semibold hover:underline hover:underline-offset-3 focus-visible:underline phone:text-11"
+        class="block w-fit max-w-full truncate text-body font-semibold hover:underline hover:underline-offset-3 focus-visible:underline"
         data-testid="track-title"
         >{{ title }}</RouterLink
       >
-      <strong v-else class="block truncate text-11 font-semibold phone:text-11" data-testid="track-title">{{
-        title
-      }}</strong>
-      <span class="mt-6 flex min-w-0 items-baseline gap-5 text-11 text-muted phone:text-10">
+      <strong v-else class="block truncate text-body font-semibold" data-testid="track-title">{{ title }}</strong>
+      <span class="mt-6 flex min-w-0 items-baseline gap-5 text-footnote text-muted">
         <span v-if="subtitleLinks?.length" class="min-w-0 truncate">
           <template v-for="(link, index) in subtitleLinks" :key="link.text"
             >{{ creditSeparator(index, subtitleLinks.length)

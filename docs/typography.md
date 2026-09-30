@@ -96,3 +96,57 @@ or Russian. Two things the interface language cannot decide
   own text has kana `lang="ja"` and one with hangul `lang="ko"`; ideographs
   alone stay with the document's language, since Chinese and Japanese cannot
   be told apart by them. It never touches a `lang` a template set.
+
+## Type scale
+
+Ten roles replace the 33 pixel sizes (`src/styles/main.css`). Each has its
+own line height; letter spacing is in em, so it follows the size.
+
+| Role      | Class           | Standard | Line height | Used for                                                    |
+| --------- | --------------- | -------- | ----------- | ----------------------------------------------------------- |
+| Caption 2 | `text-caption2` | 11 px    | 1.35        | Uppercase labels, column heads, seek times, the volume      |
+| Caption   | `text-caption`  | 12 px    | 1.35        | Tile captions, palette names, small notes                   |
+| Footnote  | `text-footnote` | 13 px    | 1.4         | Artists, albums and durations in rows, subtitles, hints     |
+| Body      | `text-body`     | 14 px    | 1.4         | Titles in lists, navigation, buttons, fields (and the root) |
+| Callout   | `text-callout`  | 15 px    | 1.35        | Emphasised lines, dialog subheads                           |
+| Title 3   | `text-title3`   | 18 px    | 1.25        | Card and pane headings, lyrics lines                        |
+| Title 2   | `text-title2`   | 22 px    | 1.2         | Section and dialog headings                                 |
+| Title 1   | `text-title1`   | 32 px    | 1.12        | Page titles, long album and artist names                    |
+| Large     | `text-large`    | 44 px    | 1.06        | Short album and artist names                                |
+| Display   | `text-display`  | 44 px    | 1.07        | The home banner                                             |
+
+Title 1, Large and Display follow the screen width like the old per-breakpoint
+classes did: Display is 55 px from 1500 px and 36 px up to 1100 px; Large is
+38 px up to 800 px; on phones Title 1, Large and Display are 28, 32 and
+35 px. Uppercase labels use `tracking-caps` (+0.08 em), section and dialog
+headings `tracking-heading` (−0.012 em), page titles `tracking-title`
+(−0.025 em). Paragraphs of several lines keep `leading-[1.55]`.
+
+A few sizes are deliberately fixed and never follow the text size: the word
+mark and its tagline, the Hi-Res badge, the "···" glyph of the row menus, the
+phone's bottom navigation labels (10 px, as tab bars do) and the text drawn
+inside artwork (`cqw` units).
+
+## Text size
+
+The only new setting (appearance dialog, "Text size"): Compact, Standard (the
+default), Large and Extra large. The choice is kept in this browser
+(`disc-player.text-size`), applied before the first paint by
+`public/theme.js` and afterwards by `src/stores/appearance.ts`, as
+`data-text-size` on `<html>`; Standard sets no attribute. Small text grows
+more than headings, as in Apple's Dynamic Type:
+
+| Role                          | Compact | Standard | Large | Extra large |
+| ----------------------------- | ------- | -------- | ----- | ----------- |
+| Caption 2                     | 10      | 11       | 12    | 13          |
+| Caption                       | 11      | 12       | 13    | 15          |
+| Footnote                      | 12      | 13       | 15    | 17          |
+| Body                          | 13      | 14       | 16    | 18          |
+| Callout                       | 14      | 15       | 17    | 19          |
+| Title 3                       | 17      | 18       | 20    | 22          |
+| Title 2                       | 20      | 22       | 24    | 26          |
+| Title 1, Large, Display (+/−) | −2      | 0        | +2    | +4          |
+
+Spacing stays in pixels, so rows and cards grow with their text; the sidebar
+scrolls when a short window cannot hold it at Extra large. The whole-interface
+scale for TV browsers (100/115/130 %) remains a separate plan item.

@@ -221,7 +221,7 @@ function addHere(): void {
   <RescanNote />
   <nav
     :aria-label="t('files_breadcrumbs')"
-    class="mb-14 flex flex-wrap items-center gap-4 text-13"
+    class="mb-14 flex flex-wrap items-center gap-4 text-body"
     data-testid="files-path"
   >
     <template v-for="(crumb, index) in breadcrumbs(folder)" :key="crumb.folder">
@@ -259,27 +259,27 @@ function addHere(): void {
         :aria-label="t('files_folder_name')"
         :placeholder="t('files_folder_name')"
         maxlength="120"
-        class="h-36 w-240 rounded-18 border border-line bg-raised px-14 text-13 outline-none focus:border-secondary"
+        class="h-36 w-240 rounded-18 border border-line bg-raised px-14 text-body outline-none focus:border-secondary"
         @keydown.esc.stop="naming = false"
       />
       <UiPillButton type="submit" :disabled="!name || problem !== null || operation.busy">{{
         t('files_create')
       }}</UiPillButton>
-      <UiTextButton class="text-12" @click="naming = false">{{ t('files_cancel') }}</UiTextButton>
-      <span v-if="problem" role="alert" class="w-full text-11 text-notice">{{ t(PROBLEM[problem]) }}</span>
+      <UiTextButton class="text-footnote" @click="naming = false">{{ t('files_cancel') }}</UiTextButton>
+      <span v-if="problem" role="alert" class="w-full text-footnote text-notice">{{ t(PROBLEM[problem]) }}</span>
     </form>
   </div>
-  <p v-if="!ready" class="mt-0 mb-14 text-11 text-muted">{{ t('files_pair') }}</p>
+  <p v-if="!ready" class="mt-0 mb-14 text-footnote text-muted">{{ t('files_pair') }}</p>
 
   <div v-if="status === 'loading' && !listing" :aria-busy="true">
     <div v-for="n in 6" :key="n" class="flex items-center gap-14 border-b border-line py-10">
       <UiSkeleton class="size-36 rounded-6" /><UiSkeleton class="h-10 w-[40%]" />
     </div>
   </div>
-  <p v-else-if="status === 'failed'" role="status" class="text-12 text-muted">
-    {{ t('files_failed') }} <UiTextButton class="text-12" @click="load">{{ t('refresh') }}</UiTextButton>
+  <p v-else-if="status === 'failed'" role="status" class="text-footnote text-muted">
+    {{ t('files_failed') }} <UiTextButton class="text-footnote" @click="load">{{ t('refresh') }}</UiTextButton>
   </p>
-  <p v-else-if="!rows.length" role="status" class="text-12 text-muted" data-testid="files-empty">
+  <p v-else-if="!rows.length" role="status" class="text-footnote text-muted" data-testid="files-empty">
     {{ t('files_empty') }}
   </p>
   <ul v-else class="m-0 list-none p-0" data-testid="files-list" :aria-busy="status === 'loading'">
@@ -327,11 +327,11 @@ function addHere(): void {
         <RouterLink
           v-if="row.entry.folder"
           :to="folderTo(row.path)"
-          class="block truncate text-13 font-semibold hover:underline"
+          class="block truncate text-body font-semibold hover:underline"
           >{{ row.entry.name }}</RouterLink
         >
-        <span v-else class="block truncate text-13">{{ row.entry.name }}</span>
-        <p class="m-0 mt-2 truncate text-11 text-muted">
+        <span v-else class="block truncate text-body">{{ row.entry.name }}</span>
+        <p class="m-0 mt-2 truncate text-footnote text-muted">
           <template v-if="row.stats">
             <template v-if="row.stats.tracks">{{ t('track_count', { count: row.stats.tracks }) }}</template>
             <template v-if="row.stats.album">
@@ -354,7 +354,7 @@ function addHere(): void {
           </template>
         </p>
       </div>
-      <span class="w-72 shrink-0 text-right text-12 font-semibold text-secondary tabular-nums">
+      <span class="w-72 shrink-0 text-right text-body font-semibold text-secondary tabular-nums">
         {{
           row.stats ? (row.stats.measured ? bytes(row.stats.bytes) : '') : row.size !== null ? bytes(row.size ?? 0) : ''
         }}
@@ -370,6 +370,8 @@ function addHere(): void {
       />
     </li>
   </ul>
-  <p v-if="listing?.truncated" class="mt-12 text-11 text-muted">{{ t('files_truncated', { count: MAX_ENTRIES }) }}</p>
-  <p class="mt-20 text-11 leading-[1.6] text-muted">{{ t('files_note') }}</p>
+  <p v-if="listing?.truncated" class="mt-12 text-footnote text-muted">
+    {{ t('files_truncated', { count: MAX_ENTRIES }) }}
+  </p>
+  <p class="mt-20 text-footnote leading-[1.55] text-muted">{{ t('files_note') }}</p>
 </template>

@@ -20,7 +20,7 @@ const OPTIONS = computed<{ value: Appearance; swatch: string }[]>(() => [
       :key="option.value"
       type="button"
       :aria-pressed="value === option.value"
-      class="rounded-12 border border-line p-9 text-11 text-muted aria-pressed:border-accent aria-pressed:bg-soft aria-pressed:text-ink dark:aria-pressed:bg-selected"
+      class="rounded-12 border border-line p-9 text-footnote text-muted aria-pressed:border-accent aria-pressed:bg-soft aria-pressed:text-ink dark:aria-pressed:bg-selected"
       @click="emit('choose', option.value)"
     >
       <span

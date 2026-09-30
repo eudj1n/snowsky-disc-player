@@ -44,15 +44,13 @@ const emit = defineEmits<{ play: [] }>()
     <div
       class="max-w-[61%] px-36 py-30 wide:pl-44 compact:p-28 rail:max-w-[75%] phone:max-w-[87%] phone:px-23 phone:py-26"
     >
-      <span class="text-9 font-semibold tracking-[2.2px] text-white/70 uppercase phone:text-8 phone:tracking-[1.5px]">{{
-        eyebrow
-      }}</span>
+      <span class="text-caption2 font-semibold tracking-caps text-white/70 uppercase">{{ eyebrow }}</span>
       <h2
-        class="mt-19 mb-16 text-43 leading-[1.07] font-semibold tracking-[-1.7px] wide:text-55 compact:text-36 phone:text-35 [:lang(en)_&]:text-39 [:lang(en)_&]:phone:text-32"
+        class="mt-19 mb-16 text-display font-semibold tracking-title [:lang(en)_&]:text-[length:calc(var(--text-display)*0.91)]"
       >
         {{ titleLines[0] }}<br />{{ titleLines[1] }}
       </h2>
-      <p class="mt-0 mb-22 text-11 leading-[1.8] text-white/75 wide:text-13 phone:max-w-235 phone:text-11">
+      <p class="mt-0 mb-22 text-footnote leading-[1.55] text-white/75 phone:max-w-235">
         <span v-if="loading" aria-hidden="true" class="flex h-[1lh] items-center"
           ><span class="block h-[0.8em] w-[70%] animate-pulse rounded-4 bg-white/15 motion-reduce:animate-none"
         /></span>
@@ -69,14 +67,14 @@ const emit = defineEmits<{ play: [] }>()
         type="button"
         :disabled="actionDisabled"
         :title="actionTitle"
-        class="inline-flex items-center justify-center gap-9 rounded-24 bg-[#f5f3e8] px-22 py-12 text-11 font-semibold text-[#30362a] shadow-[0_2px_10px_#0001] hover:enabled:-translate-y-1 hover:enabled:brightness-[1.04] phone:px-18 phone:py-11 phone:text-11"
+        class="inline-flex items-center justify-center gap-9 rounded-24 bg-[#f5f3e8] px-22 py-12 text-body font-semibold text-[#30362a] shadow-[0_2px_10px_#0001] hover:enabled:-translate-y-1 hover:enabled:brightness-[1.04] phone:px-18 phone:py-11"
         @click="emit('play')"
       >
         <UiIcon name="play" class="size-15" />{{ action }}
       </button>
     </div>
     <span
-      class="absolute right-25 bottom-25 text-9 tracking-[1.7px] text-[#f9efe3c4] [writing-mode:vertical-rl] phone:right-16 phone:text-8"
+      class="absolute right-25 bottom-25 text-caption2 tracking-caps text-[#f9efe3c4] [writing-mode:vertical-rl] phone:right-16"
       >MADE FOR LISTENING</span
     >
   </section>

@@ -120,22 +120,22 @@ async function submit(): Promise<void> {
     @close="closePlaylistDialog"
   >
     <form v-if="dialog" class="mt-14" @submit.prevent="submit">
-      <h2 class="mt-0 mb-8 text-24 font-bold tracking-[-0.6px]">{{ t(TITLES[dialog.mode]) }}</h2>
-      <p v-if="dialog.mode === 'add'" class="mt-0 mb-16 truncate text-12 text-muted">
+      <h2 class="mt-0 mb-8 text-title2 font-bold tracking-heading">{{ t(TITLES[dialog.mode]) }}</h2>
+      <p v-if="dialog.mode === 'add'" class="mt-0 mb-16 truncate text-footnote text-muted">
         {{ t('playlist_adding', { title: dialog.title }) }}
       </p>
-      <p v-else-if="dialog.mode === 'delete'" class="mt-0 mb-16 text-12 leading-[1.6] text-secondary">
+      <p v-else-if="dialog.mode === 'delete'" class="mt-0 mb-16 text-footnote leading-[1.55] text-secondary">
         {{ t('playlist_delete_confirm', { name: dialog.playlist }) }}
       </p>
-      <p v-else-if="dialog.mode === 'unfavorite'" class="mt-0 mb-16 text-12 leading-[1.6] text-secondary">
+      <p v-else-if="dialog.mode === 'unfavorite'" class="mt-0 mb-16 text-footnote leading-[1.55] text-secondary">
         {{ t('favorite_remove_confirm', { track: dialog.track.title }) }}
       </p>
-      <p v-else-if="dialog.mode === 'remove'" class="mt-0 mb-16 text-12 leading-[1.6] text-secondary">
+      <p v-else-if="dialog.mode === 'remove'" class="mt-0 mb-16 text-footnote leading-[1.55] text-secondary">
         {{ t('playlist_remove_confirm', { track: dialog.track.title, name: dialog.playlist }) }}
       </p>
 
       <label v-if="needsName" class="mb-16 block">
-        <span class="mb-6 block text-11 text-muted">{{ t('playlist_name') }}</span>
+        <span class="mb-6 block text-footnote text-muted">{{ t('playlist_name') }}</span>
         <input
           ref="field"
           v-model="name"
@@ -143,23 +143,23 @@ async function submit(): Promise<void> {
           maxlength="100"
           required
           autocomplete="off"
-          class="w-full rounded-10 border border-line bg-paper px-14 py-11 text-13 text-ink focus-visible:border-secondary"
+          class="w-full rounded-10 border border-line bg-paper px-14 py-11 text-body text-ink focus-visible:border-secondary"
         />
       </label>
 
       <template v-if="dialog.mode === 'add'">
         <label v-if="names.length" class="mb-16 block">
-          <span class="mb-6 block text-11 text-muted">{{ t('playlist_choose') }}</span>
+          <span class="mb-6 block text-footnote text-muted">{{ t('playlist_choose') }}</span>
           <UiSelect block>
             <select
               v-model="choice"
-              class="w-full rounded-10 border border-line bg-paper py-10 pl-12 text-13 text-ink focus-visible:border-secondary"
+              class="w-full rounded-10 border border-line bg-paper py-10 pl-12 text-body text-ink focus-visible:border-secondary"
             >
               <option v-for="option in names" :key="option" :value="option">{{ option }}</option>
             </select>
           </UiSelect>
         </label>
-        <p v-else class="mb-16 flex items-center gap-10 text-12 text-muted">
+        <p v-else class="mb-16 flex items-center gap-10 text-footnote text-muted">
           {{ t('playlist_empty') }}
           <UiTextButton icon="arrow" @click="openPlaylistDialog({ mode: 'create' })">{{
             t('new_playlist')
@@ -167,10 +167,10 @@ async function submit(): Promise<void> {
         </p>
       </template>
 
-      <p v-if="dialog.mode !== 'unfavorite'" class="mt-0 mb-18 text-11 leading-[1.6] text-muted">
+      <p v-if="dialog.mode !== 'unfavorite'" class="mt-0 mb-18 text-footnote leading-[1.55] text-muted">
         {{ t('playlist_no_files') }}
       </p>
-      <p v-if="feedback" role="status" class="mt-0 mb-14 text-11 text-notice" data-testid="playlist-feedback">
+      <p v-if="feedback" role="status" class="mt-0 mb-14 text-footnote text-notice" data-testid="playlist-feedback">
         {{ feedback }}
       </p>
       <div class="flex items-center justify-end gap-10">

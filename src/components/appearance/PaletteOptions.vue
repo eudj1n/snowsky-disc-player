@@ -14,7 +14,7 @@ const swatch = (id: string): Swatch => SWATCHES[id as keyof typeof SWATCHES]
       :key="option"
       type="button"
       :aria-pressed="value === option"
-      class="rounded-10 border border-line p-6 text-10 text-muted aria-pressed:border-accent aria-pressed:text-ink"
+      class="rounded-10 border border-line p-6 text-caption text-muted aria-pressed:border-accent aria-pressed:text-ink"
       @click="emit('choose', option)"
     >
       <span

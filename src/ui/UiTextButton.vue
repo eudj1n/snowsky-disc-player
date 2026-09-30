@@ -10,7 +10,7 @@ withDefaults(defineProps<{ icon?: IconName; disabled?: boolean }>(), { icon: und
   <button
     type="button"
     :disabled="disabled"
-    class="flex items-center gap-6 text-12 text-muted hover:enabled:text-ink [&>svg]:size-14"
+    class="flex items-center gap-6 text-footnote text-muted hover:enabled:text-ink [&>svg]:size-14"
   >
     <slot />
     <UiIcon v-if="icon" :name="icon" />

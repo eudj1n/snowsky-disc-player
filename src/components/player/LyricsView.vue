@@ -75,7 +75,7 @@ watch(
     @wheel.passive="touchedAt = Date.now()"
     @touchmove.passive="touchedAt = Date.now()"
   >
-    <p v-if="!lyrics" class="mt-24 text-12 leading-[1.7] text-muted" role="status">{{ message }}</p>
+    <p v-if="!lyrics" class="mt-24 text-footnote leading-[1.55] text-muted" role="status">{{ message }}</p>
     <template v-else-if="lyrics.synced">
       <button
         v-for="(line, index) in lyrics.lines"
@@ -85,7 +85,7 @@ watch(
         :aria-current="index === active ? 'true' : undefined"
         :aria-label="silentLine(line) ? seekLabel : undefined"
         :disabled="!seekable || line.timeMs === null"
-        class="phone:text-16 block w-full rounded-8 px-6 py-5 text-left text-17 leading-[1.45] font-semibold tracking-[-0.2px] text-muted/70 transition-[color,opacity,transform,translate,scale,rotate] duration-300 hover:enabled:text-secondary aria-[current=true]:text-ink motion-reduce:transition-none"
+        class="block w-full rounded-8 px-6 py-5 text-left text-title3 leading-[1.45] font-semibold tracking-heading text-muted/70 transition-[color,opacity,transform,translate,scale,rotate] duration-300 hover:enabled:text-secondary aria-[current=true]:text-ink motion-reduce:transition-none"
         :class="index < active ? 'opacity-60' : ''"
         @click="line.timeMs !== null && emit('seek', line.timeMs)"
       >
@@ -106,9 +106,9 @@ watch(
         <template v-else>{{ line.text }}</template>
       </button>
     </template>
-    <div v-else class="text-14 leading-[1.7] whitespace-pre-line text-secondary">
+    <div v-else class="text-body leading-[1.55] whitespace-pre-line text-secondary">
       <p v-for="(line, index) in lyrics.lines" :key="index" class="m-0 min-h-[1lh]">{{ line.text }}</p>
     </div>
-    <p v-if="lyrics && source" class="mt-20 mb-0 text-11 text-muted">{{ source }}</p>
+    <p v-if="lyrics && source" class="mt-20 mb-0 text-footnote text-muted">{{ source }}</p>
   </div>
 </template>

@@ -219,7 +219,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
     class="fixed top-0 right-0 bottom-(--player) z-25 flex w-380 animate-listening-enter flex-col border-l border-line bg-raised text-left shadow-[-15px_0_65px_#26301418] phone:bottom-0 phone:z-40 phone:w-full phone:border-l-0"
   >
     <div class="flex items-center justify-between px-24 pt-22 pb-12 phone:px-24 phone:pt-16 phone:pb-10">
-      <span class="text-10 font-semibold tracking-[1.8px] text-muted uppercase">SNOWSKY DISC</span>
+      <span class="text-caption2 font-semibold tracking-caps text-muted uppercase">SNOWSKY DISC</span>
       <UiIconButton ref="close" icon="close" :label="t('minimize_player')" @click="closePanel(true)" />
     </div>
     <div class="mx-24 mb-20 flex shrink-0 gap-4 rounded-24 border border-line p-4 phone:mb-16" role="group">
@@ -228,7 +228,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         :key="section"
         type="button"
         :aria-pressed="ui.panel === section"
-        class="flex-1 rounded-20 px-12 py-9 text-12 text-muted aria-pressed:bg-paper aria-pressed:text-ink aria-pressed:shadow-[0_1px_5px_#0001]"
+        class="flex-1 rounded-20 px-12 py-9 text-footnote text-muted aria-pressed:bg-paper aria-pressed:text-ink aria-pressed:shadow-[0_1px_5px_#0001]"
         @click="showPanelSection(section)"
       >
         {{ t(section === 'now' ? 'now_playing' : 'lyrics_tab') }}
@@ -285,8 +285,10 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         >
           <div class="flex items-end justify-between">
             <div>
-              <span class="text-10 font-semibold tracking-[1.8px] text-muted uppercase">{{ t('your_selection') }}</span>
-              <h2 id="panel-queue-title" class="mt-6 mb-4 text-24 font-bold tracking-[-0.8px]">{{ t('queue') }}</h2>
+              <span class="text-caption2 font-semibold tracking-caps text-muted uppercase">{{
+                t('your_selection')
+              }}</span>
+              <h2 id="panel-queue-title" class="mt-6 mb-4 text-title2 font-bold tracking-heading">{{ t('queue') }}</h2>
             </div>
             <UiIconButton
               icon="refresh"
@@ -295,8 +297,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
               @click="loadQueue"
             />
           </div>
-          <p class="mt-4 mb-4 text-11 text-muted" role="status">{{ queueHint }}</p>
-          <p v-if="queue.status === 'ready'" class="mt-0 mb-14 text-11 leading-[1.6] text-muted">
+          <p class="mt-4 mb-4 text-footnote text-muted" role="status">{{ queueHint }}</p>
+          <p v-if="queue.status === 'ready'" class="mt-0 mb-14 text-footnote leading-[1.55] text-muted">
             {{ t('queue_snapshot_note') }}
           </p>
           <QueueRows
@@ -317,7 +319,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
       <!-- The tab already says Lyrics: the header names the track only (owner, round 14). -->
       <div class="shrink-0 px-24 pb-10">
         <div class="flex items-center gap-10">
-          <h2 class="mt-0 mb-0 min-w-0 flex-1 truncate text-24 font-bold tracking-[-0.8px]">
+          <h2 class="mt-0 mb-0 min-w-0 flex-1 truncate text-title2 font-bold tracking-heading">
             {{ playback.current.track?.title ?? t('lyrics_tab') }}
           </h2>
           <UiIconButton
@@ -330,7 +332,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         </div>
         <p
           v-if="playback.current.track?.artist"
-          class="mt-2 mb-0 truncate text-11 text-muted"
+          class="mt-2 mb-0 truncate text-footnote text-muted"
           @click="($event.target as HTMLElement).closest('a') && onNavigate()"
         >
           <ArtistCredit
@@ -350,7 +352,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
           >{{ t('lyrics_save') }}</UiPillButton
         >
         <template v-else>
-          <p v-if="lookupMessage" class="mt-0 mb-8 text-11 text-secondary" role="status">{{ lookupMessage }}</p>
+          <p v-if="lookupMessage" class="mt-0 mb-8 text-footnote text-secondary" role="status">{{ lookupMessage }}</p>
           <UiPillButton
             v-if="lyrics.lookup !== 'searching'"
             variant="secondary"
@@ -358,8 +360,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
             @click="lookUpLyrics"
             >{{ t(plainLyricsOnly() ? 'lrclib_find_synced' : 'lrclib_find') }}</UiPillButton
           >
-          <p class="mt-8 mb-6 text-10 leading-[1.5] text-muted">{{ t('lrclib_note') }}</p>
-          <label class="flex items-center gap-8 text-11 text-secondary">
+          <p class="mt-8 mb-6 text-caption leading-[1.5] text-muted">{{ t('lrclib_note') }}</p>
+          <label class="flex items-center gap-8 text-footnote text-secondary">
             <input
               type="checkbox"
               :checked="lyrics.autoLookup"

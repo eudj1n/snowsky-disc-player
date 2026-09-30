@@ -47,38 +47,34 @@
     -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', Roboto, 'Noto Sans', Ubuntu, Cantarell,
     'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji';
 
-  --text-6: 6px;
-  --text-7: 7px;
-  --text-8: 8px;
-  --text-9: 9px;
-  --text-10: 10px;
-  --text-11: 11px;
-  --text-12: 12px;
-  --text-13: 13px;
-  --text-14: 14px;
-  --text-15: 15px;
-  --text-17: 17px;
-  --text-18: 18px;
-  --text-19: 19px;
-  --text-21: 21px;
-  --text-22: 22px;
-  --text-24: 24px;
-  --text-25: 25px;
-  --text-26: 26px;
-  --text-27: 27px;
-  --text-28: 28px;
-  --text-29: 29px;
-  --text-30: 30px;
-  --text-32: 32px;
-  --text-34: 34px;
-  --text-35: 35px;
-  --text-36: 36px;
-  --text-38: 38px;
-  --text-39: 39px;
-  --text-42: 42px;
-  --text-43: 43px;
-  --text-48: 48px;
-  --text-55: 55px;
+  /* Type scale (owner, 2026-09-30; docs/typography.md): ten roles instead of 33 pixel sizes.
+   * These are the Standard text size; the text size setting changes the working text, and
+   * the headings (title1, large, display) also follow the screen width, both below. */
+  --text-caption2: 11px;
+  --text-caption2--line-height: 1.35;
+  --text-caption: 12px;
+  --text-caption--line-height: 1.35;
+  --text-footnote: 13px;
+  --text-footnote--line-height: 1.4;
+  --text-body: 14px;
+  --text-body--line-height: 1.4;
+  --text-callout: 15px;
+  --text-callout--line-height: 1.35;
+  --text-title3: 18px;
+  --text-title3--line-height: 1.25;
+  --text-title2: 22px;
+  --text-title2--line-height: 1.2;
+  --text-title1: calc(var(--title1) + var(--heading-step));
+  --text-title1--line-height: 1.12;
+  --text-large: calc(var(--large) + var(--heading-step));
+  --text-large--line-height: 1.06;
+  --text-display: calc(var(--display) + var(--heading-step));
+  --text-display--line-height: 1.07;
+  /* Letter spacing in em, so it follows the size: uppercase labels, section and dialog
+   * headings, page titles. */
+  --tracking-caps: 0.08em;
+  --tracking-heading: -0.012em;
+  --tracking-title: -0.025em;
 
   --radius-3: 3px;
   --radius-4: 4px;
@@ -186,7 +182,13 @@
 }
 
 :root {
-  font-size: 14px;
+  /* Text without a role of its own (the navigation, buttons) is body text. */
+  font-size: var(--text-body);
+  /* Heading sizes per screen width (below) and their step with the text size. */
+  --title1: 32px;
+  --large: 44px;
+  --display: 44px;
+  --heading-step: 0px;
   --paper: #faf9f6;
   --line: #e8e7e0;
   --ink: #242521;
@@ -289,6 +291,63 @@
   :root {
     --sidebar: 250px;
   }
+}
+
+/* Headings per screen width, as the page titles and the home banner had them. */
+@media (min-width: 1500px) {
+  :root {
+    --display: 55px;
+  }
+}
+@media (max-width: 1100px) {
+  :root {
+    --display: 36px;
+  }
+}
+@media (max-width: 800px) {
+  :root {
+    --large: 38px;
+  }
+}
+@media (max-width: 540px) {
+  :root {
+    --title1: 28px;
+    --large: 32px;
+    --display: 35px;
+  }
+}
+
+/* Text size (the appearance dialog; src/stores/appearance.ts). Standard is the default and
+ * sets no attribute. Small text grows more than headings, as in Apple's Dynamic Type. */
+:root[data-text-size='compact'] {
+  --text-caption2: 10px;
+  --text-caption: 11px;
+  --text-footnote: 12px;
+  --text-body: 13px;
+  --text-callout: 14px;
+  --text-title3: 17px;
+  --text-title2: 20px;
+  --heading-step: -2px;
+}
+:root[data-text-size='large'] {
+  --text-caption2: 12px;
+  --text-caption: 13px;
+  --text-footnote: 15px;
+  --text-body: 16px;
+  --text-callout: 17px;
+  --text-title3: 20px;
+  --text-title2: 24px;
+  --heading-step: 2px;
+}
+:root[data-text-size='extra-large'] {
+  --text-caption2: 13px;
+  --text-caption: 15px;
+  --text-footnote: 17px;
+  --text-body: 18px;
+  --text-callout: 19px;
+  --text-title3: 22px;
+  --text-title2: 26px;
+  --heading-step: 4px;
 }
 @media (max-width: 1100px) {
   :root {

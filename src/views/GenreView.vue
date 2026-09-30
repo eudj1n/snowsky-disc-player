@@ -145,7 +145,7 @@ function playAlbum(item: Album): void {
 <template>
   <CollectionGate :count="count" :searching="searching" empty-key="search_empty_tracks">
     <template #heading="{ loading }">
-      <UiTextButton class="text-12" @click="router.push('/genres')">← {{ t('back_to_genres') }}</UiTextButton>
+      <UiTextButton class="text-footnote" @click="router.push('/genres')">← {{ t('back_to_genres') }}</UiTextButton>
       <DetailHeading
         :title="shown"
         :kind="t('kind_genre')"
@@ -166,7 +166,7 @@ function playAlbum(item: Album): void {
       </DetailHeading>
       <p
         v-if="!loading && spellings"
-        class="-mt-10 mb-18 text-11 leading-[1.6] text-muted"
+        class="-mt-10 mb-18 text-footnote leading-[1.55] text-muted"
         data-testid="genre-spellings"
       >
         {{ t('genre_spellings', { spellings: spellings.map((item) => `“${item}”`).join(', '), main: `“${literal}”` }) }}

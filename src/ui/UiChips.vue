@@ -11,7 +11,7 @@ defineProps<{ label: string; options: readonly { value: T; text: string }[] }>()
       :key="option.value"
       type="button"
       :aria-pressed="model === option.value"
-      class="rounded-20 border border-line px-15 py-8 text-11 text-muted hover:text-ink aria-pressed:border-chip-on aria-pressed:bg-chip-on aria-pressed:text-chip-on-ink"
+      class="rounded-20 border border-line px-15 py-8 text-footnote text-muted hover:text-ink aria-pressed:border-chip-on aria-pressed:bg-chip-on aria-pressed:text-chip-on-ink"
       @click="model = option.value"
     >
       {{ option.text }}

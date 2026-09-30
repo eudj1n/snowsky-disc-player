@@ -140,7 +140,9 @@ function lines(album: Album) {
 <template>
   <CollectionGate :count="items.length + joined.length" :searching="searching" empty-key="search_empty_albums">
     <template #heading="{ loading }">
-      <UiTextButton class="text-12" @click="router.push('/artists')">← {{ t('back_to_collection') }}</UiTextButton>
+      <UiTextButton class="text-footnote" @click="router.push('/artists')"
+        >← {{ t('back_to_collection') }}</UiTextButton
+      >
       <DetailHeading
         :title="creditLabel(name)"
         :kind="t('kind_artist')"
@@ -181,13 +183,13 @@ function lines(album: Album) {
           @click="lookUpArtistPicture(name)"
         />
       </DetailHeading>
-      <p v-if="photoMessage" class="-mt-8 mb-20 text-12 text-secondary" role="status" data-testid="photo-status">
+      <p v-if="photoMessage" class="-mt-8 mb-20 text-footnote text-secondary" role="status" data-testid="photo-status">
         {{ photoMessage }}
-        <span v-if="artistPictures.search.status === 'searching'" class="block text-10 text-muted">{{
+        <span v-if="artistPictures.search.status === 'searching'" class="block text-caption text-muted">{{
           t('photo_note')
         }}</span>
       </p>
-      <p v-if="picture" class="-mt-8 mb-20 text-11 text-muted" data-testid="photo-credit">
+      <p v-if="picture" class="-mt-8 mb-20 text-footnote text-muted" data-testid="photo-credit">
         {{ t('photo_credit') }}:
         <a
           v-if="picture.page"
@@ -210,7 +212,7 @@ function lines(album: Album) {
         >
         · {{ t('photo_source') }} · {{ t('photo_kept') }}
         <UiTextButton
-          class="ml-6 inline-flex! align-baseline text-11"
+          class="ml-6 inline-flex! align-baseline text-footnote"
           data-testid="photo-remove"
           @click="forgetArtistPicture(name)"
           >{{ t('photo_remove') }}</UiTextButton

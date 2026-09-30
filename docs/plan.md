@@ -1662,10 +1662,8 @@ new setting is the text size. See docs/typography.md.
 - [x] The system font stack covers Windows 11, Android and Linux and colour emoji; the whole page is antialiased; four weights (400, 500, 600, 700) instead of eight; the unused Georgia token is gone.
 - [x] Secondary text passes 4.5:1 in every light palette, also on a selected row (secondary text slightly darker in Sage and Paper too); small notices use a darker coral; more contrast and less transparency follow the system settings; the player bar is 97 % opaque with a 30 px blur and no longer shows the list through it.
 - [x] Names from the collection keep their order next to numbers (every inline element is a bidi isolate; names joined into one string or passed to messages get first-strong isolates when they hold a right-to-left letter) and elements with kana or hangul get their language, so Japanese titles are drawn with Japanese glyph forms.
-- [ ] A type scale of ten roles replaces the 33 pixel sizes; letter spacing
-      in em; the working text grows by 2 to 3 px.
-- [ ] Text size in the appearance dialog: Compact, Standard (default),
-      Large, Extra large, applied before the first paint.
+- [x] A type scale of ten roles replaces the 33 pixel sizes; letter spacing in em; the working text grows by 2 to 3 px (track titles 11 → 14 px, artists and captions 11 → 13 px, seek times 8 to 9 → 11 px); headings follow the screen width through their tokens.
+- [x] Text size in the appearance dialog: Compact, Standard (default), Large, Extra large, applied before the first paint; the only new setting.
 
 ## Requests for the next service build
 

@@ -55,7 +55,7 @@ onBeforeUnmount(() => {
     "
   >
     <div class="flex items-center justify-between">
-      <span class="text-10 font-semibold tracking-[1.8px] text-muted uppercase">{{ eyebrow }}</span>
+      <span class="text-caption2 font-semibold tracking-caps text-muted uppercase">{{ eyebrow }}</span>
       <UiIconButton icon="close" :label="closeLabel" @click="emit('close')" />
     </div>
     <slot />

@@ -118,11 +118,11 @@ const emit = defineEmits<{
         <Artwork v-else :key="identity ?? 'none'" :title="playback.track?.title ?? null" :cover="cover" />
       </Transition>
     </div>
-    <p class="flex items-center justify-between gap-10 text-11 text-muted">
+    <p class="flex items-center justify-between gap-10 text-footnote text-muted">
       <span>{{ status }}</span>
       <span v-if="quality.format" class="flex items-center gap-6" data-testid="quality">
         <UiHiResBadge v-if="isHiRes(quality)" class="py-5" />
-        <span :title="labels.format" class="rounded-5 border border-line px-7 py-4 text-11 tracking-[1px]"
+        <span :title="labels.format" class="rounded-5 border border-line px-7 py-4 text-caption2 tracking-caps"
           >{{ quality.format }}<template v-if="qualityLabel(quality)"> · {{ qualityLabel(quality) }}</template
           ><span v-if="outputRate" data-testid="output-rate" :title="labels.resampled.replace('{rate}', outputRate)">
             → {{ outputRate }}</span
@@ -130,13 +130,13 @@ const emit = defineEmits<{
         >
       </span>
     </p>
-    <h2 class="mt-14 mb-8 text-28 leading-[1.15] font-bold tracking-[-0.8px] [overflow-wrap:anywhere] phone:text-25">
+    <h2 class="mt-14 mb-8 text-title1 font-bold tracking-title [overflow-wrap:anywhere]">
       {{ playback.track?.title ?? labels.title }}
     </h2>
     <!-- Each artist of a joint credit ("A; B") links on its own. -->
     <p
       v-if="playback.track?.artist"
-      class="m-0 text-15 leading-[1.5] [overflow-wrap:anywhere] text-secondary"
+      class="m-0 text-callout leading-[1.5] [overflow-wrap:anywhere] text-secondary"
       @click="($event.target as HTMLElement).closest('a') && emit('navigate')"
     >
       <ArtistCredit
@@ -152,11 +152,11 @@ const emit = defineEmits<{
           ? { name: 'album', params: { name: playback.track.album, artist: playback.track.artist } }
           : { name: 'album', params: { name: playback.track.album } }
       "
-      class="mt-4 mb-24 block text-12 [overflow-wrap:anywhere] text-muted hover:underline"
+      class="mt-4 mb-24 block text-footnote [overflow-wrap:anywhere] text-muted hover:underline"
       @click="emit('navigate')"
       >{{ playback.track.album }}</RouterLink
     >
-    <p v-if="context" class="-mt-14 mb-22 flex min-w-0 items-center gap-6 text-11 text-muted">
+    <p v-if="context" class="-mt-14 mb-22 flex min-w-0 items-center gap-6 text-footnote text-muted">
       <UiIcon name="queue" class="size-12 shrink-0" />
       <span class="shrink-0">{{ labels.playingFrom }} ·</span>
       <RouterLink
@@ -170,7 +170,7 @@ const emit = defineEmits<{
     </p>
     <div class="hidden phone:block" data-testid="panel-controls">
       <SeekBar
-        class="text-10"
+        class="text-caption"
         :position-ms="positionMs"
         :duration-ms="playback.track?.durationMs ?? null"
         :identity="identity"
@@ -178,7 +178,7 @@ const emit = defineEmits<{
         :label="labels.seek"
         @seek="(seconds, id) => emit('seek', seconds, id)"
       />
-      <p v-if="seekFeedback" role="status" class="mt-6 text-11 text-secondary">{{ seekFeedback }}</p>
+      <p v-if="seekFeedback" role="status" class="mt-6 text-footnote text-secondary">{{ seekFeedback }}</p>
       <div class="my-20 flex items-center justify-center gap-32">
         <UiIconButton
           icon="previous"
@@ -239,7 +239,7 @@ const emit = defineEmits<{
         @change="(value) => emit('volume', value)"
         @mute="emit('mute')"
       />
-      <p class="mt-20 text-11 text-muted">{{ labels.output }}</p>
+      <p class="mt-20 text-footnote text-muted">{{ labels.output }}</p>
     </div>
     <slot />
   </div>

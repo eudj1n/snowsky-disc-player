@@ -162,8 +162,8 @@ onBeforeUnmount(() => cleanup())
           ><Artwork :title="menu.track.title" :cover="coverFor(menu.track)"
         /></span>
         <span class="min-w-0 flex-1">
-          <strong class="block truncate text-13 font-semibold">{{ menu.track.title }}</strong>
-          <small class="mt-3 block truncate text-11 text-muted">{{
+          <strong class="block truncate text-body font-semibold">{{ menu.track.title }}</strong>
+          <small class="mt-3 block truncate text-footnote text-muted">{{
             menu.track.artist ? creditLabel(menu.track.artist) : '—'
           }}</small>
         </span>
@@ -176,7 +176,7 @@ onBeforeUnmount(() => cleanup())
             type="button"
             role="menuitem"
             :disabled="!item.enabled"
-            class="flex w-full items-center gap-13 rounded-9 p-12 text-left text-13 text-ink focus-visible:bg-hover hover:enabled:bg-hover disabled:cursor-not-allowed"
+            class="flex w-full items-center gap-13 rounded-9 p-12 text-left text-body text-ink focus-visible:bg-hover hover:enabled:bg-hover disabled:cursor-not-allowed"
             @click="choose(item.id)"
           >
             <UiIcon :name="item.icon" class="size-18" />{{ item.label }}

@@ -60,7 +60,9 @@ const unavailable = (track: { path: string | null }) =>
 <template>
   <CollectionGate :count="items.length" :searching="searching" empty-key="search_empty_tracks" :ready="tracks !== null">
     <template #heading="{ loading }">
-      <UiTextButton class="text-12" @click="router.push('/playlists')">← {{ t('back_to_collection') }}</UiTextButton>
+      <UiTextButton class="text-footnote" @click="router.push('/playlists')"
+        >← {{ t('back_to_collection') }}</UiTextButton
+      >
       <DetailHeading
         :title="playlist?.name ?? ''"
         :kind="t('kind_playlist')"

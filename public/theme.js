@@ -1,4 +1,4 @@
-// Applies the saved appearance (and sidebar) before the stylesheet paints (no light flash
+// Applies the saved appearance (sidebar, text size) before the stylesheet paints (no light flash
 // in dark mode). External and synchronous because the gateway CSP forbids
 // inline scripts. src/stores/appearance.ts owns the preference afterwards.
 ;(function () {
@@ -29,4 +29,12 @@
     sidebar = null
   }
   if (sidebar === 'rail') root.dataset.sidebar = 'rail'
+  // The text size (src/stores/appearance.ts); Standard sets no attribute.
+  var size
+  try {
+    size = localStorage.getItem('disc-player.text-size')
+  } catch {
+    size = null
+  }
+  if (size === 'compact' || size === 'large' || size === 'extra-large') root.dataset.textSize = size
 })()

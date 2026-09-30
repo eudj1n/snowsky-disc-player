@@ -68,7 +68,9 @@ and eject. The [release guide](docs/release.md) has the details.
    `DISC_WEB_TOKEN` file on the memory card. It is stored in this browser only.
 
 The interface starts in the player's own language when it is Russian or
-English and remembers your choice of language and appearance.
+English and remembers your choice of language, appearance and text size
+(Compact, Standard, Large or Extra large, under Appearance). More contrast and
+reduced transparency follow your system's settings.
 
 ## Privacy and safety
 

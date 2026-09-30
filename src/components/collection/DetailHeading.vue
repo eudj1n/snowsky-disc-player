@@ -35,9 +35,7 @@ const props = withDefaults(
 /** Longer names step down so the column keeps the sleeve's height in the usual cases. */
 const titleSize = computed(() => {
   const length = props.title.length
-  if (length <= 20) return 'text-48 tracking-[-1.8px] rail:text-38 phone:text-32'
-  if (length <= 36) return 'text-38 tracking-[-1.3px] rail:text-30 phone:text-28'
-  return 'text-30 tracking-[-0.9px] rail:text-26 phone:text-24'
+  return length <= 20 ? 'text-large tracking-title' : 'text-title1 tracking-title'
 })
 /** `cover`: show the observed cover (or artist picture) in full size. */
 const emit = defineEmits<{ sticky: []; cover: [] }>()
@@ -110,17 +108,13 @@ function toTop(): void {
     </div>
     <!-- As tall as the sleeve: the kind on its top edge, the actions on its bottom edge. -->
     <div class="flex min-h-220 min-w-0 flex-1 flex-col rail:min-h-165 phone:min-h-0">
-      <p
-        v-if="kind"
-        class="m-0 mb-10 text-13 leading-none font-medium text-secondary phone:mb-10 phone:text-11"
-        data-testid="heading-kind"
-      >
+      <p v-if="kind" class="m-0 mb-10 text-body leading-none font-medium text-secondary" data-testid="heading-kind">
         {{ kind }}
       </p>
       <h1 class="mt-0 mb-12 leading-[1.08] font-bold [overflow-wrap:anywhere]" :class="titleSize">
         {{ title }}
       </h1>
-      <p class="m-0 text-13 text-muted phone:text-11"><slot name="meta" /></p>
+      <p class="m-0 text-body text-muted"><slot name="meta" /></p>
       <!-- Actions wrap to a new line on narrow screens rather than widen the page. -->
       <div
         class="mt-auto flex flex-wrap items-center gap-10 pt-20 empty:hidden phone:mt-0 phone:justify-center [&>*]:whitespace-nowrap"
@@ -152,12 +146,12 @@ function toTop(): void {
             <div class="min-w-0 flex-1">
               <button
                 type="button"
-                class="block max-w-full truncate p-0 text-left text-15 font-bold tracking-[-0.3px] hover:underline hover:underline-offset-3"
+                class="block max-w-full truncate p-0 text-left text-callout font-bold tracking-heading hover:underline hover:underline-offset-3"
                 @click="toTop"
               >
                 {{ title }}
               </button>
-              <p v-if="$slots.sticky" class="m-0 mt-3 truncate text-11 text-muted"><slot name="sticky" /></p>
+              <p v-if="$slots.sticky" class="m-0 mt-3 truncate text-footnote text-muted"><slot name="sticky" /></p>
             </div>
             <button
               v-if="stickyAction"

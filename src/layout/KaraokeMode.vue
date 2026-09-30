@@ -228,8 +228,8 @@ onBeforeUnmount(() => {
       :class="idle ? 'opacity-0' : 'opacity-100'"
     >
       <div class="min-w-0 flex-1">
-        <p class="text-16 m-0 truncate font-semibold">{{ track?.title ?? t('karaoke') }}</p>
-        <p v-if="track?.artist" class="m-0 mt-2 truncate text-12 text-white/65">{{ track.artist }}</p>
+        <p class="m-0 truncate text-callout font-semibold">{{ track?.title ?? t('karaoke') }}</p>
+        <p v-if="track?.artist" class="m-0 mt-2 truncate text-footnote text-white/65">{{ track.artist }}</p>
       </div>
       <button
         type="button"
@@ -254,7 +254,7 @@ onBeforeUnmount(() => {
     <div ref="stage" class="relative min-h-0 flex-1 overflow-hidden" :class="{ 'overflow-y-auto': !synced }">
       <p
         v-if="!lines.length"
-        class="text-20 absolute inset-x-0 top-[40%] m-0 px-[6vw] text-center text-white/70"
+        class="absolute inset-x-0 top-[40%] m-0 px-[6vw] text-center text-title2 text-white/70"
         role="status"
       >
         {{ message }}
@@ -323,7 +323,7 @@ onBeforeUnmount(() => {
       class="relative flex items-center justify-center gap-22 pt-10 pb-26 transition-opacity duration-500"
       :class="idle ? 'opacity-0' : 'opacity-100'"
     >
-      <span class="w-56 text-right text-12 text-white/60 tabular-nums">{{ timeLabel(position) }}</span>
+      <span class="w-56 text-right text-footnote text-white/60 tabular-nums">{{ timeLabel(position) }}</span>
       <button
         type="button"
         class="grid size-44 place-items-center rounded-full text-white/85 hover:enabled:bg-white/12 disabled:opacity-40"
@@ -352,7 +352,7 @@ onBeforeUnmount(() => {
       >
         <UiIcon name="next" class="size-22" />
       </button>
-      <span class="w-56 text-12 text-white/60 tabular-nums">{{ timeLabel(track?.durationMs ?? null) }}</span>
+      <span class="w-56 text-footnote text-white/60 tabular-nums">{{ timeLabel(track?.durationMs ?? null) }}</span>
     </footer>
   </div>
 </template>

@@ -107,7 +107,7 @@ const rows = computed<Row[]>(() => {
           :aria-expanded="open"
           aria-controls="track-facts-list"
           data-testid="facts-toggle"
-          class="-mx-6 flex items-center gap-6 rounded-8 px-6 py-3 text-10 font-semibold tracking-[1.8px] text-muted uppercase hover:text-ink"
+          class="-mx-6 flex items-center gap-6 rounded-8 px-6 py-3 text-caption2 font-semibold tracking-caps text-muted uppercase hover:text-ink"
           @click="open = !open"
         >
           {{ t('facts_heading') }}
@@ -124,13 +124,13 @@ const rows = computed<Row[]>(() => {
         :aria-pressed="disliked"
         :aria-label="dislikeLabel"
         data-testid="now-dislike"
-        class="flex items-center gap-6 rounded-14 px-10 py-5 text-11 text-muted hover:bg-soft hover:text-ink aria-pressed:text-accent"
+        class="flex items-center gap-6 rounded-14 px-10 py-5 text-footnote text-muted hover:bg-soft hover:text-ink aria-pressed:text-accent"
         @click="emit('dislike')"
       >
         <UiIcon name="ban" class="size-14" />{{ dislikeLabel }}
       </button>
     </div>
-    <dl v-if="open" id="track-facts-list" class="m-0 grid grid-cols-[minmax(92px,auto)_minmax(0,1fr)] text-11">
+    <dl v-if="open" id="track-facts-list" class="m-0 grid grid-cols-[minmax(92px,auto)_minmax(0,1fr)] text-footnote">
       <template v-for="row in rows" :key="row.key">
         <dt class="border-t border-line/70 py-7 pr-14 text-muted">{{ row.label }}</dt>
         <dd

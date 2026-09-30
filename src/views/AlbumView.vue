@@ -52,7 +52,7 @@ import { playAlbumCard, playFrom } from './playAlbum'
 
 const MORE_BY_ARTISTS = 3
 const CHIP =
-  'rounded-20 border border-line px-15 py-8 text-11 text-muted hover:text-ink aria-[current=page]:border-chip-on aria-[current=page]:bg-chip-on aria-[current=page]:text-chip-on-ink'
+  'rounded-20 border border-line px-15 py-8 text-footnote text-muted hover:text-ink aria-[current=page]:border-chip-on aria-[current=page]:bg-chip-on aria-[current=page]:text-chip-on-ink'
 
 const route = useRoute()
 const router = useRouter()
@@ -233,7 +233,7 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
 <template>
   <CollectionGate :count="items.length" :searching="searching" empty-key="search_empty_tracks">
     <template #heading="{ loading }">
-      <UiTextButton class="text-12" @click="back"
+      <UiTextButton class="text-footnote" @click="back"
         >← {{ scope ? creditLabel(scope) : t('back_to_collection') }}</UiTextButton
       >
       <DetailHeading
@@ -307,9 +307,11 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
         data-testid="cover-offer"
         :aria-label="t('cover_find')"
       >
-        <p class="m-0 min-w-0 flex-1 text-12 leading-[1.6] text-secondary" role="status">
+        <p class="m-0 min-w-0 flex-1 text-footnote leading-[1.55] text-secondary" role="status">
           {{ coverMessage }}
-          <span v-if="coverSearch.status === 'searching'" class="block text-10 text-muted">{{ t('cover_note') }}</span>
+          <span v-if="coverSearch.status === 'searching'" class="block text-caption text-muted">{{
+            t('cover_note')
+          }}</span>
         </p>
         <template v-if="coverSearch.status === 'found'">
           <UiPillButton
@@ -319,7 +321,7 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
             @click="group && saveCover(group, scope)"
             >{{ t('cover_save') }}</UiPillButton
           >
-          <UiTextButton class="text-12" @click="dismissCover">{{ t('cover_dismiss') }}</UiTextButton>
+          <UiTextButton class="text-footnote" @click="dismissCover">{{ t('cover_dismiss') }}</UiTextButton>
         </template>
       </section>
       <nav
@@ -327,7 +329,7 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
         :aria-label="t('album_scope_label')"
         class="mb-24 rounded-12 border border-line bg-raised px-18 py-16"
       >
-        <p class="m-0 text-12 leading-[1.6] text-secondary">{{ t('album_scope_note') }}</p>
+        <p class="m-0 text-footnote leading-[1.55] text-secondary">{{ t('album_scope_note') }}</p>
         <div class="mt-12 flex flex-wrap gap-6">
           <RouterLink :to="albumRoute(name)" :class="CHIP" :aria-current="scope === null ? 'page' : undefined">{{
             t('album_scope_all')
@@ -349,7 +351,7 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
         :aria-label="t('genre_filter')"
         class="mb-24 flex flex-wrap items-center gap-6 rounded-12 border border-line bg-raised px-18 py-14"
       >
-        <span class="mr-6 text-12 text-secondary">{{ t('in_genre', { genre: genreShown ?? genre }) }}</span>
+        <span class="mr-6 text-footnote text-secondary">{{ t('in_genre', { genre: genreShown ?? genre }) }}</span>
         <RouterLink :to="albumRoute(name)" :class="CHIP">{{ t('whole_album') }}</RouterLink>
         <RouterLink :to="genreRoute(genreShown ?? genre)" :class="CHIP">{{ genreShown }}</RouterLink>
       </nav>

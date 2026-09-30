@@ -17,7 +17,7 @@ withDefaults(
   <button
     :type="type"
     :disabled="disabled"
-    class="inline-flex items-center justify-center gap-9 rounded-24 px-22 py-12 text-13 leading-none font-semibold tracking-[0.1px] transition-colors duration-150 [&>svg]:size-14"
+    class="inline-flex items-center justify-center gap-9 rounded-24 px-22 py-12 text-body leading-none font-semibold transition-colors duration-150 [&>svg]:size-14"
     :class="
       variant === 'primary'
         ? 'bg-strong text-strong-ink hover:enabled:bg-strong-hover'

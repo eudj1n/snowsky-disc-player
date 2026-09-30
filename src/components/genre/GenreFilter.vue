@@ -7,13 +7,13 @@ defineProps<{ label: string; allLabel: string; options: readonly string[] }>()
 </script>
 
 <template>
-  <label class="inline-flex items-center gap-8 text-12 text-muted">
+  <label class="inline-flex items-center gap-8 text-footnote text-muted">
     <span>{{ label }}</span>
     <UiSelect>
       <select
         :value="model ?? ''"
         :aria-label="label"
-        class="max-w-200 rounded-20 border border-line bg-paper py-7 pl-14 text-12 text-ink hover:border-secondary focus-visible:border-secondary"
+        class="max-w-200 rounded-20 border border-line bg-paper py-7 pl-14 text-body text-ink hover:border-secondary focus-visible:border-secondary"
         @change="model = ($event.target as HTMLSelectElement).value || null"
       >
         <option value="">{{ allLabel }}</option>

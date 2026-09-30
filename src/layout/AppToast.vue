@@ -15,7 +15,7 @@ import { ui } from '../stores/ui'
       ui.toast.quiet
         ? 'sr-only'
         : [
-            'fixed bottom-[calc(var(--player)+18px)] left-1/2 z-50 max-w-[min(600px,90vw)] -translate-x-1/2 rounded-12 px-23 py-14 text-12 leading-[1.6] text-[#f1f5e9] shadow-[0_8px_25px_#23301725]',
+            'fixed bottom-[calc(var(--player)+18px)] left-1/2 z-50 max-w-[min(600px,90vw)] -translate-x-1/2 rounded-12 px-23 py-14 text-footnote leading-[1.55] text-[#f1f5e9] shadow-[0_8px_25px_#23301725]',
             ui.toast.error ? 'bg-[#653c32]' : 'bg-[var(--toast)]',
           ]
     "

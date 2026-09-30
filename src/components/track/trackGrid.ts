@@ -6,7 +6,7 @@
  * optional last column holds the track actions button. Class names stay
  * literal so Tailwind can see them.
  */
-export const TRACK_ROW = 'relative grid items-center gap-13 rounded-8 px-12 py-10 text-11 phone:gap-9 phone:px-3'
+export const TRACK_ROW = 'relative grid items-center gap-13 rounded-8 px-12 py-10 text-footnote phone:gap-9 phone:px-3'
 
 /** What leads a row: the cover (play on hover) or the track number (album pages). */
 export type TrackLead = 'cover' | 'number'
@@ -57,7 +57,7 @@ export interface TrackColumnLabels {
 
 /** The muted column header row: same grid and gutters, smaller caps text. */
 export const TRACK_HEADER =
-  'grid items-center gap-13 px-12 pb-9 text-10 font-semibold tracking-[1.4px] text-muted uppercase phone:gap-9 phone:px-3'
+  'grid items-center gap-13 px-12 pb-9 text-caption2 font-semibold tracking-caps text-muted uppercase phone:gap-9 phone:px-3'
 
 /** Quiet separators between rows (owner's request; the reference had none). */
 export const ROW_DIVIDER = 'border-t border-line/70 first:border-t-0'

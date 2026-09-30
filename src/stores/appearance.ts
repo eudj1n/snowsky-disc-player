@@ -15,7 +15,7 @@ import {
   type LightPalette,
 } from '../domain/palettes'
 
-import type { Appearance } from '../domain/preferences'
+import { DEFAULT_TEXT_SIZE, isTextSize, type Appearance, type TextSize } from '../domain/preferences'
 
 export type { Appearance }
 export const APPEARANCE_KEY = 'disc-player.appearance'
@@ -29,6 +29,10 @@ const savedLight = readPreference(LIGHT_PALETTE_KEY)
 const savedDark = readPreference(DARK_PALETTE_KEY)
 export const lightPalette = ref<LightPalette>(isLightPalette(savedLight) ? savedLight : DEFAULT_LIGHT)
 export const darkPalette = ref<DarkPalette>(isDarkPalette(savedDark) ? savedDark : DEFAULT_DARK)
+/** The text size (owner, 2026-09-30); public/theme.js applies it before paint too. */
+export const TEXT_SIZE_KEY = 'disc-player.text-size'
+const savedSize = readPreference(TEXT_SIZE_KEY)
+export const textSize = ref<TextSize>(isTextSize(savedSize) ? savedSize : DEFAULT_TEXT_SIZE)
 const media = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : null
 const systemDark = ref(media?.matches ?? false)
 media?.addEventListener('change', (event) => (systemDark.value = event.matches))
@@ -52,6 +56,13 @@ watchEffect(() => {
   document.querySelector('meta[name=theme-color]')?.setAttribute('content', paper || (dark ? '#181614' : '#faf9f6'))
 })
 
+watchEffect(() => {
+  if (typeof document === 'undefined') return
+  const root = document.documentElement
+  if (textSize.value === DEFAULT_TEXT_SIZE) delete root.dataset.textSize
+  else root.dataset.textSize = textSize.value
+})
+
 export function chooseAppearance(value: Appearance): void {
   appearance.value = value
   writePreference(APPEARANCE_KEY, value)
@@ -65,4 +76,9 @@ export function chooseLightPalette(value: LightPalette): void {
 export function chooseDarkPalette(value: DarkPalette): void {
   darkPalette.value = value
   writePreference(DARK_PALETTE_KEY, value === DEFAULT_DARK ? null : value)
+}
+
+export function chooseTextSize(value: TextSize): void {
+  textSize.value = value
+  writePreference(TEXT_SIZE_KEY, value === DEFAULT_TEXT_SIZE ? null : value)
 }

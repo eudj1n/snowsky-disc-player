@@ -14,8 +14,8 @@ const emit = defineEmits<{ open: [] }>()
   >
     <UiIcon name="device" class="size-27 text-secondary" />
     <span>
-      <strong class="block text-11 tracking-[0.5px]">SNOWSKY DISC</strong>
-      <small class="mt-5 block text-12 text-secondary">{{ action }}</small>
+      <strong class="block text-footnote">SNOWSKY DISC</strong>
+      <small class="mt-5 block text-footnote text-secondary">{{ action }}</small>
     </span>
     <UiIcon name="arrow" class="ml-14 size-17 text-secondary" />
   </button>

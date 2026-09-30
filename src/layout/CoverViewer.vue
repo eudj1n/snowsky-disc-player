@@ -77,7 +77,7 @@ onBeforeUnmount(() => {
       >
         <CoverCanvas :blob="ui.cover.blob" />
       </div>
-      <figcaption class="flex items-center gap-12 text-12 text-white/80">
+      <figcaption class="flex items-center gap-12 text-footnote text-white/80">
         <span class="max-w-[60vw] truncate font-semibold text-white">{{ ui.cover.title }}</span>
         <span data-testid="cover-size" class="tabular-nums">{{ size.width }} × {{ size.height }} px</span>
         <UiIconButton icon="close" :label="t('close')" class="text-white hover:bg-white/15" @click="closeCover" />

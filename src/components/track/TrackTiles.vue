@@ -105,12 +105,12 @@ const LINK = 'hover:underline hover:underline-offset-3 focus-visible:underline'
         <RouterLink
           v-if="titleTo(track)"
           :to="titleTo(track) ?? ''"
-          class="block w-fit max-w-full truncate text-12 font-medium"
+          class="block w-fit max-w-full truncate text-body font-medium"
           :class="LINK"
           >{{ track.title }}</RouterLink
         >
-        <strong v-else class="block truncate text-12 font-medium">{{ track.title }}</strong>
-        <span v-if="subtitleOf?.(track)" class="mt-3 block max-w-full truncate text-11 text-muted">
+        <strong v-else class="block truncate text-body font-medium">{{ track.title }}</strong>
+        <span v-if="subtitleOf?.(track)" class="mt-3 block max-w-full truncate text-footnote text-muted">
           <RouterLink
             v-if="subtitleOf(track)?.to"
             :to="subtitleOf(track)?.to ?? ''"
@@ -121,11 +121,11 @@ const LINK = 'hover:underline hover:underline-offset-3 focus-visible:underline'
         </span>
         <span
           v-else-if="track.artist && artistTo(track.artist)"
-          class="mt-3 block max-w-full truncate text-11 text-muted"
+          class="mt-3 block max-w-full truncate text-footnote text-muted"
         >
           <ArtistCredit :credit="track.artist" :to="artistTo" :link-class="`hover:text-ink ${LINK}`" />
         </span>
-        <small v-else class="mt-3 block truncate text-11 text-muted">{{
+        <small v-else class="mt-3 block truncate text-footnote text-muted">{{
           track.artist ? creditLabel(track.artist) : '—'
         }}</small>
       </span>
@@ -134,7 +134,7 @@ const LINK = 'hover:underline hover:underline-offset-3 focus-visible:underline'
         data-track-menu
         :aria-label="`${menuLabel}: ${track.title}`"
         aria-haspopup="menu"
-        class="grid size-27 place-items-center rounded-full text-24 leading-none font-light text-secondary hover:bg-hover hover:text-ink"
+        class="grid size-27 place-items-center rounded-full text-[24px] leading-none font-light text-secondary hover:bg-hover hover:text-ink"
         @click="emit('menu', index, $event.currentTarget as HTMLElement)"
       >
         ⋯

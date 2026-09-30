@@ -44,7 +44,7 @@ const columns = computed(() => ({
           v-if="disliked.available"
           to="/disliked"
           data-testid="disliked-link"
-          class="rounded-20 bg-soft px-14 py-7 text-12 font-medium text-muted hover:bg-hover hover:text-ink"
+          class="rounded-20 bg-soft px-14 py-7 text-footnote font-medium text-muted hover:bg-hover hover:text-ink"
           >{{ t('disliked_section') }} · {{ disliked.records.length }}</RouterLink
         >
       </ViewHeading>

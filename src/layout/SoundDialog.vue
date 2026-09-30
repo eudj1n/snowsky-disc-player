@@ -71,10 +71,10 @@ const applyDisabled = (name: SoundName, draft: number) => locked.value || sound.
 
 <template>
   <UiDialog :open="open" :eyebrow="t('sound_eyebrow')" :close-label="t('close')" size="lg" @close="closeDialog">
-    <h2 class="mt-18 mb-8 text-30 font-bold tracking-[-1px]">{{ t('sound_title') }}</h2>
-    <p class="m-0 text-12 leading-[1.7] text-muted">{{ t('sound_description') }}</p>
+    <h2 class="mt-18 mb-8 text-title2 font-bold tracking-heading">{{ t('sound_title') }}</h2>
+    <p class="m-0 text-footnote leading-[1.55] text-muted">{{ t('sound_description') }}</p>
     <div class="my-18 flex flex-wrap items-center justify-between gap-12">
-      <p role="status" class="m-0 text-12 text-secondary" data-testid="sound-feedback">{{ notice }}</p>
+      <p role="status" class="m-0 text-footnote text-secondary" data-testid="sound-feedback">{{ notice }}</p>
       <UiPillButton variant="secondary" :disabled="!ready || operation.busy" @click="readSoundSettings">{{
         t('sound_refresh')
       }}</UiPillButton>
@@ -82,8 +82,8 @@ const applyDisabled = (name: SoundName, draft: number) => locked.value || sound.
     <div v-if="sound.values" class="divide-y divide-line/70 border-y border-line/70">
       <div class="flex flex-wrap items-center justify-between gap-12 py-16">
         <div>
-          <strong class="block text-13">{{ t('sound_gain') }}</strong>
-          <small class="text-11 text-muted">{{ t('sound_gain_note') }}</small>
+          <strong class="block text-body">{{ t('sound_gain') }}</strong>
+          <small class="text-footnote text-muted">{{ t('sound_gain_note') }}</small>
         </div>
         <UiChips
           v-model="gain"
@@ -98,8 +98,8 @@ const applyDisabled = (name: SoundName, draft: number) => locked.value || sound.
       <div class="py-16">
         <div class="flex flex-wrap items-center justify-between gap-12">
           <div>
-            <strong class="block text-13">{{ t('sound_balance') }}</strong>
-            <small class="text-11 text-muted">{{ t('sound_balance_note') }}</small>
+            <strong class="block text-body">{{ t('sound_balance') }}</strong>
+            <small class="text-footnote text-muted">{{ t('sound_balance_note') }}</small>
           </div>
           <UiPillButton
             variant="secondary"
@@ -121,16 +121,16 @@ const applyDisabled = (name: SoundName, draft: number) => locked.value || sound.
             class="flex-1 accent-progress-fill"
             @input="markSoundDraft"
           />
-          <output class="w-32 text-right text-12 tabular-nums">{{ balanceLabel(balance) }}</output>
+          <output class="w-32 text-right text-footnote tabular-nums">{{ balanceLabel(balance) }}</output>
         </div>
-        <div class="mt-4 flex justify-between pr-44 text-10 text-muted">
+        <div class="mt-4 flex justify-between pr-44 text-caption text-muted">
           <span>L20</span><span>0</span><span>R20</span>
         </div>
       </div>
       <div class="flex flex-wrap items-center justify-between gap-12 py-16">
         <div>
-          <strong class="block text-13">{{ t('sound_filter') }}</strong>
-          <small class="text-11 text-muted">{{ t('sound_filter_note') }}</small>
+          <strong class="block text-body">{{ t('sound_filter') }}</strong>
+          <small class="text-footnote text-muted">{{ t('sound_filter_note') }}</small>
         </div>
         <div class="flex items-center gap-10">
           <UiSelect>
@@ -138,7 +138,7 @@ const applyDisabled = (name: SoundName, draft: number) => locked.value || sound.
               v-model.number="filter"
               :disabled="locked"
               :aria-label="t('sound_filter')"
-              class="rounded-10 border border-line bg-raised py-9 pl-12 text-12 text-ink"
+              class="rounded-10 border border-line bg-raised py-9 pl-12 text-body text-ink"
               @change="markSoundDraft"
             >
               <option v-for="(label, index) in FILTER_LABELS" :key="label" :value="index">
@@ -156,8 +156,8 @@ const applyDisabled = (name: SoundName, draft: number) => locked.value || sound.
       </div>
       <div class="flex flex-wrap items-center justify-between gap-12 py-16">
         <div>
-          <strong class="block text-13">DRE</strong>
-          <small class="text-11 text-muted">{{ t('sound_dre_note') }}</small>
+          <strong class="block text-body">DRE</strong>
+          <small class="text-footnote text-muted">{{ t('sound_dre_note') }}</small>
         </div>
         <UiChips
           v-model="dre"
@@ -172,8 +172,8 @@ const applyDisabled = (name: SoundName, draft: number) => locked.value || sound.
       <div class="border-t border-line py-16">
         <div class="flex flex-wrap items-center justify-between gap-12">
           <div>
-            <strong class="block text-13">SPDIF</strong>
-            <small class="text-11 text-muted">{{ t('sound_spdif_note') }}</small>
+            <strong class="block text-body">SPDIF</strong>
+            <small class="text-footnote text-muted">{{ t('sound_spdif_note') }}</small>
           </div>
           <UiChips
             v-model="spdif"
@@ -190,7 +190,7 @@ const applyDisabled = (name: SoundName, draft: number) => locked.value || sound.
           role="alert"
           class="mt-12 flex flex-wrap items-center justify-between gap-12 rounded-10 bg-soft px-14 py-12"
         >
-          <p class="m-0 text-12 leading-[1.6] text-ink">{{ t('sound_spdif_warning') }}</p>
+          <p class="m-0 text-body leading-[1.55] text-ink">{{ t('sound_spdif_warning') }}</p>
           <div class="flex gap-8">
             <UiPillButton variant="secondary" @click="spdifConfirm = false">{{ t('cancel') }}</UiPillButton>
             <UiPillButton :disabled="locked" @click="enableSpdif">{{ t('sound_spdif_enable') }}</UiPillButton>
@@ -203,7 +203,7 @@ const applyDisabled = (name: SoundName, draft: number) => locked.value || sound.
         @preset="applyPreset"
         @apply="(bands, master) => applyBands(bands, master)"
       />
-      <p v-if="eq.feedback" role="status" class="m-0 pb-12 text-11 text-secondary" data-testid="eq-feedback">
+      <p v-if="eq.feedback" role="status" class="m-0 pb-12 text-footnote text-secondary" data-testid="eq-feedback">
         {{ t(eq.feedback) }}
       </p>
     </div>

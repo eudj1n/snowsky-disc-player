@@ -162,7 +162,7 @@ const heroLines = computed<[string, string]>(() =>
         <li v-for="name in pinnedArtists" :key="name">
           <RouterLink
             :to="artistRoute(name)"
-            class="block rounded-20 bg-soft px-14 py-7 text-12 font-medium text-ink hover:bg-hover"
+            class="block rounded-20 bg-soft px-14 py-7 text-footnote font-medium text-ink hover:bg-hover"
             >{{ creditLabel(name) }}</RouterLink
           >
         </li>
@@ -172,7 +172,7 @@ const heroLines = computed<[string, string]>(() =>
     <p
       v-if="connection.historyWrites === 'failing'"
       role="status"
-      class="m-0 rounded-12 bg-soft px-14 py-10 text-12 text-notice"
+      class="m-0 rounded-12 bg-soft px-14 py-10 text-footnote text-notice"
       data-testid="history-failing"
     >
       {{ t('history_writes_failing') }}
@@ -236,7 +236,7 @@ const heroLines = computed<[string, string]>(() =>
         @play="playAlbumCard(album)"
       />
     </CoverGrid>
-    <p v-else class="text-11 leading-[1.6] text-muted">{{ t('no_albums_in_your_library_yet') }}</p>
+    <p v-else class="text-footnote leading-[1.55] text-muted">{{ t('no_albums_in_your_library_yet') }}</p>
     <div class="grid grid-cols-[1.6fr_1fr] gap-32 compact:grid-cols-[1.4fr_1fr] compact:gap-20 rail:grid-cols-1">
       <section>
         <SectionHeading :title="t('from_your_collection')">

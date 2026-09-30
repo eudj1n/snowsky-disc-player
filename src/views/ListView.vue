@@ -116,7 +116,9 @@ async function remove(): Promise<void> {
     :ready="entries !== null || (autoPlaylists.available && !list)"
   >
     <template #heading="{ loading }">
-      <UiTextButton class="text-12" @click="router.push('/playlists')">← {{ t('back_to_collection') }}</UiTextButton>
+      <UiTextButton class="text-footnote" @click="router.push('/playlists')"
+        >← {{ t('back_to_collection') }}</UiTextButton
+      >
       <DetailHeading
         :title="name"
         :kind="t('kind_auto_playlist')"
@@ -157,7 +159,7 @@ async function remove(): Promise<void> {
             :aria-label="t('auto_period')"
             :disabled="autoPlaylists.busy || autoPlaylists.refreshing"
             data-testid="list-period"
-            class="rounded-18 border border-line bg-soft py-9 pl-12 text-12 text-secondary"
+            class="rounded-18 border border-line bg-soft py-9 pl-12 text-footnote text-secondary"
             @change="list && setAutoPeriod(list, ($event.target as HTMLSelectElement).value as RotationPeriod)"
           >
             <option v-for="period in PERIODS" :key="period" :value="period">{{ t(`auto_period_${period}`) }}</option>

@@ -263,8 +263,8 @@ onBeforeUnmount(() => {
       :class="idle ? 'opacity-0' : 'opacity-100'"
     >
       <div class="min-w-0 flex-1">
-        <p class="text-16 m-0 truncate font-semibold">{{ track?.title ?? t('visualizer') }}</p>
-        <p v-if="track?.artist" class="m-0 mt-2 truncate text-12 text-white/65">{{ track.artist }}</p>
+        <p class="m-0 truncate text-callout font-semibold">{{ track?.title ?? t('visualizer') }}</p>
+        <p v-if="track?.artist" class="m-0 mt-2 truncate text-footnote text-white/65">{{ track.artist }}</p>
       </div>
       <button
         type="button"
@@ -289,7 +289,7 @@ onBeforeUnmount(() => {
     <p
       v-if="!analyser"
       role="status"
-      class="absolute inset-x-0 m-0 px-[6vw] text-center text-14 text-white/70"
+      class="absolute inset-x-0 m-0 px-[6vw] text-center text-body text-white/70"
       :style="{ top: discBottom }"
     >
       {{ t('visualizer_unavailable') }}
@@ -299,7 +299,9 @@ onBeforeUnmount(() => {
       class="absolute inset-x-0 bottom-0 flex items-center justify-center gap-22 pt-10 pb-26 transition-opacity duration-500"
       :class="idle ? 'opacity-0' : 'opacity-100'"
     >
-      <span class="w-56 text-right text-12 text-white/60 tabular-nums">{{ timeLabel(browserPlayback.position) }}</span>
+      <span class="w-56 text-right text-footnote text-white/60 tabular-nums">{{
+        timeLabel(browserPlayback.position)
+      }}</span>
       <!-- Browser playback has no previous track: a spacer keeps Play in the middle. -->
       <span aria-hidden="true" class="size-44" />
       <button
@@ -320,7 +322,7 @@ onBeforeUnmount(() => {
       >
         <UiIcon name="next" class="size-22" />
       </button>
-      <span class="w-56 text-12 text-white/60 tabular-nums">{{ timeLabel(browserPlayback.lengthMs) }}</span>
+      <span class="w-56 text-footnote text-white/60 tabular-nums">{{ timeLabel(browserPlayback.lengthMs) }}</span>
     </footer>
   </div>
 </template>

@@ -1420,6 +1420,36 @@ test('offers the tones of the theme in effect and keeps the chosen palettes', as
   await expect(html).not.toHaveAttribute('data-light-palette', /.+/)
 })
 
+test('changes the text size and keeps it before the first paint', async ({ page }) => {
+  await english(page)
+  const html = page.locator('html')
+  await page.goto('/#/tracks')
+  const title = page.getByRole('table').getByRole('row').nth(1).locator('strong').first()
+  await expect(title).toHaveCSS('font-size', '14px')
+  const openAppearance = () =>
+    page
+      .getByRole('button', { name: /^Appearance/ })
+      .filter({ visible: true })
+      .first()
+      .click()
+  await openAppearance()
+  const sizes = page.getByRole('dialog').getByRole('group', { name: 'Text size' })
+  await expect(sizes.getByRole('button')).toHaveCount(4)
+  await expect(sizes.getByRole('button', { name: 'Standard', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await sizes.getByRole('button', { name: 'Large', exact: true }).click()
+  await expect(html).toHaveAttribute('data-text-size', 'large')
+  await page.keyboard.press('Escape')
+  await expect(title).toHaveCSS('font-size', '16px')
+  await page.reload()
+  // Applied before paint by theme.js, then kept by the store.
+  await expect(html).toHaveAttribute('data-text-size', 'large')
+  await expect(title).toHaveCSS('font-size', '16px')
+  await openAppearance()
+  await sizes.getByRole('button', { name: 'Standard', exact: true }).click()
+  await expect(html).not.toHaveAttribute('data-text-size', /.+/)
+  expect(await page.evaluate(() => localStorage.getItem('disc-player.text-size'))).toBeNull()
+})
+
 test('finds lyrics on LRCLIB for a track without any and saves them beside it', async ({ page }, info) => {
   test.skip(external, 'Needs the mock collection')
   test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')

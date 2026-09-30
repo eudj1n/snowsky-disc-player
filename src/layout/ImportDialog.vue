@@ -102,13 +102,13 @@ function openNew(): void {
     size="xl"
     @close="closeDialog"
   >
-    <h2 class="mt-14 mb-6 text-26 leading-[1.15] font-bold tracking-[-0.8px] phone:text-22">
+    <h2 class="mt-14 mb-6 text-title2 font-bold tracking-heading">
       {{ t('import_title_1') }} {{ t('import_title_2') }}
     </h2>
-    <p class="m-0 text-12 leading-[1.7] text-muted">{{ t('import_description') }}</p>
-    <p v-if="imports.destination" class="mt-8 mb-0 text-12 text-secondary" data-testid="import-destination">
+    <p class="m-0 text-footnote leading-[1.55] text-muted">{{ t('import_description') }}</p>
+    <p v-if="imports.destination" class="mt-8 mb-0 text-footnote text-secondary" data-testid="import-destination">
       {{ t('import_into', { folder: imports.destination }) }}
-      <UiTextButton v-if="!locked && !counts.waiting" class="ml-8 text-12" @click="setImportDestination('')">{{
+      <UiTextButton v-if="!locked && !counts.waiting" class="ml-8 text-footnote" @click="setImportDestination('')">{{
         t('import_into_root')
       }}</UiTextButton>
     </p>
@@ -118,7 +118,7 @@ function openNew(): void {
         v-for="(step, index) in STEPS"
         :key="step"
         :aria-current="importFlow.step === index ? 'step' : undefined"
-        class="rounded-10 border px-12 py-9 text-11"
+        class="rounded-10 border px-12 py-9 text-footnote"
         :class="
           importFlow.step > index
             ? 'border-transparent bg-banner text-secondary'
@@ -131,12 +131,12 @@ function openNew(): void {
         >{{ t(step) }}
       </li>
     </ol>
-    <p role="status" class="mt-0 mb-18 text-12 leading-[1.6] text-secondary" data-testid="import-flow">
+    <p role="status" class="mt-0 mb-18 text-footnote leading-[1.55] text-secondary" data-testid="import-flow">
       {{ ready ? t(importFlow.message) : t('import_connect') }}
     </p>
 
     <section class="border-t border-line pt-16">
-      <span class="text-10 font-semibold tracking-[1.8px] text-muted">{{ t('import_step_transfer') }}</span>
+      <span class="text-caption2 font-semibold tracking-caps text-muted">{{ t('import_step_transfer') }}</span>
       <div
         class="rounded-16 mt-10 grid place-items-center gap-8 border border-dashed px-16 py-22 text-center transition-colors duration-150"
         :class="dragging ? 'border-secondary bg-banner' : 'border-line bg-raised'"
@@ -145,8 +145,8 @@ function openNew(): void {
         @drop.prevent="drop"
       >
         <UiIcon name="upload" class="size-22 text-secondary" />
-        <strong class="text-13">{{ t('import_drop') }}</strong>
-        <small class="text-11 text-muted">{{ t('import_formats', { limit }) }}</small>
+        <strong class="text-body">{{ t('import_drop') }}</strong>
+        <small class="text-footnote text-muted">{{ t('import_formats', { limit }) }}</small>
         <div class="mt-6 flex flex-wrap justify-center gap-8">
           <UiPillButton variant="secondary" :disabled="locked" @click="filesInput?.click()">{{
             t('import_choose')
@@ -172,7 +172,7 @@ function openNew(): void {
           @change="choose(folderInput, true)"
         />
       </div>
-      <p class="mt-8 mb-0 text-11 text-muted">
+      <p class="mt-8 mb-0 text-footnote text-muted">
         {{ t('import_no_overwrite')
         }}<template v-if="imports.skipped"> · {{ t('import_skipped', { count: imports.skipped }) }}</template>
       </p>
@@ -182,16 +182,16 @@ function openNew(): void {
         data-testid="import-files"
       >
         <li v-for="item in imports.items" :key="item.id" class="border-t border-line/70 py-8 first:border-t-0">
-          <div class="flex items-center gap-10 text-11">
+          <div class="flex items-center gap-10 text-footnote">
             <UiIcon :name="item.phase === 'done' ? 'music' : 'upload'" class="size-15 shrink-0 text-secondary" />
             <span class="min-w-0 flex-1">
               <strong class="block truncate font-medium" :title="item.path">{{ splitPath(item.path).name }}</strong>
-              <small class="block truncate text-11 text-muted"
+              <small class="block truncate text-footnote text-muted"
                 >{{ splitPath(item.path).folder || '/' }} · {{ sizeLabel(item.size) }}</small
               >
             </span>
             <span
-              class="shrink-0 text-right text-11"
+              class="shrink-0 text-right text-footnote"
               :class="
                 item.phase === 'done'
                   ? 'text-secondary'
@@ -219,15 +219,15 @@ function openNew(): void {
               <UiIcon name="close" />
             </button>
           </div>
-          <p v-if="item.phase === 'exists'" class="mt-4 mb-0 pl-25 text-11 text-muted">
+          <p v-if="item.phase === 'exists'" class="mt-4 mb-0 pl-25 text-footnote text-muted">
             {{ t(PHASE[item.phase]) }}
           </p>
           <p
             v-if="['uncertain', 'not-sent'].includes(item.phase)"
-            class="mt-4 mb-0 flex flex-wrap items-center gap-x-10 pl-25 text-11 text-notice"
+            class="mt-4 mb-0 flex flex-wrap items-center gap-x-10 pl-25 text-footnote text-notice"
           >
             {{ t(PHASE[item.phase]) }}
-            <UiTextButton class="text-11" :disabled="imports.transferring" @click="retryItem(item.id)">{{
+            <UiTextButton class="text-footnote" :disabled="imports.transferring" @click="retryItem(item.id)">{{
               t('import_retry')
             }}</UiTextButton>
           </p>
@@ -237,7 +237,7 @@ function openNew(): void {
         </li>
       </ul>
       <div class="mt-12 flex flex-wrap items-center justify-between gap-10">
-        <small class="text-11 text-muted"
+        <small class="text-footnote text-muted"
           >{{ counts.total ? t('import_batch_count', counts) : ''
           }}<template v-if="counts.present"> · {{ t('import_batch_present', counts) }}</template></small
         >
@@ -253,14 +253,14 @@ function openNew(): void {
     </section>
 
     <section class="mt-18 border-t border-line pt-16">
-      <span class="text-10 font-semibold tracking-[1.8px] text-muted">{{ t('import_step_scan') }}</span>
-      <h3 class="mt-8 mb-4 text-15 font-semibold">{{ t('import_scan_title') }}</h3>
-      <p class="m-0 text-11 leading-[1.6] text-muted">{{ t('import_scan_description') }}</p>
+      <span class="text-caption2 font-semibold tracking-caps text-muted">{{ t('import_step_scan') }}</span>
+      <h3 class="mt-8 mb-4 text-callout font-semibold">{{ t('import_scan_title') }}</h3>
+      <p class="m-0 text-footnote leading-[1.55] text-muted">{{ t('import_scan_description') }}</p>
       <div class="mt-12 flex flex-wrap items-center justify-between gap-10">
         <span
           v-if="scanLabel"
           role="status"
-          class="flex items-center gap-8 text-11 text-secondary"
+          class="flex items-center gap-8 text-footnote text-secondary"
           data-testid="scan-status"
         >
           <i
@@ -277,9 +277,9 @@ function openNew(): void {
     </section>
 
     <section class="mt-18 border-t border-line pt-16">
-      <span class="text-10 font-semibold tracking-[1.8px] text-muted">{{ t('import_step_sync') }}</span>
-      <h3 class="mt-8 mb-4 text-15 font-semibold">{{ t('import_sync_title') }}</h3>
-      <label class="mt-6 flex items-center gap-8 text-11 text-muted">
+      <span class="text-caption2 font-semibold tracking-caps text-muted">{{ t('import_step_sync') }}</span>
+      <h3 class="mt-8 mb-4 text-callout font-semibold">{{ t('import_sync_title') }}</h3>
+      <label class="mt-6 flex items-center gap-8 text-footnote text-muted">
         <input
           type="checkbox"
           :checked="imports.refreshAfterScan"
@@ -289,7 +289,7 @@ function openNew(): void {
         {{ t('import_refresh_after_scan') }}
       </label>
       <div class="mt-12 flex flex-wrap items-center justify-between gap-10">
-        <small class="text-11 text-muted">{{
+        <small class="text-footnote text-muted">{{
           imports.collection === 'done' ? t('import_collection_count', { count: library.tracks.length }) : ''
         }}</small>
         <div class="flex gap-10">
@@ -305,8 +305,10 @@ function openNew(): void {
         </div>
       </div>
     </section>
-    <p v-if="!pairing.paired" class="mt-16 text-11 text-muted">
-      <UiTextButton class="inline-flex text-11" @click="openDialog('connection')">{{ t('pairing') }} →</UiTextButton>
+    <p v-if="!pairing.paired" class="mt-16 text-footnote text-muted">
+      <UiTextButton class="inline-flex text-footnote" @click="openDialog('connection')"
+        >{{ t('pairing') }} →</UiTextButton
+      >
     </p>
   </UiDialog>
 </template>

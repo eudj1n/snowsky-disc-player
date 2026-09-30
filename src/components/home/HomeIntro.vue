@@ -7,10 +7,10 @@ defineProps<{ eyebrow: string; title: string; note?: string }>()
 <template>
   <div class="mb-24 flex items-end justify-between phone:mb-20">
     <div>
-      <span class="text-10 font-semibold tracking-[1.8px] text-muted uppercase phone:text-9">{{ eyebrow }}</span>
-      <h1 class="mt-9 mb-0 text-32 font-bold tracking-[-1.1px] phone:text-27">{{ title }}</h1>
+      <span class="text-caption2 font-semibold tracking-caps text-muted uppercase">{{ eyebrow }}</span>
+      <h1 class="mt-9 mb-0 text-title1 font-bold tracking-title">{{ title }}</h1>
     </div>
-    <span v-if="note" class="flex items-center gap-7 text-11 text-muted compact:hidden">
+    <span v-if="note" class="flex items-center gap-7 text-footnote text-muted compact:hidden">
       <UiIcon name="music" class="size-14" />{{ note }}
     </span>
   </div>

@@ -39,10 +39,10 @@ const columns = computed(() => ({
         :title="t('disliked_section')"
         :meta="loading ? null : countLine(searching, items.length)"
       >
-        <p class="m-0 max-w-420 text-12 text-muted">{{ t('disliked_hint') }}</p>
+        <p class="m-0 max-w-420 text-footnote text-muted">{{ t('disliked_hint') }}</p>
       </ViewHeading>
     </template>
-    <p v-if="!items.length" class="m-0 text-13 text-muted" data-testid="disliked-empty">{{ t('disliked_empty') }}</p>
+    <p v-if="!items.length" class="m-0 text-body text-muted" data-testid="disliked-empty">{{ t('disliked_empty') }}</p>
     <TrackList
       v-else
       v-bind="trackRowProps"

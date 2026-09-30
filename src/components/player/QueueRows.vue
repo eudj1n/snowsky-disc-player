@@ -33,7 +33,7 @@ const REVEAL = 'opacity-0 group-hover/row:opacity-100 group-focus-within/row:opa
     <li
       v-for="(item, index) in items"
       :key="index"
-      class="group/row grid min-h-59 grid-cols-[40px_minmax(0,1fr)] items-center gap-13 rounded-8 border-t border-line/70 px-12 py-10 text-11 first:border-t-0"
+      class="group/row grid min-h-59 grid-cols-[40px_minmax(0,1fr)] items-center gap-13 rounded-8 border-t border-line/70 px-12 py-10 text-footnote first:border-t-0"
       :class="index === current ? 'bg-selected hover:bg-selected' : 'hover:bg-soft'"
       :aria-current="index === current ? 'true' : undefined"
     >
@@ -65,8 +65,10 @@ const REVEAL = 'opacity-0 group-hover/row:opacity-100 group-focus-within/row:opa
         </span>
       </button>
       <span class="min-w-0">
-        <strong class="block truncate font-medium">{{ item.title }}</strong>
-        <small class="mt-5 block truncate text-11 text-muted">{{ item.artist ? creditLabel(item.artist) : '—' }}</small>
+        <strong class="block truncate text-body font-medium">{{ item.title }}</strong>
+        <small class="mt-5 block truncate text-footnote text-muted">{{
+          item.artist ? creditLabel(item.artist) : '—'
+        }}</small>
       </span>
     </li>
   </ol>

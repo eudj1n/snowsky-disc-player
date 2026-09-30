@@ -25,14 +25,14 @@ function submit(): void {
 
 <template>
   <div class="mt-22 border-t border-line pt-22">
-    <h3 class="mt-0 mb-8 text-17 font-medium">{{ t('pairing') }}</h3>
+    <h3 class="mt-0 mb-8 text-title3 font-medium">{{ t('pairing') }}</h3>
     <div v-if="stored" class="flex items-center justify-between gap-14">
-      <p class="m-0 text-12 text-secondary" data-testid="paired">{{ t('paired') }}</p>
+      <p class="m-0 text-footnote text-secondary" data-testid="paired">{{ t('paired') }}</p>
       <UiTextButton @click="emit('forget')">{{ t('forget_serial') }}</UiTextButton>
     </div>
     <form v-else class="flex flex-col gap-12" @submit.prevent="submit">
-      <p class="m-0 text-12 leading-[1.7] text-muted">{{ t('pairing_hint') }}</p>
-      <label class="flex min-w-0 flex-col gap-7 text-11 text-muted">
+      <p class="m-0 text-footnote leading-[1.55] text-muted">{{ t('pairing_hint') }}</p>
+      <label class="flex min-w-0 flex-col gap-7 text-footnote text-muted">
         {{ t('pairing_serial') }}
         <input
           v-model="draft"
@@ -40,10 +40,10 @@ function submit(): void {
           autocomplete="off"
           spellcheck="false"
           :aria-invalid="invalid"
-          class="w-full min-w-0 rounded-10 border border-line bg-raised p-12 text-14 text-ink outline-offset-3 focus:border-secondary aria-invalid:border-accent"
+          class="w-full min-w-0 rounded-10 border border-line bg-raised p-12 text-body text-ink outline-offset-3 focus:border-secondary aria-invalid:border-accent"
         />
       </label>
-      <p v-if="invalid" role="status" class="m-0 text-12 text-notice">
+      <p v-if="invalid" role="status" class="m-0 text-footnote text-notice">
         {{ t('serial_invalid') }}
       </p>
       <UiPillButton type="submit" variant="secondary" class="self-end">{{ t('pair') }}</UiPillButton>

@@ -52,16 +52,16 @@ function addMusic(): void {
         :placeholder="placeholder"
         :aria-label="placeholder"
         :value="ui.query"
-        class="w-full min-w-0 border-0 bg-transparent text-11 text-ink outline-none phone:text-11"
+        class="w-full min-w-0 border-0 bg-transparent text-body text-ink outline-none"
         @input="setQuery(($event.target as HTMLInputElement).value)"
       />
-      <kbd class="rounded-3 border border-line px-5 py-1 font-[inherit] text-11 phone:hidden">/</kbd>
+      <kbd class="rounded-3 border border-line px-5 py-1 font-[inherit] text-footnote phone:hidden">/</kbd>
     </label>
     <button
       type="button"
       :aria-label="t('import_music')"
       :title="t('import_music')"
-      class="flex items-center justify-center gap-7 rounded-24 px-12 py-8 text-11 whitespace-nowrap text-secondary transition-colors duration-150 hover:bg-hover hover:text-ink compact:p-8 listening:p-8"
+      class="flex items-center justify-center gap-7 rounded-24 px-12 py-8 text-footnote whitespace-nowrap text-secondary transition-colors duration-150 hover:bg-hover hover:text-ink compact:p-8 listening:p-8"
       @click="addMusic"
     >
       <UiIcon name="add-music" class="size-18" />
@@ -87,7 +87,7 @@ function addMusic(): void {
         <select
           v-model="language"
           :aria-label="t('language')"
-          class="rounded-7 border border-line bg-soft py-7 pl-7 text-11 text-secondary phone:py-6 phone:pl-5 phone:text-10"
+          class="rounded-7 border border-line bg-soft py-7 pl-7 text-footnote text-secondary phone:py-6 phone:pl-5"
         >
           <option value="ru">RU</option>
           <option value="en">EN</option>

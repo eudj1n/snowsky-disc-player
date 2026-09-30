@@ -33,8 +33,8 @@ const colours = computed(() => sleeveColours(props.name))
   >
     <GenreRecords :name="name" :records="records" class="absolute inset-0" />
     <span class="absolute right-14 bottom-12 left-14 text-(--tint-ink)">
-      <strong class="block truncate text-17 font-bold tracking-[-0.3px] phone:text-14">{{ name }}</strong>
-      <small class="mt-3 block truncate text-11 opacity-80">{{ caption }}</small>
+      <strong class="block truncate text-title3 font-bold tracking-heading">{{ name }}</strong>
+      <small class="mt-3 block truncate text-footnote opacity-80">{{ caption }}</small>
     </span>
   </RouterLink>
 </template>
