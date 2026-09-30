@@ -697,6 +697,7 @@ export const ru: Messages = {
   pair: 'Сохранить',
   paired: 'Этот браузер сопряжён.',
   // Global search and its palette (owner, 2026-09-30).
+  open_track: 'Показать трек',
   breadcrumbs: 'Вы здесь',
   search: 'Поиск',
   search_collection: 'Поиск по коллекции',

@@ -30,7 +30,7 @@ import { history, loadHistory, recentSourcesShown } from '../stores/history'
 import { isDisliked } from '../stores/disliked'
 import { albums, featuredAlbum, tracks } from '../stores/library'
 import { isPinnedAlbum, pins } from '../stores/pins'
-import { openTrackMenu } from '../stores/ui'
+import { openTrackMenu, openTrackPanel } from '../stores/ui'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { albumCardRoute, albumLines, artistRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
@@ -220,6 +220,11 @@ const heroLines = computed<[string, string]>(() =>
             (index, anchor) =>
               recentTracks[index] &&
               openTrackMenu(recentTracks[index], { kind: 'library', track: recentTracks[index] }, anchor)
+          "
+          @open="
+            (index, anchor) =>
+              recentTracks[index] &&
+              openTrackPanel(recentTracks[index], { kind: 'library', track: recentTracks[index] }, anchor)
           "
           @favorite="onRowFavorite"
           @unfavorite="onRowUnfavorite"

@@ -12,7 +12,7 @@ import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
 import { t } from '../i18n'
 import { disliked } from '../stores/disliked'
 import { favorites, library, trackByPath } from '../stores/library'
-import { openTrackMenu } from '../stores/ui'
+import { openTrackMenu, openTrackPanel } from '../stores/ui'
 import { countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
@@ -59,6 +59,10 @@ const columns = computed(() => ({
       @menu="
         (index, anchor) =>
           items[index] && openTrackMenu(items[index], { kind: 'favorites', track: items[index] }, anchor)
+      "
+      @open="
+        (index, anchor) =>
+          items[index] && openTrackPanel(items[index], { kind: 'favorites', track: items[index] }, anchor)
       "
       @play="(index) => items[index] && playFrom({ kind: 'favorites', track: items[index] })"
       @favorite="onRowFavorite"

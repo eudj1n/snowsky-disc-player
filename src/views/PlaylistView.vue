@@ -9,7 +9,7 @@ import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
 import type { LibraryTrack } from '../domain/track'
 import { t } from '../i18n'
 import { library, loadPlaylistTracks, trackByPath } from '../stores/library'
-import { openPlaylistDialog, openTrackMenu } from '../stores/ui'
+import { openPlaylistDialog, openTrackMenu, openTrackPanel } from '../stores/ui'
 import { playlistEdits } from '../stores/playlistEdits'
 import UiActionMenu from '../ui/UiActionMenu.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
@@ -105,6 +105,16 @@ const unavailable = (track: { path: string | null }) =>
         (index, anchor) =>
           items[index] &&
           openTrackMenu(
+            items[index],
+            playlist ? { kind: 'playlist', name: playlist.name, track: items[index] } : null,
+            anchor,
+            playlist?.name ?? null,
+          )
+      "
+      @open="
+        (index, anchor) =>
+          items[index] &&
+          openTrackPanel(
             items[index],
             playlist ? { kind: 'playlist', name: playlist.name, track: items[index] } : null,
             anchor,

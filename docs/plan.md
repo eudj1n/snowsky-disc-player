@@ -1785,10 +1785,17 @@ the track panel, placeholders, the sticky bar.
       Settings…", "reads the collection again from the connection dialog",
       "sound settings read on opening…" (the bar's button), "imports files,
       scans once…" (Card's Add music).
-- [ ] A click on a track's title opens the track in the side panel (a full
-      sheet on phones): cover, links, the facts block, lyrics, and Play on
-      the chosen side, favorite, add to playlist, dislike, open its folder;
-      a link returns to what plays. Double click and Enter play.
+- [x] A click on a track's title opens the track in the side panel (a full
+      sheet on phones; `src/layout/TrackPanel.vue`): cover, artist and album
+      links, the facts block (with dislike and the folder in the file
+      manager), its own lyrics read once, and Play on the chosen side
+      (pause and resume when it is the current track), the favorite heart
+      and Add to playlist, disabled where they cannot act. The same title
+      again closes it; the panel's tabs return to what plays; the panel
+      keeps the theme's colours, not the playing cover's. A double click on
+      a row plays it; the keyboard plays from the row's number or cover
+      button and opens from its title. Evidence: e2e "opens a track from its
+      title in the panel…".
 - [ ] (On hold: the owner will discuss placeholders separately, 2026-09-30.) One placeholder system: genres and own playlists show a 2×2 mosaic of their albums' covers where covers are known; otherwise genres take album-like cards (records fanned on a square sleeve, the name below) and artists' circles take the records' label style.
 - [x] The compact bar that pins over a detail page takes the album's top
       colour (see-through, blurred; plain under more contrast, solid under

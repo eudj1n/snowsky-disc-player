@@ -1508,6 +1508,41 @@ test("keeps the page's context in a compact bar once its header scrolls away", a
   await expect(bar).toHaveCount(0)
 })
 
+test('opens a track from its title in the panel, plays it from there or with a double click', async ({
+  page,
+}, info) => {
+  test.skip(external, 'Needs the mock collection')
+  test.skip(info.project.name === 'phone', 'On phones the panel covers the rows (the close button leads back)')
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/album/Afterglow/Northline')
+  const title = (name: string) =>
+    page.getByRole('row').filter({ hasText: name }).getByRole('button', { name, exact: true })
+  await title('Soft Focus').click()
+  const panel = page.getByTestId('track-panel')
+  await expect(panel.getByTestId('track-panel-title')).toHaveText('Soft Focus')
+  await expect(panel.getByRole('link', { name: 'Northline' })).toBeVisible()
+  await expect(panel.getByTestId('track-panel-lyrics')).toContainText(/Lyrics/)
+  // The same title again closes it; another switches to its track.
+  await title('Soft Focus').click()
+  await expect(panel).toHaveCount(0)
+  await title('Soft Focus').click()
+  await title('First Light').click()
+  await expect(panel.getByTestId('track-panel-title')).toHaveText('First Light')
+  await panel.getByTestId('track-panel-play').click()
+  const bar = page.getByRole('region', { name: 'Player' })
+  await expect(bar.getByTestId('track-title')).toHaveText('First Light', { timeout: 15_000 })
+  // Now it plays, the panel's button pauses it.
+  await expect(panel.getByTestId('track-panel-play')).toHaveText(/Pause/)
+  // The tabs lead back to what plays.
+  await page.getByRole('complementary', { name: 'Player view' }).getByRole('button', { name: 'Now Playing' }).click()
+  await expect(panel).toHaveCount(0)
+  // A double click on a row plays it, as its number does.
+  await page.getByRole('row').filter({ hasText: 'Somewhere, Slowly' }).getByRole('cell').nth(-2).dblclick()
+  await expect(bar.getByTestId('track-title')).toHaveText('Somewhere, Slowly', { timeout: 15_000 })
+  await disconnect(page)
+})
+
 test('searches the whole collection from the palette, with commands and the full page', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'Phones open the search page (below)')
   test.skip(external, 'Needs the mock collection')
@@ -1627,7 +1662,7 @@ test('changes the text size and keeps it before the first paint', async ({ page 
   await english(page)
   const html = page.locator('html')
   await page.goto('/#/tracks')
-  const title = page.getByRole('table').getByRole('row').nth(1).locator('strong').first()
+  const title = page.getByRole('table').getByRole('row').nth(1).locator('[data-track-open]')
   await expect(title).toHaveCSS('font-size', '14px')
   const openAppearance = () => openSettings(page)
   await openAppearance()

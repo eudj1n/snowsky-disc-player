@@ -652,6 +652,7 @@ export const en = {
   pair: 'Pair',
   paired: 'This browser is paired.',
   // Global search and its palette (owner, 2026-09-30).
+  open_track: 'Show the track',
   breadcrumbs: 'You are here',
   search: 'Search',
   search_collection: 'Search your collection',

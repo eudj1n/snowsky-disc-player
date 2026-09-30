@@ -30,6 +30,8 @@ export const trackRowProps = computed(() => ({
   pauseLabel: t('pause'),
   toggleCurrent,
   menuLabel: t('track_actions'),
+  // A title opens its track in the panel; a double click on the row plays it (2026-09-30).
+  openLabel: t('open_track'),
   artistTo: artistRoute,
   albumTo: trackAlbumRoute,
   favoriteOf: isFavorite,

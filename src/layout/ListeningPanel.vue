@@ -2,7 +2,8 @@
 /**
  * Reference listening panel (aside#now-panel), two tabs since 2026-09-29
  * (owner): Now (the track's head, its facts and, on the same scroll, the
- * whole queue, which the bar's queue button scrolls to) and Lyrics. Once the
+ * whole queue, which the bar's queue button scrolls to) and Lyrics; a row's
+ * title shows its track here instead (TrackPanel.vue, 2026-09-30). Once the
  * head has scrolled away, a compact line of the track and the queue's heading
  * stay pinned and only the list moves (owner, 2026-09-30); the line leads back
  * to the head, and on phones it keeps play and pause. The bar
@@ -15,6 +16,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Artwork from '../components/artwork/Artwork.vue'
 import NowPlayingDetails from '../components/player/NowPlayingDetails.vue'
+import TrackPanel from './TrackPanel.vue'
 import TrackFacts from '../components/player/TrackFacts.vue'
 import { libraryRow, trackFacts } from '../domain/nowFacts'
 import { trackKey } from '../domain/track'
@@ -54,6 +56,8 @@ import { usePlayerControls } from './usePlayerControls'
 import { nowColourStyle } from '../stores/nowColours'
 
 const player = usePlayerControls()
+/** The playing track's cover colours; an opened track keeps the theme's. */
+const onCover = computed(() => Boolean(nowColourStyle.value) && ui.panel !== 'track')
 const close = ref<InstanceType<typeof UiIconButton> | null>(null)
 const queueSection = ref<HTMLElement | null>(null)
 const nowScroll = ref<HTMLElement | null>(null)
@@ -257,9 +261,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
     id="now-panel"
     :aria-label="t('player_view')"
     class="fixed top-0 right-0 bottom-(--player) z-25 flex w-380 animate-listening-enter flex-col border-l border-line bg-raised text-left shadow-[-15px_0_65px_#26301418] phone:bottom-0 phone:z-40 phone:w-full phone:border-l-0"
-    :class="{ 'on-cover': nowColourStyle }"
-    :style="nowColourStyle ?? undefined"
-    :data-on-cover="nowColourStyle ? 'true' : undefined"
+    :class="{ 'on-cover': onCover }"
+    :style="onCover ? nowColourStyle : undefined"
+    :data-on-cover="onCover ? 'true' : undefined"
   >
     <div class="flex items-center justify-between px-24 pt-22 pb-12 phone:px-24 phone:pt-16 phone:pb-10">
       <span class="text-caption2 font-semibold tracking-caps text-muted uppercase">SNOWSKY DISC</span>
@@ -412,6 +416,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         </section>
       </NowPlayingDetails>
     </div>
+    <TrackPanel v-else-if="ui.panel === 'track'" @navigate="onNavigate" />
     <template v-else-if="ui.panel === 'lyrics'">
       <!-- The tab already says Lyrics: the header names the track only (owner, round 14). -->
       <div class="shrink-0 px-24 pb-10">

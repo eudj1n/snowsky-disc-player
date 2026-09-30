@@ -108,7 +108,10 @@ hidden), its facts (`components/player/TrackFacts.vue` from the pure
 `domain/nowFacts.ts`: stock's play state, the library row, the file measured
 through the media route and the service's play history) and the whole queue;
 Lyrics holds the lyrics and karaoke. On wider screens the bottom bar is the
-only control surface.
+only control surface. A row's title opens its track in the same panel
+(`layout/TrackPanel.vue`, `openTrackPanel` in `stores/ui.ts`): the facts come
+from the same `domain/nowFacts.ts`, the lyrics from `ownLyrics()` (the file's
+own, read once), and Play selects what the row's play button would.
 
 The visualizer (`layout/VisualizerMode.vue`) draws what plays in this
 browser. Its first opening (a click or the V key, since browsers start audio

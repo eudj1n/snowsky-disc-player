@@ -22,7 +22,7 @@ import { t } from '../i18n'
 import { artistImage } from '../stores/artistPictures'
 import { albumCover } from '../stores/enrichment'
 import { isPinnedAlbum, isPinnedArtist } from '../stores/pins'
-import { openTrackMenu } from '../stores/ui'
+import { openTrackMenu, openTrackPanel } from '../stores/ui'
 import UiCircleButton from '../ui/UiCircleButton.vue'
 import UiIcon from '../ui/UiIcon.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
@@ -187,6 +187,12 @@ onMounted(() => {
             (index, anchor) => {
               const track = shown('tracks', trackHits(group.hits))[index]
               if (track) openTrackMenu(track, trackTarget(track), anchor)
+            }
+          "
+          @open="
+            (index, anchor) => {
+              const track = shown('tracks', trackHits(group.hits))[index]
+              if (track) openTrackPanel(track, trackTarget(track), anchor)
             }
           "
           @play="

@@ -9,7 +9,7 @@ import TrackList from '../components/track/TrackList.vue'
 import { t } from '../i18n'
 import { dislikedTracks } from '../stores/disliked'
 import { tracks } from '../stores/library'
-import { openTrackMenu } from '../stores/ui'
+import { openTrackMenu, openTrackPanel } from '../stores/ui'
 import { countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { useCrumbs } from './crumbs'
@@ -44,6 +44,7 @@ const columns = computed(() => ({
       :header="columns"
       data-testid="disliked-list"
       @menu="(index, anchor) => items[index] && openTrackMenu(items[index], null, anchor)"
+      @open="(index, anchor) => items[index] && openTrackPanel(items[index], null, anchor)"
       @favorite="onRowFavorite"
       @unfavorite="onRowUnfavorite"
     />

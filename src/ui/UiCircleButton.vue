@@ -2,15 +2,19 @@
 /**
  * A 40px round action beside a pill button in a detail heading (owner,
  * 2026-09-28, after the Yandex Music album header): the icon speaks, the
- * name is its label and tooltip. Pressed turns accent.
+ * name is its label and tooltip. Pressed turns accent (and fills the icon when asked: a heart).
  */
 import UiIcon from './UiIcon.vue'
 import type { IconName } from './icons'
 
-withDefaults(defineProps<{ icon: IconName; label: string; pressed?: boolean | undefined; disabled?: boolean }>(), {
-  pressed: undefined,
-  disabled: false,
-})
+withDefaults(
+  defineProps<{ icon: IconName; label: string; pressed?: boolean | undefined; disabled?: boolean; fill?: boolean }>(),
+  {
+    pressed: undefined,
+    disabled: false,
+    fill: false,
+  },
+)
 </script>
 
 <template>
@@ -22,6 +26,6 @@ withDefaults(defineProps<{ icon: IconName; label: string; pressed?: boolean | un
     :disabled="disabled"
     class="inline-flex size-40 shrink-0 items-center justify-center rounded-full bg-(--control-ground) text-ink shadow-[inset_0_0_0_1px_var(--control-edge),0_1px_3px_#0000001a] backdrop-blur-[10px] transition-colors duration-150 hover:enabled:bg-hover disabled:opacity-50 aria-pressed:text-accent [&>svg]:size-17"
   >
-    <UiIcon :name="icon" />
+    <UiIcon :name="icon" :filled="fill && pressed === true" />
   </button>
 </template>

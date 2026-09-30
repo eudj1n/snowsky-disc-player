@@ -9,6 +9,8 @@
  * column before the duration, 2026-09-29; always shown for favorites, on
  * hover otherwise), duration and the actions button. Album and duration
  * columns disappear when no row knows them (stock rows often lack both).
+ * With an open label, a title opens the track (the track panel, owner
+ * 2026-09-30) and a double click on the row plays it, as the lead does.
  */
 import { creditLabel, sameCredit } from '../../domain/artist'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
@@ -59,6 +61,8 @@ const props = withDefaults(
     pauseLabel?: string | null
     /** Rows get a ⋯ button (and a context menu) that emit `menu`. */
     menuLabel?: string | null
+    /** Titles open the track (emit `open`); a double click on the row plays it. */
+    openLabel?: string | null
     disabled?: boolean
     /** Observed cover for a row, when known. */
     coverOf?: (track: Track) => Blob | null
@@ -103,6 +107,7 @@ const props = withDefaults(
     toggleCurrent: null,
     pauseLabel: null,
     menuLabel: null,
+    openLabel: null,
     disabled: false,
     coverOf: () => null,
     header: null,
@@ -124,6 +129,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   play: [index: number]
   menu: [index: number, anchor: HTMLElement]
+  open: [index: number, anchor: HTMLElement]
   favorite: []
   unfavorite: [track: Track]
   love: [track: Track]
@@ -218,6 +224,13 @@ const numberOf = (track: Track, index: number) => {
 const unavailable = (track: Track) => props.unavailableOf?.(track) === true
 /** Cells of an unavailable row fade; the heart stays as it is. No cover is asked for a file that is gone. */
 const dim = (track: Track) => (unavailable(track) ? 'opacity-40' : '')
+/** A double click plays the row, except on its own buttons and links. */
+function doubleClick(event: MouseEvent, track: Track, index: number): void {
+  if (props.openLabel === null || !props.playLabel || props.disabled || unavailable(track)) return
+  if ((event.target as HTMLElement).closest('a, button:not([data-track-open])')) return
+  window.getSelection()?.removeAllRanges()
+  activate(track, index)
+}
 function contextMenu(event: MouseEvent, index: number): void {
   if (props.menuLabel === null) return
   const row = event.currentTarget as HTMLElement
@@ -261,6 +274,7 @@ function contextMenu(event: MouseEvent, index: number): void {
         ]"
         :style="columns"
         @contextmenu="contextMenu($event, index)"
+        @dblclick="doubleClick($event, track, index)"
       >
         <span role="cell" class="flex justify-center">
           <template v-if="lead === 'cover'">
@@ -321,7 +335,18 @@ function contextMenu(event: MouseEvent, index: number): void {
           }}</span>
         </span>
         <div role="cell" class="min-w-0" :class="dim(track)">
-          <strong class="block truncate text-body font-medium"
+          <button
+            v-if="openLabel !== null"
+            type="button"
+            data-track-open
+            :title="openLabel"
+            class="block max-w-full truncate p-0 text-left text-body font-medium hover:underline hover:underline-offset-3 focus-visible:underline"
+            @click="emit('open', index, $event.currentTarget as HTMLElement)"
+          >
+            {{ track.title
+            }}<span v-if="unavailable(track) && unavailableLabel" class="sr-only">, {{ unavailableLabel }}</span>
+          </button>
+          <strong v-else class="block truncate text-body font-medium"
             >{{ track.title
             }}<span v-if="unavailable(track) && unavailableLabel" class="sr-only"
               >, {{ unavailableLabel }}</span

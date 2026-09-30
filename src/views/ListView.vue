@@ -20,7 +20,7 @@ import { locale, t } from '../i18n'
 import { autoPlaylists, autoPreviews } from '../stores/autoPlaylists'
 import { GLOBAL_KINDS, type GlobalKind } from '../domain/autoPlaylists'
 import { trackByPath } from '../stores/library'
-import { openTrackMenu } from '../stores/ui'
+import { openTrackMenu, openTrackPanel } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiActionMenu from '../ui/UiActionMenu.vue'
 import CollectionGate from './CollectionGate.vue'
@@ -77,6 +77,11 @@ function openMenu(index: number, anchor: HTMLElement): void {
   const track = items.value[index]
   const row = rows.value.find((item) => item.track === track)
   if (track) openTrackMenu(track, row ? target(row.position) : null, anchor)
+}
+function openTrack(index: number, anchor: HTMLElement): void {
+  const track = items.value[index]
+  const row = rows.value.find((item) => item.track === track)
+  if (track) openTrackPanel(track, row ? target(row.position) : null, anchor)
 }
 /** Plays the list on the player; a list not there yet is written first, and the page becomes its own. */
 async function listen(position?: number): Promise<void> {
@@ -138,6 +143,7 @@ async function onAction(id: string): Promise<void> {
       :tracks="items"
       @play="playRow"
       @menu="openMenu"
+      @open="openTrack"
       @favorite="onRowFavorite"
       @unfavorite="onRowUnfavorite"
     />

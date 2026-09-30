@@ -36,7 +36,7 @@ import { findGenre, playableGenre, sameGenre } from '../domain/genre'
 import { albums, artists, genres, titleGroups, tracks as collection } from '../stores/library'
 import { connection } from '../stores/connection'
 import { isPinnedAlbum, pins, togglePinAlbum } from '../stores/pins'
-import { openPlaylistDialog, openTrackMenu, showCover } from '../stores/ui'
+import { openPlaylistDialog, openTrackMenu, openTrackPanel, showCover } from '../stores/ui'
 import UiCircleButton from '../ui/UiCircleButton.vue'
 import UiHiResBadge from '../ui/UiHiResBadge.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
@@ -357,6 +357,7 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
       :disc-of="discOf"
       :disc-label="(disc: number) => t('disc_number', { number: disc })"
       @menu="(index, anchor) => items[index] && openTrackMenu(items[index], target(items[index]), anchor)"
+      @open="(index, anchor) => items[index] && openTrackPanel(items[index], target(items[index]), anchor)"
       @play="(index) => items[index] && playFrom(target(items[index]))"
       @favorite="onRowFavorite"
       @unfavorite="onRowUnfavorite"

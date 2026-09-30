@@ -214,6 +214,26 @@ export async function saveFoundLyrics(): Promise<void> {
   }
 }
 
+/**
+ * A track's own lyrics (a same-stem .lrc or its tags), for the track panel (2026-09-30): read
+ * once when it opens, never looked up elsewhere. Null when it has none; 'unavailable' when the
+ * service has no media routes. A CUE track's file holds the whole sheet: nothing of its own.
+ */
+export async function ownLyrics(track: {
+  path: string | null
+  cue?: boolean
+}): Promise<{ lyrics: Lyrics; source: LyricsSource } | null | 'unavailable'> {
+  if (!connection.media) return 'unavailable'
+  if (!track.path || track.cue) return null
+  try {
+    const own = await mediaLyrics(http, track.path)
+    const parsed = own ? parseLyrics(own.text) : null
+    return own && parsed?.lines.length ? { lyrics: parsed, source: own.source } : null
+  } catch {
+    return null
+  }
+}
+
 // Keyed by trackKey: moving between a CUE sheet's tracks keeps the file but changes the track.
 watch(
   () => [nowPlaying.value.track ? trackKey(nowPlaying.value.track) : null, connection.media] as const,

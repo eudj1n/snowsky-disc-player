@@ -12,7 +12,7 @@ import { history, loadHistory, sourceOf } from '../stores/history'
 import { tracks, library } from '../stores/library'
 import { trackSort } from '../stores/preferences'
 import UiChips from '../ui/UiChips.vue'
-import { openTrackMenu } from '../stores/ui'
+import { openTrackMenu, openTrackPanel } from '../stores/ui'
 import { countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { useGenreFilter } from './genreFilter'
@@ -87,6 +87,7 @@ const columns = computed(() => ({
       :header="columns"
       :album-note="trackSort === 'recent' ? sourceNoteOf : null"
       @menu="(index, anchor) => items[index] && openTrackMenu(items[index], target(items[index]), anchor)"
+      @open="(index, anchor) => items[index] && openTrackPanel(items[index], target(items[index]), anchor)"
       @play="(index) => items[index] && playFrom(target(items[index]))"
       @favorite="onRowFavorite"
       @unfavorite="onRowUnfavorite"
