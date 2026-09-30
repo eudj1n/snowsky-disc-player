@@ -1584,6 +1584,12 @@ browser on its own.
       entry's position) or in this browser, and removes it; the Playlists
       section keeps adding and removing; the same cover shows there and in
       Recently played.
+      Checks (2026-09-30): `npm run check` 255 unit tests, the mock suite
+      155 passed (the mock now sends an empty album name, as stock does,
+      where it sent null for an uploaded file, which the page rejects), the
+      emulator acceptance with release `2026.09.30-325ebae` and the card
+      catalogs: 35 desktop cases, 28 on stock, among them an artist's list
+      played from a row (`0100` with its position).
 - [x] On the owner's card (2026-09-30, the owner's go-ahead, storage mode):
       `Apps/Disc Player` replaced by `2026.09.30-039adb5` (87 files) and
       `install-catalog` wrote `.disc/catalog/queries.json` (the image's own,

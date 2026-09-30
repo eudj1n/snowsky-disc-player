@@ -255,7 +255,8 @@ function a202() {
   const song = {
     song_name: track.TITLE,
     song_artist_name: track.ARTIST,
-    song_album_name: cutAlbum(track.ALBUM),
+    // Like stock: always a string, empty for a file without an album tag.
+    song_album_name: cutAlbum(track.ALBUM) ?? '',
     song_file_path: track.PATH,
     pos_id: player.index + 1,
     song_duration_time: track.DURATION,
@@ -1187,6 +1188,7 @@ server.on('upgrade', (request, socket, head) => {
           else if (type === '0006') select(FAVORITES, index, 6)
           else if (type === '0005') select(PLAYLISTS[JSON.parse(payload.slice(8)).id]?.members ?? [], index, 5)
           else if (type === '0000') select(player.list, index, 0)
+          else if (type === '0004' && payload.endsWith('.m3u')) select(m3uTracks(payload.slice(8)), index, 4)
           else if (type === '0004') {
             // A position in the playback browser, subfolders included; the queue holds the folder's files.
             const folder = payload.slice(8)
