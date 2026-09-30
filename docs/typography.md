@@ -52,6 +52,11 @@ Four weights, each with one job:
 | 600    | `font-semibold` | Uppercase labels, buttons, the player's title, tiles |
 | 700    | `font-bold`     | Headings, the word mark, list artwork                |
 
+The sidebar's links are in the ink with quieter icons; the current section is
+semibold with its icon in the accent (owner, 2026-09-30, after the album
+colours made the muted links look faded). The phone's tab bar keeps quiet
+labels, the current one with the accent icon.
+
 Intermediate weights (550, 620, 650, 750) are not used: static faces snap
 them to their neighbours, and 750 became Black on Windows. The light weight
 remains only for the "···" glyph of the row menus.
