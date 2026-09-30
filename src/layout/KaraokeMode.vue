@@ -28,6 +28,7 @@ import { timeLabel } from '../domain/track'
 import { t } from '../i18n'
 import { coverFor } from '../stores/enrichment'
 import { lyrics } from '../stores/lyrics'
+import { nowColourStyle } from '../stores/nowColours'
 import { nowIsPlaying as isPlaying, nowPlaying, nowPositionAt, nowPositionMs } from '../stores/output'
 import UiIcon from '../ui/UiIcon.vue'
 import { closeKaraoke, toggleKaraokeFullscreen } from './karaoke'
@@ -202,12 +203,20 @@ onBeforeUnmount(() => {
     aria-modal="true"
     :aria-label="t('karaoke')"
     tabindex="-1"
-    class="fixed inset-0 z-90 flex flex-col overflow-hidden bg-[#0e100f] text-white outline-none"
+    class="fixed inset-0 isolate z-90 flex flex-col overflow-hidden bg-[#0e100f] text-white outline-none"
     :class="{ 'cursor-none': idle }"
     data-testid="karaoke"
     @pointermove="wake"
     @pointerdown="wake"
   >
+    <!-- The cover's colours, blurred, behind the words (owner, 2026-09-30). -->
+    <div
+      v-if="nowColourStyle"
+      aria-hidden="true"
+      data-testid="karaoke-colours"
+      class="karaoke-colours pointer-events-none absolute -inset-80 -z-10"
+      :style="nowColourStyle"
+    />
     <div
       v-if="cover"
       aria-hidden="true"

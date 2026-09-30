@@ -813,6 +813,50 @@ test.describe('player controls on the mock', () => {
     await disconnect(page)
   })
 
+  test('takes two colours of the cover for the heading, the Now Playing panel and karaoke', async ({ page }, info) => {
+    test.skip(info.project.name !== 'desktop', 'The same colours on phones')
+    await english(page)
+    await connectAndPair(page)
+    await page.goto('/#/album/Inner%20Space/Forma')
+    // The heading's gradient: the cover's colours fitted to each theme, set once the cover decoded.
+    const heading = page.getByTestId('album-colours').locator('xpath=..')
+    await expect.poll(() => heading.getAttribute('style'), { timeout: 15_000 }).toMatch(/--head-a: #[0-9a-f]{6}/)
+    const lightFirst = (await heading.getAttribute('style'))?.match(/--head-a: (#[0-9a-f]{6})/)?.[1]
+    await expect(page.getByTestId('album-colours')).toHaveCSS('background-image', /linear-gradient/)
+    // The Play button keeps the theme's colour (owner: controls stay stable).
+    const play = page.getByRole('button', { name: 'Play album' })
+    const strong = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue('--strong').trim(),
+    )
+    expect(await play.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(
+      await page.evaluate((color) => {
+        const probe = document.createElement('span')
+        probe.style.color = color
+        document.body.append(probe)
+        const value = getComputedStyle(probe).color
+        probe.remove()
+        return value
+      }, strong),
+    )
+    await page
+      .getByRole('button', { name: /^(Play|Pause) Weightless/ })
+      .first()
+      .click()
+    await expect(page.getByTestId('track-title')).toHaveText('Weightless', { timeout: 15_000 })
+    await page.getByRole('button', { name: 'Open Now Playing panel' }).first().click()
+    const panel = page.locator('#now-panel')
+    await expect(panel).toHaveAttribute('data-on-cover', 'true', { timeout: 15_000 })
+    // Light text on the cover's deep colours.
+    await expect(panel.getByRole('heading', { name: 'Weightless' })).toHaveCSS('color', 'rgb(255, 255, 255)')
+    await panel.getByRole('button', { name: 'Lyrics', exact: true }).click()
+    await page.getByTestId('karaoke-open').click()
+    await expect(page.getByTestId('karaoke-colours')).toBeAttached()
+    await page.keyboard.press('Escape')
+    expect(lightFirst).toBeTruthy()
+    await page.keyboard.press('Escape')
+    await disconnect(page)
+  })
+
   test('pins a compact line of the track and the queue heading once the head scrolls away', async ({ page }, info) => {
     test.skip(info.project.name !== 'desktop', 'The phone panel shows the same Now tab')
     await english(page)

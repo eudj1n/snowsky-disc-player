@@ -1722,19 +1722,10 @@ soft glow behind the detail heading; dark or many-coloured covers averaged to
 grey or mud (Under My Skin gave `#8d8a88`). The owner compared variants on
 twelve covers of their player and chose:
 
-- [ ] Two colours per cover: buckets of a 48×48 copy, near-black, near-white
-      and grey weigh little, the frequent and saturated colour wins, the
-      second clearly differs; both are fitted to the theme in OKLCH so the
-      theme's own text stays readable (`src/domain/coverColours.ts`).
-- [ ] The album, artist and other detail headings: a two-colour gradient
-      behind the heading, fading into the page, in place of the glow.
-- [ ] The Now Playing panel on a background from the cover's colours,
-      darkened, with light text and see-through cards.
-- [ ] Karaoke over blurred colours of the cover.
-- Controls stay the theme's (owner: "the button must stay stable so the user
-  does not look for it"): the Play button, the progress bar and every other
-  control keep their colours on every album. More contrast and less
-  transparency (system settings) tone the album colours down.
+- [x] Two colours per cover: buckets of a 48×48 copy, near-black, near-white and grey weigh little, the frequent and saturated colour wins, the second clearly differs (a one-colour cover gets a lighter, softer version); both are fitted to the theme in OKLCH so the theme's own text stays readable (`src/domain/coverColours.ts`, unit tests).
+- [x] The album, artist and other detail headings: a two-colour gradient behind the heading, fading into the page, in place of the glow; the sleeve's colour without a cover.
+- [x] The Now Playing panel on a background from the cover's colours, darkened, with light text and see-through cards (`.on-cover`, `src/stores/nowColours.ts`).
+- [x] Karaoke over blurred colours of the cover.
 
 ## Requests for the next service build
 

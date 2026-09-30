@@ -51,6 +51,7 @@ import { usePlaybackContext } from './usePlaybackContext'
 import { openKaraoke } from './karaoke'
 import { openVisualizer } from './visualizer'
 import { usePlayerControls } from './usePlayerControls'
+import { nowColourStyle } from '../stores/nowColours'
 
 const player = usePlayerControls()
 const close = ref<InstanceType<typeof UiIconButton> | null>(null)
@@ -255,6 +256,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
     id="now-panel"
     :aria-label="t('player_view')"
     class="fixed top-0 right-0 bottom-(--player) z-25 flex w-380 animate-listening-enter flex-col border-l border-line bg-raised text-left shadow-[-15px_0_65px_#26301418] phone:bottom-0 phone:z-40 phone:w-full phone:border-l-0"
+    :class="{ 'on-cover': nowColourStyle }"
+    :style="nowColourStyle ?? undefined"
+    :data-on-cover="nowColourStyle ? 'true' : undefined"
   >
     <div class="flex items-center justify-between px-24 pt-22 pb-12 phone:px-24 phone:pt-16 phone:pb-10">
       <span class="text-caption2 font-semibold tracking-caps text-muted uppercase">SNOWSKY DISC</span>
@@ -281,7 +285,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
       <!-- Pinned above the list once the head is gone; it takes no room in the flow. -->
       <div class="sticky top-0 z-3 -mx-24 h-0">
         <div
-          class="flex h-60 items-center gap-12 border-b border-line bg-raised px-24 transition-[opacity,translate,visibility] duration-200 motion-reduce:transition-none"
+          class="flex h-60 items-center gap-12 border-b border-line bg-raised px-24 backdrop-blur-[18px] transition-[opacity,translate,visibility] duration-200 motion-reduce:transition-none"
           :class="compact ? 'visible opacity-100' : 'invisible -translate-y-4 opacity-0'"
           :inert="!compact"
           data-testid="now-compact"
@@ -366,7 +370,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         >
           <!-- The queue's heading stays on top of its list, below the compact line of the track. -->
           <div
-            class="sticky z-2 -mx-24 bg-raised px-24 pb-6 transition-[top] duration-200 motion-reduce:transition-none"
+            class="sticky z-2 -mx-24 bg-raised px-24 pb-6 backdrop-blur-[18px] transition-[top] duration-200 motion-reduce:transition-none"
             :class="compact ? 'top-60 pt-10' : 'top-0 pt-2'"
             data-testid="panel-queue-heading"
           >

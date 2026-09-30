@@ -58,3 +58,28 @@ A new palette copies one block of `palettes.css`, changes the values and keeps
 every token (a token left out falls back to the theme's default palette), then
 gets an entry with swatch colors in `src/domain/palettes.ts` and a name in both
 languages.
+
+## Album colours
+
+Since 2026-09-30 (owner) the page takes two colours of a cover
+(`src/domain/coverColours.ts`) instead of the average of all its pixels, which
+made dark or many-coloured covers grey or muddy. A 48×48 copy is sorted into
+colour buckets; near-black, near-white and grey weigh little, the frequent and
+saturated colour wins and the second one clearly differs from it (a cover of
+one colour gets a lighter, softer version of it). They colour backgrounds
+only; controls keep the theme's colours on every album (owner: "the button
+must stay stable so the user does not look for it"):
+
+- Detail headings (album, artist, genre, playlist): a gradient of the two
+  colours behind the heading, fading into the page. Each colour is fitted to
+  each theme in OKLCH (light and soft in the light theme, dark in the dark
+  one) so the theme's own text keeps 4.5:1 on it; a page without a cover
+  takes the sleeve's colour.
+- The Now Playing panel (`.on-cover`, `src/stores/nowColours.ts`): deep
+  versions of the two colours, light text and see-through surfaces; the
+  theme's tokens are redefined for the panel only.
+- Karaoke: the two colours blurred behind the words.
+
+More contrast (system setting) tones the heading's colours down and makes the
+panel's secondary text white; less transparency makes the panel's pinned
+lines solid.

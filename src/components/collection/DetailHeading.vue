@@ -2,15 +2,16 @@
 /** Reference detail header: 220px sleeve beside a column of the same height
  * (owner, 2026-09-28, after the Yandex Music album header): the kind of page
  * at its top edge, the name sized by its length and the meta line, the
- * actions on its bottom edge; a longer column grows past the sleeve. A soft
- * glow in the artwork's tone (the observed cover's average color, else the
- * sleeve palette) sits behind it, and a quiet rule separates it from the
- * content below. Once the header has scrolled away, a compact bar keeps the
+ * actions on its bottom edge; a longer column grows past the sleeve. Two
+ * colours of the cover (owner, 2026-09-30; domain/coverColours.ts), else of
+ * the sleeve palette, fitted to the theme, run as a gradient behind it into
+ * the page, and a quiet rule separates it from the content below. Once the header has scrolled away, a compact bar keeps the
  * page's context at the top: small cover, name (back to the top), the
  * `sticky` slot's line and one play/pause button (owner, round 14, option A).
  * The `artwork` slot replaces the sleeve in both places (a genre's records). */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { sleeve, SLEEVE_TONES } from '../../domain/artwork'
+import { hex, tint, toLch, type CoverColours, type Rgb } from '../../domain/coverColours'
 import { t } from '../../i18n'
 import UiIcon from '../../ui/UiIcon.vue'
 import Artwork from '../artwork/Artwork.vue'
@@ -39,14 +40,30 @@ const titleSize = computed(() => {
 })
 /** `cover`: show the observed cover (or artist picture) in full size. */
 const emit = defineEmits<{ sticky: []; cover: [] }>()
-const observed = ref<string | null>(null)
+const observed = ref<CoverColours | null>(null)
 watch(
   () => props.cover,
   (cover) => {
     if (!cover) observed.value = null
   },
 )
-const tint = computed(() => observed.value ?? SLEEVE_TONES[sleeve(props.title).palette] ?? SLEEVE_TONES[0])
+/** A sleeve's label colour and a lighter neighbour of it, for pages without a cover. */
+function sleeveColoursOf(title: string): CoverColours {
+  const label = SLEEVE_TONES[sleeve(title).palette] ?? SLEEVE_TONES[0]
+  const rgb = [1, 3, 5].map((at) => parseInt(label.slice(at, at + 2), 16)) as unknown as Rgb
+  const first = toLch(rgb)
+  return { first, second: { ...first, L: Math.min(0.9, first.L + 0.15), h: first.h + 0.35 }, grey: first.C < 0.035 }
+}
+/** The gradient's colours for both themes; the stylesheet picks the theme's pair. */
+const colours = computed(() => {
+  const { first, second } = observed.value ?? sleeveColoursOf(props.title)
+  return {
+    '--head-a': hex(tint(first, 'light')),
+    '--head-b': hex(tint(second, 'light', 0.85)),
+    '--head-a-dark': hex(tint(first, 'dark')),
+    '--head-b-dark': hex(tint(second, 'dark', 0.85)),
+  }
+})
 
 /** The compact bar's height: the header counts as gone once it has scrolled under it. */
 const BAR = 62
@@ -81,11 +98,12 @@ function toTop(): void {
   <div
     ref="heading"
     class="relative isolate mt-25 mb-26 flex items-start gap-30 border-b border-line pb-30 rail:gap-22 phone:mt-23 phone:mb-20 phone:block phone:pb-23 phone:text-center"
-    :style="{ '--tint': tint }"
+    :style="colours"
   >
     <span
       aria-hidden="true"
-      class="pointer-events-none absolute -inset-x-40 -top-70 bottom-0 -z-10 bg-[radial-gradient(closest-side_at_24%_55%,color-mix(in_oklab,var(--tint)_34%,transparent),transparent)] transition-[--tint] duration-700 dark:opacity-80 wide:-inset-x-56 compact:-inset-x-24 phone:-inset-x-16 phone:bg-[radial-gradient(closest-side_at_50%_40%,color-mix(in_oklab,var(--tint)_34%,transparent),transparent)] listening:-inset-x-28"
+      data-testid="album-colours"
+      class="album-colours pointer-events-none absolute -inset-x-40 -top-70 bottom-0 -z-10 wide:-inset-x-56 compact:-inset-x-24 phone:-inset-x-16 listening:-inset-x-28"
     />
     <div
       class="aspect-square w-220 shrink-0 overflow-hidden shadow-[0_12px_40px_#25341515] rail:w-165 phone:mx-auto phone:mb-25 phone:w-200"

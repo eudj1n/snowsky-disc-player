@@ -147,6 +147,97 @@
   }
 }
 
+/* Album colours behind a detail heading (owner, 2026-09-30): two colours of the cover fitted to
+ * each theme (domain/coverColours.ts), registered so a new album's colours blend in. */
+@property --head-a {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --head-b {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --head-a-dark {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --head-b-dark {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+.album-colours {
+  background: linear-gradient(180deg, var(--head-a) 0%, var(--head-b) 52%, transparent 100%);
+  /* The sides fade out, so the colour has no edge where the page's padding ends. */
+  mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+  transition:
+    --head-a 0.7s,
+    --head-b 0.7s,
+    --head-a-dark 0.7s,
+    --head-b-dark 0.7s;
+}
+:root[data-theme='dark'] .album-colours {
+  background: linear-gradient(180deg, var(--head-a-dark) 0%, var(--head-b-dark) 52%, transparent 100%);
+}
+@media (prefers-contrast: more) {
+  .album-colours {
+    opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .album-colours {
+    transition: none;
+  }
+}
+
+/*
+ * The Now Playing panel on the cover's colours (owner, 2026-09-30; stores/nowColours.ts):
+ * deep colours of the cover under light text, see-through surfaces. The theme's tokens are
+ * redefined for the panel only, so every control inside keeps its shape and place.
+ */
+.on-cover {
+  --ink: #ffffff;
+  --secondary: #ffffffd9;
+  --muted: #ffffffb8;
+  --line: #ffffff29;
+  --soft: #ffffff1f;
+  --hover: #ffffff1a;
+  --selected: #ffffff2e;
+  --paper: #ffffff36;
+  --raised: color-mix(in srgb, var(--cover-base) 86%, transparent);
+  --strong: #ffffff;
+  --strong-hover: #f2f2f2;
+  --strong-ink: var(--cover-base);
+  --accent: #ffb09c;
+  --notice: #ffb09c;
+  --progress-bg: #ffffff38;
+  --progress-fill: #ffffff;
+  --focus-ring: #ffffffaa;
+  color-scheme: dark;
+  color: var(--ink);
+  background:
+    radial-gradient(120% 70% at 20% 0%, var(--cover-a), transparent 70%),
+    radial-gradient(100% 80% at 90% 100%, var(--cover-b), transparent 70%), var(--cover-base);
+}
+@media (prefers-contrast: more) {
+  .on-cover {
+    --secondary: #ffffff;
+    --muted: #ffffffe0;
+  }
+}
+
+/* Karaoke over the cover's colours, blurred (owner, 2026-09-30). */
+.karaoke-colours {
+  background:
+    radial-gradient(45% 50% at 25% 30%, var(--cover-a), transparent 72%),
+    radial-gradient(50% 55% at 78% 72%, var(--cover-b), transparent 72%);
+  filter: blur(60px) saturate(1.15);
+  opacity: 0.95;
+}
+
 /* Detail headers glow in their artwork's tone; registered so it can transition. */
 @property --tint {
   syntax: '<color>';
@@ -398,6 +489,10 @@
 @media (prefers-reduced-transparency: reduce) {
   :root {
     --solid-player: var(--paper);
+  }
+  /* The cover-coloured panel's pinned lines turn solid too. */
+  .on-cover {
+    --raised: var(--cover-base);
   }
   *,
   ::before,
