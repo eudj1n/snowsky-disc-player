@@ -1862,7 +1862,13 @@ or its IP. The service admits the site's exact origin from its reviewed
       denied and not-found cases.
 - [x] A Pages workflow (`.github/workflows/pages.yml`) that publishes the
       hosted build.
-- [ ] The public repository and the first deployment (the owner's go-ahead).
+- [x] The public repository `eudj1n/snowsky-disc-player` and the first
+      deployment (owner's go-ahead, 2026-10-01): Pages from GitHub Actions at
+      `https://eudj1n.github.io/snowsky-disc-player/`; the history was checked
+      for serial numbers, MAC and private addresses, tokens and keys first.
+- [x] Release `2026.09.30-418fa1e` passed the emulator acceptance (40 desktop
+      cases, 30 on stock) as the app of combined-010; the kept-list case now
+      waits for the list's file, which follows the store's record.
 - [ ] The real player: an image with `hosted.json` (its own authorization),
       then Chrome on desktop and Android at `ingenic.local` and at an IP.
 

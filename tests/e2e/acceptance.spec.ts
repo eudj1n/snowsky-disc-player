@@ -885,7 +885,9 @@ test('keeps an artist’s most played on the player as an M3U list and plays it 
   await expect(keep).toBeVisible({ timeout: 30_000 })
   if ((await keep.getAttribute('aria-pressed')) !== 'true') await keep.click()
   await expect(keep).toHaveAttribute('aria-pressed', 'true', { timeout: 30_000 })
-  // The service wrote it into the visible Playlists folder, which the player's own file view opens.
+  // The service wrote it into the visible Playlists folder, which the player's own file view opens
+  // (the button shows the kept state as soon as the store records it; the file follows).
+  await expect.poll(async () => (await read()).status(), { timeout: 30_000 }).toBe(200)
   const list = (await (await read()).json()) as { path: string; entries: string[] }
   expect(list.path).toBe(`/tmp/sdcard/Playlists/${name}.m3u`)
   expect(list.entries.length).toBeGreaterThan(0)
