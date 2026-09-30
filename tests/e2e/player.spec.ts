@@ -1571,6 +1571,16 @@ test('searches the whole collection from the palette, with commands and the full
   const crumbs = page.getByTestId('crumbs')
   await expect(crumbs.getByRole('link', { name: 'Albums', exact: true })).toBeVisible()
   await expect(crumbs.locator('[aria-current=page]')).toHaveText('Afterglow')
+  // The crumbs start where the content does, at every width (owner, 2026-09-30).
+  for (const width of [1600, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    const crumb = await crumbs.getByRole('link', { name: 'Albums', exact: true }).boundingBox()
+    const heading = await page
+      .getByRole('heading', { level: 1 })
+      .locator('xpath=ancestor::div[contains(@class,"isolate")][1]')
+      .boundingBox()
+    expect(crumb?.x, `width ${String(width)}`).toBe(heading?.x)
+  }
   // ⌘K (Ctrl+K): arrows move, the modifier with Enter opens the search page.
   await page.keyboard.press('ControlOrMeta+k')
   await field.fill('light')
@@ -1598,6 +1608,8 @@ test("opens the search page from the phone's top bar", async ({ page }, info) =>
   test.skip(info.project.name !== 'phone', 'The phone layout')
   test.skip(external, 'Needs the mock collection')
   await english(page)
+  // A section's own page shows the logo where the sidebar's would be.
+  await expect(page.getByTestId('topbar-logo')).toBeVisible()
   await page.getByRole('button', { name: 'Search', exact: true }).click()
   await expect(page).toHaveURL(/#\/search$/)
   const field = page.getByTestId('search-field')

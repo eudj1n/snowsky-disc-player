@@ -1818,6 +1818,24 @@ owner's card (2026-09-30, their go-ahead): `Apps/Disc Player` replaced by
 `2026.09.30-d0a6849` (97 files); the catalog already current; the card
 ejected.
 
+## Owner remarks (2026-09-30, late), card-only
+
+- [x] Phones show the logo in the top bar on a section's own page (the
+      lighter header left room; the tab bar has none); a page below a
+      section keeps the step back there. Evidence: e2e "opens the search
+      page from the phone's top bar".
+- [x] The track panel's cover is as large as Now Playing's (the panel's
+      width; on phones at most 30 % of the screen's height). Its colours
+      stay the theme's: the track does not play.
+- [x] The top bar keeps the page's column and gutters (60 px from 1500 px,
+      18 px on phones, the 1680 px column on very wide screens), so the
+      crumbs start where the content does and the buttons end where it
+      ends; they were 16 px left of it on wide screens. Evidence: e2e
+      "searches the whole collection…" measures it at 1600 and 1280 px.
+- [ ] The top bar's empty left on a section's own page (desktop): options
+      proposed to the owner (back and forward arrows, the section's name,
+      the player's state); waiting for the choice.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
