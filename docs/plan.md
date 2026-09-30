@@ -1564,6 +1564,12 @@ browser on its own.
       plays by the hash of its entries. Unit tests, a mock browser test and
       the emulator acceptance (an artist's list written, played on stock and
       removed).
+      Checks (2026-09-30): `npm run check` 251 unit tests, the mock suite 155
+      passed, the emulator acceptance with release `2026.09.30-039adb5` and
+      the service's card catalogs (`install-catalog`) on the guest: 35
+      desktop cases, 28 on stock.
+- [ ] On the owner's card (with their go-ahead): the release and
+      `app_bundle.py install-catalog` (the store's `auto_playlists`).
 
 ## Requests for the next service build
 
