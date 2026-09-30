@@ -26,7 +26,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="flex items-center justify-end gap-10 text-muted compact:gap-7 rail:justify-center">
+  <div class="flex items-center justify-end gap-10 text-muted compact:gap-7 rail:justify-center phone:gap-2">
     <span class="mr-12 text-9 tracking-[1.2px] whitespace-nowrap compact:hidden">{{ outputLabel }}</span>
     <VolumeControl
       class="w-120 compact:w-100 rail:hidden"

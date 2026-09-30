@@ -82,7 +82,7 @@ const small = 'size-25 p-3 [&>svg]:size-19'
       />
     </div>
     <SeekBar
-      class="phone:absolute phone:inset-x-0 phone:bottom-0 phone:gap-0"
+      class="phone:absolute phone:inset-x-14 phone:bottom-0 phone:gap-6"
       :position-ms="positionMs"
       :duration-ms="durationMs"
       :identity="identity"

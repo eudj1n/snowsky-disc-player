@@ -1247,6 +1247,32 @@ test('places the favorite heart in its own column right before the duration', as
   }
 })
 
+test("keeps every control of the phone's mini player on the screen", async ({ page }, info) => {
+  test.skip(info.project.name !== 'phone', 'The mini player is the phone layout')
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  await connectAndPair(page)
+  const bar = page.getByRole('region', { name: 'Player' })
+  await expect(bar.getByRole('button', { name: 'Open queue' })).toBeVisible()
+  for (const width of [360, 390, 430]) {
+    await page.setViewportSize({ width, height: 800 })
+    const boxes: { name: string | null; x: number; y: number; width: number; height: number }[] = []
+    for (const button of await bar.getByRole('button').all()) {
+      const box = await button.boundingBox()
+      if (box && box.width > 0) boxes.push({ name: await button.getAttribute('aria-label'), ...box })
+    }
+    boxes.sort((a, b) => a.x - b.x)
+    for (const box of boxes) {
+      expect(box.x, `${box.name} at ${width}`).toBeGreaterThanOrEqual(0)
+      expect(box.x + box.width, `${box.name} at ${width}`).toBeLessThanOrEqual(width)
+    }
+    // Neighbours on one line do not overlap.
+    for (const [left, right] of boxes.slice(1).map((box, index) => [boxes[index], box] as const))
+      if (Math.abs(right.y - left.y) < left.height)
+        expect(left.x + left.width, `${left.name} and ${right.name} at ${width}`).toBeLessThanOrEqual(right.x)
+  }
+})
+
 test('draws select arrows inside the rounded edge', async ({ page }) => {
   await english(page)
   await page.goto('/#/tracks')

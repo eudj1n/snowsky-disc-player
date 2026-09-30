@@ -1642,6 +1642,36 @@ Player` replaced by `2026.09.30-325ebae` (94 files) and
       `2026.09.30-2c05bcb` (92 files); the catalog already current; the
       card ejected.
 
+## Typography and display (owner, 2026-09-30), card-only
+
+An audit of sizes, weights, contrast, blur and international glyphs against
+Apple Music, Spotify and Yandex Music (the owner's references) found the
+working text small (track titles 11 px in 61 px rows, seek times 8 to 9 px),
+grey text below 4.5:1 in the light palettes, eight font weights and 33 sizes,
+Japanese names drawn with Chinese glyph forms, right-to-left names reordered
+next to numbers and the phone's mini player wider than the screen. The owner
+chose (2026-09-30): the system font, the "Standard" text size as the default,
+no compact density, contrast and transparency only following the system
+settings; the user should be comfortable without extra settings, so the only
+new setting is the text size. See docs/typography.md.
+
+- [x] The phone's mini player fits the screen: at 360 to 430 px the queue
+      button ran 10 px past the right edge and Next overlapped Lyrics by
+      7 px (fixed 78 px and 28 px columns); the columns now take their
+      buttons' width and the seek times keep the bar's side padding.
+- [ ] The system font stack covers Windows 11, Android and Linux and colour
+      emoji; the whole page is antialiased; four weights (400, 500, 600, 700) instead of eight.
+- [ ] Secondary text passes 4.5:1 in every light palette, also on a
+      selected row; more contrast and less transparency follow the system
+      settings; the player bar no longer shows the list through it.
+- [ ] Names from the collection keep their order next to numbers (bidi
+      isolation) and names with kana or hangul get their language, so
+      Japanese titles are drawn with Japanese glyph forms.
+- [ ] A type scale of ten roles replaces the 33 pixel sizes; letter spacing
+      in em; the working text grows by 2 to 3 px.
+- [ ] Text size in the appearance dialog: Compact, Standard (default),
+      Large, Extra large, applied before the first paint.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
