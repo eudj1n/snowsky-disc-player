@@ -21,6 +21,8 @@ import type { GatewayHttp } from './http'
 import type { PlaybackSource } from '../domain/playback'
 import { mergePlayback, playbackOf, readPlaybackWire, type PlaybackWire } from './playback'
 import { selectFolder } from './folderSelection'
+import { selectList } from './listSelection'
+import type { ListScope } from './lists'
 import { NoObservation, type GatewaySession } from './session'
 
 export type SelectionOutcome = 'playing' | 'uncertain' | 'changed' | 'ambiguous' | 'unavailable'
@@ -41,6 +43,8 @@ export type SelectionTarget =
   | { kind: 'playlist'; name: string; track?: TrackKey }
   /** A card folder (relative to the card root): from its first audio file, or one file of it. */
   | { kind: 'folder'; folder: string; file?: string }
+  /** An M3U list of the service (combined-009), from its first entry. */
+  | { kind: 'list'; scope: ListScope; name: string }
 
 export interface TrackKey {
   title: string
@@ -97,8 +101,9 @@ export function genreSelector(genre: string, album: string): string | null {
 /** The read, send and confirmation plan for a target, or null when the stock cannot carry it. */
 function plan(target: SelectionTarget, indexed: boolean): Plan | null {
   switch (target.kind) {
-    // Folders have their own sequence (folderSelection.ts).
+    // Folders and lists have their own sequences (folderSelection.ts, listSelection.ts).
     case 'folder':
+    case 'list':
       return null
     case 'album':
       return {
@@ -211,6 +216,7 @@ async function albumMatches(
 
 export async function selectSource(deps: SelectionDeps, target: SelectionTarget): Promise<SelectionOutcome> {
   if (target.kind === 'folder') return selectFolder(deps, target.folder, target.file)
+  if (target.kind === 'list') return selectList(deps, target.scope, target.name)
   const { session, http, timeoutMs } = deps
   const now = deps.now ?? Date.now
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((done) => setTimeout(done, ms)))

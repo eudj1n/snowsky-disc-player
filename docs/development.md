@@ -97,6 +97,9 @@ npm run build && DISC_SERVICE_DIR=../snowsky-disc-service npm run release
 docker cp work/disc-player-<version>.zip $C:/work/disc-player.zip
 docker exec $C python3 /platform/scripts/app_bundle.py install \
   --app /work/disc-player.zip --card /tmp/sdcard --confirm-card-write
+# The store's auto_playlists collection (2026-09-30) is newer than the guest image's catalogs:
+docker exec $C python3 /platform/scripts/app_bundle.py install-catalog \
+  --card /tmp/sdcard --confirm-card-write
 E2E_ACCEPTANCE=emulator E2E_BASE_URL=http://127.0.0.1:17870 E2E_SERIAL=00000000000000 \
   npx playwright test --project=desktop
 tests/e2e/emulator/media.sh $C remove               # then rescan:

@@ -1,0 +1,111 @@
+<script setup lang="ts">
+/**
+ * The automatic playlists on the Playlists page (owner, 2026-09-30): the
+ * three lists that are not an artist's, each added to the player or removed
+ * here, and the artists' lists made on their pages. A list plays on the
+ * player from its first entry; "Update now" brings every list up to date.
+ */
+import { computed } from 'vue'
+import SectionHeading from '../components/common/SectionHeading.vue'
+import { GLOBAL_KINDS, type AutoPlaylist, type GlobalKind } from '../domain/autoPlaylists'
+import { locale, t } from '../i18n'
+import { autoPlaylists, kindList, makeKindList, refreshAutoPlaylists, removeAutoList } from '../stores/autoPlaylists'
+import { pairing } from '../stores/pairing'
+import UiIconButton from '../ui/UiIconButton.vue'
+import UiPillButton from '../ui/UiPillButton.vue'
+import UiTextButton from '../ui/UiTextButton.vue'
+import { artistRoute } from './captions'
+import { CARD_ROW } from './cardRows'
+import { playFrom } from './playAlbum'
+
+interface Row {
+  kind: GlobalKind | null
+  list: AutoPlaylist | null
+  artist: string | null
+}
+const rows = computed<Row[]>(() => [
+  ...GLOBAL_KINDS.map((kind) => ({ kind, list: kindList(kind), artist: null })),
+  ...autoPlaylists.lists
+    .filter((list) => list.kind === 'artist_most_played')
+    .map((list) => ({ kind: null, list, artist: list.artist ?? null })),
+])
+const count = (list: AutoPlaylist) => autoPlaylists.entries[list.name]?.length ?? null
+const busy = computed(() => autoPlaylists.busy || autoPlaylists.refreshing || !pairing.paired)
+const updated = computed(() =>
+  autoPlaylists.refreshedAt === null
+    ? null
+    : t('auto_updated', {
+        time: new Intl.DateTimeFormat(locale.value, { timeStyle: 'short' }).format(autoPlaylists.refreshedAt),
+      }),
+)
+function remove(list: AutoPlaylist): void {
+  if (confirm(t('auto_remove_confirm', { name: list.name }))) void removeAutoList(list)
+}
+</script>
+
+<template>
+  <section :aria-label="t('auto_section')" data-testid="auto-playlists">
+    <SectionHeading :title="t('auto_section')" :subtitle="t('auto_section_note')">
+      <div class="flex shrink-0 items-center gap-10">
+        <span v-if="updated" class="text-11 text-muted phone:hidden">{{ updated }}</span>
+        <UiTextButton
+          class="text-12"
+          :disabled="busy || !autoPlaylists.lists.length"
+          data-testid="auto-refresh"
+          @click="refreshAutoPlaylists(true)"
+          >{{ autoPlaylists.refreshing ? t('auto_refreshing') : t('auto_refresh') }}</UiTextButton
+        >
+      </div>
+    </SectionHeading>
+    <ul class="m-0 list-none p-0">
+      <li
+        v-for="row in rows"
+        :key="row.list?.name ?? row.kind ?? ''"
+        class="flex items-center gap-14 border-b border-line py-9 last:border-b-0"
+        :class="CARD_ROW"
+        :data-kind="row.kind ?? 'artist_most_played'"
+      >
+        <div class="min-w-0 flex-1">
+          <strong class="block truncate text-13 font-semibold">{{
+            row.list?.name ?? t(`auto_name_${row.kind ?? 'most_played'}`)
+          }}</strong>
+          <p class="m-0 mt-2 truncate text-11 text-muted">
+            <template v-if="row.list && count(row.list) !== null">{{
+              t('track_count', { count: count(row.list) ?? 0 })
+            }}</template>
+            <template v-else-if="!row.list">{{ t('kind_auto_playlist') }}</template>
+            <template v-if="row.artist">
+              ·
+              <RouterLink :to="artistRoute(row.artist)" class="hover:text-ink hover:underline">{{
+                row.artist
+              }}</RouterLink>
+            </template>
+          </p>
+        </div>
+        <template v-if="row.list">
+          <UiIconButton
+            icon="play"
+            :label="t('play_item', { name: row.list.name })"
+            :disabled="busy || !count(row.list)"
+            @click="row.list && playFrom({ kind: 'list', scope: 'external', name: row.list.name })"
+          />
+          <UiIconButton
+            icon="trash"
+            :label="`${t('auto_remove')}: ${row.list.name}`"
+            :disabled="busy"
+            class="opacity-60 hover:opacity-100 [&>svg]:size-16"
+            @click="row.list && remove(row.list)"
+          />
+        </template>
+        <UiPillButton
+          v-else-if="row.kind"
+          variant="secondary"
+          icon="playlist"
+          :disabled="busy"
+          @click="row.kind && makeKindList(row.kind)"
+          >{{ t('auto_add') }}</UiPillButton
+        >
+      </li>
+    </ul>
+  </section>
+</template>

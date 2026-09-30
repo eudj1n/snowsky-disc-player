@@ -37,15 +37,20 @@ interface HistoryModel {
   plays: ServicePlay[]
   /** Playlists named by the hash of their members, read when a play needs them. */
   playlists: Record<string, { id: number; name: string; trackCount: number }>
+  /** The automatic playlists (M3U lists) by the hash of their entries. */
+  lists: Record<string, { name: string; count: number }>
   loaded: boolean
 }
-const state = reactive<HistoryModel>({ recent: [], most: [], plays: [], playlists: {}, loaded: false })
+const state = reactive<HistoryModel>({ recent: [], most: [], plays: [], playlists: {}, lists: {}, loaded: false })
 export const history = readonly(state)
 
 /** Every queue the library can name, by the hash of its paths. */
 const index = computed(() => {
   const map = sourceIndex({ albums: albums.value, tracks: tracks.value, favorites: favorites.value })
   for (const [hash, playlist] of Object.entries(state.playlists)) map.set(hash, { kind: 'playlist', playlist })
+  // A list with an album's very files names the album.
+  for (const [hash, list] of Object.entries(state.lists))
+    if (!map.has(hash)) map.set(hash, { kind: 'list', name: list.name, count: list.count })
   return map
 })
 
@@ -87,6 +92,15 @@ async function resolvePlaylists(): Promise<void> {
       // Unread playlists stay unnamed.
     }
   }
+}
+
+/** Names the automatic playlists' plays: stock records a list's queue by the hash of its entries. */
+export function nameLists(lists: readonly { name: string; entries: readonly string[] }[]): void {
+  state.lists = Object.fromEntries(
+    lists
+      .filter((list) => list.entries.length)
+      .map((list) => [pathsHash(list.entries), { name: list.name, count: list.entries.length }]),
+  )
 }
 
 let loading: Promise<void> | null = null

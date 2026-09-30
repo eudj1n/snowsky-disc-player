@@ -12,6 +12,8 @@ import UiPillButton from '../ui/UiPillButton.vue'
 import { countLine, playlistLines, playlistRoute } from './captions'
 import { playFrom } from './playAlbum'
 import CollectionGate from './CollectionGate.vue'
+import AutoPlaylistsSection from './AutoPlaylistsSection.vue'
+import { autoPlaylists } from '../stores/autoPlaylists'
 
 const searching = computed(() => ui.query.trim() !== '')
 const items = computed(() => filterBy(library.playlists, ui.query, (playlist) => [playlist.name]))
@@ -51,4 +53,6 @@ const skeletonCards = computed(() => Math.max(1, Math.min(library.summary?.playl
       />
     </CoverGrid>
   </CollectionGate>
+  <!-- Combined-009: the page's automatic playlists, M3U lists the player plays by itself. -->
+  <AutoPlaylistsSection v-if="autoPlaylists.available && !searching" />
 </template>

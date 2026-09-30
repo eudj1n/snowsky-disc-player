@@ -25,6 +25,8 @@ export interface Health {
    * one request); absent before.
    */
   historyWrites?: 'ok' | 'failing'
+  /** The service keeps M3U lists in the card's visible Playlists folder (combined-009). */
+  externalLists?: boolean
 }
 
 export interface DataResult {

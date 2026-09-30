@@ -66,6 +66,15 @@ export function sourceTile(source: PlaySource, path: string): SourceTileModel | 
         cover: playedCover(path),
         play: { kind: 'genre', genre: source.genre },
       }
+    case 'list':
+      return {
+        key: `list:${source.name}`,
+        title: source.name,
+        caption: `${t('kind_auto_playlist')} · ${t('track_count', { count: source.count })}`,
+        to: '/playlists',
+        cover: playedCover(path),
+        play: { kind: 'list', scope: 'external', name: source.name },
+      }
     case 'playlist':
       return {
         key: `playlist:${String(source.playlist.id)}`,
@@ -103,6 +112,8 @@ export function sourceNote(source: PlaySource | null): { text: string; to: Route
       return { text: `${t('kind_genre')} · ${genreName(source.genre)}`, to: genreRoute(genreName(source.genre)) }
     case 'playlist':
       return { text: `${t('kind_playlist')} · ${source.playlist.name}`, to: playlistRoute(source.playlist.id) }
+    case 'list':
+      return { text: `${t('kind_auto_playlist')} · ${source.name}`, to: '/playlists' }
     case 'favorites':
       return { text: t('favorites'), to: '/favorites' }
     default:

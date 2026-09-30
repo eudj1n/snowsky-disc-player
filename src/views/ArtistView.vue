@@ -34,6 +34,8 @@ import { albums, artists, tracks } from '../stores/library'
 import { isPinnedArtist, pins, togglePinArtist } from '../stores/pins'
 import { isPlaying, playback } from '../stores/playback'
 import { openTrackMenu, showCover, ui } from '../stores/ui'
+import { artistList, autoPlaylists, makeArtistList, removeAutoList } from '../stores/autoPlaylists'
+import { pairing } from '../stores/pairing'
 import UiCircleButton from '../ui/UiCircleButton.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
@@ -46,6 +48,13 @@ import { toggleCurrent } from './trackRows'
 const route = useRoute()
 const router = useRouter()
 const name = computed(() => String(route.params.name ?? ''))
+/** The artist's automatic playlist, if the player keeps one. */
+const kept = computed(() => artistList(name.value))
+async function toggleKept(): Promise<void> {
+  const list = kept.value
+  if (!list) await makeArtistList(name.value)
+  else if (confirm(t('auto_remove_confirm', { name: list.name }))) await removeAutoList(list)
+}
 /** The artist's picture in full size, when there is one (never the sleeve). */
 function showArtistPicture(): void {
   const picture = artistImage(name.value)
@@ -212,7 +221,20 @@ function lines(album: Album) {
       <CoverGrid><CoverCardSkeleton v-for="n in 4" :key="n" /></CoverGrid>
     </template>
     <section v-if="hot.length" :aria-label="t('hot_tracks')" data-testid="hot-tracks">
-      <SectionHeading :title="t('hot_tracks')" class="mt-0!" />
+      <SectionHeading :title="t('hot_tracks')" class="mt-0!">
+        <!-- The artist's most played as an automatic playlist the player keeps (owner, 2026-09-30). -->
+        <UiPillButton
+          v-if="autoPlaylists.available"
+          variant="secondary"
+          icon="playlist"
+          :aria-pressed="kept !== null"
+          :aria-label="kept ? t('auto_kept_remove', { name: kept.name }) : undefined"
+          :disabled="autoPlaylists.busy || !pairing.paired"
+          data-testid="artist-auto"
+          @click="toggleKept"
+          >{{ kept ? t('auto_kept') : t('auto_keep') }}</UiPillButton
+        >
+      </SectionHeading>
       <TrackTiles
         :tracks="hot"
         :play-label="t('play_label')"

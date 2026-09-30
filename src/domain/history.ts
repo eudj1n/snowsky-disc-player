@@ -243,6 +243,8 @@ export type PlaySource =
   | { kind: 'playlist'; playlist: { id: number; name: string; trackCount: number } }
   | { kind: 'favorites'; count: number }
   | { kind: 'library' }
+  /** One of the page's automatic playlists (an M3U list, combined-009), by its entries' hash. */
+  | { kind: 'list'; name: string; count: number }
 
 export function sourceKey(source: PlaySource): string {
   switch (source.kind) {
@@ -254,6 +256,8 @@ export function sourceKey(source: PlaySource): string {
       return `genre:${source.genre}`
     case 'playlist':
       return `playlist:${String(source.playlist.id)}`
+    case 'list':
+      return `list:${source.name}`
     default:
       return source.kind
   }

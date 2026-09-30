@@ -1545,6 +1545,26 @@ browser on its own.
       service's installer, the three test lists of the M3U research removed from
       `Playlists/` (the folder stays for the automatic lists), the card ejected.
 
+## Automatic playlists (owner, 2026-09-30; service combined-009)
+
+- [x] M3U lists in the card's visible `Playlists/` folder, which the
+      player's own file view opens and plays without the page (owner's
+      decisions: an artist's most played, made with "Keep on the player" on
+      the artist page; the most played overall, recently added and long not
+      played, added on the Playlists page; 50 tracks; updated when the page
+      opens and with "Update now"). The store's `auto_playlists` collection
+      names the page's lists, so the owner's own lists there are never
+      rewritten (a card catalog of the service, `install-catalog`). A list is
+      written whole and only when its entries changed; disliked tracks and
+      CUE tracks (an entry is a whole file) stay out; long not played means
+      played before but not among the newest 100 plays, the longest unplayed
+      first (the history's order, not the device clock). A list plays on the
+      player from its first entry (`0101` `0004` with the list's path,
+      confirmed by the playing file), and Recently played names a list's
+      plays by the hash of its entries. Unit tests, a mock browser test and
+      the emulator acceptance (an artist's list written, played on stock and
+      removed).
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

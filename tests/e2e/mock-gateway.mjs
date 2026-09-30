@@ -67,8 +67,24 @@ const TYPES = {
 }
 
 // The service's own state (combined-008): store collections, the trash, what macOS left.
-const STORE_KEYS = { disliked: ['path', 'title'], pinned_artists: ['name'], pinned_albums: ['album'] }
-const STORE_LIMITS = { disliked: 20000, pinned_artists: 500, pinned_albums: 500 }
+const STORE_KEYS = {
+  disliked: ['path', 'title'],
+  pinned_artists: ['name'],
+  pinned_albums: ['album'],
+  auto_playlists: ['name'],
+}
+const STORE_LIMITS = { disliked: 20000, pinned_artists: 500, pinned_albums: 500, auto_playlists: 200 }
+/** Combined-009 M3U lists by scope: name → entries (absolute card paths). */
+const LISTS = { internal: new Map(), external: new Map() }
+const LIST_FOLDERS = { internal: '/tmp/sdcard/.disc/playlists', external: '/tmp/sdcard/Playlists' }
+/** The tracks stock queues from a list file: its entries that are library files, in order. */
+function m3uTracks(path) {
+  for (const [scope, lists] of Object.entries(LISTS))
+    for (const [name, entries] of lists)
+      if (`${LIST_FOLDERS[scope]}/${name}.m3u` === path)
+        return entries.flatMap((entry) => TRACKS.find((track) => track.PATH === entry) ?? [])
+  return []
+}
 const storeData = Object.fromEntries(Object.keys(STORE_KEYS).map((name) => [name, new Map()]))
 const trash = { entries: [], next: 1, removed: new Set() }
 const LEFTOVERS = [
@@ -310,7 +326,9 @@ const server = createServer((request, response) => {
       favoriteAny: true,
       store: true,
       trash: true,
-      ...(player.image === '009' ? { historyWrites: player.historyFailing ? 'failing' : 'ok' } : {}),
+      ...(player.image === '009'
+        ? { historyWrites: player.historyFailing ? 'failing' : 'ok', internalLists: true, externalLists: true }
+        : {}),
     }
     return send(response, 200, JSON.stringify(health), 'application/json')
   }
@@ -374,6 +392,78 @@ const server = createServer((request, response) => {
   }
   if (url.pathname === '/api/history') {
     return send(response, 200, JSON.stringify({ records: HISTORY, truncated: false }), 'application/json')
+  }
+  // Combined-009: M3U lists stock plays by path, in the hidden internal and the visible external folder.
+  if (url.pathname === '/api/lists' || url.pathname.startsWith('/api/lists/')) {
+    if (player.image !== '009') return send(response, 404, 'Not found\n')
+    const [scope, encoded, extra] = url.pathname.slice('/api/lists/'.length).split('/')
+    if (url.pathname === '/api/lists')
+      return send(response, 200, JSON.stringify({ scopes: LIST_FOLDERS }), 'application/json')
+    const lists = LISTS[scope]
+    if (!lists || extra !== undefined) return send(response, 404, 'No such list scope\n')
+    const folder = LIST_FOLDERS[scope]
+    const file = (name, entries) => ({
+      name,
+      path: `${folder}/${name}.m3u`,
+      bytes: 11 + entries.reduce((sum, entry) => sum + Buffer.byteLength(entry) - 11, 0),
+      modified: 1790000000,
+    })
+    if (!encoded) {
+      const rows = [...lists].sort(([a], [b]) => (a < b ? -1 : 1)).map(([name, entries]) => file(name, entries))
+      return send(
+        response,
+        200,
+        JSON.stringify({ folder, lists: rows, count: rows.length, truncated: false, max: 200, maxEntries: 5000 }),
+        'application/json',
+      )
+    }
+    const name = decodeURIComponent(encoded)
+    if (request.method === 'GET') {
+      const entries = lists.get(name)
+      if (!entries) return send(response, 404, 'No such list\n')
+      return send(
+        response,
+        200,
+        JSON.stringify({ ...file(name, entries), entries, count: entries.length }),
+        'application/json',
+      )
+    }
+    if (!guarded(request, response)) return
+    // eslint-disable-next-line no-control-regex -- the service refuses control characters in names
+    if (/[/\\:*?"<>|\u0000-\u001f]/.test(name) || /^[\s.]|[\s.]$/.test(name) || Buffer.byteLength(name) > 96)
+      return send(response, 400, 'Not a list name\n')
+    if (request.method === 'DELETE') {
+      if (!lists.delete(name)) return send(response, 404, 'No such list\n')
+      return send(response, 200, JSON.stringify({ name, deleted: true }), 'application/json')
+    }
+    if (request.method !== 'PUT') return send(response, 405, 'Lists are read, written or deleted\n')
+    void readBody(request).then((text) => {
+      let entries
+      try {
+        entries = JSON.parse(text).entries
+      } catch {
+        return send(response, 400, 'The body is {"entries":[...]}\n')
+      }
+      if (!Array.isArray(entries)) return send(response, 400, 'The body is {"entries":[...]}\n')
+      const refused = entries.find((entry) => !TRACKS.some((track) => track.PATH === entry))
+      if (refused !== undefined)
+        return send(
+          response,
+          400,
+          JSON.stringify({ error: 'Not a music file on the card', entry: refused }),
+          'application/json',
+        )
+      if (!lists.has(name) && lists.size >= 200) return send(response, 409, 'Too many lists\n')
+      const replaced = lists.has(name)
+      lists.set(name, entries)
+      return send(
+        response,
+        replaced ? 200 : 201,
+        JSON.stringify({ ...file(name, entries), entries, replaced }),
+        'application/json',
+      )
+    })
+    return
   }
   // Combined-009: the card in one request (a folder, or the whole tree with audio facts).
   if (url.pathname === '/api/card/folder' || url.pathname.startsWith('/api/card/folder/')) {
@@ -716,6 +806,13 @@ const server = createServer((request, response) => {
   }
   if (url.pathname === '/__mock/browser-plays' && request.method === 'GET') {
     return send(response, 200, JSON.stringify(player.browserPlays), 'application/json')
+  }
+  // Forgets every list and automatic playlist record, so the shared mock is as it was.
+  if (url.pathname === '/__mock/lists' && request.method === 'DELETE') {
+    LISTS.internal.clear()
+    LISTS.external.clear()
+    storeData.auto_playlists.clear()
+    return send(response, 204, '')
   }
   // Takes the reported plays out of the history again, so the shared mock is as it was.
   if (url.pathname === '/__mock/browser-plays' && request.method === 'DELETE') {
@@ -1075,7 +1172,8 @@ server.on('upgrade', (request, socket, head) => {
         } else if (tag === '0101' && payload.startsWith('0003')) select(album(payload.slice(4)), 0, 3)
         else if (tag === '0101' && payload.startsWith('0007')) select(scoped(payload.slice(4)), 0, 7)
         else if (tag === '0101' && payload.startsWith('0008')) select(styled(payload.slice(4)), 0, 8)
-        else if (tag === '0101' && payload.startsWith('0004')) select(folderTracks(payload.slice(4)), 0, 4)
+        else if (tag === '0101' && payload.startsWith('0004'))
+          select(payload.endsWith('.m3u') ? m3uTracks(payload.slice(4)) : folderTracks(payload.slice(4)), 0, 4)
         else if (tag === '0101' && payload.startsWith('0005'))
           select(PLAYLISTS[JSON.parse(payload.slice(4)).id]?.members ?? [], 0, 5)
         else if (tag === '0100') {

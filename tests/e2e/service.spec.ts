@@ -291,3 +291,69 @@ async function reportedPlay(page: Page, plays: () => Promise<Record<string, unkn
   await expect(recent.getByRole('listitem').first()).toContainText('Blue Hours')
   await disconnect(page)
 }
+
+test('keeps automatic playlists on the player: an artist’s most played and the Playlists page’s lists', async ({
+  page,
+  request,
+}) => {
+  test.setTimeout(90_000)
+  const errors = watchErrors(page)
+  const lists = async () =>
+    ((await (await request.get('/api/lists/external')).json()) as { lists: { name: string }[] }).lists.map(
+      (list) => list.name,
+    )
+  try {
+    await english(page)
+    await connectAndPair(page)
+    // From the artist page: the artist's most played, kept by the player.
+    await page.goto('/#/artist/Forma')
+    const keep = page.getByTestId('artist-auto')
+    await expect(keep).toHaveText('Keep on the player')
+    await keep.click()
+    await expect(status(page, '“Most played · Forma” is on the player')).toBeVisible()
+    await expect(keep).toHaveText('On the player')
+    await expect(keep).toHaveAttribute('aria-pressed', 'true')
+    expect(await lists()).toEqual(['Most played · Forma'])
+
+    // The Playlists page adds the other lists; one with nothing to hold yet is not made.
+    await page.goto('/#/playlists')
+    const section = page.getByTestId('auto-playlists')
+    const row = (kind: string) => section.locator(`li[data-kind="${kind}"]`)
+    await row('most_played').getByRole('button', { name: 'Add to the player' }).click()
+    await expect(row('most_played')).toContainText(/Most played\s*\d+ tracks?/)
+    await row('recently_added').getByRole('button', { name: 'Add to the player' }).click()
+    await expect(row('recently_added')).toContainText(/Recently added\s*\d+ tracks/)
+    await row('not_played_lately').getByRole('button', { name: 'Add to the player' }).click()
+    await expect(status(page, 'Nothing to put in it yet')).toBeVisible()
+    await expect(row('artist_most_played')).toContainText('Most played · Forma')
+    expect(await lists()).toEqual(['Most played', 'Most played · Forma', 'Recently added'])
+
+    // Nothing changed since: an update writes nothing.
+    await section.getByTestId('auto-refresh').click()
+    await expect(status(page, 'Automatic playlists are up to date')).toBeVisible()
+
+    // A list plays on the player from its first entry, confirmed by the playing file.
+    const first = (
+      (await (await request.get(`/api/lists/external/${encodeURIComponent('Most played · Forma')}`)).json()) as {
+        entries: string[]
+      }
+    ).entries[0]
+    await row('artist_most_played').getByRole('button', { name: 'Play Most played · Forma' }).click()
+    await expect(status(page, 'Done. Verified on DISC.')).toBeVisible({ timeout: 15_000 })
+    // The mock names files "<number> <title>.flac".
+    const file = first.split('/').at(-1) ?? ''
+    const title = file.replace(/^\d+\s*/, '').replace(/\.[a-z0-9]+$/, '')
+    await expect(page.getByTestId('track-title')).toContainText(title.slice(0, 5))
+
+    // Removed after a confirmation: the file and the record go.
+    page.once('dialog', (dialog) => void dialog.accept())
+    await row('recently_added').getByRole('button', { name: 'Remove: Recently added' }).click()
+    await expect(status(page, '“Recently added” is removed from the player')).toBeVisible()
+    await expect(row('recently_added').getByRole('button', { name: 'Add to the player' })).toBeVisible()
+    expect(await lists()).toEqual(['Most played', 'Most played · Forma'])
+    await disconnect(page)
+  } finally {
+    await request.delete('/__mock/lists')
+  }
+  expect(errors).toEqual([])
+})

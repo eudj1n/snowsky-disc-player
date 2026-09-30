@@ -64,6 +64,8 @@ interface ConnectionModel {
    * also has neither the browser play route nor the card listing routes.
    */
   historyWrites: 'ok' | 'failing' | null
+  /** M3U lists in the card's visible Playlists folder (combined-009): the automatic playlists live there. */
+  externalLists: boolean
   connection: ConnectionState
   identity: PlayerIdentity | null
   /** currentVolume from the last 0501 read (0..120); null when unknown. */
@@ -80,6 +82,7 @@ const state = reactive<ConnectionModel>({
   store: false,
   trash: false,
   historyWrites: null,
+  externalLists: false,
   connection: 'disconnected',
   identity: null,
   volume: null,
@@ -120,6 +123,7 @@ export async function probeGateway(): Promise<boolean> {
     state.trash = health.trash === true
     state.historyWrites =
       health.historyWrites === 'ok' || health.historyWrites === 'failing' ? health.historyWrites : null
+    state.externalLists = health.externalLists === true
   } catch {
     state.gateway = false
     state.notice = 'gateway_unreachable'

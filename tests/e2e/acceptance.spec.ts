@@ -832,6 +832,37 @@ test('pauses stock when playback starts in this browser, and records the play th
   expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])
 })
 
+test('keeps an artist’s most played on the player as an M3U list and plays it there on stock', async ({ page }) => {
+  test.setTimeout(120_000)
+  const errors = watchErrors(page)
+  const name = 'Most played · Lumen'
+  const read = () => page.request.get(`/api/lists/external/${encodeURIComponent(name)}`)
+  await english(page)
+  await connectAndPair(page)
+  // The earlier cases played Lumen's albums: the service's history has the artist's most played.
+  await page.goto('/#/artist/Lumen')
+  const keep = page.getByTestId('artist-auto')
+  await expect(keep).toBeVisible({ timeout: 30_000 })
+  if ((await keep.getAttribute('aria-pressed')) !== 'true') await keep.click()
+  await expect(keep).toHaveAttribute('aria-pressed', 'true', { timeout: 30_000 })
+  // The service wrote it into the visible Playlists folder, which the player's own file view opens.
+  const list = (await (await read()).json()) as { path: string; entries: string[] }
+  expect(list.path).toBe(`/tmp/sdcard/Playlists/${name}.m3u`)
+  expect(list.entries.length).toBeGreaterThan(0)
+  expect(list.entries.every((entry) => entry.startsWith('/tmp/sdcard/Player Acceptance/'))).toBe(true)
+  // Stock reads the list into its queue and plays its first entry.
+  await page.goto('/#/playlists')
+  const row = page.getByTestId('auto-playlists').locator('li[data-kind="artist_most_played"]').filter({ hasText: name })
+  await verified(page, () => row.getByRole('button', { name: `Play ${name}` }).click())
+  // Removed again: the file and the store's record.
+  page.once('dialog', (dialog) => void dialog.accept())
+  await row.getByRole('button', { name: `Remove: ${name}` }).click()
+  await expect(row).toHaveCount(0, { timeout: 30_000 })
+  expect((await read()).status()).toBe(404)
+  await disconnect(page)
+  expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])
+})
+
 test("shows the running service's diagnostics on stock", async ({ page }) => {
   await english(page)
   await openConnection(page)
