@@ -1809,6 +1809,12 @@ the track panel, placeholders, the sticky bar.
       Evidence: e2e "draws what plays in this browser as the disc
       visualizer".
 
+Checks (2026-09-30) of release `2026.09.30-d0a6849`, which carries the "⋯"
+menus, the global search with the new top bar, the track panel, the coloured
+compact bar and the visualizer's Previous: `npm run check` with 282 unit
+tests; the mock suite 171 passed, 71 skipped; the emulator acceptance 40
+desktop cases passed (30 on stock), the guest cleaned up afterwards.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
