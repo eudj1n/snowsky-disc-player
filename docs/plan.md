@@ -1726,6 +1726,21 @@ twelve covers of their player and chose:
 - [x] The album, artist and other detail headings: a two-colour gradient behind the heading, fading into the page, in place of the glow; the sleeve's colour without a cover.
 - [x] The Now Playing panel on a background from the cover's colours, darkened, with light text and see-through cards (`.on-cover`, `src/stores/nowColours.ts`).
 - [x] Karaoke over blurred colours of the cover.
+- Controls stay the theme's (owner: "the button must stay stable so the user
+  does not look for it"): the Play button, the progress bar and every other
+  control keep their colours on every album. More contrast and less
+  transparency (system settings) tone the album colours down.
+- [x] The colours reach from the page's top edge, under the top bar, across
+      the whole workspace; round buttons and the back link stand on one ground
+      of the theme's own (`--control-ground`), legible over any album.
+- [x] The sidebar's links, faded next to the colours, are in the ink with
+      quieter icons; the current section is semibold with an accent icon
+      (option B of three compared). Checks (2026-09-30): `npm run check` with
+      280 unit tests and the mock cases of the touched screens (album,
+      artist, genre and playlist headings, sidebar, navigation: 52 passed);
+      styles only, so no emulator run. On the owner's card (their go-ahead):
+      `Apps/Disc Player` replaced by `2026.09.30-6f88969` (90 files); the
+      catalog already current; the card ejected.
 
 Checks (2026-09-30) of release `2026.09.30-4e5070d`, which also carries the
 switch between the player and this browser, the Now tab's pinned list and
