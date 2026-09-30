@@ -18,6 +18,8 @@ export const ICON_PATHS = {
   next: 'M19 5v14M5 5l11 7L5 19Z',
   shuffle: 'M3 6h3c5 0 7 12 12 12h3M17 14l4 4-4 4M3 18h3c2 0 4-3 6-6s4-6 6-6h3M17 2l4 4-4 4',
   repeat: 'm17 2 4 4-4 4M3 11V8a2 2 0 0 1 2-2h16M7 22l-4-4 4-4M21 13v3a2 2 0 0 1-2 2H3',
+  // Repeat one (2026-09-30): the repeat arrows with a small 1 between them.
+  'repeat-one': 'm17 2 4 4-4 4M3 11V8a2 2 0 0 1 2-2h16M7 22l-4-4 4-4M21 13v3a2 2 0 0 1-2 2H3M10.5 10.5 12.5 9v6',
   volume: 'M11 4 6 8H2v8h4l5 4ZM15 8a6 6 0 0 1 0 8M18 4a11 11 0 0 1 0 16',
   // Project additions in the same 24×24 stroke style.
   muted: 'M11 4 6 8H2v8h4l5 4ZM16 9l6 6M22 9l-6 6',

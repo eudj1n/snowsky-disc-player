@@ -1628,6 +1628,13 @@ Player` replaced by `2026.09.30-325ebae` (94 files) and
       by their files without an artist, take the library's title and
       artist.
 
+- [x] Repeat one (owner, 2026-09-30: only "repeat queue" was offered):
+      stock keeps one play mode (0 in order, 1 random, 2 repeat track, 3
+      repeat list), so the repeat button goes round as in Apple Music: the
+      queue, one track (its icon with a small 1, "Repeat one"), off; shuffle
+      stays on and off. Unit test of the cycle, a mock browser test and the
+      emulator acceptance's controls case.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

@@ -116,7 +116,7 @@ const labels = computed(() => ({
   play: t('play'),
   pause: t('pause'),
   next: t('next_track'),
-  repeat: t('repeat_queue'),
+  repeat: t(player.repeatOne.value ? 'repeat_one' : 'repeat_queue'),
   favorite: t('favorite_track'),
   seek: t('seek_position'),
   volume: t('player_volume'),
@@ -252,6 +252,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         :favorite-disabled="player.favoriteDisabled.value"
         :shuffle="player.shuffle.value"
         :repeat="player.repeat.value"
+        :repeat-one="player.repeatOne.value"
         :volume="connection.volume"
         :volume-disabled="player.volumeDisabled.value"
         :labels="labels"

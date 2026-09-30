@@ -19,6 +19,8 @@ const props = defineProps<{
   seekDisabled: boolean
   shuffle: boolean
   repeat: boolean
+  /** Stock repeats one track (the repeat button's third state). */
+  repeatOne?: boolean
   labels: { shuffle: string; previous: string; play: string; pause: string; next: string; repeat: string; seek: string }
 }>()
 const emit = defineEmits<{
@@ -70,7 +72,7 @@ const small = 'size-25 p-3 [&>svg]:size-19'
         @click="emit('transport', 'next')"
       />
       <UiIconButton
-        icon="repeat"
+        :icon="repeatOne ? 'repeat-one' : 'repeat'"
         :label="labels.repeat"
         :pressed="repeat"
         :disabled="modesDisabled"

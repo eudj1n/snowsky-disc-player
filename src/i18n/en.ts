@@ -309,6 +309,7 @@ export const en = {
   pause: 'Pause',
   next_track: 'Next track',
   repeat_queue: 'Repeat queue',
+  repeat_one: 'Repeat one',
   seek_position: 'Seek position',
   on_disc: 'ON DISC',
   disc_volume: 'DISC volume',

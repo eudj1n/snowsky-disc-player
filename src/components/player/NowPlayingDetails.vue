@@ -34,6 +34,8 @@ const props = defineProps<{
   favoriteDisabled: boolean
   shuffle: boolean
   repeat: boolean
+  /** Stock repeats one track (the repeat button's third state). */
+  repeatOne?: boolean
   volume: number | null
   volumeDisabled: boolean
   labels: {
@@ -219,7 +221,7 @@ const emit = defineEmits<{
           @click="emit('favorite')"
         />
         <UiIconButton
-          icon="repeat"
+          :icon="repeatOne ? 'repeat-one' : 'repeat'"
           :label="labels.repeat"
           :pressed="repeat"
           :disabled="modesDisabled"

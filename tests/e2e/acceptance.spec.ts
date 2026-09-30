@@ -153,6 +153,17 @@ test('controls transport, seek, volume and mute, modes, favorite and the queue o
   const shuffle = panel.getByRole('button', { name: 'Shuffle' })
   await flip(shuffle)
   await flip(shuffle)
+  // Repeat goes round on stock's one play mode: the queue (3), one track (2), off (0).
+  const repeatQueue = panel.getByRole('button', { name: 'Repeat queue' })
+  await repeatQueue.click()
+  await expect(repeatQueue).toHaveAttribute('aria-pressed', 'true', { timeout: 30_000 })
+  await repeatQueue.click()
+  const repeatOne = panel.getByRole('button', { name: 'Repeat one' })
+  await expect(repeatOne).toHaveAttribute('aria-pressed', 'true', { timeout: 30_000 })
+  await repeatOne.click()
+  await expect(panel.getByRole('button', { name: 'Repeat queue' })).toHaveAttribute('aria-pressed', 'false', {
+    timeout: 30_000,
+  })
   const favorite = panel.getByRole('button', { name: /^(Favorite|Unfavorite) the current track$/ })
   await flip(favorite)
   await flip(favorite)

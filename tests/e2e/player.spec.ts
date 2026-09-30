@@ -87,6 +87,26 @@ test('pairs with the serial number and toggles playback there and back', async (
   expect(errors).toEqual([])
 })
 
+test('repeats the queue, then one track, then nothing, as stock keeps one play mode', async ({ page }, info) => {
+  test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
+  test.skip(info.project.name === 'phone', 'The bar keeps the repeat button for wider screens')
+  await english(page)
+  await connectAndPair(page)
+  const bar = page.getByRole('region', { name: 'Player' })
+  const queue = bar.getByRole('button', { name: 'Repeat queue' })
+  await expect(queue).toHaveAttribute('aria-pressed', 'false')
+  await queue.click()
+  await expect(queue).toHaveAttribute('aria-pressed', 'true', { timeout: 15_000 })
+  await queue.click()
+  const one = bar.getByRole('button', { name: 'Repeat one' })
+  await expect(one).toHaveAttribute('aria-pressed', 'true', { timeout: 15_000 })
+  await one.click()
+  await expect(bar.getByRole('button', { name: 'Repeat queue' })).toHaveAttribute('aria-pressed', 'false', {
+    timeout: 15_000,
+  })
+  await disconnect(page)
+})
+
 test('plays the featured album from Home with a verified result', async ({ page }) => {
   test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
   const errors = watchErrors(page)

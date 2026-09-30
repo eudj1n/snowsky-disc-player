@@ -41,7 +41,8 @@ export function usePlayerControls() {
       (track.value?.durationMs ?? 0) < 1000,
   )
   const shuffle = computed(() => observations.mode === MODE.random)
-  const repeat = computed(() => observations.mode === MODE.repeatList)
+  const repeat = computed(() => observations.mode === MODE.repeatList || observations.mode === MODE.repeatOne)
+  const repeatOne = computed(() => observations.mode === MODE.repeatOne)
   const seekFeedback = computed(() =>
     controls.seekFeedback ? t(controls.seekFeedback.key, { position: controls.seekFeedback.position ?? '' }) : null,
   )
@@ -65,6 +66,7 @@ export function usePlayerControls() {
     seekDisabled,
     shuffle,
     repeat,
+    repeatOne,
     seekFeedback,
     favoriteLabel,
     volumeTitle,

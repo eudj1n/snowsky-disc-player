@@ -45,7 +45,7 @@ const labels = computed(() => ({
   play: t('play'),
   pause: t('pause'),
   next: t('next_track'),
-  repeat: t('repeat_queue'),
+  repeat: t(player.repeatOne.value ? 'repeat_one' : 'repeat_queue'),
   seek: t('seek_position'),
 }))
 </script>
@@ -88,6 +88,7 @@ const labels = computed(() => ({
       :seek-disabled="player.seekDisabled.value"
       :shuffle="player.shuffle.value"
       :repeat="player.repeat.value"
+      :repeat-one="player.repeatOne.value"
       :labels="labels"
       @transport="player.onTransport"
       @mode="player.onMode"

@@ -200,15 +200,25 @@ async function refreshVolume(): Promise<void> {
   await refreshSettings()
 }
 
+/**
+ * Stock keeps one play mode. Shuffle turns random on and off; repeat goes
+ * round as in Apple Music (owner, 2026-09-30): the queue, then one track,
+ * then off.
+ */
+export function nextMode(kind: 'shuffle' | 'repeat', mode: number | null): number {
+  if (kind === 'shuffle') return mode === MODE.random ? MODE.listOnce : MODE.random
+  if (mode === MODE.repeatList) return MODE.repeatOne
+  return mode === MODE.repeatOne ? MODE.listOnce : MODE.repeatList
+}
+
 export async function toggleMode(kind: 'shuffle' | 'repeat'): Promise<void> {
   if (!paired()) return
-  const on = kind === 'shuffle' ? MODE.random : MODE.repeatList
   const result = await run(
     'mode',
     async (context) => {
       await context.pace()
-      // Decided when it runs: a press waiting behind another mode change toggles its result.
-      return setMode(context, observations.mode === on ? MODE.listOnce : on)
+      // Decided when it runs: a press waiting behind another mode change moves on from its result.
+      return setMode(context, nextMode(kind, observations.mode))
     },
     { wait: true },
   )

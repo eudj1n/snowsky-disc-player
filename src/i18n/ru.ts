@@ -315,6 +315,7 @@ export const ru: Messages = {
   pause: 'Пауза',
   next_track: 'Следующий трек',
   repeat_queue: 'Повторять очередь',
+  repeat_one: 'Повторять трек',
   seek_position: 'Перемотка',
   on_disc: 'НА DISC',
   disc_volume: 'Громкость DISC',
