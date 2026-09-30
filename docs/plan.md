@@ -1665,6 +1665,13 @@ new setting is the text size. See docs/typography.md.
 - [x] A type scale of ten roles replaces the 33 pixel sizes; letter spacing in em; the working text grows by 2 to 3 px (track titles 11 → 14 px, artists and captions 11 → 13 px, seek times 8 to 9 → 11 px); headings follow the screen width through their tokens.
 - [x] Text size in the appearance dialog: Compact, Standard (default), Large, Extra large, applied before the first paint; the only new setting.
 
+Checks (2026-09-30): `npm run check` with 273 unit tests; the mock suite
+161 passed, 65 skipped after the first four items, then with the scale and the
+text size 134 passed and `player.spec.ts` re-run whole after a test fix
+(its "Large" button also matched "Extra large") 143 passed, 9 skipped; the
+emulator acceptance with release `2026.09.30-a247c0e`: 38 desktop cases, 28
+on stock, 76 skipped; the guest cleaned up and rescanned.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

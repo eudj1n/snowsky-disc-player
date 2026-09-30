@@ -58,6 +58,22 @@ in, without macOS leftovers; it refuses, writing nothing, when the card could
 not keep 8 MiB free for the service's database afterwards. Leave storage mode
 on the player and reload the page.
 
+## Record
+
+A release that reaches the owner's card leaves two entries in `docs/plan.md`
+under the stage it belongs to, each its own commit:
+
+1. The checks ("Record the checks of …"): `npm run check` with its unit test
+   count, the mock suite (passed and skipped), and when the batch needed it
+   the emulator acceptance with the release version and its case count. The
+   guest is then cleaned up as [development](development.md#emulator-acceptance-against-real-stock)
+   describes (test media removed, then rescanned).
+2. The installation ("Record … on the owner's card"): the version now in
+   `Apps/Disc Player`, its file count, whether the card's catalog was current
+   or installed, and that the card was ejected.
+
+Logs, screenshots and the zips in `work/` stay out of commits.
+
 ## Compatibility
 
 The service names the image's firmware identity (`/api/contract/compatibility.json`).
