@@ -1613,7 +1613,11 @@ Player` replaced by `2026.09.30-325ebae` (94 files) and
       Checks (2026-09-30): `npm run check` 257 unit tests, the mock suite
       157 passed, the emulator acceptance with release
       `2026.09.30-fb3183f` and the service's card catalogs (store
-      `e05292f5…`): 35 desktop cases, 28 on stock.
+      `e05292f5…`): 35 desktop cases, 28 on stock. On the owner's card
+      (2026-09-30, their go-ahead): `Apps/Disc Player` replaced by
+      `2026.09.30-fb3183f` (94 files) and `.disc/catalog/store.json` by
+      `e05292f5…`; the owner's `Playlists/Daily mix.m3u` untouched; the card
+      ejected.
 
 ## Requests for the next service build
 
