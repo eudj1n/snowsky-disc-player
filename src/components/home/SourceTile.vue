@@ -9,6 +9,7 @@
 import type { RouteLocationRaw } from 'vue-router'
 import UiIcon from '../../ui/UiIcon.vue'
 import Artwork from '../artwork/Artwork.vue'
+import ListArt from '../artwork/ListArt.vue'
 
 withDefaults(
   defineProps<{
@@ -16,11 +17,13 @@ withDefaults(
     caption: string
     to: RouteLocationRaw
     cover?: Blob | null
+    /** An automatic playlist's cover background, in place of a cover (combined-009). */
+    art?: string | null
     openLabel: string
     playLabel?: string | null
     playDisabled?: boolean
   }>(),
-  { cover: null, playLabel: null, playDisabled: false },
+  { cover: null, art: null, playLabel: null, playDisabled: false },
 )
 const emit = defineEmits<{ play: [] }>()
 </script>
@@ -36,7 +39,9 @@ const emit = defineEmits<{ play: [] }>()
       :aria-label="openLabel"
       class="flex h-full min-w-0 flex-1 items-center gap-12 pr-48 phone:gap-10 [@media(hover:none)]:pr-10"
     >
-      <span class="size-64 shrink-0 overflow-hidden phone:size-52"><Artwork :title="title" :cover="cover" /></span>
+      <span class="size-64 shrink-0 overflow-hidden phone:size-52"
+        ><ListArt v-if="art" :title="title" :background="art" thumb /><Artwork v-else :title="title" :cover="cover"
+      /></span>
       <span class="min-w-0">
         <strong class="block truncate text-12 font-[600]">{{ title }}</strong>
         <small class="mt-3 block truncate text-10 text-muted">{{ caption }}</small>

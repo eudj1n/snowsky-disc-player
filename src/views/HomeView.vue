@@ -25,6 +25,8 @@ import { recentlyPlayedAlbums } from '../domain/history'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
 import { connection } from '../stores/connection'
+import { autoPlaylists } from '../stores/autoPlaylists'
+import ForYouSection from './ForYouSection.vue'
 import { albumCover } from '../stores/enrichment'
 import { history, loadHistory, recentSourcesShown } from '../stores/history'
 import { isDisliked } from '../stores/disliked'
@@ -190,6 +192,7 @@ const heroLines = computed<[string, string]>(() =>
           :caption="tile.caption"
           :to="tile.to"
           :cover="tile.cover"
+          :art="tile.art ?? null"
           :open-label="t('open_item', { name: tile.title })"
           :play-label="tile.play ? t('play_item', { name: tile.title }) : null"
           @play="tile.play && playFrom(tile.play)"
@@ -214,6 +217,8 @@ const heroLines = computed<[string, string]>(() =>
         />
       </CoverRow>
     </section>
+    <!-- Combined-009: the automatic playlists, made for you (owner, 2026-09-30). -->
+    <ForYouSection v-if="autoPlaylists.available" />
     <SectionHeading :title="t('your_albums')" :subtitle="t('the_music_you_always_come_back_to')">
       <UiTextButton icon="arrow" @click="router.push('/albums')">{{ t('all_albums') }}</UiTextButton>
     </SectionHeading>

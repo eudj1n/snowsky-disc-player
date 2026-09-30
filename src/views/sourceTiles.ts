@@ -10,6 +10,8 @@ import { findGenre } from '../domain/genre'
 import type { PlaySource } from '../domain/history'
 import type { SelectionTarget } from '../gateway/selection'
 import { t } from '../i18n'
+import { listBackground } from '../domain/listArt'
+import { autoPlaylists } from '../stores/autoPlaylists'
 import { albumCover, coverFor } from '../stores/enrichment'
 import { favorites, genres, trackByPath } from '../stores/library'
 
@@ -23,6 +25,8 @@ export interface SourceTileModel {
   caption: string
   to: RouteLocationRaw
   cover: Blob | null
+  /** An automatic playlist's cover background (combined-009). */
+  art?: string
   play: SelectionTarget | null
 }
 
@@ -71,8 +75,12 @@ export function sourceTile(source: PlaySource, path: string): SourceTileModel | 
         key: `list:${source.name}`,
         title: source.name,
         caption: `${t('kind_auto_playlist')} · ${t('track_count', { count: source.count })}`,
-        to: '/playlists',
-        cover: playedCover(path),
+        to: { name: 'list', params: { name: source.name } },
+        cover: null,
+        art: listBackground(
+          autoPlaylists.lists.find((list) => list.name === source.name)?.kind ?? 'most_played',
+          source.name,
+        ),
         play: { kind: 'list', scope: 'external', name: source.name },
       }
     case 'playlist':
@@ -113,7 +121,10 @@ export function sourceNote(source: PlaySource | null): { text: string; to: Route
     case 'playlist':
       return { text: `${t('kind_playlist')} · ${source.playlist.name}`, to: playlistRoute(source.playlist.id) }
     case 'list':
-      return { text: `${t('kind_auto_playlist')} · ${source.name}`, to: '/playlists' }
+      return {
+        text: `${t('kind_auto_playlist')} · ${source.name}`,
+        to: { name: 'list', params: { name: source.name } },
+      }
     case 'favorites':
       return { text: t('favorites'), to: '/favorites' }
     default:

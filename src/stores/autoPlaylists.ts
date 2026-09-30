@@ -12,7 +12,9 @@ import { computed, reactive, readonly, watch } from 'vue'
 import {
   autoEntries,
   autoPlaylist,
+  GLOBAL_KINDS,
   listName,
+  localDay,
   sameEntries,
   type AutoKind,
   type AutoPlaylist,
@@ -24,7 +26,7 @@ import { t } from '../i18n'
 import { connection, http } from './connection'
 import { disliked, isDisliked } from './disliked'
 import { history, loadHistory, nameLists } from './history'
-import { library, tracks } from './library'
+import { favorites, library, tracks } from './library'
 import { pairing, pairingToken } from './pairing'
 import { toast } from './ui'
 
@@ -69,8 +71,24 @@ const ready = computed(
   () => state.available && library.status === 'ready' && history.loaded && (disliked.available || !connection.store),
 )
 function input() {
-  return { tracks: tracks.value, most: history.most, plays: history.plays, disliked: isDisliked }
+  return {
+    tracks: tracks.value,
+    most: history.most,
+    plays: history.plays,
+    disliked: isDisliked,
+    favorites: favorites.value,
+    day: localDay(),
+  }
 }
+
+/** What each list that is not an artist's would hold now (the Home offers of lists not made yet). */
+export const autoPreviews = computed<Record<GlobalKind, string[]>>(
+  () =>
+    Object.fromEntries(GLOBAL_KINDS.map((kind) => [kind, ready.value ? autoEntries({ kind }, input()) : []])) as Record<
+      GlobalKind,
+      string[]
+    >,
+)
 
 /** Publishes the known lists to the history, so Recently played names their plays. */
 function name(): void {
@@ -143,8 +161,8 @@ function guard(): string | null {
   return token
 }
 
-/** Makes one automatic list: its record first, then its file. */
-async function make(list: AutoPlaylist): Promise<boolean> {
+/** Makes one automatic list: its record first, then its file; `quiet` leaves the success to what follows (a play). */
+async function make(list: AutoPlaylist, quiet = false): Promise<boolean> {
   const token = guard()
   if (!token) return false
   // The owner's own list of that name is never taken over.
@@ -174,7 +192,7 @@ async function make(list: AutoPlaylist): Promise<boolean> {
     state.entries[list.name] = entries
     state.files = (await readLists(http, SCOPE).catch(() => null)) ?? state.files
     name()
-    toast('auto_made', false, { name: list.name })
+    if (!quiet) toast('auto_made', false, { name: list.name })
     return true
   } finally {
     state.busy = false
@@ -189,8 +207,8 @@ export function makeArtistList(artist: string): Promise<boolean> {
 }
 
 /** One of the lists that are not an artist's (the Playlists page). */
-export function makeKindList(kind: GlobalKind): Promise<boolean> {
-  return make({ name: listName(t(`auto_name_${kind}`)), kind, at: now() })
+export function makeKindList(kind: GlobalKind, quiet = false): Promise<boolean> {
+  return make({ name: listName(t(`auto_name_${kind}`)), kind, at: now() }, quiet)
 }
 
 /** Removes a list: its file first (a record left behind only makes the next update write it again), then its record. */

@@ -18,7 +18,9 @@ export const selection = operation
 export async function play(target: SelectionTarget): Promise<SelectionOutcome | 'busy' | 'superseded' | 'dropped'> {
   const code =
     target.kind === 'list'
-      ? '0101'
+      ? target.position === undefined
+        ? '0101'
+        : '0100'
       : target.kind === 'folder'
         ? target.file === undefined
           ? '0101'

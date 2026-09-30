@@ -854,6 +854,13 @@ test('keeps an artist’s most played on the player as an M3U list and plays it 
   await page.goto('/#/playlists')
   const row = page.getByTestId('auto-playlists').locator('li[data-kind="artist_most_played"]').filter({ hasText: name })
   await verified(page, () => row.getByRole('button', { name: `Play ${name}` }).click())
+  // From its page, a row plays the list from that entry (`0100` with its position).
+  if (list.entries.length > 1) {
+    await row.getByRole('link', { name }).click()
+    await expect(page.getByRole('heading', { level: 1, name })).toBeVisible()
+    await verified(page, () => page.getByRole('table').getByRole('row').nth(2).getByRole('button').first().click())
+    await page.goto('/#/playlists')
+  }
   // Removed again: the file and the store's record.
   page.once('dialog', (dialog) => void dialog.accept())
   await row.getByRole('button', { name: `Remove: ${name}` }).click()

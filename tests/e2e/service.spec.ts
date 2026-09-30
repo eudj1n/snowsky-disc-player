@@ -295,7 +295,7 @@ async function reportedPlay(page: Page, plays: () => Promise<Record<string, unkn
 test('keeps automatic playlists on the player: an artist’s most played and the Playlists page’s lists', async ({
   page,
   request,
-}) => {
+}, info) => {
   test.setTimeout(90_000)
   const errors = watchErrors(page)
   const lists = async () =>
@@ -321,12 +321,10 @@ test('keeps automatic playlists on the player: an artist’s most played and the
     const row = (kind: string) => section.locator(`li[data-kind="${kind}"]`)
     await row('most_played').getByRole('button', { name: 'Add to the player' }).click()
     await expect(row('most_played')).toContainText(/Most played\s*\d+ tracks?/)
-    await row('recently_added').getByRole('button', { name: 'Add to the player' }).click()
-    await expect(row('recently_added')).toContainText(/Recently added\s*\d+ tracks/)
     await row('not_played_lately').getByRole('button', { name: 'Add to the player' }).click()
     await expect(status(page, 'Nothing to put in it yet')).toBeVisible()
     await expect(row('artist_most_played')).toContainText('Most played · Forma')
-    expect(await lists()).toEqual(['Most played', 'Most played · Forma', 'Recently added'])
+    expect(await lists()).toEqual(['Most played', 'Most played · Forma'])
 
     // Nothing changed since: an update writes nothing.
     await section.getByTestId('auto-refresh').click()
@@ -345,12 +343,35 @@ test('keeps automatic playlists on the player: an artist’s most played and the
     const title = file.replace(/^\d+\s*/, '').replace(/\.[a-z0-9]+$/, '')
     await expect(page.getByTestId('track-title')).toContainText(title.slice(0, 5))
 
+    // Home: made for you. The daily mix is not on the player yet and looks the same: listening writes it
+    // there first and plays it, one tap (owner, 2026-09-30).
+    await expect(status(page, 'Done. Verified on DISC.')).toBeHidden({ timeout: 10_000 })
+    await page.goto('/#/')
+    const mix = page.getByTestId('for-you').locator('article[data-kind="daily_mix"]')
+    if (info.project.name === 'phone') {
+      // Touch screens have no hover button: the card opens the list, which plays from there.
+      await mix.getByRole('link', { name: 'Open Daily mix' }).click()
+      await page.getByTestId('list-play').click()
+    } else {
+      await mix.hover()
+      await mix.getByRole('button', { name: 'Play Daily mix' }).click()
+    }
+    await expect(status(page, 'Done. Verified on DISC.')).toBeVisible({ timeout: 15_000 })
+    expect(await lists()).toContain('Daily mix')
+    // Not made yet, from its page: its tracks first, Listen writes and plays it, and the page becomes its own.
+    await page.goto(`/#/list/${encodeURIComponent('Recently added')}?kind=recently_added`)
+    await expect(page.getByRole('table').getByRole('row').nth(1)).toBeVisible()
+    await page.getByTestId('list-play').click()
+    await expect(status(page, 'Done. Verified on DISC.')).toBeVisible({ timeout: 15_000 })
+    await expect(page).toHaveURL(/#\/list\/Recently%20added$/)
+
+    await page.goto('/#/playlists')
     // Removed after a confirmation: the file and the record go.
     page.once('dialog', (dialog) => void dialog.accept())
     await row('recently_added').getByRole('button', { name: 'Remove: Recently added' }).click()
     await expect(status(page, '“Recently added” is removed from the player')).toBeVisible()
     await expect(row('recently_added').getByRole('button', { name: 'Add to the player' })).toBeVisible()
-    expect(await lists()).toEqual(['Most played', 'Most played · Forma'])
+    expect(await lists()).toEqual(['Daily mix', 'Most played', 'Most played · Forma'])
     await disconnect(page)
   } finally {
     await request.delete('/__mock/lists')

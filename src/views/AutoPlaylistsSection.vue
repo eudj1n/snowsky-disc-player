@@ -6,8 +6,10 @@
  * player from its first entry; "Update now" brings every list up to date.
  */
 import { computed } from 'vue'
+import ListArt from '../components/artwork/ListArt.vue'
 import SectionHeading from '../components/common/SectionHeading.vue'
 import { GLOBAL_KINDS, type AutoPlaylist, type GlobalKind } from '../domain/autoPlaylists'
+import { listBackground } from '../domain/listArt'
 import { locale, t } from '../i18n'
 import { autoPlaylists, kindList, makeKindList, refreshAutoPlaylists, removeAutoList } from '../stores/autoPlaylists'
 import { pairing } from '../stores/pairing'
@@ -29,6 +31,8 @@ const rows = computed<Row[]>(() => [
     .filter((list) => list.kind === 'artist_most_played')
     .map((list) => ({ kind: null, list, artist: list.artist ?? null })),
 ])
+const rowTitle = (row: Row) => row.list?.name ?? t(`auto_name_${row.kind ?? 'most_played'}`)
+const rowKind = (row: Row) => row.list?.kind ?? row.kind ?? 'most_played'
 const count = (list: AutoPlaylist) => autoPlaylists.entries[list.name]?.length ?? null
 const busy = computed(() => autoPlaylists.busy || autoPlaylists.refreshing || !pairing.paired)
 const updated = computed(() =>
@@ -65,10 +69,17 @@ function remove(list: AutoPlaylist): void {
         :class="CARD_ROW"
         :data-kind="row.kind ?? 'artist_most_played'"
       >
+        <span class="size-44 shrink-0 overflow-hidden rounded-8" :class="{ 'opacity-45 saturate-[.55]': !row.list }">
+          <ListArt :title="rowTitle(row)" :background="listBackground(rowKind(row), rowTitle(row))" thumb />
+        </span>
         <div class="min-w-0 flex-1">
-          <strong class="block truncate text-13 font-semibold">{{
-            row.list?.name ?? t(`auto_name_${row.kind ?? 'most_played'}`)
-          }}</strong>
+          <RouterLink
+            v-if="row.list"
+            :to="{ name: 'list', params: { name: row.list.name } }"
+            class="block truncate text-13 font-semibold hover:underline"
+            >{{ row.list.name }}</RouterLink
+          >
+          <strong v-else class="block truncate text-13 font-semibold">{{ rowTitle(row) }}</strong>
           <p class="m-0 mt-2 truncate text-11 text-muted">
             <template v-if="row.list && count(row.list) !== null">{{
               t('track_count', { count: count(row.list) ?? 0 })

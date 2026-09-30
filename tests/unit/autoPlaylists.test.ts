@@ -5,6 +5,7 @@ import {
   autoPlaylist,
   listable,
   listName,
+  localDay,
   RECENT_PLAYS,
   sameEntries,
 } from '../../src/domain/autoPlaylists'
@@ -117,6 +118,30 @@ describe('automatic playlists', () => {
       '/tmp/sdcard/o2.flac',
       '/tmp/sdcard/o1.flac',
     ])
+  })
+
+  it('draws a daily mix: half loved, half rarely heard, the same all day and another the next', () => {
+    const tracks = Array.from({ length: 120 }, (_, i) => track(`/tmp/sdcard/m${String(i)}.flac`))
+    // Loved: 20 played often and 10 favorites; 90 others, played at most once, or twice (not fresh).
+    const most = [
+      ...Array.from({ length: 20 }, (_, i) => record(`/tmp/sdcard/m${String(i)}.flac`, 5, i)),
+      record('/tmp/sdcard/m100.flac', 2, 1),
+      record('/tmp/sdcard/m101.flac', 1, 1),
+    ]
+    const favorites = tracks.slice(20, 30)
+    const input = { tracks, most, plays: [], disliked: none, favorites, day: '2026-09-30' }
+    const mix = autoEntries({ kind: 'daily_mix' }, input)
+    expect(mix).toHaveLength(AUTO_SIZE)
+    expect(new Set(mix).size).toBe(AUTO_SIZE)
+    // m100, played twice, is loved too; m101, played once, is fresh.
+    const loved = new Set([...tracks.slice(0, 30).map((t) => t.path), '/tmp/sdcard/m100.flac'])
+    expect(mix.filter((path) => loved.has(path))).toHaveLength(25)
+    expect(autoEntries({ kind: 'daily_mix' }, input)).toEqual(mix)
+    expect(autoEntries({ kind: 'daily_mix' }, { ...input, day: '2026-10-01' })).not.toEqual(mix)
+    // Too little history: the loved half is made up from the rest.
+    const early = autoEntries({ kind: 'daily_mix' }, { ...input, most: [], favorites: [] })
+    expect(early).toHaveLength(AUTO_SIZE)
+    expect(localDay(new Date(2026, 8, 30, 23, 59))).toBe('2026-09-30')
   })
 
   it('names lists as a FAT card keeps them', () => {

@@ -1568,6 +1568,22 @@ browser on its own.
       passed, the emulator acceptance with release `2026.09.30-039adb5` and
       the service's card catalogs (`install-catalog`) on the guest: 35
       desktop cases, 28 on stock.
+- [x] The daily mix (owner, 2026-09-30, the fourth list that is not an
+      artist's): half loved (played twice or more, and the favorites), half
+      played at most once, drawn and shuffled by the local date, so it is
+      the same all day and written once a day.
+- [x] "Made for you" on Home (owner, 2026-09-30, after Apple Music's cards):
+      the four lists as tall cards with covers of their own (a soft CSS
+      gradient per kind, the name large, the `disc.` mark, the artists it
+      holds); a card opens the list's page and plays from its button. A list
+      not on the player yet looks the same: listening (the card's button,
+      Listen or a row on its page) writes it to the player first and plays
+      it, one tap (owner: no separate add step); one with nothing to hold is
+      left out. The list page (`/list/<name>`) shows its tracks, plays the
+      list on the player from the start or from a row (`0100` with the
+      entry's position) or in this browser, and removes it; the Playlists
+      section keeps adding and removing; the same cover shows there and in
+      Recently played.
 - [x] On the owner's card (2026-09-30, the owner's go-ahead, storage mode):
       `Apps/Disc Player` replaced by `2026.09.30-039adb5` (87 files) and
       `install-catalog` wrote `.disc/catalog/queries.json` (the image's own,

@@ -26,7 +26,7 @@ export type SectionName = (typeof SECTIONS)[number]['name']
 export function sectionOf(name: unknown): SectionName {
   if (name === 'album') return 'albums'
   if (name === 'artist') return 'artists'
-  if (name === 'playlist') return 'playlists'
+  if (name === 'playlist' || name === 'list') return 'playlists'
   if (name === 'genre') return 'genres'
   if (name === 'cardFiles' || name === 'cardTrash') return 'card'
   if (name === 'disliked') return 'favorites'
@@ -51,6 +51,8 @@ const routes: RouteRecordRaw[] = [
   { path: '/album/:name/:artist?', name: 'album', component: () => import('./views/AlbumView.vue') },
   { path: '/artist/:name', name: 'artist', component: () => import('./views/ArtistView.vue') },
   { path: '/playlist/:id(\\d+)', name: 'playlist', component: () => import('./views/PlaylistView.vue') },
+  // An automatic playlist (an M3U list of the page's, combined-009), by its name.
+  { path: '/list/:name', name: 'list', component: () => import('./views/ListView.vue') },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
