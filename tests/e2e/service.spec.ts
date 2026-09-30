@@ -219,8 +219,9 @@ test('draws what plays in this browser as the disc visualizer', async ({ page },
   await expect(visualizer).toContainText(await bar.getByTestId('track-title').innerText())
   // The analyser hears the mock's tones and the canvas fills the screen.
   await expect(visualizer).toHaveAttribute('data-live', 'true', { timeout: 10_000 })
+  // The whole layout viewport: classic scrollbars (Linux, Windows) keep their stable gutter outside it.
   const box = await page.getByTestId('visualizer-canvas').boundingBox()
-  expect(box?.width).toBe(page.viewportSize()?.width)
+  expect(box?.width).toBe(await page.evaluate(() => document.documentElement.clientWidth))
   // Space pauses this browser's playback, not the player's.
   await page.keyboard.press('Space')
   await expect(visualizer.getByTestId('visualizer-toggle')).toHaveAttribute('aria-label', 'Play')
