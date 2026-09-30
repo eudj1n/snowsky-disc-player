@@ -71,6 +71,10 @@ onBeforeUnmount(() => document.removeEventListener('keydown', handleShortcut))
 watchEffect(() => {
   document.documentElement.dataset.player = barVisible.value ? 'shown' : 'hidden'
 })
+// A full-window overlay leaves the page behind it without a scrollbar or its gutter (styles/main.css).
+watchEffect(() => {
+  document.documentElement.classList.toggle('overlay-open', ui.karaoke || ui.visualizer)
+})
 </script>
 
 <template>

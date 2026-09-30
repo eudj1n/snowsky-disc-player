@@ -556,6 +556,12 @@
     overflow: hidden;
     overscroll-behavior: none;
   }
+  /* Karaoke and the visualizer cover the whole window: the page behind them keeps no scrollbar
+   * gutter, so classic scrollbars (Linux, Windows) leave no strip at their right edge (2026-10-01). */
+  html.overlay-open {
+    scrollbar-gutter: auto;
+    overflow: hidden;
+  }
   .modal-open body {
     position: fixed;
     top: var(--dialog-scroll-y);

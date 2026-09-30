@@ -219,9 +219,11 @@ test('draws what plays in this browser as the disc visualizer', async ({ page },
   await expect(visualizer).toContainText(await bar.getByTestId('track-title').innerText())
   // The analyser hears the mock's tones and the canvas fills the screen.
   await expect(visualizer).toHaveAttribute('data-live', 'true', { timeout: 10_000 })
-  // The whole layout viewport: classic scrollbars (Linux, Windows) keep their stable gutter outside it.
+  // The whole window: the page behind drops its scrollbar gutter, so classic scrollbars (Linux, Windows)
+  // leave no strip at the right edge.
   const box = await page.getByTestId('visualizer-canvas').boundingBox()
-  expect(box?.width).toBe(await page.evaluate(() => document.documentElement.clientWidth))
+  expect(box?.width).toBe(page.viewportSize()?.width)
+  await expect(page.locator('html')).toHaveClass(/overlay-open/)
   // Space pauses this browser's playback, not the player's.
   await page.keyboard.press('Space')
   await expect(visualizer.getByTestId('visualizer-toggle')).toHaveAttribute('aria-label', 'Play')
@@ -241,6 +243,7 @@ test('draws what plays in this browser as the disc visualizer', async ({ page },
   await expect(title).toHaveText(first)
   await page.keyboard.press('Escape')
   await expect(visualizer).toBeHidden()
+  await expect(page.locator('html')).not.toHaveClass(/overlay-open/)
   // V opens it again; on the player's side there is nothing to draw.
   await page.keyboard.press('v')
   await expect(visualizer).toBeVisible()
