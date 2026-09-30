@@ -1541,9 +1541,9 @@ browser on its own.
   watch lets pass the documented 409 of a data query whose stock table a
   scan dropped (`resume_point` after the first scan).
 - [x] On the owner's card (2026-09-30, the owner's go-ahead, storage mode):
-  `Apps/Disc Player` replaced by `2026.09.30-b8ce251` (84 files) with the
-  service's installer, the three test lists of the M3U research removed from
-  `Playlists/` (the folder stays for the automatic lists), the card ejected.
+      `Apps/Disc Player` replaced by `2026.09.30-b8ce251` (84 files) with the
+      service's installer, the three test lists of the M3U research removed from
+      `Playlists/` (the folder stays for the automatic lists), the card ejected.
 
 ## Requests for the next service build
 
