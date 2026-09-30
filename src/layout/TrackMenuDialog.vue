@@ -11,6 +11,7 @@ import { useRouter } from 'vue-router'
 import Artwork from '../components/artwork/Artwork.vue'
 import { coverFor } from '../stores/enrichment'
 import { t } from '../i18n'
+import { queueContext } from '../domain/history'
 import { playInBrowser } from '../stores/browser'
 import { connection } from '../stores/connection'
 import { library, trackByPath } from '../stores/library'
@@ -115,7 +116,9 @@ async function choose(id: string): Promise<void> {
   if (!current) return
   if (id === 'play' && current.play) await playFrom(current.play)
   if (id === 'dislike') await toggleDislike(current.track)
-  if (id === 'browser') playInBrowser([current.track])
+  // One file, no queue: the history keeps its path (Recently played names no source for it).
+  if (id === 'browser' && current.track.path)
+    playInBrowser([current.track], 0, queueContext([current.track.path], { type: null }))
   if (id === 'add') openPlaylistDialog({ mode: 'add', tracks: [{ ...current.track }], title: current.track.title })
   if (id === 'remove' && current.playlist)
     openPlaylistDialog({ mode: 'remove', playlist: current.playlist, track: { ...current.track } })

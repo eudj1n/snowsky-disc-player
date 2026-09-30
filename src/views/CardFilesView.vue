@@ -1,8 +1,10 @@
 <script setup lang="ts">
 /**
  * A small file manager for the player's card (owner, round 16): its folders
- * as stock's transfer browser lists them, with what the library knows about
- * the music below each (tracks, measured size, the album they form). Creates
+ * as the service lists them in one request, every visible file with its size
+ * (combined-009; stock's transfer browser before), with what the library
+ * knows about the music below each (tracks, measured size, the album they
+ * form). Creates
  * a folder and adds music into the folder shown; deleting, renaming and
  * moving stay in USB storage mode (the service denies stock's file deletion
  * and stock has no rename).
@@ -54,13 +56,15 @@ const folder = computed(() => folderParts(typeof route.query.folder === 'string'
 const folderTo = (path: string) => ({ name: 'cardFiles', query: path ? { folder: path } : {} })
 
 const listing = ref<FolderListing | null>(null)
+/** Combined-009 lists the card itself; earlier images through stock's transfer browser. */
+const serviceListing = computed(() => connection.historyWrites !== null)
 const status = ref<'loading' | 'ready' | 'failed'>('loading')
 let request = 0
 async function load(): Promise<void> {
   const current = ++request
   status.value = 'loading'
   try {
-    const result = await listFolder(http, folder.value, cardChangedSinceListing())
+    const result = await listFolder(http, folder.value, cardChangedSinceListing(), serviceListing.value)
     if (current !== request) return
     listing.value = result
     status.value = 'ready'
@@ -83,7 +87,7 @@ const rows = computed(() =>
     if (entry.folder) return { entry, path, stats: folderStats(tracks.value, enrichment.files, path), track: null }
     const card = CARD_ROOT + path
     const track = byPath.value.get(card)?.[0] ?? null
-    return { entry, path, stats: null, track, size: enrichment.files[card]?.bytes ?? null }
+    return { entry, path, stats: null, track, size: enrichment.files[card]?.bytes ?? entry.bytes ?? null }
   }),
 )
 const here = computed(() => folderStats(tracks.value, enrichment.files, folder.value))
@@ -119,11 +123,19 @@ function activate(row: Row): void {
       : { kind: 'folder', folder: folder.value, file: row.entry.name },
   )
 }
-// The files shown are measured (once, remembered) so their sizes appear.
+// Stock's listing has no sizes: the files shown are measured (once, remembered) so they appear.
 watch(
-  () => rows.value.flatMap((row) => (row.track ? [row.track] : [])),
+  () => rows.value.flatMap((row) => (row.track && row.entry.bytes == null ? [row.track] : [])),
   (shown) => wantSizes(shown),
 )
+/** A file that is not a library track: its kind's icon (the service names kinds). */
+function fileIcon(entry: Row['entry']): 'album' | 'lyrics' | 'playlist' | 'card' | 'music' {
+  if (entry.image) return 'album'
+  if (entry.kind === 'lyrics') return 'lyrics'
+  if (entry.playlist) return 'playlist'
+  if (entry.kind === 'other') return 'card'
+  return 'music'
+}
 const meta = computed(() => {
   if (status.value !== 'ready') return null
   const parts = [t('folder_entries', { count: rows.value.length })]
@@ -167,7 +179,7 @@ async function create(): Promise<void> {
     await context.pace()
     context.guard()
     context.attempted()
-    return createFolder(http, token, parent, wanted)
+    return createFolder(http, token, parent, wanted, serviceListing.value)
   }).catch(() => 'not-sent' as const)
   if (outcome === 'busy' || outcome === 'no-session') {
     toast(outcome === 'busy' ? 'please_wait_for_the_current_request' : 'pair_to_control')
@@ -290,7 +302,7 @@ function addHere(): void {
       >
         <UiIcon v-if="row.entry.folder" name="folder" class="size-18" />
         <Artwork v-else-if="row.track" :title="row.track.album ?? row.track.title" :cover="coverFor(row.track)" />
-        <UiIcon v-else :name="row.entry.image ? 'album' : 'music'" class="size-16" />
+        <UiIcon v-else :name="fileIcon(row.entry)" class="size-16" />
         <span
           v-if="canPlay(row)"
           aria-hidden="true"

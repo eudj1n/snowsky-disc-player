@@ -19,6 +19,12 @@ export interface About {
     plays: number | null
     records: number | null
     trash: number | null
+    /**
+     * Combined-009: plays the service could not write since it started, when,
+     * and the last reason ("card full", "card away", "newer schema",
+     * "input/output" or "failed"); null on earlier images.
+     */
+    writes: { failed: number; lastFailure: number | null; lastSuccess: number | null; reason: string | null } | null
   } | null
   restarts: string[]
   log: { at: number; message: string }[]
@@ -34,6 +40,7 @@ export function parseAbout(value: unknown): About | null {
   const image = v.image as Record<string, unknown> | null
   const page = (v.page ?? {}) as Record<string, unknown>
   const database = v.database as Record<string, unknown> | null
+  const writes = (database?.writes ?? null) as Record<string, unknown> | null
   return {
     version: service.version,
     build: text(service.build) ?? 'unknown',
@@ -53,6 +60,14 @@ export function parseAbout(value: unknown): About | null {
           plays: number(database.plays),
           records: number(database.records),
           trash: number(database.trash),
+          writes: writes
+            ? {
+                failed: number(writes.failed) ?? 0,
+                lastFailure: number(writes.lastFailure),
+                lastSuccess: number(writes.lastSuccess),
+                reason: text(writes.reason),
+              }
+            : null,
         }
       : null,
     restarts: Array.isArray(v.restarts) ? v.restarts.flatMap((line) => (typeof line === 'string' ? [line] : [])) : [],

@@ -55,6 +55,8 @@ const props = defineProps<{
     /** "{rate}" stands for the output rate. */
     resampled: string
     playingFrom: string
+    /** The button that shows an observed cover in full size. */
+    coverFullSize: string
   }
   /** Where playback comes from, when known. */
   context?: { text: string; to: RouteLocationRaw | null } | null
@@ -82,6 +84,8 @@ const emit = defineEmits<{
   volume: [value: number]
   mute: []
   navigate: []
+  /** Show the observed cover in full size. */
+  cover: []
 }>()
 </script>
 
@@ -97,7 +101,19 @@ const emit = defineEmits<{
         leave-active-class="transition-opacity duration-150 ease-in motion-reduce:transition-none"
         leave-to-class="opacity-0"
       >
-        <Artwork :key="identity ?? 'none'" :title="playback.track?.title ?? null" :cover="cover" />
+        <!-- An observed cover opens in full size (owner, 2026-09-30); the typographic sleeve does not. -->
+        <button
+          v-if="cover"
+          :key="identity ?? 'none'"
+          type="button"
+          class="group block size-full cursor-zoom-in p-0"
+          :aria-label="labels.coverFullSize"
+          data-testid="now-cover-open"
+          @click="emit('cover')"
+        >
+          <Artwork :title="playback.track?.title ?? null" :cover="cover" />
+        </button>
+        <Artwork v-else :key="identity ?? 'none'" :title="playback.track?.title ?? null" :cover="cover" />
       </Transition>
     </div>
     <p class="flex items-center justify-between gap-10 text-11 text-muted">

@@ -133,6 +133,14 @@ const player = {
   infoMissing: new Set(),
   /** Media info reads per path, for tests that count them (/__mock/info-reads). */
   infoReads: new Map(),
+  /** The image the mock stands for: '009' (the installed one) or '008' (/__mock/image?version=008). */
+  image: '009',
+  /** The service's last play write failed (/__mock/history-failing), as with a full card. */
+  historyFailing: false,
+  /** Walks of the whole card (/api/card/tree), for tests that count them (/__mock/tree-reads). */
+  treeReads: 0,
+  /** Plays this page reported from a browser (/__mock/browser-plays). */
+  browserPlays: [],
   state: 1,
   list: TRACKS.filter((track) => track.ALBUM === 'Afterglow'),
   index: 0,
@@ -302,6 +310,7 @@ const server = createServer((request, response) => {
       favoriteAny: true,
       store: true,
       trash: true,
+      ...(player.image === '009' ? { historyWrites: player.historyFailing ? 'failing' : 'ok' } : {}),
     }
     return send(response, 200, JSON.stringify(health), 'application/json')
   }
@@ -324,8 +333,133 @@ const server = createServer((request, response) => {
     }
     return send(response, 200, JSON.stringify(facts), 'application/json')
   }
+  if (url.pathname === '/api/history' && request.method === 'POST') {
+    // Combined-009: a play in a browser, with the SN and a fresh request ID; the service stamps its start.
+    if (player.image !== '009') return send(response, 405, 'The history is read-only\n')
+    if (!guarded(request, response)) return
+    void readBody(request).then((text) => {
+      let play
+      try {
+        play = JSON.parse(text)
+      } catch {
+        return send(response, 400, 'The body is {"path","seconds","title"?,"ctx"?}\n')
+      }
+      const known = ['path', 'seconds', 'title', 'ctx']
+      if (!play || Object.keys(play).some((key) => !known.includes(key)) || typeof play.path !== 'string')
+        return send(response, 400, 'The body is {"path","seconds","title"?,"ctx"?}\n')
+      if (!TRACKS.some((track) => track.PATH === play.path)) return send(response, 404, 'No such music file\n')
+      if (!Number.isInteger(play.seconds) || play.seconds < 1 || play.seconds > 86400)
+        return send(response, 400, 'Seconds out of range\n')
+      const t = Math.floor(Date.now() / 1000) - play.seconds
+      const ctx = {
+        type: null,
+        count: 0,
+        hash: null,
+        album: null,
+        artist: null,
+        genre: null,
+        folder: null,
+        ...play.ctx,
+      }
+      HISTORY.push({ v: 1, t, path: play.path, title: play.title ?? null, s: play.seconds, source: 'browser', ctx })
+      player.browserPlays.push(play)
+      return send(
+        response,
+        201,
+        JSON.stringify({ id: HISTORY.length, t, s: play.seconds, source: 'browser' }),
+        'application/json',
+      )
+    })
+    return
+  }
   if (url.pathname === '/api/history') {
     return send(response, 200, JSON.stringify({ records: HISTORY, truncated: false }), 'application/json')
+  }
+  // Combined-009: the card in one request (a folder, or the whole tree with audio facts).
+  if (url.pathname === '/api/card/folder' || url.pathname.startsWith('/api/card/folder/')) {
+    if (player.image !== '009') return send(response, 404, 'Not found\n')
+    const folder = url.pathname
+      .slice('/api/card/folder'.length)
+      .split('/')
+      .filter(Boolean)
+      .map((part) => decodeURIComponent(part))
+      .join('/')
+    const entries = folderEntries(folder)
+      .filter((entry) => !entry.name.startsWith('.'))
+      .sort((a, b) => (a.name < b.name ? -1 : 1))
+      .map((entry) => {
+        if (entry.dir) return { name: entry.name, dir: true, modified: 1790000000 }
+        const path = `/tmp/sdcard/${folder ? `${folder}/` : ''}${entry.name}`
+        const info = mediaRoute('info', path)
+        const bytes = info.status === 200 ? JSON.parse(info.body).bytes : 40_000
+        const kind = entry.image ? 'image' : /\.lrc$/i.test(entry.name) ? 'lyrics' : 'audio'
+        return { name: entry.name, dir: false, kind, bytes, modified: 1790000000 }
+      })
+    if (!entries.length && folder && !TRACKS.some((track) => track.PATH.startsWith(`/tmp/sdcard/${folder}/`)))
+      return send(response, 404, 'No such folder\n')
+    return send(
+      response,
+      200,
+      JSON.stringify({ path: folder, entries, count: entries.length, truncated: false }),
+      'application/json',
+    )
+  }
+  if (url.pathname === '/api/card/tree') {
+    if (player.image !== '009') return send(response, 404, 'Not found\n')
+    player.treeReads++
+    const gone = (path) => [...trash.removed].some((removed) => path === removed || path.startsWith(`${removed}/`))
+    const paths = [...new Set([...TRACKS.map((track) => track.PATH), ...player.uploads.map((upload) => upload.path)])]
+      .filter((path) => !gone(path) && !player.infoMissing.has(path))
+      .sort()
+    const folders = new Set()
+    const entries = []
+    for (const path of paths) {
+      const relative = path.slice('/tmp/sdcard/'.length)
+      const parts = relative.split('/')
+      for (let i = 1; i < parts.length; i++) {
+        const folder = parts.slice(0, i).join('/')
+        if (!folders.has(folder)) {
+          folders.add(folder)
+          entries.push({ path: folder, dir: true, modified: 1790000000 })
+        }
+      }
+      const info = mediaRoute('info', path)
+      if (info.status !== 200) {
+        entries.push({
+          path: relative,
+          bytes: 40_000,
+          modified: 1790000000,
+          kind: /\.lrc$/i.test(path) ? 'lyrics' : 'image',
+        })
+        continue
+      }
+      const facts = JSON.parse(info.body)
+      entries.push({
+        path: relative,
+        bytes: facts.bytes,
+        modified: 1790000000,
+        kind: 'audio',
+        format: facts.format,
+        sampleRate: facts.sampleRate,
+        bitDepth: facts.bitDepth,
+        channels: facts.channels,
+        bitRate: null,
+        durationMs: facts.durationMs,
+        year: facts.tags?.date ? String(facts.tags.date).slice(0, 4) : null,
+      })
+    }
+    const files = entries.filter((entry) => !entry.dir)
+    const tree = {
+      root: '/tmp/sdcard',
+      path: '',
+      entries,
+      folders: folders.size,
+      files: files.length,
+      bytes: files.reduce((sum, entry) => sum + entry.bytes, 0),
+      truncated: false,
+      elapsedMs: 3,
+    }
+    return send(response, 200, JSON.stringify(tree), 'application/json')
   }
   const favorite = /^\/api\/favorites\/(\d+)$/.exec(url.pathname)
   if (favorite) {
@@ -343,7 +477,14 @@ const server = createServer((request, response) => {
   }
   if (url.pathname === '/api/about') {
     const about = {
-      service: { name: 'disc-native-probe', version: '0.8.0', build: 'mock', api: 1, uptime: 3600, supervised: true },
+      service: {
+        name: 'disc-native-probe',
+        version: player.image === '009' ? '0.9.0' : '0.8.0',
+        build: 'mock',
+        api: 1,
+        uptime: 3600,
+        supervised: true,
+      },
       image: {
         schema: 1,
         variant: 'usb-engineering',
@@ -354,11 +495,18 @@ const server = createServer((request, response) => {
       card: { owned: true },
       database: {
         state: 'ok',
-        schema: 4,
+        schema: player.image === '009' ? 5 : 4,
         bytes: 90112,
         plays: HISTORY.length,
         records: 0,
         trash: trash.entries.length,
+        ...(player.image === '009'
+          ? {
+              writes: player.historyFailing
+                ? { failed: 2, lastFailure: 1790000200, lastSuccess: 1790000100, reason: 'card full' }
+                : { failed: 0, lastFailure: null, lastSuccess: 1790000100, reason: null },
+            }
+          : {}),
       },
       restarts: ['1790000000 restarted after signal 11'],
       log: [{ t: 1790000100, m: 'Skip rule: skipped to the next track' }],
@@ -551,6 +699,28 @@ const server = createServer((request, response) => {
   // Stock dropped its queue table: a scan removed a file of the current queue (V2.57).
   if (url.pathname === '/__mock/queue-dropped' && request.method === 'POST') {
     player.queueDropped = url.searchParams.get('on') === '1'
+    return send(response, 204, '')
+  }
+  // The image the mock stands for: 008 has no card listing, browser plays or write diagnostics.
+  if (url.pathname === '/__mock/image' && request.method === 'POST') {
+    player.image = url.searchParams.get('version') === '008' ? '008' : '009'
+    return send(response, 204, '')
+  }
+  // The service's last play write failed, as with a full card.
+  if (url.pathname === '/__mock/history-failing' && request.method === 'POST') {
+    player.historyFailing = url.searchParams.get('on') === '1'
+    return send(response, 204, '')
+  }
+  if (url.pathname === '/__mock/tree-reads' && request.method === 'GET') {
+    return send(response, 200, JSON.stringify({ reads: player.treeReads }), 'application/json')
+  }
+  if (url.pathname === '/__mock/browser-plays' && request.method === 'GET') {
+    return send(response, 200, JSON.stringify(player.browserPlays), 'application/json')
+  }
+  // Takes the reported plays out of the history again, so the shared mock is as it was.
+  if (url.pathname === '/__mock/browser-plays' && request.method === 'DELETE') {
+    for (let i = HISTORY.length - 1; i >= 0; i--) if (HISTORY[i].source === 'browser') HISTORY.splice(i, 1)
+    player.browserPlays = []
     return send(response, 204, '')
   }
   // The counts answer busy this many times, as while stock scans after USB storage mode.

@@ -224,11 +224,70 @@ test("shows the service's diagnostics in the connection dialog", async ({ page }
   await openConnection(page)
   const diagnostics = page.getByRole('dialog').getByTestId('diagnostics')
   await diagnostics.getByText('Diagnostics', { exact: true }).click()
-  await expect(diagnostics).toContainText('0.8.0 · build mock')
+  await expect(diagnostics).toContainText('0.9.0 · build mock')
   await expect(diagnostics).toContainText('usb-engineering · 2.57')
   await expect(diagnostics).toContainText('from the card · 2026.09.29')
-  await expect(diagnostics).toContainText('ok, schema 4')
+  await expect(diagnostics).toContainText('ok, schema 5')
+  await expect(diagnostics.getByTestId('about-writes')).toHaveText('every play written')
   await expect(diagnostics).toContainText('restarted after signal 11')
   await expect(diagnostics).toContainText('Skip rule: skipped to the next track')
   await page.keyboard.press('Escape')
 })
+
+test('says when the service cannot write plays, and why', async ({ page, request }) => {
+  test.skip(external, 'Needs the mock gateway')
+  await request.post('/__mock/history-failing?on=1')
+  try {
+    await english(page)
+    // Home says it where Recently played stands still.
+    await expect(page.getByTestId('history-failing')).toContainText('not recording plays right now')
+    await openConnection(page)
+    const diagnostics = page.getByRole('dialog').getByTestId('diagnostics')
+    await diagnostics.getByText('Diagnostics', { exact: true }).click()
+    await expect(diagnostics.getByTestId('about-writes')).toHaveText('2 plays not written: the card is full')
+    await page.keyboard.press('Escape')
+  } finally {
+    await request.post('/__mock/history-failing?on=0')
+  }
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Recently played' })).toBeVisible()
+  await expect(page.getByTestId('history-failing')).toBeHidden()
+})
+
+test('puts a play in this browser into the play history with its album', async ({ page, request }) => {
+  test.skip(external, 'Needs the mock gateway')
+  test.setTimeout(60_000)
+  const errors = watchErrors(page)
+  const plays = async () => (await (await request.get('/__mock/browser-plays')).json()) as Record<string, unknown>[]
+  const before = (await plays()).length
+  try {
+    await reportedPlay(page, plays, before)
+  } finally {
+    await request.delete('/__mock/browser-plays')
+  }
+  expect(errors).toEqual([])
+})
+
+async function reportedPlay(page: Page, plays: () => Promise<Record<string, unknown>[]>, before: number) {
+  await english(page)
+  // The report needs the serial number, as every change does.
+  await connectAndPair(page)
+  await page.goto('/#/album/Blue%20Hours/Mira%20Sol')
+  await page.getByTestId('album-browser').click()
+  const bar = page.getByTestId('browser-player')
+  await expect(bar.getByTestId('browser-toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 10_000 })
+  // Half of the mock's 30-second file is a play: one report, as the observer would record it.
+  await expect.poll(async () => (await plays()).length, { timeout: 30_000 }).toBe(before + 1)
+  const play = (await plays()).at(-1) as { path: string; seconds: number; title?: string; ctx: Record<string, unknown> }
+  expect(play.path).toMatch(/^\/tmp\/sdcard\//)
+  expect(play.seconds).toBeGreaterThanOrEqual(15)
+  expect(play.title).toBeUndefined()
+  expect(play.ctx).toMatchObject({ type: 3, album: 'Blue Hours', artist: 'Mira Sol', genre: null, folder: null })
+  expect(play.ctx.hash).toMatch(/^[0-9a-f]{16}$/)
+  await bar.getByTestId('browser-stop').click()
+  // Recently played names the album first.
+  await page.goto('/#/')
+  const recent = page.getByRole('list', { name: 'Recently played' })
+  await expect(recent.getByRole('listitem').first()).toContainText('Blue Hours')
+  await disconnect(page)
+}

@@ -19,6 +19,12 @@ export interface Health {
   store?: boolean
   /** Card files go to the service's trash instead of being deleted (combined-008). */
   trash?: boolean
+  /**
+   * Whether the last play the service tried to write reached its database
+   * (combined-009, which also takes plays in a browser and lists the card in
+   * one request); absent before.
+   */
+  historyWrites?: 'ok' | 'failing'
 }
 
 export interface DataResult {

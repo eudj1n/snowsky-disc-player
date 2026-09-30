@@ -253,6 +253,36 @@ test('browses the saved copy while the player is unreachable and recovers', asyn
   await expect(page.getByRole('heading', { name: 'Blue Hours' })).toBeVisible()
 })
 
+test('shows an observed cover in full size, never the typographic sleeve', async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  await page.goto('/#/album/Inner%20Space')
+  const open = page.getByTestId('cover-open')
+  await expect(open).toBeVisible({ timeout: 15_000 })
+  await open.click()
+  const viewer = page.getByTestId('cover-viewer')
+  await expect(viewer).toBeVisible()
+  // The image at its own pixels, named by the album.
+  await expect(viewer.getByTestId('cover-size')).toHaveText('4 × 4 px')
+  await expect(viewer).toContainText('Inner Space')
+  await page.keyboard.press('Escape')
+  await expect(viewer).toBeHidden()
+  // An album without a cover shows its sleeve, which opens nothing.
+  await page.goto('/#/album/Two%20Rooms')
+  await expect(page.getByRole('heading', { level: 1, name: 'Two Rooms' })).toBeVisible()
+  await expect(page.getByTestId('cover-open')).toHaveCount(0)
+  // The playing track's cover in the listening panel too.
+  await connectAndPair(page)
+  await page.getByRole('button', { name: 'Open Now Playing panel' }).click()
+  const panel = page.getByRole('complementary', { name: 'Player view' })
+  await panel.getByTestId('now-cover-open').click({ timeout: 15_000 })
+  await expect(viewer).toBeVisible()
+  await expect(viewer.getByTestId('cover-size')).toHaveText('4 × 4 px')
+  await viewer.getByRole('button', { name: 'Close' }).click()
+  await expect(viewer).toBeHidden()
+  await disconnect(page)
+})
+
 test('loads covers and missing durations from the card media', async ({ page }) => {
   test.skip(external, 'Needs the mock collection')
   await english(page)
@@ -514,6 +544,14 @@ test.describe('player controls on the mock', () => {
     await expect(panel.getByRole('button', { name: 'Now Playing', exact: true })).toBeVisible()
     await expect(panel.getByRole('button', { name: 'Lyrics', exact: true })).toBeVisible()
     await expect(panel.getByTestId('track-facts')).toBeVisible()
+    // The facts are folded until asked for (owner, 2026-09-30).
+    const toggle = panel.getByTestId('facts-toggle')
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    await expect(panel.locator('#track-facts-list')).toHaveCount(0)
+    await toggle.click()
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    await expect(panel.locator('#track-facts-list [data-fact]').first()).toBeVisible()
+    await toggle.click()
     await expect(panel.getByTestId('panel-queue')).toBeAttached()
     if (info.project.name === 'phone') {
       await expect(panel.getByRole('button', { name: 'Next track' })).toBeVisible()
@@ -785,6 +823,7 @@ test.describe('player controls on the mock', () => {
     // The first links are the track's credit; the facts may name the album artist again.
     for (const name of ['Kite Lines', 'Mira Sol'])
       await expect(panel.getByRole('link', { name, exact: true }).first()).toBeVisible()
+    await panel.getByTestId('facts-toggle').click()
     await expect(panel.getByTestId('track-facts').locator('[data-fact=album-artist]')).toHaveText('Kite Lines')
     await panel.getByRole('button', { name: 'Lyrics', exact: true }).click()
     await expect(panel.getByRole('link', { name: 'Mira Sol', exact: true })).toBeVisible()
@@ -1701,8 +1740,10 @@ test('shows the track stock remembers when it reports nothing, and Play continue
   await disconnect(page)
 })
 
-test('shows what takes space on the card by format, album and artist', async ({ page }) => {
+test('shows what takes space on the card by format, album and artist', async ({ page, request }) => {
   test.skip(external, 'Needs the mock collection')
+  const walks = async () => ((await (await request.get('/__mock/tree-reads')).json()) as { reads: number }).reads
+  const before = await walks()
   await english(page)
   // The connection dialog's card bar leads to the view.
   await openConnection(page)
@@ -1712,8 +1753,9 @@ test('shows what takes space on the card by format, album and artist', async ({ 
     .click()
   await expect(page).toHaveURL(/#\/card$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Card' })).toBeVisible()
-  // Every library file is measured once through the media route.
+  // Combined-009: every library file is measured in one walk of the card.
   await expect(page.getByText(/^Measured (\d+) of \1 files$/)).toBeVisible({ timeout: 30_000 })
+  expect(await walks()).toBe(before + 1)
   await expect(page.getByTestId('card-usage')).toContainText('used of 64 GB')
   await expect(page.getByTestId('card-usage')).toContainText('18 GB free')
   const formats = page.getByTestId('space-formats')
@@ -1733,11 +1775,42 @@ test('shows what takes space on the card by format, album and artist', async ({ 
   await expect(page).toHaveURL(/#\/album\/Blue%20Hours/)
 })
 
+test('a file the card walk did not find counts as unreadable, and the card is walked once', async ({
+  page,
+  request,
+}) => {
+  test.skip(external, 'Needs the mock gateway')
+  const walks = async () => ((await (await request.get('/__mock/tree-reads')).json()) as { reads: number }).reads
+  await request.post('/__mock/info-missing?title=Last%20Exit')
+  try {
+    await english(page)
+    await page.goto('/#/card')
+    await expect(page.getByText(/^Measured (\d+) of \d+ files · 1 file could not be read$/)).toBeVisible({
+      timeout: 30_000,
+    })
+    const after = await walks()
+    // Measured and remembered: a later visit walks the card no more.
+    await page.waitForTimeout(500)
+    await page.reload()
+    await page.goto('/#/albums')
+    await page.goto('/#/card')
+    await expect(page.getByText(/· 1 file could not be read$/)).toBeVisible({ timeout: 30_000 })
+    expect(await walks()).toBe(after)
+    // Measure again walks it once more.
+    await page.getByRole('button', { name: 'Measure again' }).click()
+    await expect.poll(walks).toBe(after + 1)
+  } finally {
+    await request.post('/__mock/info-missing?title=')
+  }
+})
+
 test('remembers a file the media route could not measure instead of asking on every visit', async ({
   page,
   request,
 }) => {
   test.skip(external, 'Needs the mock gateway')
+  // An image before combined-009: no card walk, one media read per file.
+  await request.post('/__mock/image?version=008')
   await request.post('/__mock/info-missing?title=Last%20Exit')
   try {
     await english(page)
@@ -1758,6 +1831,7 @@ test('remembers a file the media route could not measure instead of asking on ev
     expect(await reads()).toBe(before)
   } finally {
     await request.post('/__mock/info-missing?title=')
+    await request.post('/__mock/image?version=009')
   }
 })
 

@@ -1465,10 +1465,13 @@ browser on its own.
       beginning and then seeks (whole seconds), so a short start is heard;
       muting it around the switch is out (two more commands, and an
       unconfirmed restore would leave it silent).
-- [ ] Plays in this browser go into the play history (owner, 2026-09-29):
-      the observer sees only the player's open files, so the page applies its
-      rule (30 s, or half with at least 5 s; a CUE image per track) and sends
-      each play to a history route of the next image (see below).
+- [x] Plays in this browser go into the play history (owner, 2026-09-29;
+      done 2026-09-30 on combined-009): the observer sees only the player's
+      open files, so the page applies its rule (30 s, or half with at least
+      5 s; a CUE image per track) and sends each play once to
+      `POST /api/history` with the queue it came from (an album: type 3, its
+      paths' hash), the serial number and a fresh request ID; never sent
+      again. Recently played then names the album.
 - [x] (Done 2026-09-29, service `docs/m3u.md`; the player powers off after
       its timer only on battery, owner.) First, research on the guest (service plan): the queue over a long
       pause, sleep and a restart with memory play; `0100` on the current
@@ -1503,6 +1506,33 @@ browser on its own.
       `2026.09.29-f4ca12d` (zip `34035a35…`) on the service's MIPS build
       `a64ce31ab892`, 34 desktop cases passed, 27 of them on stock. The same
       zip is the image's own Disc Player in the combined-009 candidate.
+
+## Using combined-009 (2026-09-30, the owner's first three items)
+
+- [x] The Card section in one request (the owner's proposal): Files lists a
+      folder through `/api/card/folder` (every visible file with its size and
+      kind, no stock pages, no stock memory of the last folder); Space
+      measures the whole card with one `/api/card/tree` walk, which also
+      gives every audio file's format, quality, duration and year, in place
+      of one media read per file (about 780 on the owner's card). A library
+      file a complete walk did not find counts as unreadable. Images before
+      combined-009 keep the earlier reads (the health flag `historyWrites`
+      tells them apart).
+- [x] Plays in this browser go into the play history (see the switch
+      section above).
+- [x] History write diagnostics: `historyWrites` in the health and
+      `database.writes` in the diagnostics ("2 plays not written: the card is
+      full"); Home says it where Recently played stands still.
+- [x] Found on the way: the measured sizes and qualities and the saved
+      history copy never reached IndexedDB (a reactive proxy cannot be
+      cloned; the write failed silently), so every visit measured the card
+      again. Raw copies are saved now, and the Space view waits for what the
+      browser remembered before measuring.
+- [x] Owner's small items (2026-09-30): the track facts ("About this
+      track") are folded until asked for; an observed cover or artist
+      picture opens in full size on a click (the album and artist headers,
+      the listening panel), drawn on a canvas under the CSP, with its pixel
+      size; the typographic sleeve opens nothing.
 
 ## Requests for the next service build
 
@@ -1582,12 +1612,13 @@ image; card-only items (catalog or query additions) are marked as such.
       `"history": true`. The diagnostics should report a failed write (and
       a card too full to write), so the page can say why Recently played
       stands still. Needs a new image.
-- [ ] **Record plays in this browser in the play history** (owner,
-      2026-09-29, with the player/browser switch): the observer never sees
-      files the audio route serves. A history write route with the SN, a
-      fresh request ID and pacing (see the service plan). Needs a new image.
-- [ ] These requests, the M3U list route and the history write diagnostics
-      go into the service's combined-009 image (owner, 2026-09-29; see the
+- [x] (Combined-009, used by the page 2026-09-30.) **Record plays in this
+      browser in the play history** (owner, 2026-09-29, with the
+      player/browser switch): the observer never sees files the audio route
+      serves. A history write route with the SN, a fresh request ID and
+      pacing (see the service plan).
+- [x] (Installed 2026-09-30.) These requests, the M3U list route and the
+      history write diagnostics go into the service's combined-009 image (owner, 2026-09-29; see the
       service plan). Before it, the guest's card got 224 MB more room and the
       publisher keeps 8 MiB free for the service's database (`--prune` on
       the guest), so page releases no longer fill the card and stop the

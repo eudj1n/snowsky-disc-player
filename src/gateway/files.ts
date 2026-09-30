@@ -1,6 +1,7 @@
 /**
- * Card folders through stock's transfer browser, as the reference file
- * browser reads them (snowsky-disc-qemu docs/protocol/http-api.md):
+ * Card folders: the service's own listing (combined-009, `/api/card/folder`,
+ * every visible file with its size), else stock's transfer browser, as the
+ * reference file browser reads it (snowsky-disc-qemu docs/protocol/http-api.md):
  * `GET /dir/tmp/sdcard/…/` pages of at most 200 records with `total-num`;
  * an empty or missing folder answers an empty 200 without a count. Creating a
  * folder is `POST /dir/tmp/sdcard/…/Name` (a catalog-admitted mutation);
@@ -8,6 +9,7 @@
  */
 import { cardFolder, type FolderEntry } from '../domain/files'
 import { CARD_ROOT } from '../domain/imports'
+import { readCardFolder } from './card'
 import type { GatewayHttp } from './http'
 
 const PAGE = 200
@@ -41,7 +43,19 @@ function entry(value: unknown): FolderEntry | null {
  * the card again; the service's `.disc` folder is always there. `fresh` asks
  * for that after the service changed the card behind stock's back.
  */
-export async function listFolder(http: GatewayHttp, folder: string, fresh = false): Promise<FolderListing> {
+export async function listFolder(
+  http: GatewayHttp,
+  folder: string,
+  fresh = false,
+  service = false,
+): Promise<FolderListing> {
+  // The service (combined-009) reads the card itself: no stock memory to refresh, no pages; a missing folder is empty.
+  if (service) {
+    const own = await readCardFolder(http, folder)
+    return own
+      ? { entries: own.entries, total: own.entries.length, truncated: own.truncated }
+      : { entries: [], total: null, truncated: false }
+  }
   if (fresh) {
     await http.stockRead(`/dir${CARD_ROOT}.disc/`, { 'start-pos': '0', 'num-max': '1' }).catch(() => undefined)
   }
@@ -71,6 +85,7 @@ export async function createFolder(
   token: string,
   parent: string,
   name: string,
+  service = false,
 ): Promise<FolderOutcome> {
   let existed: boolean
   try {
@@ -83,7 +98,7 @@ export async function createFolder(
     return 'uncertain'
   }
   try {
-    const listing = await listFolder(http, parent)
+    const listing = await listFolder(http, parent, false, service)
     const found = listing.entries.some((item) => item.folder && item.name === name)
     if (!found) return 'uncertain'
     return existed ? 'exists' : 'created'

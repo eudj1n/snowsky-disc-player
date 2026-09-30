@@ -58,6 +58,12 @@ interface ConnectionModel {
   /** The service keeps the card catalog's collections and a trash (combined-008). */
   store: boolean
   trash: boolean
+  /**
+   * Combined-009: whether the service's last play write succeeded ('failing'
+   * once one failed, a full card for one); null on an image without it, which
+   * also has neither the browser play route nor the card listing routes.
+   */
+  historyWrites: 'ok' | 'failing' | null
   connection: ConnectionState
   identity: PlayerIdentity | null
   /** currentVolume from the last 0501 read (0..120); null when unknown. */
@@ -73,6 +79,7 @@ const state = reactive<ConnectionModel>({
   favoriteAny: false,
   store: false,
   trash: false,
+  historyWrites: null,
   connection: 'disconnected',
   identity: null,
   volume: null,
@@ -111,6 +118,8 @@ export async function probeGateway(): Promise<boolean> {
     state.favoriteAny = health.favoriteAny === true
     state.store = health.store === true
     state.trash = health.trash === true
+    state.historyWrites =
+      health.historyWrites === 'ok' || health.historyWrites === 'failing' ? health.historyWrites : null
   } catch {
     state.gateway = false
     state.notice = 'gateway_unreachable'
@@ -121,6 +130,17 @@ export async function probeGateway(): Promise<boolean> {
   if (commands.status === 'fulfilled') catalog.value = commands.value
   if (reachable.status === 'fulfilled') origins.value = reachable.value
   return true
+}
+
+/** Health again, quietly: the history write state changes while the page is open (a card that filled up). */
+export async function refreshHealth(): Promise<void> {
+  try {
+    const health = await http.health()
+    state.historyWrites =
+      health.historyWrites === 'ok' || health.historyWrites === 'failing' ? health.historyWrites : null
+  } catch {
+    // Unreachable for now: the last state stays.
+  }
 }
 
 /**

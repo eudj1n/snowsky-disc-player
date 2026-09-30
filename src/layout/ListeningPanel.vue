@@ -37,7 +37,7 @@ import {
 } from '../stores/lyrics'
 import UiPillButton from '../ui/UiPillButton.vue'
 import { playerOptions } from '../stores/playerOptions'
-import { closePanel, showPanelSection, ui } from '../stores/ui'
+import { closePanel, showCover, showPanelSection, ui } from '../stores/ui'
 import { disliked, isDisliked, toggleDislike } from '../stores/disliked'
 import UiIconButton from '../ui/UiIconButton.vue'
 import { usePlaybackContext } from './usePlaybackContext'
@@ -121,7 +121,14 @@ const labels = computed(() => ({
   format: t('format_from_filename'),
   resampled: t('output_resampled'),
   playingFrom: t('playing_from'),
+  coverFullSize: t('cover_full_size', { name: coverName.value }),
 }))
+const nowCover = computed(() => (playback.current.track ? coverFor(playback.current.track) : null))
+/** What the full-size cover is named by: the album, else the track. */
+const coverName = computed(() => playback.current.track?.album || playback.current.track?.title || '')
+function showNowCover(): void {
+  if (nowCover.value) showCover(nowCover.value, coverName.value)
+}
 const lyricsMessage = computed(() => {
   if (!playback.current.track) return t('lyrics_idle')
   if (lyrics.status === 'loading') return t('lyrics_loading')
@@ -228,7 +235,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
       <NowPlayingDetails
         :playback="playback.current"
         :output="device.facts?.output ?? null"
-        :cover="playback.current.track ? coverFor(playback.current.track) : null"
+        :cover="nowCover"
         :status="status"
         :position-ms="observations.positionMs"
         :identity="player.identity.value"
@@ -250,6 +257,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         @volume="player.onVolume"
         @mute="player.onMute"
         @navigate="onNavigate"
+        @cover="showNowCover"
       >
         <TrackFacts
           v-if="facts"

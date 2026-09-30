@@ -1,20 +1,28 @@
 /**
- * The card's folders as the file manager shows them (owner, round 16): stock's
- * transfer browser lists music, covers and playlists folder by folder; the
- * library adds what it knows about the music below a folder. Folders are
+ * The card's folders as the file manager shows them (owner, round 16): the
+ * service lists every visible file of a folder with its size (combined-009;
+ * before it, stock's transfer browser listed music, covers and playlists);
+ * the library adds what it knows about the music below a folder. Folders are
  * addressed relative to the card root ('' is the root itself).
  */
 import type { FileFacts } from './space'
 import { CARD_ROOT } from './imports'
 import type { LibraryTrack } from './track'
 
-/** One entry of stock's folder listing (`/dir/…`). */
+/** What the service's card listing calls a file, by its extension (combined-009). */
+export type CardKind = 'audio' | 'lyrics' | 'image' | 'cue' | 'playlist' | 'other'
+
+/** One entry of a folder listing: the service's (combined-009) or stock's (`/dir/…`). */
 export interface FolderEntry {
   name: string
   folder: boolean
   image: boolean
   cue: boolean
   playlist: boolean
+  /** The service's kind of a file; absent in stock's listing and for folders. */
+  kind?: CardKind | null
+  /** The file's size from the service's listing; absent in stock's. */
+  bytes?: number | null
 }
 
 /** A folder's parts from the card root: '' → [], 'A/B' → ['A', 'B']. */

@@ -12,11 +12,21 @@
  * Starting or resuming playback here pauses the player when it plays (owner,
  * 2026-09-29), with a guarded pause in the background; the browser's own
  * sound starts at once, inside the listener's click.
+ *
+ * Plays here go into the play history (owner, 2026-09-29; combined-009): the
+ * service's observer sees only the player's open files, so this page counts
+ * the sound it played by the observer's rule and reports each play once, with
+ * the queue it came from, the serial number and a fresh request ID. A report
+ * is never sent again: its outcome may be uncertain.
  */
 import { computed, reactive, readonly } from 'vue'
+import { playCounts, type PlayContext } from '../domain/history'
 import type { Track } from '../domain/track'
 import { audioUrl } from '../gateway/media'
+import { connection, http } from './connection'
 import { pausePlayer } from './controls'
+import { loadHistory } from './history'
+import { pairingToken } from './pairing'
 import { toast } from './ui'
 
 interface BrowserTrack {
@@ -27,6 +37,8 @@ interface BrowserTrack {
   /** A CUE track starts at its offset within the image (ms). */
   offsetMs: number
   durationMs: number | null
+  /** A CUE track's title: the history counts an image per track. */
+  cueTitle: string | null
 }
 
 const state = reactive({
@@ -36,6 +48,8 @@ const state = reactive({
   position: 0,
   /** The current track's length (ms): a CUE track's own, a whole file's once the browser knows it. */
   lengthMs: null as number | null,
+  /** The queue the tracks came from (an album), for the play history. */
+  context: null as PlayContext | null,
 })
 export const browserPlayback = readonly(state)
 export const browserTrack = computed(() => state.queue[state.index] ?? null)
@@ -43,6 +57,44 @@ export const browserTrack = computed(() => state.queue[state.index] ?? null)
 let audio: HTMLAudioElement | null = null
 let context: AudioContext | null = null
 let analyser: AnalyserNode | null = null
+
+/* The sound heard of the current track since it started: advances of the playing element only, not seeks. */
+let heardMs = 0
+let lastTime: number | null = null
+let reported = false
+
+function listen(): void {
+  const current = browserTrack.value
+  if (!current || !audio) return
+  const now = audio.currentTime
+  const step = lastTime === null ? 0 : now - lastTime
+  lastTime = now
+  if (audio.paused || step <= 0 || step > 1.5) return
+  heardMs += step * 1000
+  if (!reported && playCounts(heardMs, state.lengthMs)) {
+    reported = true
+    void report(current, heardMs)
+  }
+}
+
+/** One play into the service's history; nothing where the image takes none or the page is not paired. */
+async function report(track: BrowserTrack, heard: number): Promise<void> {
+  const token = pairingToken()
+  if (!connection.history || connection.historyWrites === null || !token) return
+  const body = {
+    path: track.path,
+    seconds: Math.max(1, Math.floor(heard / 1000)),
+    ...(track.cueTitle ? { title: track.cueTitle } : {}),
+    ...(state.context ? { ctx: state.context } : {}),
+  }
+  try {
+    const reply = await http.serviceChange('/api/history', { method: 'POST', token, body })
+    // Recently played and the play counts follow.
+    if (reply.status === 201) void loadHistory()
+  } catch {
+    // Uncertain: never sent again.
+  }
+}
 
 function element(): HTMLAudioElement {
   if (audio) return audio
@@ -54,6 +106,7 @@ function element(): HTMLAudioElement {
     const current = browserTrack.value
     if (!current || !audio) return
     state.position = Math.max(0, audio.currentTime * 1000 - current.offsetMs)
+    listen()
     // A CUE track ends where the next one starts.
     if (current.durationMs !== null && state.position >= current.durationMs) advance()
   })
@@ -62,6 +115,7 @@ function element(): HTMLAudioElement {
     if (current && current.durationMs === null && audio && Number.isFinite(audio.duration))
       state.lengthMs = audio.duration * 1000
   })
+  audio.addEventListener('seeked', () => (lastTime = audio?.currentTime ?? null))
   audio.addEventListener('ended', () => advance())
   audio.addEventListener('error', () => {
     toast('browser_play_unsupported', true)
@@ -77,6 +131,9 @@ function start(): void {
   const url = audioUrl(current.path)
   if (!player.src.endsWith(url)) player.src = url
   player.currentTime = current.offsetMs / 1000
+  heardMs = 0
+  lastTime = null
+  reported = false
   state.position = 0
   state.lengthMs = current.durationMs ?? (Number.isFinite(player.duration) ? player.duration * 1000 : null)
   wakeGraph()
@@ -120,11 +177,16 @@ function wakeGraph(): void {
   if (context && context.state !== 'running') void context.resume().catch(() => undefined)
 }
 
-/** Plays tracks in this browser from the given one; a CUE track from its offset in the image. */
+/**
+ * Plays tracks in this browser from the given one; a CUE track from its offset
+ * in the image. `context` names the queue they came from for the history.
+ */
 export function playInBrowser(
   tracks: readonly Pick<Track, 'path' | 'title' | 'artist' | 'album' | 'durationMs' | 'cue' | 'cueOffsetMs'>[],
   from = 0,
+  context: PlayContext | null = null,
 ): void {
+  state.context = context
   state.queue = tracks.flatMap((track) =>
     track.path
       ? [
@@ -136,6 +198,7 @@ export function playInBrowser(
             offsetMs: track.cue ? (track.cueOffsetMs ?? 0) : 0,
             // A CUE track ends where its duration says; a whole file at its end.
             durationMs: track.cue ? track.durationMs : null,
+            cueTitle: track.cue ? track.title : null,
           },
         ]
       : [],
@@ -166,4 +229,5 @@ export function stopInBrowser(): void {
   state.playing = false
   state.position = 0
   state.lengthMs = null
+  state.context = null
 }

@@ -9,7 +9,7 @@ import { computed, watch } from 'vue'
 import ConnectionStatus from '../components/connection/ConnectionStatus.vue'
 import PairingForm from '../components/connection/PairingForm.vue'
 import { cardSpace, formatBytes } from '../domain/device'
-import { locale, t } from '../i18n'
+import { locale, t, type MessageKey } from '../i18n'
 import { about, loadAbout } from '../stores/about'
 import { connect, connection, disconnect } from '../stores/connection'
 import { device, refreshDevice } from '../stores/device'
@@ -78,6 +78,20 @@ const database = computed(() => {
     records: count(value.records),
     trash: count(value.trash),
   })
+})
+/** The service's reasons for a play it could not write (combined-009), as the page words them. */
+const WRITE_REASONS: Record<string, MessageKey> = {
+  'card full': 'about_writes_card_full',
+  'card away': 'about_writes_card_away',
+  'newer schema': 'about_writes_newer',
+  'input/output': 'about_writes_io',
+}
+const writes = computed(() => {
+  const value = about.about?.database?.writes
+  if (!value) return null
+  if (!value.failed) return { text: t('about_writes_ok'), failing: false }
+  const reason = t((value.reason && WRITE_REASONS[value.reason]) || 'about_writes_other')
+  return { text: t('about_writes_failed', { count: value.failed, reason }), failing: true }
 })
 const PAGE_SOURCE = { card: 'about_page_card', image: 'about_page_image', embedded: 'about_page_embedded' } as const
 
@@ -175,6 +189,10 @@ const status = computed(() => {
         <template v-if="database">
           <dt class="text-muted">{{ t('about_database') }}</dt>
           <dd class="m-0">{{ database }}</dd>
+        </template>
+        <template v-if="writes">
+          <dt class="text-muted">{{ t('about_writes') }}</dt>
+          <dd class="m-0" :class="{ 'text-accent': writes.failing }" data-testid="about-writes">{{ writes.text }}</dd>
         </template>
         <dt class="text-muted">{{ t('about_restarts') }}</dt>
         <dd class="m-0">

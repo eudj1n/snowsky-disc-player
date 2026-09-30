@@ -2,8 +2,9 @@
 /**
  * What takes space on the card (owner, round 16): the used space split into
  * the measured music and other files, then formats, the largest albums and
- * artists, and possible duplicates. Read-only; every file is measured once
- * through the media route and remembered in this browser.
+ * artists, and possible duplicates. Read-only; the whole card is measured in
+ * one request (combined-009; before it, one media read per file) and
+ * remembered in this browser.
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import Artwork from '../components/artwork/Artwork.vue'
@@ -17,7 +18,15 @@ import { albumSpace, artistSpace, byFormat, cardUsage, duplicates, playsByPath, 
 import { locale, t } from '../i18n'
 import { connection } from '../stores/connection'
 import { device, refreshDevice } from '../stores/device'
-import { albumCover, enrichment, forgetSizes, sizeUnreadable, wantSizes } from '../stores/enrichment'
+import {
+  albumCover,
+  enrichment,
+  enrichmentLoaded,
+  forgetSizes,
+  measureCard,
+  sizeUnreadable,
+  wantSizes,
+} from '../stores/enrichment'
 import { history, loadHistory } from '../stores/history'
 import { loadTrash, trash } from '../stores/trash'
 import { albums, library, tracks } from '../stores/library'
@@ -103,12 +112,27 @@ const meta = computed(() => {
   return unreadable.value ? `${measured} · ${t('space_unreadable', { count: unreadable.value })}` : measured
 })
 
-function measure(): void {
+/** CUE images: their files hold several tracks, whose durations come from the sheet. */
+const cueImages = computed(
+  () => new Set(tracks.value.flatMap((track) => (track.cue && track.path ? [track.path] : []))),
+)
+async function measure(): Promise<void> {
+  // What this browser measured before counts first.
+  await enrichmentLoaded()
+  if (complete.value) return
+  // Combined-009 walks the card once; earlier images answer null and are measured file by file.
+  if (connection.historyWrites !== null) {
+    const walked = await measureCard(
+      withPath.value.map((track) => track.path),
+      cueImages.value,
+    )
+    if (walked !== null) return
+  }
   wantSizes(withPath.value)
 }
 async function measureAgain(): Promise<void> {
   await forgetSizes()
-  measure()
+  await measure()
 }
 
 onMounted(() => {
@@ -120,7 +144,7 @@ onMounted(() => {
 watch(
   () => [library.status, connection.media, withPath.value.length] as const,
   ([status, media]) => {
-    if (status === 'ready' && media) measure()
+    if (status === 'ready' && media) void measure()
   },
   { immediate: true },
 )

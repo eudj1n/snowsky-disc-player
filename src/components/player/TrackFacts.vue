@@ -1,10 +1,16 @@
+<script lang="ts">
+import { ref } from 'vue'
+/** Folded by default (owner, 2026-09-30); opened or closed, it stays so for every track while the page lives. */
+const open = ref(false)
+</script>
+
 <script setup lang="ts">
 /**
  * The playing track's facts in the Now tab (owner, 2026-09-29): what is known
  * of it as a list of names and values (bit rate, channels, year, genre, disc
  * and track, album artist, the file's size and folder, plays, when added),
  * linking the genre, the album artist and the folder in the file manager,
- * with the dislike action beside the heading.
+ * with the dislike action beside the heading. The heading unfolds the list.
  */
 import { computed } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
@@ -95,7 +101,23 @@ const rows = computed<Row[]>(() => {
 <template>
   <section class="mt-26" data-testid="track-facts" :aria-label="t('facts_heading')">
     <div class="mb-8 flex items-center justify-between gap-10">
-      <h3 class="m-0 text-10 font-[650] tracking-[1.8px] text-muted uppercase">{{ t('facts_heading') }}</h3>
+      <h3 class="m-0">
+        <button
+          type="button"
+          :aria-expanded="open"
+          aria-controls="track-facts-list"
+          data-testid="facts-toggle"
+          class="-mx-6 flex items-center gap-6 rounded-8 px-6 py-3 text-10 font-[650] tracking-[1.8px] text-muted uppercase hover:text-ink"
+          @click="open = !open"
+        >
+          {{ t('facts_heading') }}
+          <UiIcon
+            name="chevron"
+            class="size-10 !stroke-2 transition-transform duration-150 motion-reduce:transition-none"
+            :class="open ? '' : '-rotate-90'"
+          />
+        </button>
+      </h3>
       <button
         v-if="disliked !== null && disliked !== undefined"
         type="button"
@@ -108,7 +130,7 @@ const rows = computed<Row[]>(() => {
         <UiIcon name="ban" class="size-14" />{{ dislikeLabel }}
       </button>
     </div>
-    <dl class="m-0 grid grid-cols-[minmax(92px,auto)_minmax(0,1fr)] text-11">
+    <dl v-if="open" id="track-facts-list" class="m-0 grid grid-cols-[minmax(92px,auto)_minmax(0,1fr)] text-11">
       <template v-for="row in rows" :key="row.key">
         <dt class="border-t border-line/70 py-7 pr-14 text-muted">{{ row.label }}</dt>
         <dd

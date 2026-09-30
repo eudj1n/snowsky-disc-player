@@ -55,8 +55,18 @@ const state = reactive({
   karaoke: false,
   /** The visualizer: what plays in this browser, drawn full screen (2026-09-29). */
   visualizer: false,
+  /** A cover shown in full size (owner, 2026-09-30); only observed covers, never the typographic sleeve. */
+  cover: null as { blob: Blob; title: string } | null,
 })
 export const ui = readonly(state)
+
+export function showCover(blob: Blob, title: string): void {
+  state.cover = { blob, title }
+}
+
+export function closeCover(): void {
+  state.cover = null
+}
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined
 let toastId = 0

@@ -11,6 +11,7 @@
  * The `artwork` slot replaces the sleeve in both places (a genre's records). */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { sleeve, SLEEVE_TONES } from '../../domain/artwork'
+import { t } from '../../i18n'
 import UiIcon from '../../ui/UiIcon.vue'
 import Artwork from '../artwork/Artwork.vue'
 import type { HeadingAction } from './headingAction'
@@ -38,7 +39,8 @@ const titleSize = computed(() => {
   if (length <= 36) return 'text-38 tracking-[-1.3px] rail:text-30 phone:text-28'
   return 'text-30 tracking-[-0.9px] rail:text-26 phone:text-24'
 })
-const emit = defineEmits<{ sticky: [] }>()
+/** `cover`: show the observed cover (or artist picture) in full size. */
+const emit = defineEmits<{ sticky: []; cover: [] }>()
 const observed = ref<string | null>(null)
 watch(
   () => props.cover,
@@ -92,7 +94,18 @@ function toTop(): void {
       :class="artist ? 'rounded-full' : 'rounded-12'"
     >
       <slot name="artwork">
-        <Artwork :title="title" :artist="artist" :cover="cover" tone @tone="(color) => (observed = color)" />
+        <!-- An observed cover (or artist picture) opens in full size; the typographic sleeve does not. -->
+        <button
+          v-if="cover"
+          type="button"
+          class="group block size-full cursor-zoom-in p-0"
+          :aria-label="t('cover_full_size', { name: title })"
+          data-testid="cover-open"
+          @click="emit('cover')"
+        >
+          <Artwork :title="title" :artist="artist" :cover="cover" tone @tone="(color) => (observed = color)" />
+        </button>
+        <Artwork v-else :title="title" :artist="artist" :cover="cover" tone @tone="(color) => (observed = color)" />
       </slot>
     </div>
     <!-- As tall as the sleeve: the kind on its top edge, the actions on its bottom edge. -->

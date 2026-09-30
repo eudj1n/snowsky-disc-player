@@ -803,8 +803,17 @@ test('plays card files in this browser through the audio route, a CUE track from
   expect(errors).toEqual([])
 })
 
-test('pauses stock when playback starts in this browser', async ({ page }) => {
+test('pauses stock when playback starts in this browser, and records the play there', async ({ page }) => {
+  test.setTimeout(120_000)
   const errors = watchErrors(page)
+  // Combined-009: plays in a browser reach the service's history with their source and album.
+  const browserPlays = async () =>
+    (
+      (await (await page.request.get('/api/history')).json()) as {
+        records: { source?: string; path: string; ctx: { type: number | null; album: string | null } }[]
+      }
+    ).records.filter((record) => record.source === 'browser' && record.path.includes('/Kestrel - Harbor/'))
+  const before = (await browserPlays()).length
   await english(page)
   await connectAndPair(page)
   await page.goto('/#/album/Harbor/Kestrel')
@@ -815,6 +824,9 @@ test('pauses stock when playback starts in this browser', async ({ page }) => {
   await expect(page.getByTestId('browser-toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 30_000 })
   // Stock pauses: a guarded toggle, sent only while it played, confirmed by its own state.
   await expect(toggle).toHaveAttribute('aria-label', 'Play', { timeout: 30_000 })
+  // Half of the 25-second tone is a play: recorded once, by the service's clock, with the album.
+  await expect.poll(async () => (await browserPlays()).length, { timeout: 40_000 }).toBe(before + 1)
+  expect((await browserPlays()).at(-1)?.ctx).toMatchObject({ type: 3, album: 'Harbor' })
   await page.getByTestId('browser-stop').click()
   await disconnect(page)
   expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])

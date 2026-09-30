@@ -24,6 +24,7 @@ import { creditLabel } from '../domain/artist'
 import { recentlyPlayedAlbums } from '../domain/history'
 import { filterBy } from '../domain/search'
 import { t } from '../i18n'
+import { connection } from '../stores/connection'
 import { albumCover } from '../stores/enrichment'
 import { history, loadHistory, recentSourcesShown } from '../stores/history'
 import { isDisliked } from '../stores/disliked'
@@ -165,6 +166,15 @@ const heroLines = computed<[string, string]>(() =>
         </li>
       </ul>
     </section>
+    <!-- Combined-009: the service says when it could not write a play (a full card stopped the history once). -->
+    <p
+      v-if="connection.historyWrites === 'failing'"
+      role="status"
+      class="m-0 rounded-12 bg-soft px-14 py-10 text-12 text-accent"
+      data-testid="history-failing"
+    >
+      {{ t('history_writes_failing') }}
+    </p>
     <!-- The service's history: what the listener started, one tile shape for every kind. -->
     <section v-if="tiles.length" :aria-label="t('recently_played')">
       <SectionHeading :title="t('recently_played')" :subtitle="t('recently_played_subtitle')" />

@@ -33,7 +33,7 @@ import { history, loadHistory } from '../stores/history'
 import { albums, artists, tracks } from '../stores/library'
 import { isPinnedArtist, pins, togglePinArtist } from '../stores/pins'
 import { isPlaying, playback } from '../stores/playback'
-import { openTrackMenu, ui } from '../stores/ui'
+import { openTrackMenu, showCover, ui } from '../stores/ui'
 import UiCircleButton from '../ui/UiCircleButton.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
@@ -46,6 +46,11 @@ import { toggleCurrent } from './trackRows'
 const route = useRoute()
 const router = useRouter()
 const name = computed(() => String(route.params.name ?? ''))
+/** The artist's picture in full size, when there is one (never the sleeve). */
+function showArtistPicture(): void {
+  const picture = artistImage(name.value)
+  if (picture) showCover(picture, name.value)
+}
 const byId = computed(() => new Map(tracks.value.map((track) => [track.id, track])))
 
 /** How this artist is credited on an album: as its (track or album) artist, jointly, or not. */
@@ -133,6 +138,7 @@ function lines(album: Album) {
         artist
         :cover="artistImage(name)"
         :sticky-action="loading || !playable ? null : heading.action.value"
+        @cover="showArtistPicture"
         @sticky="heading.run"
       >
         <template #sticky>{{ t('album_count', { count: own.length }) }}</template>

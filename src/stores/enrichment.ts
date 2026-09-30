@@ -12,12 +12,14 @@
  * are remembered for a week so they are not asked again on every load.
  *
  * The card space view asks for every file's size and format the same way
- * (one metadata read per file, remembered until measured again).
+ * (one metadata read per file, remembered until measured again); since
+ * combined-009 one walk of the whole card gives them all (measureCard).
  */
-import { reactive, readonly } from 'vue'
+import { reactive, readonly, toRaw } from 'vue'
 import type { FileFacts } from '../domain/space'
 import type { Track } from '../domain/track'
 import { currentCover } from '../gateway/artwork'
+import { readCardTree } from '../gateway/card'
 import { mediaCover, mediaInfo } from '../gateway/media'
 import { currentPlayback, readPlayback } from '../gateway/playback'
 import type { GatewaySession } from '../gateway/session'
@@ -80,7 +82,20 @@ let noDuration: Record<string, number> = {}
 let noYear: Record<string, number> = {}
 let noQuality: Record<string, number> = {}
 
-export async function loadEnrichment(): Promise<void> {
+let loading: Promise<void> | null = null
+/** What this browser remembered; loaded once, when the page starts. */
+export function loadEnrichment(): Promise<void> {
+  loading ??= restore()
+  return loading
+}
+/**
+ * Resolves once what this browser remembered is loaded: a view that measures
+ * waits for it, or it would measure again what is known and have the result
+ * replaced by the older copy.
+ */
+export const enrichmentLoaded = (): Promise<void> => loading ?? Promise.resolve()
+
+async function restore(): Promise<void> {
   state.durations = (await cacheGet<Record<string, number>>(DURATIONS)) ?? {}
   state.albumCovers = (await cacheGet<Record<string, string>>(ALBUM_COVERS)) ?? {}
   state.scopedCovers = (await cacheGet<Record<string, string>>(SCOPED_COVERS)) ?? {}
@@ -192,9 +207,10 @@ function saveInfo(): void {
   void cacheSet(NO_DURATION, { ...noDuration })
   void cacheSet(YEARS, { ...state.years })
   void cacheSet(NO_YEAR, { ...noYear })
-  void cacheSet(QUALITIES, { ...state.qualities })
+  // Raw copies: IndexedDB cannot clone the reactive proxies of nested objects (it dropped them before 2026-09-30).
+  void cacheSet(QUALITIES, { ...toRaw(state.qualities) })
   void cacheSet(NO_QUALITY, { ...noQuality })
-  void cacheSet(FILES, { ...state.files })
+  void cacheSet(FILES, { ...toRaw(state.files) })
   void cacheSet(NO_SIZE, { ...state.unmeasured })
 }
 
@@ -262,6 +278,55 @@ export function wantSizes(tracks: readonly Pick<Track, 'path'>[]): void {
   if (!connection.media) return
   for (const track of tracks)
     if (track.path && !state.files[track.path] && !sizeUnreadable(track.path)) wantInfo(track.path)
+}
+
+let walking: Promise<boolean | null> | null = null
+/**
+ * The whole card in one request (combined-009): every audio file's size,
+ * format, quality, duration and year from the service's walk, in place of one
+ * media read per file. A library file a complete walk did not find is gone
+ * (unreadable). A CUE image's length is not its tracks', so it gives no
+ * duration. Null where the image has no such route (measure file by file),
+ * false when the walk failed (the view offers to measure again).
+ */
+export function measureCard(libraryPaths: readonly string[], cueImages: ReadonlySet<string>): Promise<boolean | null> {
+  walking ??= (async () => {
+    state.pending++
+    try {
+      await enrichmentLoaded()
+      const tree = await readCardTree(http)
+      if (!tree) return null
+      const now = Date.now()
+      const seen = new Set<string>()
+      for (const file of tree.files) {
+        if (!file.audio) continue
+        const { path } = file
+        const { durationMs, year, ...facts } = file.audio
+        seen.add(path)
+        foundFiles[path] = facts
+        if (cueImages.has(path)) {
+          // Its tracks' durations come from the sheet.
+        } else if (durationMs) found[path] = durationMs
+        else noDuration[path] = now
+        if (year) foundYears[path] = year
+        else noYear[path] = now
+        if (facts.sampleRate)
+          foundQualities[path] = { sampleRate: facts.sampleRate, bitDepth: facts.bitDepth, bitRate: facts.bitRate }
+        else noQuality[path] = now
+      }
+      // Found again: no longer unreadable.
+      state.unmeasured = Object.fromEntries(Object.entries(state.unmeasured).filter(([path]) => !seen.has(path)))
+      if (!tree.truncated) for (const path of libraryPaths) if (!seen.has(path)) missedFiles[path] = now
+      saveInfo()
+      return true
+    } catch {
+      return false
+    } finally {
+      state.pending--
+      walking = null
+    }
+  })()
+  return walking
 }
 
 /** Measures one track's file (the Now tab's facts), unless known or lately unreadable. */

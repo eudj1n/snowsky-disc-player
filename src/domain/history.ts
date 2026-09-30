@@ -206,6 +206,35 @@ export function pathsHash(paths: Iterable<string>): string {
   return sum.toString(16).padStart(16, '0')
 }
 
+/**
+ * A play counts as the service's observer counts one (combined-009 takes a
+ * browser's plays by the same rule): 30 s of sound, or half the track after
+ * at least 5 s.
+ */
+export function playCounts(heardMs: number, lengthMs: number | null): boolean {
+  return heardMs >= 30_000 || (lengthMs !== null && lengthMs > 0 && heardMs >= 5_000 && heardMs * 2 >= lengthMs)
+}
+
+/**
+ * The queue a play in this browser came from, described as the observer
+ * describes stock's (type, size and the hash of its paths), so Recently
+ * played names it the same way: an album is type 3.
+ */
+export function queueContext(
+  paths: readonly string[],
+  fields: { type: number | null; album?: string | null; artist?: string | null },
+): PlayContext {
+  return {
+    type: fields.type,
+    count: paths.length,
+    hash: paths.length ? pathsHash(paths) : null,
+    album: fields.album ?? null,
+    artist: fields.artist ?? null,
+    genre: null,
+    folder: null,
+  }
+}
+
 /** Where a play was started from, as the page names and opens it. */
 export type PlaySource =
   | { kind: 'album'; album: Album; scope: string | null }

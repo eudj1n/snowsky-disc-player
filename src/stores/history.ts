@@ -5,7 +5,7 @@
  * never fills. Read on demand and again after the playing track has had time
  * to count (30 s); kept in IndexedDB so the saved copy shows it offline.
  */
-import { computed, reactive, readonly, watch } from 'vue'
+import { computed, reactive, readonly, toRaw, watch } from 'vue'
 import {
   libraryNames,
   pathsHash,
@@ -22,7 +22,7 @@ import {
 } from '../domain/history'
 import { rowsOf } from '../gateway/http'
 import { cacheGet, cacheSet } from '../lib/idb'
-import { connection, http } from './connection'
+import { connection, http, refreshHealth } from './connection'
 import { albums, favorites, library, loadPlaylistTracks, tracks } from './library'
 import { playback } from './playback'
 
@@ -94,6 +94,7 @@ export function loadHistory(): Promise<void> {
   loading ??= (async () => {
     try {
       if (connection.history) {
+        if (connection.historyWrites !== null) void refreshHealth()
         state.plays = servicePlays(await http.history()).slice(-LIMIT)
         state.most = servicePlayRecords(state.plays)
         state.recent = []
@@ -105,7 +106,8 @@ export function loadHistory(): Promise<void> {
         state.recent = playRecords(rowsOf(recent))
         state.most = playRecords(rowsOf(most))
       }
-      await cacheSet(CACHE, { recent: state.recent, most: state.most, plays: state.plays })
+      // Raw arrays: IndexedDB cannot clone reactive proxies (the saved copy was dropped before 2026-09-30).
+      await cacheSet(CACHE, { recent: toRaw(state.recent), most: toRaw(state.most), plays: toRaw(state.plays) })
       void resolvePlaylists()
     } catch {
       // Unreachable player or an older card catalog: the saved history, if any.

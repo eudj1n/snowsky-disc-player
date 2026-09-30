@@ -18,6 +18,7 @@ import ConnectionDialog from './layout/ConnectionDialog.vue'
 import ImportDialog from './layout/ImportDialog.vue'
 import KaraokeMode from './layout/KaraokeMode.vue'
 import VisualizerMode from './layout/VisualizerMode.vue'
+import CoverViewer from './layout/CoverViewer.vue'
 import PlaylistDialog from './layout/PlaylistDialog.vue'
 import ListeningPanel from './layout/ListeningPanel.vue'
 import SoundDialog from './layout/SoundDialog.vue'
@@ -110,5 +111,6 @@ watchEffect(() => {
   <PlaylistDialog />
   <KaraokeMode v-if="ui.karaoke" />
   <VisualizerMode v-if="ui.visualizer" />
+  <CoverViewer />
   <AppToast />
 </template>
