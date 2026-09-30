@@ -9,20 +9,34 @@ import UiIcon from '../../ui/UiIcon.vue'
 import UiIconButton from '../../ui/UiIconButton.vue'
 import SeekBar from './SeekBar.vue'
 
-const props = defineProps<{
-  state: PlaybackState
-  positionMs: number | null
-  durationMs: number | null
-  identity: string | null
-  controlsDisabled: boolean
-  modesDisabled: boolean
-  seekDisabled: boolean
-  shuffle: boolean
-  repeat: boolean
-  /** Stock repeats one track (the repeat button's third state). */
-  repeatOne?: boolean
-  labels: { shuffle: string; previous: string; play: string; pause: string; next: string; repeat: string; seek: string }
-}>()
+const props = withDefaults(
+  defineProps<{
+    state: PlaybackState
+    positionMs: number | null
+    durationMs: number | null
+    identity: string | null
+    controlsDisabled: boolean
+    modesDisabled: boolean
+    /** Shuffle only where it plays: on the player (owner, 2026-09-30). */
+    shuffleDisabled?: boolean | undefined
+    seekDisabled: boolean
+    shuffle: boolean
+    repeat: boolean
+    /** Stock repeats one track (the repeat button's third state). */
+    repeatOne?: boolean
+    labels: {
+      shuffle: string
+      previous: string
+      play: string
+      pause: string
+      next: string
+      repeat: string
+      seek: string
+    }
+  }>(),
+  // Absent means "as the modes": a missing boolean would otherwise read false.
+  { shuffleDisabled: undefined, repeatOne: false },
+)
 const emit = defineEmits<{
   transport: [action: TransportAction]
   mode: [kind: 'shuffle' | 'repeat']
@@ -39,7 +53,7 @@ const small = 'size-25 p-3 [&>svg]:size-19'
         icon="shuffle"
         :label="labels.shuffle"
         :pressed="shuffle"
-        :disabled="modesDisabled"
+        :disabled="shuffleDisabled ?? modesDisabled"
         :class="small"
         class="phone:hidden"
         @click="emit('mode', 'shuffle')"

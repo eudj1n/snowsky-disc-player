@@ -13,7 +13,6 @@ import { useRoute, useRouter } from 'vue-router'
 import ListArt from '../components/artwork/ListArt.vue'
 import DetailHeading from '../components/collection/DetailHeading.vue'
 import TrackList from '../components/track/TrackList.vue'
-import { queueContext } from '../domain/history'
 import { listArtists, listBackground, shortDay } from '../domain/listArt'
 import { filterBy } from '../domain/search'
 import type { LibraryTrack } from '../domain/track'
@@ -26,11 +25,8 @@ import {
   setAutoPeriod,
 } from '../stores/autoPlaylists'
 import { GLOBAL_KINDS, PERIODS, type GlobalKind, type RotationPeriod } from '../domain/autoPlaylists'
-import { playInBrowser } from '../stores/browser'
-import { connection } from '../stores/connection'
 import { trackByPath } from '../stores/library'
 import { openTrackMenu, ui } from '../stores/ui'
-import UiCircleButton from '../ui/UiCircleButton.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiSelect from '../ui/UiSelect.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
@@ -88,9 +84,6 @@ function openMenu(index: number, anchor: HTMLElement): void {
   const row = rows.value.find((item) => item.track === track)
   if (track) openTrackMenu(track, row ? target(row.position) : null, anchor)
 }
-function inBrowser(): void {
-  playInBrowser(tracks.value, 0, queueContext(entries.value ?? [], { type: 4 }))
-}
 /** Plays the list on the player; a list not there yet is written first, and the page becomes its own. */
 async function listen(position?: number): Promise<void> {
   const kind = preview.value
@@ -144,14 +137,6 @@ async function remove(): Promise<void> {
           @click="listen()"
           >{{ t('listen_playlist') }}</UiPillButton
         >
-        <UiCircleButton
-          v-if="connection.media"
-          icon="headphones"
-          :label="t('play_in_browser')"
-          :disabled="loading || !rows.length"
-          data-testid="list-browser"
-          @click="inBrowser"
-        />
         <!-- How long it stays as written, and drawing it again now (owner, 2026-09-30). -->
         <UiSelect v-if="list" size="sm">
           <select

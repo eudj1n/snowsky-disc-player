@@ -32,7 +32,7 @@ import {
 import { history, loadHistory } from '../stores/history'
 import { albums, artists, tracks } from '../stores/library'
 import { isPinnedArtist, pins, togglePinArtist } from '../stores/pins'
-import { isPlaying, playback } from '../stores/playback'
+import { nowIsPlaying as isPlaying, nowPlaying } from '../stores/output'
 import { openTrackMenu, showCover, ui } from '../stores/ui'
 import { artistList, autoPlaylists, makeArtistList, removeAutoList } from '../stores/autoPlaylists'
 import { pairing } from '../stores/pairing'
@@ -115,7 +115,7 @@ function hotTarget(track: Track): SelectionTarget {
   if (track.album) return { kind: 'album', album: track.album, track: key }
   return { kind: 'library', track: key }
 }
-const current = computed(() => playback.current.track?.path ?? null)
+const current = computed(() => nowPlaying.value.track?.path ?? null)
 const hotTitleTo = (track: Track) => (track.album ? albumRoute(track.album, track.artist || null) : null)
 /** Under a hot track: its album when the track is this artist's alone, the credit when shared. */
 const hotSubtitle = (track: Track) =>

@@ -7,6 +7,7 @@ import {
   LANGUAGES,
   openConnection,
   SERIAL,
+  switchSide,
   watchErrors,
   PAIRING_FIELD,
 } from './helpers'
@@ -498,7 +499,10 @@ test.describe('player controls on the mock', () => {
     await disconnect(page)
   })
 
-  test('pauses the player when playback starts in this browser', async ({ page }) => {
+  test('switches the music to this browser and back, with its track and queue', async ({ page, request }) => {
+    test.skip(external, 'Reads the mock player')
+    const mock = async () =>
+      (await (await request.get('/__mock/player')).json()) as { playing: boolean; title: string | null }
     await english(page)
     await connectAndPair(page)
     await page.goto('/#/album/Afterglow/Mira%20Sol')
@@ -507,12 +511,18 @@ test.describe('player controls on the mock', () => {
       await page.getByRole('button', { name: 'Play album' }).click()
       await expect(toggle).toHaveAttribute('aria-label', 'Pause', { timeout: 15_000 })
     }
-    await page.getByTestId('album-browser').click()
-    await expect(page.getByTestId('browser-player')).toBeVisible()
-    // The player pauses (a guarded toggle, confirmed); the browser keeps playing.
-    await expect(toggle).toHaveAttribute('aria-label', 'Play', { timeout: 15_000 })
-    await expect(page.getByTestId('browser-toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 15_000 })
-    await page.getByTestId('browser-stop').click()
+    const title = (await page.getByTestId('track-title').textContent())?.trim() ?? ''
+    await switchSide(page, 'browser')
+    // The player paused first (a guarded, confirmed toggle); the same track sounds here.
+    await expect.poll(async () => (await mock()).playing).toBe(false)
+    await expect(page.getByTestId('track-title')).toHaveText(title)
+    await expect(toggle).toHaveAttribute('aria-label', 'Pause', { timeout: 15_000 })
+
+    // Back: the player plays the same track from its queue.
+    await switchSide(page, 'disc')
+    await expect.poll(async () => (await mock()).playing, { timeout: 15_000 }).toBe(true)
+    expect((await mock()).title).toBe(title)
+    await expect(page.getByTestId('track-title')).toHaveText(title)
     await disconnect(page)
   })
 

@@ -27,7 +27,7 @@ import { t } from '../i18n'
 import { albumCover, coverFor } from '../stores/enrichment'
 import { artistImage } from '../stores/artistPictures'
 import { albums, artists as allArtists, genres, titleGroups, tracks as collection } from '../stores/library'
-import { isPlaying, playback } from '../stores/playback'
+import { nowIsPlaying as isPlaying, nowPlaying } from '../stores/output'
 import { openTrackMenu, ui } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiSkeleton from '../ui/UiSkeleton.vue'
@@ -83,7 +83,7 @@ const facts = computed(() =>
   ].join(' · '),
 )
 const count = computed(() => latest.value.length + shelf.value.length + artists.value.length)
-const current = computed(() => playback.current.track?.path ?? null)
+const current = computed(() => nowPlaying.value.track?.path ?? null)
 /** The album also holds tracks of other genres. */
 const mixed = (album: Album) =>
   albumTracks(collection.value, album.title, albumScope(album)).some((track) => !sameGenre(track.genre, name.value))

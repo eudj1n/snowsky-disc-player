@@ -33,7 +33,8 @@ import { cardChangedSinceListing, trash, trashPath } from '../stores/trash'
 import { coverFor, enrichment, wantSizes } from '../stores/enrichment'
 import { setImportDestination } from '../stores/imports'
 import { tracks } from '../stores/library'
-import { isPlaying, playback } from '../stores/playback'
+import { nowIsPlaying as isPlaying, nowPlaying } from '../stores/output'
+import { playback } from '../stores/playback'
 import { operation, run } from '../stores/operation'
 import { pairing, pairingToken } from '../stores/pairing'
 import { openDialog, toast } from '../stores/ui'
@@ -98,7 +99,7 @@ const here = computed(() => folderStats(tracks.value, enrichment.files, folder.v
  * folder. The playing one pauses or resumes instead of starting again.
  */
 type Row = (typeof rows.value)[number]
-const playingPath = computed(() => playback.current.track?.path ?? null)
+const playingPath = computed(() => nowPlaying.value.track?.path ?? null)
 const canPlay = (row: Row) => (row.entry.folder ? true : playable(row.entry))
 /** A track file shows its cover; the play layer darkens it instead of hiding it. */
 const hasCover = (row: Row) => !row.entry.folder && Boolean(row.track)

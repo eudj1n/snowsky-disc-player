@@ -53,6 +53,9 @@ const props = defineProps<{
     mute: string
     unmute: string
     output: string
+    /** The switch between the player and this browser, for the phone's full-screen player. */
+    switchSide: string
+    visualizer: string
     format: string
     /** "{rate}" stands for the output rate. */
     resampled: string
@@ -64,6 +67,8 @@ const props = defineProps<{
   context?: { text: string; to: RouteLocationRaw | null } | null
   /** The stream the DAC gets (next image); shown when its rate differs from the file's. */
   output?: OutputFacts | null
+  side?: 'disc' | 'browser'
+  switching?: boolean
 }>()
 const outputRate = computed(() =>
   props.output && resampled(props.output, props.playback.track?.sampleRate) && props.output.rate
@@ -83,6 +88,8 @@ const emit = defineEmits<{
   mode: [kind: 'shuffle' | 'repeat']
   seek: [seconds: number, identity: string]
   favorite: []
+  side: []
+  visualizer: []
   volume: [value: number]
   mute: []
   navigate: []
@@ -239,7 +246,28 @@ const emit = defineEmits<{
         @change="(value) => emit('volume', value)"
         @mute="emit('mute')"
       />
-      <p class="mt-20 text-footnote text-muted">{{ labels.output }}</p>
+      <!-- Phones have no room in the mini player: the switch lives here (owner, 2026-09-30). -->
+      <div class="mt-20 flex items-center gap-10">
+        <button
+          type="button"
+          class="flex items-center gap-8 rounded-18 border border-line px-12 py-7 text-footnote text-muted hover:enabled:text-ink"
+          :class="side === 'browser' ? 'border-accent text-ink' : ''"
+          :aria-label="labels.switchSide"
+          :disabled="switching"
+          data-testid="side-switch-panel"
+          @click="emit('side')"
+        >
+          <UiIcon :name="side === 'browser' ? 'browser' : 'device'" class="size-16" />
+          {{ labels.output }}
+        </button>
+        <UiIconButton
+          v-if="side === 'browser'"
+          icon="visualizer"
+          :label="labels.visualizer"
+          data-testid="visualizer-open-panel"
+          @click="emit('visualizer')"
+        />
+      </div>
     </div>
     <slot />
   </div>

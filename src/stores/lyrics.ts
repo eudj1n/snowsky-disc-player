@@ -24,10 +24,9 @@ import { currentLyrics, mediaLyrics, type LyricsSource } from '../gateway/media'
 import { uploadFile } from '../gateway/upload'
 import { readPreference, writePreference } from '../lib/storage'
 import { connection, http, originAllowed } from './connection'
-import { observations } from './observations'
 import { run } from './operation'
 import { pairingToken } from './pairing'
-import { playback } from './playback'
+import { nowPlaying, nowPositionMs } from './output'
 import { toast } from './ui'
 
 export type LyricsStatus = 'idle' | 'loading' | 'ready' | 'none' | 'unavailable'
@@ -92,7 +91,7 @@ async function load(path: string | null, media: boolean, cue: boolean): Promise<
   }
   state.status = 'loading'
   // When the track started: from the observed position if known, else now.
-  const startedAt = Date.now() - (observations.positionMs ?? 0)
+  const startedAt = Date.now() - (nowPositionMs.value ?? 0)
   try {
     // A CUE track's file holds the whole sheet: its .lrc or embedded text would
     // be timed from the file's start, so only stock's own lyrics are used.
@@ -125,7 +124,7 @@ export const plainLyricsOnly = (): boolean =>
 
 /** LRCLIB can be asked for the current track: the origins admit it and it has no synced lyrics. */
 export function lyricsLookupAvailable(): boolean {
-  const track = playback.current.track
+  const track = nowPlaying.value.track
   return (
     originAllowed('lrclib') &&
     !!track?.path &&
@@ -137,7 +136,7 @@ export function lyricsLookupAvailable(): boolean {
 
 /** Looks the current track up on LRCLIB (its artist, title, album and length leave the network). */
 export async function lookUpLyrics(): Promise<void> {
-  const track = playback.current.track
+  const track = nowPlaying.value.track
   if (!lyricsLookupAvailable() || !track?.artist || state.lookup === 'searching') return
   const current = request
   state.lookup = 'searching'
@@ -178,7 +177,7 @@ export function setAutoLookup(on: boolean): void {
  * overwritten; a lost reply is not retried.
  */
 export async function saveFoundLyrics(): Promise<void> {
-  const track = playback.current.track
+  const track = nowPlaying.value.track
   const target = track?.path ? sidecarPath(track.path) : null
   const token = pairingToken()
   if (!found || !target || state.source !== 'lrclib' || state.saving) return
@@ -217,10 +216,10 @@ export async function saveFoundLyrics(): Promise<void> {
 
 // Keyed by trackKey: moving between a CUE sheet's tracks keeps the file but changes the track.
 watch(
-  () => [playback.current.track ? trackKey(playback.current.track) : null, connection.media] as const,
+  () => [nowPlaying.value.track ? trackKey(nowPlaying.value.track) : null, connection.media] as const,
   ([key, media], previous) => {
     if (previous && previous[0] === key && previous[1] === media) return
-    const track = playback.current.track
+    const track = nowPlaying.value.track
     void load(track?.path ?? null, media, track?.cue === true)
   },
   { immediate: true },

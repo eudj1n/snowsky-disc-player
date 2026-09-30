@@ -56,3 +56,18 @@ export async function disconnect(page: Page): Promise<void> {
   await expect(page.getByRole('dialog').getByTestId('connection-state')).toContainText('Disconnected')
   await page.keyboard.press('Escape')
 }
+
+/**
+ * The bar's switch between the player and this browser (owner, 2026-09-30); on
+ * phones it is in the full-screen player. Waits until the side is the other one.
+ */
+export async function switchSide(page: Page, to: 'browser' | 'disc'): Promise<void> {
+  const flip = page.getByTestId('side-switch').filter({ visible: true })
+  if (await flip.count()) await flip.click()
+  else {
+    await page.getByRole('button', { name: 'Open Now Playing panel' }).first().click()
+    await page.getByTestId('side-switch-panel').click()
+    await page.keyboard.press('Escape')
+  }
+  await expect(page.locator('[data-testid=side-switch]')).toHaveAttribute('data-side', to, { timeout: 30_000 })
+}

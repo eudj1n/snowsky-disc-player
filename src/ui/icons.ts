@@ -40,17 +40,17 @@ export const ICON_PATHS = {
   karaoke: 'M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3Z M5 11a7 7 0 0 0 14 0 M12 18v3 M9 21h6',
   fullscreen: 'M4 9V4h5 M20 9V4h-5 M4 15v5h5 M20 15v5h-5',
   'fullscreen-exit': 'M9 4v5H4 M15 4v5h5 M9 20v-5H4 M15 20v-5h5',
-  /* combined-008: dislike (a stop sign), pin, trash, the browser player (headphones) and stop. */
+  /* combined-008: dislike (a stop sign), pin and trash. */
   ban: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM5.6 5.6l12.8 12.8',
   pin: 'M9 3h6l-1 6 3 3H7l3-3Z M12 12v9',
   trash: 'M4 7h16 M10 11v6 M14 11v6 M6 7l1 13h10l1-13 M9 7V4h6v3',
-  headphones: 'M4 17v-5a8 8 0 0 1 16 0v5 M4 15h3v6H4Z M17 15h3v6h-3Z',
   /* A picture (2026-09-29): finding a cover for an album without one. */
   image: 'M4 5h16v14H4Z M4 15l4.5-4.5 4 4 2.5-2.5L20 17 M15 9.5a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0',
   /* The visualizer (2026-09-29): the ringed disc sending out spokes of sound. */
   visualizer:
     'M8 12a4 4 0 1 0 8 0a4 4 0 1 0-8 0Z M12 11.9v.2 M12 6V2.5 M16.2 7.8l1.4-1.4 M18 12h4 M16.2 16.2l2.1 2.1 M12 18v2 M7.8 16.2l-2.5 2.5 M6 12H3 M7.8 7.8 6.4 6.4',
-  stop: 'M6 6h12v12H6Z',
+  /* The switch between the player (device) and this browser (2026-09-30): a browser window. */
+  browser: 'M4 4h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z M3 9h18 M6.5 6.5h.01 M9.5 6.5h.01',
   'sidebar-collapse':
     'M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z M9.5 4v16 M16 9.5 13.5 12l2.5 2.5',
   'sidebar-expand':

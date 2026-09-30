@@ -34,9 +34,7 @@ import {
 import { isHiRes, qualityLabel } from '../domain/quality'
 import { formatBadge } from '../domain/track'
 import { findGenre, playableGenre, sameGenre } from '../domain/genre'
-import { queueContext } from '../domain/history'
 import { albums, artists, genres, titleGroups, tracks as collection } from '../stores/library'
-import { playInBrowser } from '../stores/browser'
 import { connection } from '../stores/connection'
 import { isPinnedAlbum, pins, togglePinAlbum } from '../stores/pins'
 import { openPlaylistDialog, openTrackMenu, showCover, ui } from '../stores/ui'
@@ -82,12 +80,6 @@ const tracks = computed(() =>
     ),
   ),
 )
-/** The album (or its artist's part) in this browser; the history names the album, as a play on the player would. */
-function playAlbumInBrowser(): void {
-  const list = tracks.value
-  const paths = list.flatMap((track) => (track.path ? [track.path] : []))
-  playInBrowser(list, 0, queueContext(paths, { type: 3, album: name.value, artist: scope.value }))
-}
 /** Each artist once, joint credits ("A; B") split into their artists. */
 const credits = computed(() => [
   ...new Set((scope.value ? [scope.value] : (group.value?.artists ?? [])).flatMap(creditArtists)),
@@ -274,14 +266,6 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
           :label="t('add_to_playlist')"
           :disabled="loading || !tracks.length"
           @click="openPlaylistDialog({ mode: 'add', tracks: tracks.map((track) => ({ ...track })), title: name })"
-        />
-        <UiCircleButton
-          v-if="connection.media"
-          icon="headphones"
-          :label="t('play_in_browser')"
-          data-testid="album-browser"
-          :disabled="loading || !tracks.length"
-          @click="playAlbumInBrowser"
         />
         <UiCircleButton
           v-if="coverOffered && !(searchHere && coverSearch.status === 'found')"

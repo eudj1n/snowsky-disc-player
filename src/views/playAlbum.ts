@@ -1,7 +1,13 @@
-/** Playback actions shared by views: whole albums and single tracks. */
+/**
+ * Playback actions shared by views: whole albums and single tracks. They play
+ * where the bar's switch says (owner, 2026-09-30): on the player through the
+ * guarded selection, or in this browser at once.
+ */
 import { albumScope, type Album } from '../domain/album'
 import type { SelectionTarget } from '../gateway/selection'
 import type { MessageKey } from '../i18n'
+import { playTargetInBrowser } from '../stores/handoff'
+import { output } from '../stores/output'
 import { play } from '../stores/selection'
 import { toast } from '../stores/ui'
 import { ensureControl } from './ensureControl'
@@ -17,6 +23,10 @@ const MESSAGES: Record<string, [MessageKey, boolean]> = {
 }
 
 export async function playFrom(target: SelectionTarget): Promise<void> {
+  if (output.side === 'browser') {
+    await playTargetInBrowser(target)
+    return
+  }
   if (!(await ensureControl())) return
   const outcome = await play(target)
   // A newer play took this one's place while it waited: only the newer one reports.

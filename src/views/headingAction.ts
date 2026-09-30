@@ -7,7 +7,7 @@ import { computed } from 'vue'
 import type { HeadingAction } from '../components/collection/headingAction'
 import type { Track } from '../domain/track'
 import { t } from '../i18n'
-import { isPlaying, playback } from '../stores/playback'
+import { nowIsPlaying as isPlaying, nowPlaying } from '../stores/output'
 import { toggleCurrent } from './trackRows'
 
 export function useHeadingAction(options: {
@@ -17,7 +17,7 @@ export function useHeadingAction(options: {
   play: () => void
 }) {
   const current = computed(() => {
-    const track = playback.current.track
+    const track = nowPlaying.value.track
     return track !== null && options.owns(track)
   })
   const action = computed<HeadingAction>(() =>

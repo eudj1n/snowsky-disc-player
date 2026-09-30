@@ -28,8 +28,7 @@ import { timeLabel } from '../domain/track'
 import { t } from '../i18n'
 import { coverFor } from '../stores/enrichment'
 import { lyrics } from '../stores/lyrics'
-import { observations } from '../stores/observations'
-import { isPlaying, playback } from '../stores/playback'
+import { nowIsPlaying as isPlaying, nowPlaying, nowPositionAt, nowPositionMs } from '../stores/output'
 import UiIcon from '../ui/UiIcon.vue'
 import { closeKaraoke, toggleKaraokeFullscreen } from './karaoke'
 import { usePlayerControls } from './usePlayerControls'
@@ -47,7 +46,7 @@ const root = ref<HTMLElement | null>(null)
 const stage = ref<HTMLElement | null>(null)
 const column = ref<HTMLElement | null>(null)
 
-const track = computed(() => playback.current.track)
+const track = computed(() => nowPlaying.value.track)
 const cover = computed(() => (track.value ? coverFor(track.value) : null))
 const lines = computed<readonly LyricLine[]>(() => (lyrics.lyrics?.lines ?? []) as readonly LyricLine[])
 const synced = computed(() => Boolean(lyrics.lyrics?.synced))
@@ -68,9 +67,7 @@ watch(
   },
   { immediate: true },
 )
-const position = computed(() =>
-  livePosition(observations.positionMs, observations.positionAt, now.value, isPlaying.value),
-)
+const position = computed(() => livePosition(nowPositionMs.value, nowPositionAt.value, now.value, isPlaying.value))
 const active = computed(() => (lyrics.lyrics ? activeLine(lyrics.lyrics as Lyrics, position.value) : -1))
 const range = computed(() => karaokeRange(lines.value.length, active.value))
 const nextMs = computed(() => nextLineMs(lines.value, active.value))

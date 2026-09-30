@@ -9,10 +9,10 @@
  */
 import { closeKaraoke, openKaraoke } from '../layout/karaoke'
 import { closeVisualizer, openVisualizer } from '../layout/visualizer'
-import { browserTrack } from '../stores/browser'
+import { browserTrack, nextInBrowser, previousInBrowser, toggleBrowser } from '../stores/browser'
 import { connection } from '../stores/connection'
 import { transport } from '../stores/controls'
-import { playback } from '../stores/playback'
+import { inBrowser, nowPlaying } from '../stores/output'
 import { ui } from '../stores/ui'
 
 const INTERACTIVE = 'input, textarea, select, button, a, [contenteditable], [role=menuitem], [role=slider]'
@@ -29,7 +29,7 @@ export function handleShortcut(event: KeyboardEvent): void {
   }
   if (event.code === 'KeyK' && !event.shiftKey) {
     if (target?.closest('input, textarea, select, [contenteditable]')) return
-    if (ui.visualizer || (!ui.karaoke && !playback.current.track)) return
+    if (ui.visualizer || (!ui.karaoke && !nowPlaying.value.track)) return
     event.preventDefault()
     if (ui.karaoke) closeKaraoke()
     else openKaraoke()
@@ -46,7 +46,15 @@ export function handleShortcut(event: KeyboardEvent): void {
   const action =
     event.key === ' ' ? 'toggle' : event.key === 'ArrowLeft' ? 'previous' : event.key === 'ArrowRight' ? 'next' : null
   if (!action || target?.closest(INTERACTIVE)) return
-  if (connection.connection !== 'connected' || !playback.current.track) return
+  if (!nowPlaying.value.track) return
+  if (inBrowser.value) {
+    event.preventDefault()
+    if (action === 'toggle') toggleBrowser()
+    else if (action === 'next') nextInBrowser()
+    else previousInBrowser()
+    return
+  }
+  if (connection.connection !== 'connected') return
   event.preventDefault()
   void transport(action)
 }

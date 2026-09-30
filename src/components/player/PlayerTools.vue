@@ -1,10 +1,17 @@
 <script setup lang="ts">
-/** Right block of the player bar: output label, volume, queue. */
+/**
+ * Right block of the player bar: where music plays (the player or this
+ * browser, one switch; owner, 2026-09-30), the visualizer while this browser
+ * plays, volume, lyrics and queue.
+ */
 import UiIconButton from '../../ui/UiIconButton.vue'
 import VolumeControl from './VolumeControl.vue'
 
 defineProps<{
-  outputLabel: string
+  side: 'disc' | 'browser'
+  sideLabel: string
+  switching: boolean
+  visualizerLabel: string
   volume: number | null
   volumeDisabled: boolean
   volumeLabel: string
@@ -18,6 +25,8 @@ defineProps<{
   queueDisabled: boolean
 }>()
 const emit = defineEmits<{
+  side: []
+  visualizer: []
   queue: [opener: HTMLElement]
   lyrics: [opener: HTMLElement]
   volume: [value: number]
@@ -27,7 +36,24 @@ const emit = defineEmits<{
 
 <template>
   <div class="flex items-center justify-end gap-10 text-muted compact:gap-7 rail:justify-center phone:gap-2">
-    <span class="mr-12 text-caption2 tracking-caps whitespace-nowrap compact:hidden">{{ outputLabel }}</span>
+    <UiIconButton
+      :icon="side === 'disc' ? 'device' : 'browser'"
+      :label="sideLabel"
+      :disabled="switching"
+      :pressed="side === 'browser'"
+      class="phone:hidden"
+      data-testid="side-switch"
+      :data-side="side"
+      @click="emit('side')"
+    />
+    <UiIconButton
+      v-if="side === 'browser'"
+      icon="visualizer"
+      :label="visualizerLabel"
+      class="phone:hidden"
+      data-testid="visualizer-open"
+      @click="emit('visualizer')"
+    />
     <VolumeControl
       class="w-120 compact:w-100 rail:hidden"
       :volume="volume"

@@ -5,7 +5,16 @@
  * mock as it found it, so both projects run against the same server.
  */
 import { expect, test, type Page } from '@playwright/test'
-import { connectAndPair, disconnect, english, external, openConnection, SERIAL, watchErrors } from './helpers'
+import {
+  connectAndPair,
+  disconnect,
+  english,
+  external,
+  openConnection,
+  SERIAL,
+  switchSide,
+  watchErrors,
+} from './helpers'
 
 test.describe.configure({ mode: 'serial' })
 test.skip(() => !SERIAL || external, 'Needs the mock gateway and a serial number')
@@ -157,45 +166,55 @@ test('moves a folder to the trash, restores it, clears macOS leftovers and empti
   await disconnect(page)
 })
 
-test('plays a track in this browser, pauses and stops it', async ({ page }) => {
+/** Paired, then the bar's switch to this browser; what the player played comes along. */
+async function toBrowser(page: Page): Promise<void> {
+  await connectAndPair(page)
+  await switchSide(page, 'browser')
+}
+
+const toDisc = (page: Page) => switchSide(page, 'disc')
+
+test('plays in this browser once the switch says so: a track from its menu, an album in order', async ({ page }) => {
   const errors = watchErrors(page)
   await english(page)
+  await toBrowser(page)
   await page.goto('/#/album/Blue%20Hours/Mira%20Sol')
   await page.getByRole('button', { name: 'Track actions: Window Seat' }).click()
-  await page
-    .getByRole('dialog', { name: 'Track actions' })
-    .getByRole('menuitem', { name: 'Play in this browser' })
-    .click()
-  const bar = page.getByTestId('browser-player')
-  await expect(bar).toContainText('Window Seat')
-  const toggle = bar.getByTestId('browser-toggle')
+  await page.getByRole('dialog', { name: 'Track actions' }).getByRole('menuitem', { name: 'Play', exact: true }).click()
+  const title = page.getByTestId('track-title')
+  await expect(title).toHaveText('Window Seat')
+  const toggle = page.getByTestId('toggle')
   await expect(toggle).toHaveAttribute('aria-label', 'Pause', { timeout: 10_000 })
   await toggle.click()
   await expect(toggle).toHaveAttribute('aria-label', 'Play')
-  await bar.getByTestId('browser-stop').click()
-  await expect(bar).toBeHidden()
   // A whole album plays in order, one track after another.
-  await page.getByTestId('album-browser').click()
-  await expect(bar).toBeVisible()
-  const first = await bar.locator('strong').textContent()
-  await bar.getByRole('button', { name: 'Next track' }).click()
-  await expect(bar.locator('strong')).not.toHaveText(first ?? '')
-  await bar.getByTestId('browser-stop').click()
-  await expect(bar).toBeHidden()
+  await page.getByRole('button', { name: 'Play album' }).click()
+  await expect(toggle).toHaveAttribute('aria-label', 'Pause', { timeout: 10_000 })
+  const first = (await title.textContent()) ?? ''
+  await page.getByRole('region', { name: 'Player' }).getByRole('button', { name: 'Next track' }).click()
+  await expect(title).not.toHaveText(first)
+  // No "play in this browser" entries any more: the switch is the one place.
+  await page.getByRole('button', { name: 'Track actions: Window Seat' }).click()
+  await expect(page.getByRole('dialog', { name: 'Track actions' })).not.toContainText('in this browser')
+  await page.keyboard.press('Escape')
+  await toDisc(page)
+  await disconnect(page)
   expect(errors).toEqual([])
 })
 
-test('draws what plays in this browser as the disc visualizer', async ({ page }) => {
+test('draws what plays in this browser as the disc visualizer', async ({ page }, info) => {
+  test.skip(info.project.name === 'phone', 'The visualizer button is in the desktop bar')
   const errors = watchErrors(page)
   await english(page)
+  await toBrowser(page)
   await page.goto('/#/album/Blue%20Hours/Mira%20Sol')
-  await page.getByTestId('album-browser').click()
-  const bar = page.getByTestId('browser-player')
-  await expect(bar.getByTestId('browser-toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 10_000 })
+  await page.getByRole('button', { name: 'Play album' }).click()
+  const bar = page.getByRole('region', { name: 'Player' })
+  await expect(bar.getByTestId('toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 10_000 })
   await bar.getByTestId('visualizer-open').click()
   const visualizer = page.getByRole('dialog', { name: 'Visualizer' })
   await expect(visualizer).toBeVisible()
-  await expect(visualizer).toContainText(await bar.locator('strong').innerText())
+  await expect(visualizer).toContainText(await bar.getByTestId('track-title').innerText())
   // The analyser hears the mock's tones and the canvas fills the screen.
   await expect(visualizer).toHaveAttribute('data-live', 'true', { timeout: 10_000 })
   const box = await page.getByTestId('visualizer-canvas').boundingBox()
@@ -207,15 +226,16 @@ test('draws what plays in this browser as the disc visualizer', async ({ page })
   await expect(visualizer.getByTestId('visualizer-toggle')).toHaveAttribute('aria-label', 'Pause')
   await page.keyboard.press('Escape')
   await expect(visualizer).toBeHidden()
-  // V opens it again; stopping the browser's playback closes it.
+  // V opens it again; on the player's side there is nothing to draw.
   await page.keyboard.press('v')
   await expect(visualizer).toBeVisible()
   await page.keyboard.press('v')
   await expect(visualizer).toBeHidden()
-  await bar.getByTestId('browser-stop').click()
-  await expect(bar).toBeHidden()
+  await toDisc(page)
+  await expect(bar.getByTestId('visualizer-open')).toHaveCount(0)
   await page.keyboard.press('v')
   await expect(visualizer).toBeHidden()
+  await disconnect(page)
   expect(errors).toEqual([])
 })
 
@@ -271,11 +291,10 @@ test('puts a play in this browser into the play history with its album', async (
 async function reportedPlay(page: Page, plays: () => Promise<Record<string, unknown>[]>, before: number) {
   await english(page)
   // The report needs the serial number, as every change does.
-  await connectAndPair(page)
+  await toBrowser(page)
   await page.goto('/#/album/Blue%20Hours/Mira%20Sol')
-  await page.getByTestId('album-browser').click()
-  const bar = page.getByTestId('browser-player')
-  await expect(bar.getByTestId('browser-toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 10_000 })
+  await page.getByRole('button', { name: 'Play album' }).click()
+  await expect(page.getByTestId('toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 10_000 })
   // Half of the mock's 30-second file is a play: one report, as the observer would record it.
   await expect.poll(async () => (await plays()).length, { timeout: 30_000 }).toBe(before + 1)
   const play = (await plays()).at(-1) as { path: string; seconds: number; title?: string; ctx: Record<string, unknown> }
@@ -284,7 +303,7 @@ async function reportedPlay(page: Page, plays: () => Promise<Record<string, unkn
   expect(play.title).toBeUndefined()
   expect(play.ctx).toMatchObject({ type: 3, album: 'Blue Hours', artist: 'Mira Sol', genre: null, folder: null })
   expect(play.ctx.hash).toMatch(/^[0-9a-f]{16}$/)
-  await bar.getByTestId('browser-stop').click()
+  await toDisc(page)
   // Recently played names the album first.
   await page.goto('/#/')
   const recent = page.getByRole('list', { name: 'Recently played' })

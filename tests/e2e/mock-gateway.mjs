@@ -808,6 +808,18 @@ const server = createServer((request, response) => {
     player.historyFailing = url.searchParams.get('on') === '1'
     return send(response, 204, '')
   }
+  // The scripted player's state, for tests of the switch between it and the browser.
+  if (url.pathname === '/__mock/player' && request.method === 'GET') {
+    const current = player.list[player.index]
+    const state = {
+      // Stock reports 0 while it plays and 1 while paused.
+      playing: player.state === 0,
+      title: current?.TITLE ?? null,
+      path: current?.PATH ?? null,
+      position: player.position,
+    }
+    return send(response, 200, JSON.stringify(state), 'application/json')
+  }
   if (url.pathname === '/__mock/tree-reads' && request.method === 'GET') {
     return send(response, 200, JSON.stringify({ reads: player.treeReads }), 'application/json')
   }

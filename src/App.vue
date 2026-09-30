@@ -4,11 +4,10 @@
  * scrolling workspace (top bar, view), fixed player (only while a track is
  * observed), listening panel, dialogs, toast.
  */
-import { onBeforeUnmount, onMounted, watch, watchEffect } from 'vue'
+import { computed, onBeforeUnmount, onMounted, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import { t } from './i18n'
 import AppearanceDialog from './layout/AppearanceDialog.vue'
-import BrowserPlayer from './layout/BrowserPlayer.vue'
 import AppPlayerBar from './layout/AppPlayerBar.vue'
 import AppSidebar from './layout/AppSidebar.vue'
 import SidebarToggle from './layout/SidebarToggle.vue'
@@ -31,11 +30,14 @@ import { connection, probeGateway, resumeAfterReload } from './stores/connection
 import { loadEnrichment } from './stores/enrichment'
 import { loadArtistPictures } from './stores/artistPictures'
 import { loadCollection, loadLibraryFacts, loadSavedCollection } from './stores/library'
+import { output } from './stores/output'
 import { playerVisible } from './stores/playback'
 import { setQuery, ui } from './stores/ui'
 import { handleShortcut } from './views/shortcuts'
 
 const route = useRoute()
+/** The bar shows while the player has a track, and always on this browser's side: it holds the switch back. */
+const barVisible = computed(() => playerVisible.value || output.side === 'browser')
 // A player that becomes unreachable keeps the shown collection as a saved copy.
 watch(
   () => connection.gateway,
@@ -73,7 +75,7 @@ onMounted(async () => {
 onBeforeUnmount(() => document.removeEventListener('keydown', handleShortcut))
 // The player's height drives the layout through --player (styles/main.css).
 watchEffect(() => {
-  document.documentElement.dataset.player = playerVisible.value ? 'shown' : 'hidden'
+  document.documentElement.dataset.player = barVisible.value ? 'shown' : 'hidden'
 })
 </script>
 
@@ -100,8 +102,7 @@ watchEffect(() => {
       <RouterView />
     </main>
   </div>
-  <AppPlayerBar v-if="playerVisible" />
-  <BrowserPlayer />
+  <AppPlayerBar v-if="barVisible" />
   <ListeningPanel />
   <ConnectionDialog />
   <AppearanceDialog />

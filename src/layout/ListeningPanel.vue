@@ -27,9 +27,10 @@ import { connection } from '../stores/connection'
 import { selectInQueue } from '../stores/controls'
 import { coverFor, enrichment, wantFileFacts } from '../stores/enrichment'
 import { history, loadHistory } from '../stores/history'
-import { tracks } from '../stores/library'
-import { observations } from '../stores/observations'
-import { isPlaying, playback } from '../stores/playback'
+import { trackByPath, tracks } from '../stores/library'
+import { browserPlayback, selectInBrowser } from '../stores/browser'
+import { switchSide } from '../stores/handoff'
+import { inBrowser, nowIsPlaying, nowPlaying, nowPositionAt, nowPositionMs, output } from '../stores/output'
 import { loadQueue, queue, queueCurrent } from '../stores/queue'
 import {
   lookUpLyrics,
@@ -48,6 +49,7 @@ import UiIconButton from '../ui/UiIconButton.vue'
 import { creditLabel } from '../domain/artist'
 import { usePlaybackContext } from './usePlaybackContext'
 import { openKaraoke } from './karaoke'
+import { openVisualizer } from './visualizer'
 import { usePlayerControls } from './usePlayerControls'
 
 const player = usePlayerControls()
@@ -68,7 +70,7 @@ function backToHead(): void {
 }
 /** The playing track's facts for the Now tab. */
 const facts = computed(() => {
-  const track = playback.current.track
+  const track = nowPlaying.value.track
   if (!track) return null
   const path = track.path
   return trackFacts({
@@ -81,20 +83,21 @@ const facts = computed(() => {
 })
 // The facts read the playing file once (size, channels, year) and the play history.
 watch(
-  () => [ui.panel, playback.current.track?.path] as const,
+  () => [ui.panel, nowPlaying.value.track?.path] as const,
   ([panel]) => {
     if (panel !== 'now') return
-    wantFileFacts(playback.current.track)
+    wantFileFacts(nowPlaying.value.track)
     if (connection.history && !history.loaded) void loadHistory()
   },
   { immediate: true },
 )
 // A track the shown queue does not hold (another source started, here or on the player) reads it again.
 watch(
-  () => (playback.current.track ? trackKey(playback.current.track) : null),
+  () => (nowPlaying.value.track ? trackKey(nowPlaying.value.track) : null),
   (key) => {
     if (
       key &&
+      !inBrowser.value &&
       ui.panel &&
       connection.connection === 'connected' &&
       queue.status === 'ready' &&
@@ -112,20 +115,33 @@ watch(
     queueSection.value?.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' })
   },
 )
+/** The queue the panel lists: this browser's own while it plays here, else the player's snapshot. */
 const items = computed(() =>
-  queue.items.map((row, index) => {
-    const detail = queue.details[index]
-    // Stock names a row of an M3U list by its file, without an artist: the library names it (2026-09-30).
-    const unnamed = !row.author && detail
-    return {
-      title: unnamed ? detail.title : row.name,
-      artist: unnamed ? detail.artist : row.author,
-      cover: detail ? coverFor(detail) : null,
-    }
-  }),
+  inBrowser.value
+    ? browserPlayback.queue.map((row) => {
+        const known = row.path ? trackByPath.value.get(row.path) : undefined
+        return { title: row.cueTitle ?? row.title, artist: row.artist, cover: known ? coverFor(known) : null }
+      })
+    : queue.items.map((row, index) => {
+        const detail = queue.details[index]
+        // Stock names a row of an M3U list by its file, without an artist: the library names it (2026-09-30).
+        const unnamed = !row.author && detail
+        return {
+          title: unnamed ? detail.title : row.name,
+          artist: unnamed ? detail.artist : row.author,
+          cover: detail ? coverFor(detail) : null,
+        }
+      }),
 )
+const listCurrent = computed(() => (inBrowser.value ? browserPlayback.index : queueCurrent.value))
+function selectRow(index: number): void {
+  if (inBrowser.value) selectInBrowser(index)
+  else void selectInQueue(queue.items, index)
+}
 const status = computed(() =>
-  connection.connection === 'connected' ? t(`playback_${playback.current.state}`) : t('disconnected'),
+  inBrowser.value || connection.connection === 'connected'
+    ? t(`playback_${nowPlaying.value.state}`)
+    : t('disconnected'),
 )
 const context = usePlaybackContext()
 const labels = computed(() => ({
@@ -142,20 +158,22 @@ const labels = computed(() => ({
   volumeTitle: player.volumeTitle.value,
   mute: t('mute'),
   unmute: t('unmute'),
-  output: t('audio_plays_on_your_disc'),
+  output: t(inBrowser.value ? 'audio_plays_in_this_browser' : 'audio_plays_on_your_disc'),
+  switchSide: t(inBrowser.value ? 'side_browser' : 'side_disc'),
+  visualizer: t('visualizer_open'),
   format: t('format_from_filename'),
   resampled: t('output_resampled'),
   playingFrom: t('playing_from'),
   coverFullSize: t('cover_full_size', { name: coverName.value }),
 }))
-const nowCover = computed(() => (playback.current.track ? coverFor(playback.current.track) : null))
+const nowCover = computed(() => (nowPlaying.value.track ? coverFor(nowPlaying.value.track) : null))
 /** What the full-size cover is named by: the album, else the track. */
-const coverName = computed(() => playback.current.track?.album || playback.current.track?.title || '')
+const coverName = computed(() => nowPlaying.value.track?.album || nowPlaying.value.track?.title || '')
 function showNowCover(): void {
   if (nowCover.value) showCover(nowCover.value, coverName.value)
 }
 const lyricsMessage = computed(() => {
-  if (!playback.current.track) return t('lyrics_idle')
+  if (!nowPlaying.value.track) return t('lyrics_idle')
   if (lyrics.status === 'loading') return t('lyrics_loading')
   if (lyrics.status === 'unavailable') return t('lyrics_unavailable')
   return t('lyrics_none')
@@ -187,6 +205,7 @@ const lyricsSource = computed(() =>
           : null,
 )
 const queueHint = computed(() => {
+  if (inBrowser.value) return t('track_count', { count: browserPlayback.queue.length })
   if (connection.connection !== 'connected') return t('connect_your_disc')
   if (queue.status === 'loading') return t('reading_the_queue')
   if (queue.status === 'failed') return t('queue_unavailable')
@@ -216,7 +235,7 @@ watch(
   () => ui.panel,
   async (section, previous) => {
     if (section && !previous) {
-      if (connection.connection === 'connected') void loadQueue()
+      if (!inBrowser.value && connection.connection === 'connected') void loadQueue()
       await nextTick()
       ;(close.value?.$el as HTMLElement | undefined)?.focus({ preventScroll: true })
     }
@@ -274,14 +293,14 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
             @click="backToHead"
           >
             <span class="block size-40 shrink-0 overflow-hidden rounded-6 bg-soft">
-              <Artwork :title="playback.current.track?.title ?? null" :cover="nowCover" />
+              <Artwork :title="nowPlaying.track?.title ?? null" :cover="nowCover" />
             </span>
             <span class="min-w-0">
               <strong class="block truncate text-body font-semibold">{{
-                playback.current.track?.title ?? t('your_music_awaits')
+                nowPlaying.track?.title ?? t('your_music_awaits')
               }}</strong>
-              <span v-if="playback.current.track?.artist" class="block truncate text-footnote text-muted">{{
-                creditLabel(playback.current.track.artist)
+              <span v-if="nowPlaying.track?.artist" class="block truncate text-footnote text-muted">{{
+                creditLabel(nowPlaying.track.artist)
               }}</span>
             </span>
           </button>
@@ -289,20 +308,22 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
           <button
             type="button"
             class="hidden size-36 shrink-0 place-items-center rounded-full bg-strong text-strong-ink phone:grid"
-            :aria-label="playback.current.state === 'playing' ? t('pause') : t('play')"
+            :aria-label="nowPlaying.state === 'playing' ? t('pause') : t('play')"
             :disabled="player.controlsDisabled.value"
             @click="player.onTransport('toggle')"
           >
-            <UiIcon filled :name="playback.current.state === 'playing' ? 'pause' : 'play'" class="size-15" />
+            <UiIcon filled :name="nowPlaying.state === 'playing' ? 'pause' : 'play'" class="size-15" />
           </button>
         </div>
       </div>
       <NowPlayingDetails
-        :playback="playback.current"
+        :playback="nowPlaying"
+        :side="inBrowser ? 'browser' : 'disc'"
+        :switching="output.switching"
         :output="device.facts?.output ?? null"
         :cover="nowCover"
         :status="status"
-        :position-ms="observations.positionMs"
+        :position-ms="nowPositionMs"
         :identity="player.identity.value"
         :seek-feedback="player.seekFeedback.value"
         :controls-disabled="player.controlsDisabled.value"
@@ -323,6 +344,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         @volume="player.onVolume"
         @mute="player.onMute"
         @navigate="onNavigate"
+        @side="switchSide"
+        @visualizer="openVisualizer"
         @cover="showNowCover"
       >
         <div ref="headEnd" aria-hidden="true" />
@@ -330,11 +353,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
           v-if="facts"
           :facts="facts"
           :plays-known="connection.history"
-          :disliked="
-            connection.store && disliked.available && playback.current.track ? isDisliked(playback.current.track) : null
-          "
-          :dislike-label="t(playback.current.track && isDisliked(playback.current.track) ? 'undislike' : 'dislike')"
-          @dislike="playback.current.track && toggleDislike(playback.current.track)"
+          :disliked="connection.store && disliked.available && nowPlaying.track ? isDisliked(nowPlaying.track) : null"
+          :dislike-label="t(nowPlaying.track && isDisliked(nowPlaying.track) ? 'undislike' : 'dislike')"
+          @dislike="nowPlaying.track && toggleDislike(nowPlaying.track)"
           @navigate="onNavigate"
         />
         <section
@@ -359,6 +380,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
                 </h2>
               </div>
               <UiIconButton
+                v-if="!inBrowser"
                 icon="refresh"
                 :label="t('refresh_queue')"
                 :disabled="connection.connection !== 'connected' || queue.status === 'loading'"
@@ -367,18 +389,18 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
             </div>
             <p class="mt-4 mb-0 text-footnote text-muted" role="status">{{ queueHint }}</p>
           </div>
-          <p v-if="queue.status === 'ready'" class="mt-4 mb-14 text-footnote leading-[1.55] text-muted">
+          <p v-if="!inBrowser && queue.status === 'ready'" class="mt-4 mb-14 text-footnote leading-[1.55] text-muted">
             {{ t('queue_snapshot_note') }}
           </p>
           <QueueRows
             :items="items"
-            :current="queueCurrent"
-            :playing="isPlaying"
+            :current="listCurrent"
+            :playing="nowIsPlaying"
             :select-label="t('select_in_queue')"
             :play-label="t('play')"
             :pause-label="t('pause')"
-            :disabled="!player.ready.value || queue.status !== 'ready'"
-            @select="(index) => selectInQueue(queue.items, index)"
+            :disabled="!player.ready.value || (!inBrowser && queue.status !== 'ready')"
+            @select="selectRow"
             @toggle="player.onTransport('toggle')"
           />
         </section>
@@ -389,10 +411,10 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
       <div class="shrink-0 px-24 pb-10">
         <div class="flex items-center gap-10">
           <h2 class="mt-0 mb-0 min-w-0 flex-1 truncate text-title2 font-bold tracking-heading">
-            {{ playback.current.track?.title ?? t('lyrics_tab') }}
+            {{ nowPlaying.track?.title ?? t('lyrics_tab') }}
           </h2>
           <UiIconButton
-            v-if="playback.current.track"
+            v-if="nowPlaying.track"
             icon="karaoke"
             :label="t('karaoke_open')"
             data-testid="karaoke-open"
@@ -400,12 +422,12 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
           />
         </div>
         <p
-          v-if="playback.current.track?.artist"
+          v-if="nowPlaying.track?.artist"
           class="mt-2 mb-0 truncate text-footnote text-muted"
           @click="($event.target as HTMLElement).closest('a') && onNavigate()"
         >
           <ArtistCredit
-            :credit="playback.current.track.artist"
+            :credit="nowPlaying.track.artist"
             :to="(name) => ({ name: 'artist', params: { name } })"
             link-class="hover:text-ink hover:underline"
           />
@@ -443,9 +465,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
       </div>
       <LyricsView
         :lyrics="lyrics.lyrics"
-        :position-ms="observations.positionMs"
-        :position-at="observations.positionAt"
-        :playing="isPlaying"
+        :position-ms="nowPositionMs"
+        :position-at="nowPositionAt"
+        :playing="nowIsPlaying"
         :message="lyricsMessage"
         :source="lyricsSource"
         :seek-label="t('lyrics_seek')"

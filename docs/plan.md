@@ -1489,13 +1489,9 @@ Earlier notes, still valid:
 
 Stages:
 
-- [ ] The browser engine: a start position, previous, seek, volume, repeat,
-      skipping files it cannot play, the context it plays for the way back.
-- [ ] The bar and the Now tab show and control whichever side plays; every
-      play action follows the chosen side; the "Play in this browser" entries
-      and the separate browser card go.
-- [ ] The switch both ways with confirmations, the immediate seek after the
-      page's own selection, and the refusals with reasons.
+- [x] The browser engine: a start position, previous, seek, volume, repeat, skipping files it cannot play (by name before starting, by a decoding error while playing; a network error stops with the reason), the queue's rows kept in place for the way back (`src/stores/browser.ts`, `src/domain/browserQueue.ts`).
+- [x] The bar, the Now tab, lyrics, karaoke, the rows' marks and the shortcuts show and control whichever side plays (`src/stores/output.ts`); every Play follows the chosen side (`playFrom`, `src/stores/browserTargets.ts`); the "Play in this browser" entries and the separate browser card are gone; the visualizer button shows in the bar (on phones in the full-screen player) while the browser plays.
+- [x] The switch both ways (`src/stores/handoff.ts`): to the browser after a confirmed pause, from the player's position, with its queue and repeat; back through the same queue row when the player's queue did not change, else the source from the track, then the seek at once; refusals with reasons; the player started by hand pauses the browser.
 - [ ] The icon in the bar, tests on the mock, then the emulator acceptance
       (it sends player commands) before the owner's card.
 - [x] Plays in this browser go into the play history (owner, 2026-09-29;

@@ -10,18 +10,20 @@ import { commandCatalog, connection } from '../stores/connection'
 import { controlsReady, favoriteTrack, toggleFavorite, transport } from '../stores/controls'
 import { coverFor } from '../stores/enrichment'
 import { isFavorite } from '../stores/favorites'
-import { isPlaying, playback } from '../stores/playback'
+import { toggleBrowser } from '../stores/browser'
+import { inBrowser, nowIsPlaying, nowPlaying } from '../stores/output'
+import { playback } from '../stores/playback'
 import { openPlaylistDialog } from '../stores/ui'
 import { artistRoute, trackAlbumRoute } from './captions'
 
-/** The current row's button: pause or resume, never the track again from its start. */
-export const toggleCurrent = (): void => void transport('toggle')
+/** The current row's button: pause or resume where it plays, never the track again from its start. */
+export const toggleCurrent = (): void => (inBrowser.value ? toggleBrowser() : void transport('toggle'))
 
 export const trackRowProps = computed(() => ({
-  currentPath: playback.current.track?.path ?? null,
-  currentTitle: playback.current.track?.title ?? null,
-  currentCue: playback.current.track?.cue === true,
-  playing: isPlaying.value,
+  currentPath: nowPlaying.value.track?.path ?? null,
+  currentTitle: nowPlaying.value.track?.title ?? null,
+  currentCue: nowPlaying.value.track?.cue === true,
+  playing: nowIsPlaying.value,
   coverOf: coverFor,
   playLabel: t('play_label'),
   // The current row pauses or resumes rather than starting the track again.
@@ -43,7 +45,8 @@ export const trackRowProps = computed(() => ({
   favoriteAddable: favoritesAddable.value && controlsReady.value,
   onLove: onRowLove,
   favoriteRemovable: favoritesRemovable.value && controlsReady.value,
-  favoriteDisabled: !controlsReady.value || typeof playback.current.favorite !== 'boolean',
+  // The player's current-track heart (0104); a track playing in this browser takes the any-row hearts.
+  favoriteDisabled: inBrowser.value || !controlsReady.value || typeof playback.current.favorite !== 'boolean',
 }))
 
 /** The catalog on the card admits removing favorites (love/song, service combined-006). */

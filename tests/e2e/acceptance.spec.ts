@@ -12,7 +12,16 @@
  * point it at a real player.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test'
-import { connectAndPair, disconnect, english, external, openConnection, SERIAL, watchErrors } from './helpers'
+import {
+  connectAndPair,
+  disconnect,
+  english,
+  external,
+  openConnection,
+  SERIAL,
+  switchSide,
+  watchErrors,
+} from './helpers'
 
 const enabled = external && Boolean(SERIAL) && process.env.E2E_ACCEPTANCE === 'emulator'
 test.describe.configure({ mode: 'serial' })
@@ -785,37 +794,43 @@ test('moves a folder to the trash and back, and macOS leftovers too, on stock', 
 test('plays card files in this browser through the audio route, a CUE track from its offset, with the visualizer, on stock', async ({
   page,
 }) => {
+  test.setTimeout(120_000)
   const errors = watchErrors(page)
   await english(page)
+  await connectAndPair(page)
+  await switchSide(page, 'browser')
   await page.goto('/#/album/Night%20Lines')
-  await page.getByTestId('album-browser').click()
-  const bar = page.getByTestId('browser-player')
-  await expect(bar).toContainText('Signal')
-  await expect(bar.getByTestId('browser-toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 30_000 })
+  // With this browser chosen, the album's Play plays here.
+  await page.getByRole('button', { name: 'Play album' }).click()
+  const bar = page.getByRole('region', { name: 'Player' })
+  await expect(bar.getByTestId('track-title')).toHaveText('Signal')
+  await expect(bar.getByTestId('toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 30_000 })
   // The position moves: the browser decodes the FLAC from byte ranges of the card file.
-  await expect(bar).toContainText(/· 0:0[2-9]/, { timeout: 20_000 })
+  await expect(bar).toContainText(/0:0[2-9]/, { timeout: 20_000 })
   // The visualizer's analyser hears the card's FLAC through the same route.
   await bar.getByTestId('visualizer-open').click()
   const visualizer = page.getByRole('dialog', { name: 'Visualizer' })
   await expect(visualizer).toHaveAttribute('data-live', 'true', { timeout: 15_000 })
   await page.keyboard.press('Escape')
   await expect(visualizer).toBeHidden()
-  await bar.getByTestId('browser-stop').click()
-  await expect(bar).toBeHidden()
 
   await page.goto('/#/album/Image%20Sessions')
-  await trackAction(page, 'Second Frame', 'Play in this browser')
-  await expect(bar).toContainText('Second Frame')
-  await expect(bar.getByTestId('browser-toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 30_000 })
+  await page.getByRole('button', { name: 'Track actions: Second Frame' }).click()
+  await page.getByRole('dialog', { name: 'Track actions' }).getByRole('menuitem', { name: 'Play', exact: true }).click()
+  await expect(bar.getByTestId('track-title')).toHaveText('Second Frame')
+  await expect(bar.getByTestId('toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 30_000 })
   // Counted from the track's start at 0:20 in the image, not from the file's.
-  await expect(bar).toContainText(/· 0:0[1-9]/, { timeout: 20_000 })
-  await bar.getByTestId('browser-stop').click()
-  await expect(bar).toBeHidden()
-  expect(errors).toEqual([])
+  await expect(bar).toContainText(/0:0[1-9]/, { timeout: 20_000 })
+  await bar.getByTestId('toggle').click()
+  await switchSide(page, 'disc')
+  await disconnect(page)
+  expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])
 })
 
-test('pauses stock when playback starts in this browser, and records the play there', async ({ page }) => {
-  test.setTimeout(120_000)
+test('switches stock’s music to this browser and back, carrying the track and its position, and records the play', async ({
+  page,
+}) => {
+  test.setTimeout(150_000)
   const errors = watchErrors(page)
   // Combined-009: plays in a browser reach the service's history with their source and album.
   const browserPlays = async () =>
@@ -829,16 +844,25 @@ test('pauses stock when playback starts in this browser, and records the play th
   await connectAndPair(page)
   await page.goto('/#/album/Harbor/Kestrel')
   await verified(page, () => page.getByRole('button', { name: 'Play album' }).click())
-  const toggle = page.getByTestId('toggle')
+  const bar = page.getByRole('region', { name: 'Player' })
+  const toggle = bar.getByTestId('toggle')
   await expect(toggle).toHaveAttribute('aria-label', 'Pause', { timeout: 30_000 })
-  await page.getByTestId('album-browser').click()
-  await expect(page.getByTestId('browser-toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 30_000 })
-  // Stock pauses: a guarded toggle, sent only while it played, confirmed by its own state.
-  await expect(toggle).toHaveAttribute('aria-label', 'Play', { timeout: 30_000 })
-  // Half of the 25-second tone is a play: recorded once, by the service's clock, with the album.
+  const title = (await bar.getByTestId('track-title').textContent())?.trim() ?? ''
+
+  await switchSide(page, 'browser')
+  // Stock paused first: a guarded toggle, sent only while it played, confirmed by its own state.
+  await expect(bar).toHaveAttribute('data-disc-state', 'paused', { timeout: 30_000 })
+  await expect(bar.getByTestId('track-title')).toHaveText(title)
+  await expect(toggle).toHaveAttribute('aria-label', 'Pause', { timeout: 30_000 })
+  // Half of the 25-second tone is a play: recorded once, by the service's clock, with its queue.
   await expect.poll(async () => (await browserPlays()).length, { timeout: 40_000 }).toBe(before + 1)
-  expect((await browserPlays()).at(-1)?.ctx).toMatchObject({ type: 3, album: 'Harbor' })
-  await page.getByTestId('browser-stop').click()
+
+  // Back: stock plays the same row of its unchanged queue, sought to where the browser was.
+  await switchSide(page, 'disc')
+  await expect(bar).toHaveAttribute('data-disc-state', 'playing', { timeout: 30_000 })
+  await expect(bar.getByTestId('track-title')).toHaveText(title)
+  await expect(bar).toContainText(/0:1\d/, { timeout: 15_000 })
+  await verified(page, () => toggle.click())
   await disconnect(page)
   expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])
 })

@@ -16,7 +16,7 @@ import { recentlyAdded, type LibraryTrack, type Track } from '../domain/track'
 import { t } from '../i18n'
 import { albumCover, coverFor } from '../stores/enrichment'
 import { albums, loadRecentlyPlayed, tracks } from '../stores/library'
-import { isPlaying, playback } from '../stores/playback'
+import { nowIsPlaying as isPlaying, nowPlaying } from '../stores/output'
 import { openTrackMenu, ui } from '../stores/ui'
 import { filterBy } from '../domain/search'
 import UiSkeleton from '../ui/UiSkeleton.vue'
@@ -49,7 +49,7 @@ onMounted(async () => {
     played.value = []
   }
 })
-const current = computed(() => playback.current.track?.path ?? null)
+const current = computed(() => nowPlaying.value.track?.path ?? null)
 const titleTo = (track: Track) => (track.album ? albumRoute(track.album, track.artist || null) : null)
 const artistTo = (name: string) => artistRoute(name)
 </script>

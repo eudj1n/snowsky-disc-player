@@ -40,9 +40,11 @@ playing on the DISC; nothing streams to the browser.
 > - listen to automatic playlists made from your listening (Most played,
 >   Daily mix, Recently added, Not played lately, and one artist's most
 >   played), redrawn each day, week or month and kept on the player;
-> - listen in this browser instead of on the player, and watch what plays
->   there as a disc: the cover turns, its ring pulses with the bass and the
->   spectrum spreads around it, full screen;
+> - move the music between the player and this browser with one switch in
+>   the bar: the track, its position and the queue come along, and every
+>   Play then plays where the switch says; watch what plays in the browser as
+>   a disc: the cover turns, its ring pulses with the bass and the spectrum
+>   spreads around it, full screen;
 > - choose a light or dark theme in four tones each, and the text size.
 >
 > Covers and durations appear as tracks play: the player's library keeps

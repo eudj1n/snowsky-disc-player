@@ -11,7 +11,10 @@ import type { RouteLocationRaw } from 'vue-router'
 import { t } from '../i18n'
 import { genres, library, loadPlaylistTracks, trackByPath } from '../stores/library'
 import { autoPlaylists } from '../stores/autoPlaylists'
+import { browserPlayback } from '../stores/browser'
+import { inBrowser, nowPlaying } from '../stores/output'
 import { playback } from '../stores/playback'
+import type { Playback } from '../domain/playback'
 import { albumRoute, artistRoute, genreRoute, playlistRoute } from '../views/captions'
 
 export interface PlaybackContext {
@@ -56,8 +59,49 @@ function createContext() {
     () => members.clear(),
   )
 
-  return computed<PlaybackContext | null>(() => {
-    const current = playback.current
+  /** A page source played in this browser, named as the page names it. */
+  function browserContext(): PlaybackContext | null {
+    const origin = browserPlayback.origin
+    const track = nowPlaying.value.track
+    if (!origin || !track) return null
+    if (origin.kind === 'queue') return describe({ ...nowPlaying.value, source: origin.source, list: origin.list })
+    const target = origin.target
+    switch (target.kind) {
+      case 'album':
+        return { text: t('from_album', { name: target.album }), to: albumRoute(target.album) }
+      case 'artistAlbum':
+        return { text: t('from_album', { name: target.album }), to: albumRoute(target.album, target.artist) }
+      case 'artist':
+        return { text: t('from_artist', { name: creditLabel(target.artist) }), to: artistRoute(target.artist) }
+      case 'genre':
+      case 'genreAlbum':
+        return { text: t('from_genre', { name: target.genre }), to: genreRoute(target.genre) }
+      case 'library':
+        return { text: t('from_library'), to: '/tracks' }
+      case 'favorites':
+        return { text: t('from_favorites'), to: '/favorites' }
+      case 'playlist': {
+        const list = library.playlists.find((item) => item.name === target.name)
+        return { text: t('from_playlist', { name: target.name }), to: list ? playlistRoute(list.id) : '/playlists' }
+      }
+      case 'folder':
+        return {
+          text: t('from_folder', { name: target.folder.split('/').at(-1) || '/' }),
+          to: { name: 'cardFiles', query: target.folder ? { folder: target.folder } : {} },
+        }
+      case 'list': {
+        const own = autoPlaylists.lists.some((list) => list.name === target.name)
+        return {
+          text: t('from_playlist', { name: target.name }),
+          to: own ? { name: 'list', params: { name: target.name } } : null,
+        }
+      }
+    }
+  }
+
+  return computed<PlaybackContext | null>(() => (inBrowser.value ? browserContext() : describe(playback.current)))
+
+  function describe(current: Playback): PlaybackContext | null {
     const track = current.track
     if (!track || !current.source) return null
     switch (current.source) {
@@ -106,7 +150,7 @@ function createContext() {
           ? { text: t('from_playlist', { name: playlist.value.name }), to: playlistRoute(playlist.value.id) }
           : { text: t('from_playlist_unknown'), to: '/playlists' }
     }
-  })
+  }
 }
 
 let shared: ComputedRef<PlaybackContext | null> | null = null

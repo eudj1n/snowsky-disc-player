@@ -11,8 +11,6 @@ import { useRouter } from 'vue-router'
 import Artwork from '../components/artwork/Artwork.vue'
 import { coverFor } from '../stores/enrichment'
 import { t } from '../i18n'
-import { queueContext } from '../domain/history'
-import { playInBrowser } from '../stores/browser'
 import { connection } from '../stores/connection'
 import { library, trackByPath } from '../stores/library'
 import { disliked, isDisliked, toggleDislike } from '../stores/disliked'
@@ -60,9 +58,6 @@ const items = computed<{ id: string; icon: IconName; label: string; enabled: boo
           enabled: !disliked.busy && onCard.value,
         },
       ]
-    : []),
-  ...(connection.media && menu.value?.track.path
-    ? [{ id: 'browser', icon: 'headphones' as const, label: t('play_in_browser'), enabled: onCard.value }]
     : []),
   // Only rows opened from a playlist page can leave it.
   ...(menu.value?.playlist
@@ -116,9 +111,6 @@ async function choose(id: string): Promise<void> {
   if (!current) return
   if (id === 'play' && current.play) await playFrom(current.play)
   if (id === 'dislike') await toggleDislike(current.track)
-  // One file, no queue: the history keeps its path (Recently played names no source for it).
-  if (id === 'browser' && current.track.path)
-    playInBrowser([current.track], 0, queueContext([current.track.path], { type: null }))
   if (id === 'add') openPlaylistDialog({ mode: 'add', tracks: [{ ...current.track }], title: current.track.title })
   if (id === 'remove' && current.playlist)
     openPlaylistDialog({ mode: 'remove', playlist: current.playlist, track: { ...current.track } })
