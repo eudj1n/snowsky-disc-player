@@ -5,7 +5,7 @@
  * the previous state, a snapshot alone never proves a final stop, and
  * playing/paused require an observed track.
  */
-import { playbackSource, UNKNOWN_PLAYBACK, type Playback, type PlaybackState } from '../domain/playback'
+import { m3uList, playbackSource, UNKNOWN_PLAYBACK, type Playback, type PlaybackState } from '../domain/playback'
 import type { Track } from '../domain/track'
 import type { GatewaySession } from './session'
 
@@ -116,11 +116,13 @@ export function playbackOf(wire: PlaybackWire): Playback {
   if (track && (wire.state === 0 || wire.state === 1)) state = wire.state === 0 ? 'playing' : 'paused'
   if (wire.state === 2) state = 'loading'
   const flag = wire.playerflag
+  const list = track && wire.song && typeof wire.song === 'object' ? m3uList(wire.song as Wire) : null
   return {
     state,
     track,
     favorite: typeof wire.love === 'boolean' ? wire.love : null,
     source: typeof flag === 'number' ? playbackSource(flag) : null,
+    ...(list ? { list } : {}),
   }
 }
 

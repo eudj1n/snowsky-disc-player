@@ -20,6 +20,7 @@ import {
   type ServicePlay,
 } from '../../src/domain/history'
 import type { LibraryTrack } from '../../src/domain/track'
+import { m3uList } from '../../src/domain/playback'
 import { deleteList, readList, writeList } from '../../src/gateway/lists'
 import { GatewayHttp } from '../../src/gateway/http'
 
@@ -281,5 +282,15 @@ describe('the lists gateway (combined-009)', () => {
       entries: ['/tmp/sdcard/a.flac'],
     })
     expect(await readList(http, 'external', 'Gone')).toBeNull()
+  })
+})
+
+describe('a play from an M3U list', () => {
+  it('names its list from the song, as stock reports it (a folder play with is_m3u)', () => {
+    expect(m3uList({ is_m3u: true, m3u_file_path: '/tmp/sdcard/Playlists/Daily mix.m3u/Second — Ё.flac' })).toBe(
+      '/tmp/sdcard/Playlists/Daily mix.m3u',
+    )
+    expect(m3uList({ is_m3u: false, m3u_file_path: '/tmp/sdcard/A.m3u/x.flac' })).toBeNull()
+    expect(m3uList({ is_m3u: true })).toBeNull()
   })
 })

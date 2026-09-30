@@ -1619,6 +1619,15 @@ Player` replaced by `2026.09.30-325ebae` (94 files) and
       `e05292f5…`; the owner's `Playlists/Daily mix.m3u` untouched; the card
       ejected.
 
+- [x] A list's play names the list (owner, 2026-09-30: after a reload
+      the bar said "Folder: <the track's album folder>" for the daily mix):
+      stock reports an M3U play as a folder play (playerflag 4) with
+      `is_m3u` and `m3u_file_path` (`<list>.m3u/<file name>`, seen on the
+      guest); the bar and the panel now say "Playlist: <name>", linking an
+      automatic list's page. The queue's rows of a list, which stock names
+      by their files without an artist, take the library's title and
+      artist.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

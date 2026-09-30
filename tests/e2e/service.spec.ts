@@ -361,6 +361,11 @@ test('keeps automatic playlists on the player: an artist’s most played and the
     ).entries[0]
     await row('artist_most_played').getByRole('button', { name: 'Play Most played · Forma' }).click()
     await expect(status(page, 'Done. Verified on DISC.')).toBeVisible({ timeout: 15_000 })
+    // Stock reports a list's play as a folder play naming the list: the bar names the list and opens its page.
+    const from = page
+      .getByRole('region', { name: 'Player' })
+      .getByRole('link', { name: 'Playlist: Most played · Forma' })
+    if (info.project.name === 'desktop') await expect(from).toBeVisible()
     // The mock names files "<number> <title>.flac".
     const file = first.split('/').at(-1) ?? ''
     const title = file.replace(/^\d+\s*/, '').replace(/\.[a-z0-9]+$/, '')

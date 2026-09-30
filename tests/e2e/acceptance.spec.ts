@@ -854,6 +854,10 @@ test('keeps an artist’s most played on the player as an M3U list and plays it 
   await page.goto('/#/playlists')
   const row = page.getByTestId('auto-playlists').locator('li[data-kind="artist_most_played"]').filter({ hasText: name })
   await verified(page, () => row.getByRole('button', { name: `Play ${name}` }).click())
+  // Stock reports it as a folder play naming the list (is_m3u): the bar names the list, not the folder.
+  await expect(
+    page.getByRole('region', { name: 'Player' }).getByRole('link', { name: `Playlist: ${name}` }),
+  ).toBeVisible()
   // From its page, a row plays the list from that entry (`0100` with its position).
   if (list.entries.length > 1) {
     await row.getByRole('link', { name }).click()

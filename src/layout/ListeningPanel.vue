@@ -96,7 +96,13 @@ watch(
 const items = computed(() =>
   queue.items.map((row, index) => {
     const detail = queue.details[index]
-    return { title: row.name, artist: row.author, cover: detail ? coverFor(detail) : null }
+    // Stock names a row of an M3U list by its file, without an artist: the library names it (2026-09-30).
+    const unnamed = !row.author && detail
+    return {
+      title: unnamed ? detail.title : row.name,
+      artist: unnamed ? detail.artist : row.author,
+      cover: detail ? coverFor(detail) : null,
+    }
   }),
 )
 const status = computed(() =>

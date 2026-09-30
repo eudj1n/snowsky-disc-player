@@ -267,6 +267,7 @@ function a202() {
     song_encoding_rate: track.ALBUM === 'Inner Space' ? 24 : 16,
     song_bit_rate: track.ALBUM === 'Inner Space' ? 4608 : 1411,
     is_dsd: false,
+    ...(player.m3u ? { is_m3u: true, m3u_file_path: `${player.m3u}/${track.PATH.split('/').at(-1)}` } : {}),
   }
   return JSON.stringify({
     state: player.state,
@@ -1099,8 +1100,10 @@ server.on('upgrade', (request, socket, head) => {
         if (!session.token || !id || player.seen.has(id)) return ws.close(1008)
         player.seen.add(id)
         const payload = text.slice(8)
-        const select = (list, index, flag) => {
+        const select = (list, index, flag, m3u = null) => {
           player.silent = false
+          // Like stock: a play from an M3U list names it in each song (is_m3u, m3u_file_path).
+          player.m3u = m3u
           player.list = list
           player.index = index
           player.flag = flag
@@ -1182,8 +1185,9 @@ server.on('upgrade', (request, socket, head) => {
         } else if (tag === '0101' && payload.startsWith('0003')) select(album(payload.slice(4)), 0, 3)
         else if (tag === '0101' && payload.startsWith('0007')) select(scoped(payload.slice(4)), 0, 7)
         else if (tag === '0101' && payload.startsWith('0008')) select(styled(payload.slice(4)), 0, 8)
-        else if (tag === '0101' && payload.startsWith('0004'))
-          select(payload.endsWith('.m3u') ? m3uTracks(payload.slice(4)) : folderTracks(payload.slice(4)), 0, 4)
+        else if (tag === '0101' && payload.startsWith('0004') && payload.endsWith('.m3u'))
+          select(m3uTracks(payload.slice(4)), 0, 4, payload.slice(4))
+        else if (tag === '0101' && payload.startsWith('0004')) select(folderTracks(payload.slice(4)), 0, 4)
         else if (tag === '0101' && payload.startsWith('0005'))
           select(PLAYLISTS[JSON.parse(payload.slice(4)).id]?.members ?? [], 0, 5)
         else if (tag === '0100') {
@@ -1197,7 +1201,8 @@ server.on('upgrade', (request, socket, head) => {
           else if (type === '0006') select(FAVORITES, index, 6)
           else if (type === '0005') select(PLAYLISTS[JSON.parse(payload.slice(8)).id]?.members ?? [], index, 5)
           else if (type === '0000') select(player.list, index, 0)
-          else if (type === '0004' && payload.endsWith('.m3u')) select(m3uTracks(payload.slice(8)), index, 4)
+          else if (type === '0004' && payload.endsWith('.m3u'))
+            select(m3uTracks(payload.slice(8)), index, 4, payload.slice(8))
           else if (type === '0004') {
             // A position in the playback browser, subfolders included; the queue holds the folder's files.
             const folder = payload.slice(8)

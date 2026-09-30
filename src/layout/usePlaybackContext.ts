@@ -10,6 +10,7 @@ import { computed, ref, watch, type ComputedRef } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 import { t } from '../i18n'
 import { genres, library, loadPlaylistTracks, trackByPath } from '../stores/library'
+import { autoPlaylists } from '../stores/autoPlaylists'
 import { playback } from '../stores/playback'
 import { albumRoute, artistRoute, genreRoute, playlistRoute } from '../views/captions'
 
@@ -87,6 +88,16 @@ function createContext() {
           : { text: t('from_genre_unknown'), to: null }
       }
       case 'folder': {
+        // Stock reports an M3U list as a folder play: the list names it, and an automatic one opens its page.
+        if (current.list) {
+          const name =
+            current.list
+              .split('/')
+              .at(-1)
+              ?.replace(/\.m3u8?$/i, '') ?? current.list
+          const own = autoPlaylists.lists.some((list) => list.name === name)
+          return { text: t('from_playlist', { name }), to: own ? { name: 'list', params: { name } } : null }
+        }
         const folder = track.path?.split('/').slice(-2, -1)[0]
         return folder ? { text: t('from_folder', { name: folder }), to: null } : null
       }

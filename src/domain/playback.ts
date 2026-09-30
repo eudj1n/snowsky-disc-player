@@ -31,6 +31,19 @@ export interface Playback {
   track: Track | null
   favorite: boolean | null
   source: PlaybackSource | null
+  /**
+   * The M3U list stock plays from ('/tmp/sdcard/Playlists/Daily mix.m3u'): it
+   * reports such a play as a folder play (playerflag 4) with `is_m3u` and the
+   * list's path before the file name in `m3u_file_path` (combined-009).
+   */
+  list?: string | null
+}
+
+/** The list of an M3U play from the song's `m3u_file_path` ('<list>.m3u/<file name>'); null otherwise. */
+export function m3uList(song: Readonly<Record<string, unknown>>): string | null {
+  if (song.is_m3u !== true || typeof song.m3u_file_path !== 'string') return null
+  const match = /^(.+?\.m3u8?)\/[^/]+$/i.exec(song.m3u_file_path)
+  return match?.[1] ?? null
 }
 
 export const UNKNOWN_PLAYBACK: Playback = { state: 'unknown', track: null, favorite: null, source: null }
