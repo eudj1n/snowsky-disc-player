@@ -1302,6 +1302,25 @@ test("follows the system's contrast and transparency settings", async ({ page },
   await expect(bar).toHaveCSS('background-color', paper)
 })
 
+test('gives Japanese and Korean names their language and isolates every inline name', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'The document is the same on phones')
+  await english(page)
+  await page.goto('/#/tracks')
+  await expect(page.getByRole('table').getByRole('row').nth(1)).toBeVisible()
+  const name = page.getByTestId('script-probe')
+  await page.evaluate(() => {
+    const probe = document.createElement('span')
+    probe.dataset.testid = 'script-probe'
+    probe.textContent = '宇多田ヒカル'
+    document.querySelector('main')?.append(probe)
+  })
+  await expect(name).toHaveAttribute('lang', 'ja')
+  await expect(name).toHaveCSS('unicode-bidi', 'isolate')
+  await name.evaluate((element) => (element.textContent = 'Lumen'))
+  await expect(name).not.toHaveAttribute('lang')
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+})
+
 test('draws select arrows inside the rounded edge', async ({ page }) => {
   await english(page)
   await page.goto('/#/tracks')

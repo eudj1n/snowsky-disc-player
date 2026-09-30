@@ -356,6 +356,11 @@
      * labels were thinner on macOS. */
     @apply bg-paper font-sans text-ink antialiased;
   }
+  /* Every inline element is its own bidi isolate, so a right-to-left name in a link or a span
+   * keeps its neighbours in order (docs/typography.md). */
+  :where(a, abbr, b, bdi, cite, em, i, small, span, strong, time) {
+    unicode-bidi: isolate;
+  }
   /* Tailwind 4 resets buttons to the default cursor; interactive ones point. */
   button:not(:disabled),
   [role='button']:not([aria-disabled='true']),

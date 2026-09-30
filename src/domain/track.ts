@@ -1,3 +1,5 @@
+import { isolateName } from './scripts'
+
 /** A track as every view shows it. Sources (playback observation, library
  * rows, queue, playlists) map their wire shapes into this one object. */
 export interface Track {
@@ -60,7 +62,10 @@ export function recentlyAdded<T extends { addedAt: number | null }>(tracks: read
 
 /** "Artist · Album" with unknown parts left out. */
 export function trackCredits(track: Pick<Track, 'artist' | 'album'>): string {
-  return [track.artist, track.album].filter((part): part is string => Boolean(part)).join(' · ')
+  return [track.artist, track.album]
+    .filter((part): part is string => Boolean(part))
+    .map(isolateName)
+    .join(' · ')
 }
 
 /** m:ss or h:mm:ss; null when the duration is unknown (never guessed). */

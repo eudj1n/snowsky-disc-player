@@ -4,6 +4,7 @@
 import { ref, watchEffect } from 'vue'
 import { en, type MessageKey, type PluralForms } from './en'
 import { ru } from './ru'
+import { isolateName } from '../domain/scripts'
 import { readPreference, writePreference } from '../lib/storage'
 
 export type { MessageKey } from './en'
@@ -45,5 +46,10 @@ function pick(value: string | PluralForms, count: unknown): string {
 
 export function t(key: MessageKey, params: Record<string, string | number> = {}): string {
   const template = pick(LOCALES[locale.value][key], params.count)
-  return template.replace(/\{(\w+)\}/g, (match, name: string) => (name in params ? String(params[name]) : match))
+  // Names from the collection keep their order next to the message's own text (src/domain/scripts.ts).
+  return template.replace(/\{(\w+)\}/g, (match, name: string) => {
+    if (!(name in params)) return match
+    const value = params[name]
+    return typeof value === 'string' ? isolateName(value) : String(value)
+  })
 }

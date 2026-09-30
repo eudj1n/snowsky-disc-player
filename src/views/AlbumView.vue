@@ -8,6 +8,7 @@
  * joint album ("A; B") shows the pair's other albums, else its first
  * artist's, and then its artists (owner, round 14).
  */
+import { isolateName } from '../domain/scripts'
 import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import CoverCard from '../components/collection/CoverCard.vue'
@@ -121,7 +122,10 @@ const coverMessage = computed(() => {
     case 'found':
       return release
         ? t('cover_found', {
-            release: [release.title, release.artist, release.date?.slice(0, 4)].filter(Boolean).join(' · '),
+            release: [release.title, release.artist, release.date?.slice(0, 4)]
+              .filter((part): part is string => Boolean(part))
+              .map(isolateName)
+              .join(' · '),
           })
         : null
     case 'missing':

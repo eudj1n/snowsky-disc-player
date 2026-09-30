@@ -77,3 +77,22 @@ the page follows the system:
 
 Otherwise the player bar is 97 % opaque with a 30 px blur and more
 saturation, so the list no longer reads through it.
+
+## Names in any script
+
+Names come from the user's files in any script; the interface is in English
+or Russian. Two things the interface language cannot decide
+(`src/domain/scripts.ts`):
+
+- **Direction.** Every inline element (`span`, `a`, `strong`, …) is its own
+  bidi isolate (`src/styles/main.css`), and names joined into one string
+  ("Artist · Album", message parameters in `t()`) are wrapped in first-strong
+  isolates (U+2068 … U+2069) when they hold a right-to-left letter, so
+  "فيروز · 1991" keeps the year after the name. Other names are left as
+  they are, and columns keep their left alignment.
+- **Glyph forms.** Chinese, Japanese and Korean share ideographs drawn
+  differently per language, and the document's language is the interface's.
+  `src/lib/scriptLanguages.ts` watches the document and gives an element whose
+  own text has kana `lang="ja"` and one with hangul `lang="ko"`; ideographs
+  alone stay with the document's language, since Chinese and Japanese cannot
+  be told apart by them. It never touches a `lang` a template set.
