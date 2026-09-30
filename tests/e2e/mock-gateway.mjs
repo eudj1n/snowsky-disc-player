@@ -157,6 +157,8 @@ const player = {
   treeReads: 0,
   /** Plays this page reported from a browser (/__mock/browser-plays). */
   browserPlays: [],
+  /** The card's store catalog predates the rotation periods (/__mock/store-old). */
+  storeOld: false,
   state: 1,
   list: TRACKS.filter((track) => track.ALBUM === 'Afterglow'),
   index: 0,
@@ -644,6 +646,9 @@ const server = createServer((request, response) => {
         }
         if (!value || typeof value !== 'object' || STORE_KEYS[collection].some((name, i) => i === 0 && !value[name]))
           return send(response, 400, 'A required field is missing\n')
+        // A card catalog from before the rotation periods (/__mock/store-old) knows no written day or period.
+        if (player.storeOld && collection === 'auto_playlists' && ('written' in value || 'period' in value))
+          return send(response, 400, 'Unknown field\n')
         const key = storeKey(collection, value)
         const created = !records.has(key)
         if (created && records.size >= STORE_LIMITS[collection]) return send(response, 409, 'The collection is full\n')
@@ -807,6 +812,10 @@ const server = createServer((request, response) => {
   }
   if (url.pathname === '/__mock/browser-plays' && request.method === 'GET') {
     return send(response, 200, JSON.stringify(player.browserPlays), 'application/json')
+  }
+  if (url.pathname === '/__mock/store-old' && request.method === 'POST') {
+    player.storeOld = url.searchParams.get('on') === '1'
+    return send(response, 204, '')
   }
   // Forgets every list and automatic playlist record, so the shared mock is as it was.
   if (url.pathname === '/__mock/lists' && request.method === 'DELETE') {

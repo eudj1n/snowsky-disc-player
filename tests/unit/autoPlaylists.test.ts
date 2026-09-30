@@ -3,6 +3,8 @@ import {
   AUTO_SIZE,
   autoEntries,
   autoPlaylist,
+  dueDay,
+  isDue,
   listable,
   listName,
   localDay,
@@ -142,6 +144,42 @@ describe('automatic playlists', () => {
     const early = autoEntries({ kind: 'daily_mix' }, { ...input, most: [], favorites: [] })
     expect(early).toHaveLength(AUTO_SIZE)
     expect(localDay(new Date(2026, 8, 30, 23, 59))).toBe('2026-09-30')
+  })
+
+  it('keeps a list as written for its period: a day, a week or a calendar month', () => {
+    expect(dueDay('2026-09-30', 'day')).toBe('2026-10-01')
+    expect(dueDay('2026-12-28', 'week')).toBe('2027-01-04')
+    expect(dueDay('2026-01-31', 'month')).toBe('2026-02-28')
+    expect(dueDay('2028-01-31', 'month')).toBe('2028-02-29')
+    expect(dueDay('2026-12-15', 'month')).toBe('2027-01-15')
+    expect(isDue({ written: '2026-09-30' }, '2026-09-30')).toBe(false)
+    expect(isDue({ written: '2026-09-30' }, '2026-10-01')).toBe(true)
+    expect(isDue({ written: '2026-09-30', period: 'week' }, '2026-10-06')).toBe(false)
+    expect(isDue({ written: '2026-09-30', period: 'week' }, '2026-10-07')).toBe(true)
+    // A record from before the periods, or a broken day, is drawn again.
+    expect(isDue({}, '2026-09-30')).toBe(true)
+    expect(isDue({ written: '30.09.2026' }, '2026-09-30')).toBe(true)
+    expect(autoPlaylist({ name: 'M', kind: 'daily_mix', written: '2026-09-30', period: 'month', at: 1 })).toEqual({
+      name: 'M',
+      kind: 'daily_mix',
+      written: '2026-09-30',
+      period: 'month',
+      at: 1,
+    })
+    expect(autoPlaylist({ name: 'M', kind: 'daily_mix', written: 'soon', period: 'hour', at: 1 })).toEqual({
+      name: 'M',
+      kind: 'daily_mix',
+      at: 1,
+    })
+  })
+
+  it('draws a new daily mix apart from the last one while the library allows', () => {
+    const tracks = Array.from({ length: 200 }, (_, i) => track(`/tmp/sdcard/r${String(i)}.flac`))
+    const input = { tracks, most: [], plays: [], disliked: none, favorites: tracks.slice(0, 80), day: '2026-10-01' }
+    const last = autoEntries({ kind: 'daily_mix' }, { ...input, day: '2026-09-30' })
+    const next = autoEntries({ kind: 'daily_mix' }, { ...input, previous: last })
+    expect(next).toHaveLength(AUTO_SIZE)
+    expect(next.filter((path) => last.includes(path))).toEqual([])
   })
 
   it('names lists as a FAT card keeps them', () => {

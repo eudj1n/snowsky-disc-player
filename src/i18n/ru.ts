@@ -69,6 +69,11 @@ export const ru: Messages = {
   auto_section_note:
     'Списки, которые плеер играет сам (файловый просмотр, папка Playlists), по 50 треков, без треков «Не нравится» и образов CUE. Страница обновляет их, когда открывается.',
   auto_add: 'Добавить на плеер',
+  auto_updated_on: 'обновлён {date}',
+  auto_period: 'Как часто обновлять',
+  auto_period_day: 'Каждый день',
+  auto_period_week: 'Раз в неделю',
+  auto_period_month: 'Раз в месяц',
   auto_remove: 'Убрать',
   auto_remove_confirm: 'Убрать «{name}» с плеера?',
   auto_refresh: 'Обновить сейчас',

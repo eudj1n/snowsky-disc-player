@@ -14,18 +14,25 @@ import ListArt from '../components/artwork/ListArt.vue'
 import DetailHeading from '../components/collection/DetailHeading.vue'
 import TrackList from '../components/track/TrackList.vue'
 import { queueContext } from '../domain/history'
-import { listArtists, listBackground } from '../domain/listArt'
+import { listArtists, listBackground, shortDay } from '../domain/listArt'
 import { filterBy } from '../domain/search'
 import type { LibraryTrack } from '../domain/track'
-import { t } from '../i18n'
-import { autoPlaylists, autoPreviews, removeAutoList } from '../stores/autoPlaylists'
-import { GLOBAL_KINDS, type GlobalKind } from '../domain/autoPlaylists'
+import { locale, t } from '../i18n'
+import {
+  autoPlaylists,
+  autoPreviews,
+  refreshAutoPlaylists,
+  removeAutoList,
+  setAutoPeriod,
+} from '../stores/autoPlaylists'
+import { GLOBAL_KINDS, PERIODS, type GlobalKind, type RotationPeriod } from '../domain/autoPlaylists'
 import { playInBrowser } from '../stores/browser'
 import { connection } from '../stores/connection'
 import { trackByPath } from '../stores/library'
 import { openTrackMenu, ui } from '../stores/ui'
 import UiCircleButton from '../ui/UiCircleButton.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
+import UiSelect from '../ui/UiSelect.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import CollectionGate from './CollectionGate.vue'
 import { useHeadingAction } from './headingAction'
@@ -119,7 +126,12 @@ async function remove(): Promise<void> {
         <template #artwork><ListArt :title="name" :background="background" :artists="artists" /></template>
         <template #sticky>{{ t('track_count', { count: rows.length }) }}</template>
         <template #meta>
-          <template v-if="list">{{ t('track_count', { count: rows.length }) }}</template>
+          <template v-if="list"
+            >{{ t('track_count', { count: rows.length })
+            }}<template v-if="list.written">
+              · {{ t('auto_updated_on', { date: shortDay(list.written, locale) }) }}</template
+            ></template
+          >
           <template v-else-if="preview">{{ t('track_count', { count: rows.length }) }}</template>
           <template v-else>{{ t('auto_list_missing') }}</template>
         </template>
@@ -138,6 +150,26 @@ async function remove(): Promise<void> {
           data-testid="list-browser"
           @click="inBrowser"
         />
+        <!-- How long it stays as written, and drawing it again now (owner, 2026-09-30). -->
+        <UiSelect v-if="list" size="sm">
+          <select
+            :value="list.period ?? 'day'"
+            :aria-label="t('auto_period')"
+            :disabled="autoPlaylists.busy || autoPlaylists.refreshing"
+            data-testid="list-period"
+            class="rounded-18 border border-line bg-soft py-9 pl-12 text-12 text-secondary"
+            @change="list && setAutoPeriod(list, ($event.target as HTMLSelectElement).value as RotationPeriod)"
+          >
+            <option v-for="period in PERIODS" :key="period" :value="period">{{ t(`auto_period_${period}`) }}</option>
+          </select>
+        </UiSelect>
+        <UiTextButton
+          v-if="list"
+          :disabled="autoPlaylists.busy || autoPlaylists.refreshing"
+          data-testid="list-refresh"
+          @click="refreshAutoPlaylists(true, name)"
+          >{{ t('auto_refresh') }}</UiTextButton
+        >
         <UiTextButton v-if="list" :disabled="autoPlaylists.busy" @click="remove">{{ t('auto_remove') }}</UiTextButton>
       </DetailHeading>
     </template>

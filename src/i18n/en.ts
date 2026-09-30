@@ -69,6 +69,11 @@ export const en = {
   auto_section_note:
     'Lists the player plays by itself (its file view, the Playlists folder), 50 tracks each without disliked tracks and CUE images. The page brings them up to date when it opens.',
   auto_add: 'Add to the player',
+  auto_updated_on: 'updated {date}',
+  auto_period: 'How often it changes',
+  auto_period_day: 'Every day',
+  auto_period_week: 'Every week',
+  auto_period_month: 'Every month',
   auto_remove: 'Remove',
   auto_remove_confirm: 'Remove “{name}” from the player?',
   auto_refresh: 'Update now',

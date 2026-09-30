@@ -65,3 +65,9 @@ export function titleSize(title: string): number {
   const longest = Math.max(...title.split(/\s+/).map((word) => [...new Intl.Segmenter().segment(word)].length), 1)
   return Math.min(13, 138 / longest)
 }
+
+/** A list's day ('2026-09-30') as the page's language writes it short ("30 Sep"). */
+export function shortDay(day: string, locale?: string): string {
+  const [year = 1970, month = 1, date = 1] = day.split('-').map(Number)
+  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(new Date(year, month - 1, date))
+}

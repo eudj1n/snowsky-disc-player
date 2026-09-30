@@ -1591,13 +1591,25 @@ browser on its own.
       catalogs: 35 desktop cases, 28 on stock, among them an artist's list
       played from a row (`0100` with its position).
       On the owner's card (2026-09-30, the owner's go-ahead): `Apps/Disc
-    Player` replaced by `2026.09.30-325ebae` (94 files) and
+Player` replaced by `2026.09.30-325ebae` (94 files) and
       `.disc/catalog/store.json` by `d1151cca…` (with `daily_mix`).
 - [x] On the owner's card (2026-09-30, the owner's go-ahead, storage mode):
       `Apps/Disc Player` replaced by `2026.09.30-039adb5` (87 files) and
       `install-catalog` wrote `.disc/catalog/queries.json` (the image's own,
       `b6ca8321…`) and `store.json` (`585d2b71…`, with `auto_playlists`);
       the card ejected.
+
+- [x] Rotation periods (owner, 2026-09-30): every automatic list stays as
+      written for its period, a day by default, or a week or a month chosen
+      on its page; the page draws a list again at opening only once the
+      period has passed since the day it was written (the browser's date,
+      kept in the store's record with the period), so new plays do not
+      reshuffle it meanwhile. "Update now" draws again at once (all lists
+      on the Playlists page, one on its page). The list page and the
+      Playlists rows name the day it was last drawn; a new daily mix leaves
+      the last one's tracks for last. A card catalog from before the periods
+      refuses the two fields: the record is then stored without them. A list
+      not on the player opens as a preview from the Playlists section too.
 
 ## Requests for the next service build
 

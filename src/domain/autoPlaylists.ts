@@ -16,12 +16,20 @@ import { recentlyAdded, type LibraryTrack } from './track'
 
 export type AutoKind = 'most_played' | 'artist_most_played' | 'recently_added' | 'not_played_lately' | 'daily_mix'
 
+/** How long a list stays as written before it is drawn again (owner, 2026-09-30). */
+export type RotationPeriod = 'day' | 'week' | 'month'
+export const PERIODS: readonly RotationPeriod[] = ['day', 'week', 'month']
+
 /** A record of the store's `auto_playlists` collection: which lists are the page's to rewrite. */
 export interface AutoPlaylist {
   /** The list's name, fixed when it is made (its file is `<name>.m3u`). */
   name: string
   kind: AutoKind
   artist?: string
+  /** The browser's local day the list was last written ('2026-09-30'). */
+  written?: string
+  /** A day when absent. */
+  period?: RotationPeriod
   at: number
 }
 
@@ -50,6 +58,8 @@ export interface AutoInput {
   favorites?: readonly LibraryTrack[]
   /** The local date ('2026-09-30') the daily mix is drawn for. */
   day?: string
+  /** The list's entries as last written: a new daily mix leaves them for last. */
+  previous?: readonly string[]
 }
 
 /** Tracks a list can hold: whole files, not disliked, each file once (the first track of a path). */
@@ -117,8 +127,14 @@ function dailyMix(tracks: readonly LibraryTrack[], input: AutoInput): string[] {
   )
   for (const track of input.favorites ?? []) if (track.path && byPath.has(track.path)) loved.add(track.path)
   const fresh = [...byPath.keys()].filter((path) => !loved.has(path) && (counts.get(path) ?? 0) <= 1)
-  const lovedDrawn = shuffle([...loved], random)
-  const freshDrawn = shuffle(fresh, random)
+  // The last mix's tracks go last, so a new one differs as far as the library allows.
+  const before = new Set(input.previous ?? [])
+  const later = (paths: string[]) => [
+    ...paths.filter((path) => !before.has(path)),
+    ...paths.filter((path) => before.has(path)),
+  ]
+  const lovedDrawn = later(shuffle([...loved], random))
+  const freshDrawn = later(shuffle(fresh, random))
   const half = AUTO_SIZE / 2
   const takeLoved = Math.min(lovedDrawn.length, Math.max(half, AUTO_SIZE - freshDrawn.length))
   const takeFresh = Math.min(freshDrawn.length, AUTO_SIZE - takeLoved)
@@ -147,6 +163,29 @@ function shuffle<T>(items: readonly T[], random: () => number): T[] {
     result[j] = swap
   }
   return result
+}
+
+const DAY = /^\d{4}-\d{2}-\d{2}$/
+
+/** The day a list written on `written` is drawn again: a day, a week or a calendar month later. */
+export function dueDay(written: string, period: RotationPeriod): string {
+  const [year = 1970, month = 1, day = 1] = written.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day))
+  if (period === 'day') date.setUTCDate(day + 1)
+  else if (period === 'week') date.setUTCDate(day + 7)
+  else {
+    // The same day next month, or its last day (31 January → 28 or 29 February).
+    const last = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
+    date.setUTCDate(1)
+    date.setUTCMonth(month)
+    date.setUTCDate(Math.min(day, last))
+  }
+  return date.toISOString().slice(0, 10)
+}
+
+/** Whether a list is drawn again today: never written (or written before the periods), or its period has passed. */
+export function isDue(list: Pick<AutoPlaylist, 'written' | 'period'>, today: string): boolean {
+  return !list.written || !DAY.test(list.written) || today >= dueDay(list.written, list.period ?? 'day')
 }
 
 /** The local date a daily mix is drawn for. */
@@ -194,9 +233,13 @@ export function autoPlaylist(value: unknown): AutoPlaylist | null {
   const v = value as Record<string, unknown> | null
   if (!v || typeof v.name !== 'string' || !AUTO_KINDS.includes(v.kind as AutoKind)) return null
   const at = typeof v.at === 'number' ? v.at : 0
+  const kept = {
+    ...(typeof v.written === 'string' && DAY.test(v.written) ? { written: v.written } : {}),
+    ...(PERIODS.includes(v.period as RotationPeriod) ? { period: v.period as RotationPeriod } : {}),
+  }
   if (v.kind === 'artist_most_played')
     return typeof v.artist === 'string' && v.artist
-      ? { name: v.name, kind: 'artist_most_played', artist: v.artist, at }
+      ? { name: v.name, kind: 'artist_most_played', artist: v.artist, ...kept, at }
       : null
-  return { name: v.name, kind: v.kind as AutoKind, at }
+  return { name: v.name, kind: v.kind as AutoKind, ...kept, at }
 }

@@ -14,11 +14,13 @@ import {
   autoPlaylist,
   GLOBAL_KINDS,
   listName,
+  isDue,
   localDay,
   sameEntries,
   type AutoKind,
   type AutoPlaylist,
   type GlobalKind,
+  type RotationPeriod,
 } from '../domain/autoPlaylists'
 import { deleteList, readList, readLists, writeList, type ListFile } from '../gateway/lists'
 import { deleteRecord, putRecord, readCollection } from '../gateway/store'
@@ -121,21 +123,38 @@ export async function loadAutoPlaylists(): Promise<void> {
 }
 
 /** Brings every automatic list up to date, writing only those whose entries changed. */
-export async function refreshAutoPlaylists(announce = false): Promise<void> {
+/**
+ * Brings the automatic lists up to date: each one whose period has passed
+ * (owner, 2026-09-30: a list stays as written for a day, a week or a month),
+ * or every one (or one named) when asked. A list is written only when its
+ * entries changed; either way its record then keeps today as the day it was
+ * drawn, so it stays until its period passes again.
+ */
+export async function refreshAutoPlaylists(announce = false, only: string | null = null): Promise<void> {
   const token = pairingToken()
   if (!token || !ready.value || state.refreshing || state.busy) return
   state.refreshing = true
+  const today = localDay()
   let written = 0
   let failed = 0
   try {
     for (const list of state.lists) {
-      const entries = autoEntries(list, input())
-      if (!entries.length || sameEntries(state.entries[list.name] ?? [], entries)) continue
+      if (only !== null ? list.name !== only : !announce && !isDue(list, today)) continue
+      const current = state.entries[list.name] ?? []
+      const entries = autoEntries(list, { ...input(), day: today, previous: current })
+      if (!entries.length) continue
       if (written + failed) await pause(PACE_MS)
-      if ((await writeList(http, token, SCOPE, list.name, entries)) === 'written') {
+      if (!sameEntries(current, entries)) {
+        if ((await writeList(http, token, SCOPE, list.name, entries)) !== 'written') {
+          failed++
+          continue
+        }
         state.entries[list.name] = entries
         written++
-      } else failed++
+      }
+      // Drawn today: the record keeps the day, so the list stays until its period passes.
+      const drawn = { ...list, written: today }
+      if ((await storeList(drawn, token)) === 'confirmed') replaceList(drawn)
     }
     if (written) state.files = (await readLists(http, SCOPE)) ?? state.files
     state.refreshedAt = Date.now()
@@ -145,6 +164,39 @@ export async function refreshAutoPlaylists(announce = false): Promise<void> {
     if (announce) toast('auto_failed', true)
   } finally {
     state.refreshing = false
+  }
+}
+
+/**
+ * Stores a list's record. A card catalog from before the periods (2026-09-30)
+ * refuses the day and period fields: that refusal wrote nothing, so the
+ * record is stored again without them (the list then counts as due at each
+ * opening, as before).
+ */
+async function storeList(list: AutoPlaylist, token: string): Promise<'confirmed' | 'refused' | 'full' | 'uncertain'> {
+  const outcome = await putRecord(http, COLLECTION, { ...list }, token)
+  if (outcome !== 'refused' || (list.written === undefined && list.period === undefined)) return outcome
+  const older: Record<string, unknown> = { ...list }
+  delete older.written
+  delete older.period
+  return putRecord(http, COLLECTION, older, token)
+}
+
+function replaceList(list: AutoPlaylist): void {
+  state.lists = state.lists.map((known) => (known.name === list.name ? list : known))
+}
+
+/** How long a list stays as written (a day, a week or a month); the next due day follows from the day it was written. */
+export async function setAutoPeriod(list: AutoPlaylist, period: RotationPeriod): Promise<void> {
+  const token = guard()
+  if (!token) return
+  state.busy = true
+  try {
+    const changed = { ...list, period }
+    if ((await storeList(changed, token)) === 'confirmed') replaceList(changed)
+    else toast('auto_failed', true)
+  } finally {
+    state.busy = false
   }
 }
 
@@ -177,7 +229,7 @@ async function make(list: AutoPlaylist, quiet = false): Promise<boolean> {
   }
   state.busy = true
   try {
-    const stored = await putRecord(http, COLLECTION, { ...list }, token)
+    const stored = await storeList(list, token)
     if (stored !== 'confirmed') {
       toast(stored === 'full' ? 'auto_full' : 'auto_failed', true)
       return false
@@ -203,12 +255,19 @@ const now = () => Math.floor(Date.now() / 1000)
 
 /** An artist's most played tracks as a list the player keeps (the artist page's button). */
 export function makeArtistList(artist: string): Promise<boolean> {
-  return make({ name: listName(t('auto_name_artist', { artist })), kind: 'artist_most_played', artist, at: now() })
+  return make({
+    name: listName(t('auto_name_artist', { artist })),
+    kind: 'artist_most_played',
+    artist,
+    written: localDay(),
+    period: 'day',
+    at: now(),
+  })
 }
 
 /** One of the lists that are not an artist's (the Playlists page). */
 export function makeKindList(kind: GlobalKind, quiet = false): Promise<boolean> {
-  return make({ name: listName(t(`auto_name_${kind}`)), kind, at: now() }, quiet)
+  return make({ name: listName(t(`auto_name_${kind}`)), kind, written: localDay(), period: 'day', at: now() }, quiet)
 }
 
 /** Removes a list: its file first (a record left behind only makes the next update write it again), then its record. */

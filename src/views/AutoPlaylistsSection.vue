@@ -9,9 +9,16 @@ import { computed } from 'vue'
 import ListArt from '../components/artwork/ListArt.vue'
 import SectionHeading from '../components/common/SectionHeading.vue'
 import { GLOBAL_KINDS, type AutoPlaylist, type GlobalKind } from '../domain/autoPlaylists'
-import { listBackground } from '../domain/listArt'
+import { listBackground, shortDay } from '../domain/listArt'
 import { locale, t } from '../i18n'
-import { autoPlaylists, kindList, makeKindList, refreshAutoPlaylists, removeAutoList } from '../stores/autoPlaylists'
+import {
+  autoPlaylists,
+  autoPreviews,
+  kindList,
+  makeKindList,
+  refreshAutoPlaylists,
+  removeAutoList,
+} from '../stores/autoPlaylists'
 import { pairing } from '../stores/pairing'
 import UiIconButton from '../ui/UiIconButton.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
@@ -33,6 +40,17 @@ const rows = computed<Row[]>(() => [
 ])
 const rowTitle = (row: Row) => row.list?.name ?? t(`auto_name_${row.kind ?? 'most_played'}`)
 const rowKind = (row: Row) => row.list?.kind ?? row.kind ?? 'most_played'
+const rowRoute = (row: Row) =>
+  row.list
+    ? { name: 'list', params: { name: row.list.name } }
+    : { name: 'list', params: { name: rowTitle(row) }, query: { kind: row.kind ?? 'most_played' } }
+/** Its size, and for a list on the player the day it was last drawn. */
+function rowFacts(row: Row): string {
+  const tracks = row.list ? count(row.list) : row.kind ? autoPreviews.value[row.kind].length : null
+  const parts = tracks === null ? [] : [t('track_count', { count: tracks })]
+  if (row.list?.written) parts.push(t('auto_updated_on', { date: shortDay(row.list.written, locale.value) }))
+  return parts.join(' · ')
+}
 const count = (list: AutoPlaylist) => autoPlaylists.entries[list.name]?.length ?? null
 const busy = computed(() => autoPlaylists.busy || autoPlaylists.refreshing || !pairing.paired)
 const updated = computed(() =>
@@ -73,18 +91,12 @@ function remove(list: AutoPlaylist): void {
           <ListArt :title="rowTitle(row)" :background="listBackground(rowKind(row), rowTitle(row))" thumb />
         </span>
         <div class="min-w-0 flex-1">
-          <RouterLink
-            v-if="row.list"
-            :to="{ name: 'list', params: { name: row.list.name } }"
-            class="block truncate text-13 font-semibold hover:underline"
-            >{{ row.list.name }}</RouterLink
-          >
-          <strong v-else class="block truncate text-13 font-semibold">{{ rowTitle(row) }}</strong>
+          <!-- A list not added yet opens as a preview, as from Home (owner, 2026-09-30). -->
+          <RouterLink :to="rowRoute(row)" class="block truncate text-13 font-semibold hover:underline">{{
+            rowTitle(row)
+          }}</RouterLink>
           <p class="m-0 mt-2 truncate text-11 text-muted">
-            <template v-if="row.list && count(row.list) !== null">{{
-              t('track_count', { count: count(row.list) ?? 0 })
-            }}</template>
-            <template v-else-if="!row.list">{{ t('kind_auto_playlist') }}</template>
+            {{ rowFacts(row) }}
             <template v-if="row.artist">
               ·
               <RouterLink :to="artistRoute(row.artist)" class="hover:text-ink hover:underline">{{
@@ -112,7 +124,7 @@ function remove(list: AutoPlaylist): void {
           v-else-if="row.kind"
           variant="secondary"
           icon="playlist"
-          :disabled="busy"
+          :disabled="busy || !autoPreviews[row.kind].length"
           @click="row.kind && makeKindList(row.kind)"
           >{{ t('auto_add') }}</UiPillButton
         >

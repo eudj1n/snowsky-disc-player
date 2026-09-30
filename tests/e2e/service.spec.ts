@@ -321,8 +321,31 @@ test('keeps automatic playlists on the player: an artist’s most played and the
     const row = (kind: string) => section.locator(`li[data-kind="${kind}"]`)
     await row('most_played').getByRole('button', { name: 'Add to the player' }).click()
     await expect(row('most_played')).toContainText(/Most played\s*\d+ tracks?/)
-    await row('not_played_lately').getByRole('button', { name: 'Add to the player' }).click()
-    await expect(status(page, 'Nothing to put in it yet')).toBeVisible()
+    // A list on the player names the day it was drawn; one not added opens as a preview, as from Home.
+    await expect(row('most_played')).toContainText(/updated [A-Z][a-z]{2} \d{1,2}/)
+    await row('daily_mix').getByRole('link', { name: 'Daily mix' }).click()
+    await expect(page).toHaveURL(/#\/list\/Daily%20mix\?kind=daily_mix$/)
+    await expect(page.getByRole('table').getByRole('row').nth(1)).toBeVisible()
+    await page.goto('/#/playlists')
+    // A list with nothing to hold yet cannot be added.
+    await expect(row('not_played_lately')).toContainText('0 tracks')
+    await expect(row('not_played_lately').getByRole('button', { name: 'Add to the player' })).toBeDisabled()
+    // Its page: how often it changes (kept in the store) and drawing it again now.
+    await row('most_played').getByRole('link', { name: 'Most played', exact: true }).click()
+    await expect(page.getByRole('main')).toContainText(/updated [A-Z][a-z]{2} \d{1,2}/)
+    await expect(page.getByTestId('list-period')).toHaveValue('day')
+    await page.getByTestId('list-period').selectOption('week')
+    await expect
+      .poll(async () => {
+        const doc = (await (await request.get('/api/store/auto_playlists/records')).json()) as {
+          records: { value: { name: string; period?: string; written?: string } }[]
+        }
+        return doc.records.find((record) => record.value.name === 'Most played')?.value.period
+      })
+      .toBe('week')
+    await page.getByTestId('list-refresh').click()
+    await expect(status(page, 'Automatic playlists are up to date')).toBeVisible()
+    await page.goto('/#/playlists')
     await expect(row('artist_most_played')).toContainText('Most played · Forma')
     expect(await lists()).toEqual(['Most played', 'Most played · Forma'])
 
@@ -377,4 +400,26 @@ test('keeps automatic playlists on the player: an artist’s most played and the
     await request.delete('/__mock/lists')
   }
   expect(errors).toEqual([])
+})
+
+test('makes an automatic playlist with a card catalog from before the rotation periods', async ({ page, request }) => {
+  await request.post('/__mock/store-old?on=1')
+  try {
+    await english(page)
+    await connectAndPair(page)
+    await page.goto('/#/artist/Forma')
+    await page.getByTestId('artist-auto').click()
+    await expect(status(page, '“Most played · Forma” is on the player')).toBeVisible()
+    const doc = (await (await request.get('/api/store/auto_playlists/records')).json()) as {
+      records: { value: Record<string, unknown> }[]
+    }
+    // Stored without the fields the older catalog refuses: nothing was written by the refused attempt.
+    expect(doc.records.map((record) => record.value)).toEqual([
+      { name: 'Most played · Forma', kind: 'artist_most_played', artist: 'Forma', at: expect.any(Number) as unknown },
+    ])
+    await disconnect(page)
+  } finally {
+    await request.post('/__mock/store-old?on=0')
+    await request.delete('/__mock/lists')
+  }
 })
