@@ -1,10 +1,11 @@
-/** Presentation state shared across the shell: search query, dialogs, toast. */
-import { nextTick, reactive, readonly } from 'vue'
+/** Presentation state shared across the shell: the search palette, dialogs, toast. */
+import { nextTick, reactive, readonly, shallowRef } from 'vue'
+import type { RouteLocationRaw } from 'vue-router'
 import type { SelectionTarget } from '../gateway/selection'
 import type { Track } from '../domain/track'
 import type { MessageKey } from '../i18n'
 
-export type DialogName = 'connection' | 'appearance' | 'sound' | 'import'
+export type DialogName = 'connection' | 'settings' | 'sound' | 'import'
 /** The listening panel's tabs (owner, 2026-09-29: the queue joined Now). */
 export type PanelSection = 'now' | 'lyrics'
 /** What an opener asks for: a tab, or the queue (the Now tab scrolled to it). */
@@ -30,6 +31,12 @@ export type PlaylistDialog =
   | { mode: 'remove'; playlist: string; track: Track }
   | { mode: 'unfavorite'; track: Track }
 
+/** A step of the top bar's breadcrumbs; the last one is the page itself. */
+export interface Crumb {
+  text: string
+  to?: RouteLocationRaw
+}
+
 interface Toast {
   key: MessageKey
   /** Values for the message's placeholders ("{position}"). */
@@ -41,7 +48,8 @@ interface Toast {
 }
 
 const state = reactive({
-  query: '',
+  /** The search palette (owner, 2026-09-30): the whole collection and the page's commands. */
+  palette: false,
   dialog: null as DialogName | null,
   panel: null as PanelSection | null,
   /** What the panel was opened for; the queue asks the Now tab to scroll to it. */
@@ -71,8 +79,28 @@ export function closeCover(): void {
 let toastTimer: ReturnType<typeof setTimeout> | undefined
 let toastId = 0
 
-export function setQuery(value: string): void {
-  state.query = value
+/** The breadcrumbs a page gave for its path (owner, 2026-09-30); others show their section. */
+const crumbs = shallowRef<{ owner: object; path: string; items: Crumb[] } | null>(null)
+
+export function setCrumbs(owner: object, path: string, items: Crumb[]): void {
+  crumbs.value = { owner, path, items }
+}
+
+/** Only the page that gave the crumbs takes them away. */
+export function clearCrumbs(owner: object): void {
+  if (crumbs.value?.owner === owner) crumbs.value = null
+}
+
+/** The crumbs given for this path, if any. */
+export const pageCrumbs = (path: string): Crumb[] | null =>
+  crumbs.value && crumbs.value.path === path ? crumbs.value.items : null
+
+export function openPalette(): void {
+  state.palette = true
+}
+
+export function closePalette(): void {
+  state.palette = false
 }
 
 export function openDialog(name: DialogName): void {

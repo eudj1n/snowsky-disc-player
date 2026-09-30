@@ -8,23 +8,21 @@
  * (`?kind=`, from Home) shows what it would hold; listening writes it to the
  * player first (owner, 2026-09-30: one tap).
  */
-import { BACK_LINK } from './captions'
 import { computed } from 'vue'
+import { useCrumbs } from './crumbs'
 import { useRoute, useRouter } from 'vue-router'
 import ListArt from '../components/artwork/ListArt.vue'
 import DetailHeading from '../components/collection/DetailHeading.vue'
 import TrackList from '../components/track/TrackList.vue'
 import { listArtists, listBackground, shortDay } from '../domain/listArt'
-import { filterBy } from '../domain/search'
 import type { LibraryTrack } from '../domain/track'
 import { locale, t } from '../i18n'
 import { autoPlaylists, autoPreviews } from '../stores/autoPlaylists'
 import { GLOBAL_KINDS, type GlobalKind } from '../domain/autoPlaylists'
 import { trackByPath } from '../stores/library'
-import { openTrackMenu, ui } from '../stores/ui'
+import { openTrackMenu } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiActionMenu from '../ui/UiActionMenu.vue'
-import UiTextButton from '../ui/UiTextButton.vue'
 import CollectionGate from './CollectionGate.vue'
 import { useHeadingAction } from './headingAction'
 import { listenToKind } from './autoLists'
@@ -35,6 +33,7 @@ import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
 const route = useRoute()
 const router = useRouter()
 const name = computed(() => String(route.params.name ?? ''))
+useCrumbs(() => [{ text: t('playlists'), to: '/playlists' }, { text: name.value }])
 const list = computed(() => autoPlaylists.lists.find((item) => item.name === name.value) ?? null)
 /** A preview of a list not made yet: its kind from the address. */
 const preview = computed<GlobalKind | null>(() => {
@@ -54,8 +53,7 @@ const rows = computed(() =>
   }),
 )
 const tracks = computed<LibraryTrack[]>(() => rows.value.map((row) => row.track))
-const searching = computed(() => ui.query.trim() !== '')
-const items = computed(() => filterBy(tracks.value, ui.query, (track) => [track.title, track.artist, track.album]))
+const items = computed(() => tracks.value)
 const background = computed(() => listBackground(list.value?.kind ?? preview.value ?? 'most_played', name.value))
 const artists = computed(() => {
   const { names, more } = listArtists(entries.value ?? [], trackByPath.value)
@@ -98,14 +96,8 @@ async function onAction(id: string): Promise<void> {
 </script>
 
 <template>
-  <CollectionGate
-    :count="items.length"
-    :searching="searching"
-    empty-key="search_empty_tracks"
-    :ready="entries !== null || (autoPlaylists.available && !list)"
-  >
+  <CollectionGate :count="items.length" :ready="entries !== null || (autoPlaylists.available && !list)">
     <template #heading="{ loading }">
-      <UiTextButton :class="BACK_LINK" @click="router.push('/playlists')">← {{ t('back_to_collection') }}</UiTextButton>
       <DetailHeading
         :title="name"
         :kind="t('kind_auto_playlist')"

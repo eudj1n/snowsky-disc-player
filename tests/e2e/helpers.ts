@@ -20,9 +20,30 @@ export function watchErrors(page: Page): string[] {
   return errors
 }
 
+/** Settings (the top bar's gear): theme, text size and the interface language. */
+export async function openSettings(page: Page): Promise<void> {
+  await page
+    .getByRole('button', { name: /^(Settings|Настройки)$/ })
+    .filter({ visible: true })
+    .first()
+    .click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+}
+
 export async function english(page: Page): Promise<void> {
   await page.goto('/')
-  await page.getByRole('combobox', { name: /Interface language|Язык интерфейса/ }).selectOption('en')
+  await openSettings(page)
+  await page.getByRole('dialog').getByRole('button', { name: 'English', exact: true }).click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+}
+
+/** Runs a command of the search palette (⌘K or Ctrl+K), such as Add music or Sound settings. */
+export async function command(page: Page, label: string): Promise<void> {
+  await page.keyboard.press('ControlOrMeta+k')
+  const palette = page.getByTestId('search-palette')
+  await palette.getByRole('combobox').fill(label)
+  await palette.getByRole('option', { name: label, exact: true }).click()
 }
 
 export async function openConnection(page: Page): Promise<void> {

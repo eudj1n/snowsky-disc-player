@@ -6,14 +6,13 @@ import CoverGrid from '../components/collection/CoverGrid.vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
 import { ALBUM_SORTS, albumScope, albumTracks, sortAlbums, type Album } from '../domain/album'
 import { findGenre, genreAlbums } from '../domain/genre'
-import { filterBy } from '../domain/search'
 import { locale, t } from '../i18n'
 import { albumSort } from '../stores/preferences'
 import UiChips from '../ui/UiChips.vue'
 import { albumCover } from '../stores/enrichment'
 import { albums, genres, tracks } from '../stores/library'
 import { albumPinnedAt, isPinnedAlbum, pinnedFirst } from '../stores/pins'
-import { ui } from '../stores/ui'
+
 import { albumCardRoute, albumLines, countLine, genreAlbumRoute } from './captions'
 import { playAlbumCard, playFrom } from './playAlbum'
 import CollectionGate from './CollectionGate.vue'
@@ -22,7 +21,6 @@ import GenreFilter from '../components/genre/GenreFilter.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 
 const { genre, options } = useGenreFilter()
-const searching = computed(() => ui.query.trim() !== '')
 const current = computed(() => (genre.value ? findGenre(genres.value, genre.value) : null))
 const source = computed(() =>
   genre.value ? (current.value ? genreAlbums(albums.value, current.value) : []) : albums.value,
@@ -32,26 +30,17 @@ const mixed = (album: Album) =>
   genre.value !== null &&
   albumTracks(tracks.value, album.title, albumScope(album)).some((track) => track.genre !== genre.value)
 // Pinned albums lead the list (combined-008), each order kept below them.
-const items = computed(() =>
-  pinnedFirst(
-    sortAlbums(
-      filterBy(source.value, ui.query, (album) => [album.title, ...album.artists]),
-      albumSort.value,
-      locale.value,
-    ),
-    albumPinnedAt,
-  ),
-)
+const items = computed(() => pinnedFirst(sortAlbums(source.value, albumSort.value, locale.value), albumPinnedAt))
 const sorts = computed(() => ALBUM_SORTS.map((value) => ({ value, text: t(`sort_${value}`) })))
 </script>
 
 <template>
-  <CollectionGate :count="items.length" :searching="searching" empty-key="search_empty_albums">
+  <CollectionGate :count="items.length">
     <template #heading="{ loading }">
       <ViewHeading
         :eyebrow="t('my_collection')"
         :title="t('albums')"
-        :meta="loading ? null : countLine(searching || genre !== null, items.length)"
+        :meta="loading ? null : countLine(genre !== null, items.length)"
       >
         <div class="flex flex-wrap items-center gap-x-16 gap-y-10 self-end">
           <GenreFilter

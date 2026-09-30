@@ -91,6 +91,10 @@ const state = reactive<BrowserState>({
 })
 export const browserPlayback = readonly(state)
 export const browserTrack = computed(() => state.queue[state.index] ?? null)
+/** Next has somewhere to go: a later track this browser plays, or the first again with repeat. */
+export const browserHasNext = computed(
+  () => state.index >= 0 && nextIndex(state.queue.length, state.index, state.repeat, playable, true) !== null,
+)
 
 let audio: HTMLAudioElement | null = null
 let context: AudioContext | null = null

@@ -121,6 +121,18 @@ tested without a browser; the renderer takes any analyser, so the player's
 own playback can feed it later. Karaoke and the visualizer share
 `layout/fullscreenOverlay.ts` for entering and leaving full screen.
 
+Search covers the whole collection in the page's memory, never the player.
+`domain/globalSearch.ts` prepares each collection's compared text once
+(lower case, no diacritics, ё as е) and ranks a name equal to the query, then
+its start, then a word's start, then any match; every word of the query must
+be found. `views/searchResults.ts` groups the ranks by kind (the section the
+search started from first) and picks the top result. The palette
+(`layout/SearchPalette.vue`, `/` or ⌘K) is a combobox over those groups and the
+page's commands (`layout/paletteCommands.ts`); the search page
+(`views/SearchView.vue`, `#/search?q=…&from=…`) lists every match. A page
+below a section gives its breadcrumbs through `views/crumbs.ts`; the top bar
+shows them.
+
 ## Build and serving constraints
 
 - **CSP** `default-src 'self'` on every page: no inline script/style/handlers,

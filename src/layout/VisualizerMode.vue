@@ -7,8 +7,9 @@
  * from the cover's hue (after the owner's VJ example) and a waveform along
  * its edge; low notes at the bottom, high ones meeting at the top.
  * The sound comes from the browser's own audio element through a Web Audio
- * analyser, so the picture is exactly in time. Space pauses, the right arrow
- * skips; Esc, V, the close button or leaving full screen close it, and so does
+ * analyser, so the picture is exactly in time. Space pauses, the arrows go to
+ * the previous or next track, as the buttons do (always drawn: one that cannot
+ * act is disabled, not left out; owner, 2026-09-30); Esc, V, the close button or leaving full screen close it, and so does
  * the end of browser playback. Controls and the pointer hide while the
  * listener only listens; with reduced motion the disc neither turns nor pulses.
  */
@@ -27,7 +28,15 @@ import {
 } from '../domain/spectrum'
 import { timeLabel } from '../domain/track'
 import { t } from '../i18n'
-import { browserAnalyser, browserPlayback, browserTrack, nextInBrowser, toggleBrowser } from '../stores/browser'
+import {
+  browserAnalyser,
+  browserHasNext,
+  browserPlayback,
+  browserTrack,
+  nextInBrowser,
+  previousInBrowser,
+  toggleBrowser,
+} from '../stores/browser'
 import { coverFor } from '../stores/enrichment'
 import UiIcon from '../ui/UiIcon.vue'
 import { drawVinyl, vinylGeometry } from './vinylDrawing'
@@ -55,7 +64,7 @@ const root = ref<HTMLElement | null>(null)
 const canvas = ref<HTMLCanvasElement | null>(null)
 const track = browserTrack
 const playing = computed(() => browserPlayback.playing)
-const hasNext = computed(() => browserPlayback.index + 1 < browserPlayback.queue.length)
+const hasNext = browserHasNext
 const cover = computed(() => (track.value ? coverFor(track.value) : null))
 
 // Made by openVisualizer() inside the click or key press; null where the browser has no Web Audio.
@@ -197,7 +206,10 @@ function onKey(event: KeyboardEvent): void {
   } else if (event.key === 'ArrowRight') {
     event.preventDefault()
     if (hasNext.value) nextInBrowser()
-  } else if (event.key === 'ArrowLeft') event.preventDefault()
+  } else if (event.key === 'ArrowLeft') {
+    event.preventDefault()
+    if (track.value) previousInBrowser()
+  }
 }
 
 onMounted(() => {
@@ -302,8 +314,17 @@ onBeforeUnmount(() => {
       <span class="w-56 text-right text-footnote text-white/60 tabular-nums">{{
         timeLabel(browserPlayback.position)
       }}</span>
-      <!-- Browser playback has no previous track: a spacer keeps Play in the middle. -->
-      <span aria-hidden="true" class="size-44" />
+      <!-- Previous restarts a track played for more than three seconds, else goes to the one before. -->
+      <button
+        type="button"
+        class="grid size-44 place-items-center rounded-full text-white/85 hover:enabled:bg-white/12 disabled:opacity-40"
+        :aria-label="t('previous_track')"
+        :disabled="!track"
+        data-testid="visualizer-previous"
+        @click="previousInBrowser"
+      >
+        <UiIcon name="previous" class="size-22" />
+      </button>
       <button
         type="button"
         class="grid size-58 place-items-center rounded-full bg-white text-[#0e100f] hover:bg-white/90"
@@ -318,6 +339,7 @@ onBeforeUnmount(() => {
         class="grid size-44 place-items-center rounded-full text-white/85 hover:enabled:bg-white/12 disabled:opacity-40"
         :aria-label="t('next_track')"
         :disabled="!hasNext"
+        data-testid="visualizer-next"
         @click="nextInBrowser"
       >
         <UiIcon name="next" class="size-22" />

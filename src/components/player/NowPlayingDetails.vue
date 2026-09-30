@@ -56,6 +56,8 @@ const props = defineProps<{
     /** The switch between the player and this browser, for the phone's full-screen player. */
     switchSide: string
     visualizer: string
+    /** The player's sound settings (gain, filter, equalizer). */
+    sound: string
     format: string
     /** "{rate}" stands for the output rate. */
     resampled: string
@@ -90,6 +92,7 @@ const emit = defineEmits<{
   favorite: []
   side: []
   visualizer: []
+  sound: []
   volume: [value: number]
   mute: []
   navigate: []
@@ -266,6 +269,13 @@ const emit = defineEmits<{
           :label="labels.visualizer"
           data-testid="visualizer-open-panel"
           @click="emit('visualizer')"
+        />
+        <UiIconButton
+          icon="sliders"
+          :label="labels.sound"
+          :disabled="side === 'browser'"
+          data-testid="sound-open-panel"
+          @click="emit('sound')"
         />
       </div>
     </div>

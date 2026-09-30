@@ -6,8 +6,8 @@
  * colours of the cover (owner, 2026-09-30; domain/coverColours.ts), else of
  * the sleeve palette, fitted to the theme, run as a gradient from the page's
  * top edge down to it, across the whole workspace, and a quiet rule separates
- * it from the content below. Once the header has scrolled away, a compact bar keeps the
- * page's context at the top: small cover, name (back to the top), the
+ * it from the content below. Once the header has scrolled away, a compact bar on the top
+ * colour, see-through (2026-09-30), keeps the page's context at the top: small cover, name (back to the top), the
  * `sticky` slot's line and one play/pause button (owner, round 14, option A).
  * The `artwork` slot replaces the sleeve in both places (a genre's records). */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -176,7 +176,8 @@ function toTop(): void {
           role="region"
           :aria-label="title"
           data-testid="sticky-heading"
-          class="fixed top-0 right-0 left-(--sidebar) z-20 border-b border-line bg-paper/92 shadow-[0_6px_22px_#0000000f] backdrop-blur-[14px] listening:right-380"
+          class="sticky-colours fixed top-0 right-0 left-(--sidebar) z-20 border-b border-line shadow-[0_6px_22px_#0000000f] backdrop-blur-[14px] listening:right-380"
+          :style="colours"
         >
           <div
             class="mx-auto flex h-62 max-w-1680 items-center gap-14 px-44 wide:px-60 compact:px-26 phone:h-56 phone:gap-11 phone:px-18 listening:px-30"

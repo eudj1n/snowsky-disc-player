@@ -22,8 +22,9 @@ export const SECTIONS = [
 
 export type SectionName = (typeof SECTIONS)[number]['name']
 
-/** The section a route belongs to (detail pages highlight their list). */
-export function sectionOf(name: unknown): SectionName {
+/** The section a route belongs to (detail pages highlight their list); the search page belongs to none. */
+export function sectionOf(name: unknown): SectionName | null {
+  if (name === 'search') return null
   if (name === 'album') return 'albums'
   if (name === 'artist') return 'artists'
   if (name === 'playlist' || name === 'list') return 'playlists'
@@ -44,6 +45,8 @@ const routes: RouteRecordRaw[] = [
   { path: '/favorites', name: 'favorites', component: () => import('./views/FavoritesView.vue') },
   { path: '/disliked', name: 'disliked', component: () => import('./views/DislikedView.vue') },
   { path: '/playlists', name: 'playlists', component: () => import('./views/PlaylistsView.vue') },
+  // The global search's page (owner, 2026-09-30): #/search?q=…&from=albums.
+  { path: '/search', name: 'search', component: () => import('./views/SearchView.vue') },
   { path: '/card', name: 'card', component: () => import('./views/CardView.vue') },
   { path: '/card/files', name: 'cardFiles', component: () => import('./views/CardFilesView.vue') },
   { path: '/card/trash', name: 'cardTrash', component: () => import('./views/CardTrashView.vue') },

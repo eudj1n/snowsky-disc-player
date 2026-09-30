@@ -3,7 +3,8 @@
  * Reference connection dialog, adapted: the page is served by the player,
  * so there is no address form. Connect/Disconnect, identity, the one-owner
  * note, pairing with the player's serial number, and the service's
- * diagnostics (combined-008) behind a disclosure. Opening never connects.
+ * diagnostics (combined-008) behind a disclosure, and reading the collection
+ * again (from the top bar, 2026-09-30). Opening never connects.
  */
 import { computed, watch } from 'vue'
 import ConnectionStatus from '../components/connection/ConnectionStatus.vue'
@@ -13,7 +14,7 @@ import { locale, t, type MessageKey } from '../i18n'
 import { about, loadAbout } from '../stores/about'
 import { connect, connection, disconnect } from '../stores/connection'
 import { device, refreshDevice } from '../stores/device'
-import { albums, library, refreshPlayerFacts, refreshSummary, tracks } from '../stores/library'
+import { albums, library, loadCollection, refreshPlayerFacts, refreshSummary, tracks } from '../stores/library'
 import { playerOptions } from '../stores/playerOptions'
 import { forgetToken, pairing, saveToken } from '../stores/pairing'
 import { closeDialog, ui } from '../stores/ui'
@@ -157,18 +158,30 @@ const status = computed(() => {
     <p v-if="connection.notice" role="status" class="-mt-8 mb-16 text-footnote text-notice" data-testid="notice">
       {{ t(connection.notice) }}
     </p>
-    <div class="flex items-center justify-between gap-14">
+    <div class="flex items-center gap-14">
       <UiTextButton v-if="connection.connection === 'connected'" class="text-footnote" @click="disconnect">{{
         t('disconnect')
       }}</UiTextButton>
-      <UiPillButton
-        v-else
-        class="ml-auto px-22 py-12 text-body"
-        :disabled="connection.connection === 'connecting' || connection.gateway === false"
-        @click="connect"
-      >
-        {{ t('connect') }}
-      </UiPillButton>
+      <div class="ml-auto flex items-center gap-14">
+        <UiTextButton
+          v-if="connection.gateway"
+          icon="refresh"
+          class="text-footnote data-[busy=true]:[&>svg]:animate-sync-rotate"
+          :disabled="library.status === 'loading'"
+          :data-busy="library.status === 'loading'"
+          data-testid="refresh-collection"
+          @click="loadCollection(true)"
+          >{{ t('refresh_collection') }}</UiTextButton
+        >
+        <UiPillButton
+          v-if="connection.connection !== 'connected'"
+          class="px-22 py-12 text-body"
+          :disabled="connection.connection === 'connecting' || connection.gateway === false"
+          @click="connect"
+        >
+          {{ t('connect') }}
+        </UiPillButton>
+      </div>
     </div>
     <PairingForm :stored="pairing.stored" @save="saveToken" @forget="forgetToken" />
     <p class="mt-23 text-footnote leading-[1.55] text-muted">{{ t('one_control_connection') }}</p>

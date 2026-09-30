@@ -134,7 +134,7 @@ inside artwork (`cqw` units).
 
 ## Text size
 
-The only new setting (appearance dialog, "Text size"): Compact, Standard (the
+The only new setting (Settings dialog, "Text size"): Compact, Standard (the
 default), Large and Extra large. The choice is kept in this browser
 (`disc-player.text-size`), applied before the first paint by
 `public/theme.js` and afterwards by `src/stores/appearance.ts`, as

@@ -19,7 +19,6 @@ import TrackList from '../components/track/TrackList.vue'
 import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
 import { albumScope, albumTracks, albumsBy, byTrackNumber, discOf, recentAlbums } from '../domain/album'
 import { creditArtists, creditLabel, creditSeparator, leadCredit, sameCredit } from '../domain/artist'
-import { filterBy } from '../domain/search'
 import type { SelectionTarget, TrackKey } from '../gateway/selection'
 import { t } from '../i18n'
 import { albumCover, albumCoverState, albumQuality, albumYear } from '../stores/enrichment'
@@ -37,12 +36,13 @@ import { findGenre, playableGenre, sameGenre } from '../domain/genre'
 import { albums, artists, genres, titleGroups, tracks as collection } from '../stores/library'
 import { connection } from '../stores/connection'
 import { isPinnedAlbum, pins, togglePinAlbum } from '../stores/pins'
-import { openPlaylistDialog, openTrackMenu, showCover, ui } from '../stores/ui'
+import { openPlaylistDialog, openTrackMenu, showCover } from '../stores/ui'
 import UiCircleButton from '../ui/UiCircleButton.vue'
 import UiHiResBadge from '../ui/UiHiResBadge.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumCardRoute, albumRoute, artistRoute, BACK_LINK, genreRoute, withYear } from './captions'
+import { albumCardRoute, albumRoute, artistRoute, genreRoute, withYear } from './captions'
+import { useCrumbs } from './crumbs'
 import CollectionGate from './CollectionGate.vue'
 import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
 import { useHeadingAction } from './headingAction'
@@ -161,8 +161,7 @@ const choices = computed(() => {
   // One album with a guest on some tracks needs no filters; homonymous albums (or an open scope) do.
   return artists.length > 1 && (releases.value > 1 || scope.value !== null) ? artists : []
 })
-const searching = computed(() => ui.query.trim() !== '')
-const items = computed(() => filterBy(tracks.value, ui.query, (track) => [track.title, track.artist, track.album]))
+const items = computed(() => tracks.value)
 /** The page's joint credit ("A; B"): its scope, or the only track artist of the title. */
 const joint = computed(() => {
   const credit = scope.value ?? (group.value?.trackArtists.length === 1 ? group.value.trackArtists[0] : null)
@@ -212,7 +211,16 @@ function target(track?: TrackKey): SelectionTarget {
 /** A shelf card opens the artist's own release when the artist is a literal track artist of it. */
 const shelfScope = (album: { trackArtists: readonly string[] }, artist: string) =>
   album.trackArtists.includes(artist) ? artist : (album.trackArtists.find((other) => sameCredit(other, artist)) ?? null)
-const back = () => router.push(scope.value ? artistRoute(scope.value) : '/albums')
+useCrumbs(() => [
+  ...(genre.value
+    ? [
+        { text: t('genres'), to: '/genres' },
+        { text: genreShown.value ?? genre.value, to: genreRoute(genre.value) },
+      ]
+    : [{ text: t('albums'), to: '/albums' }]),
+  ...(scope.value ? [{ text: creditLabel(scope.value), to: artistRoute(scope.value) }] : []),
+  { text: name.value },
+])
 const heading = useHeadingAction({
   owns: (track) => tracks.value.some((item) => item.path === track.path),
   label: () => t('play_album'),
@@ -223,11 +231,8 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
 </script>
 
 <template>
-  <CollectionGate :count="items.length" :searching="searching" empty-key="search_empty_tracks">
+  <CollectionGate :count="items.length">
     <template #heading="{ loading }">
-      <UiTextButton :class="BACK_LINK" @click="back"
-        >← {{ scope ? creditLabel(scope) : t('back_to_collection') }}</UiTextButton
-      >
       <DetailHeading
         :title="name"
         :kind="t('kind_album')"
@@ -356,11 +361,7 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
       @favorite="onRowFavorite"
       @unfavorite="onRowUnfavorite"
     />
-    <section
-      v-for="shelf in searching ? [] : moreBy"
-      :key="shelf.artist"
-      :aria-label="t('more_by', { artist: shelf.label })"
-    >
+    <section v-for="shelf in moreBy" :key="shelf.artist" :aria-label="t('more_by', { artist: shelf.label })">
       <SectionHeading :title="t('more_by', { artist: shelf.label })">
         <UiTextButton icon="arrow" @click="router.push(artistRoute(shelf.artist))">{{ t('all_albums') }}</UiTextButton>
       </SectionHeading>
@@ -379,7 +380,7 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
         />
       </CoverRow>
     </section>
-    <section v-if="!searching && members.length" :aria-label="t('on_this_album')">
+    <section v-if="members.length" :aria-label="t('on_this_album')">
       <SectionHeading :title="t('on_this_album')" />
       <CoverRow :label="t('on_this_album')">
         <CoverCard

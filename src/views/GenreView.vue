@@ -20,7 +20,6 @@ import SectionHeading from '../components/common/SectionHeading.vue'
 import TrackTiles from '../components/track/TrackTiles.vue'
 import { albumScope, albumTracks, type Album } from '../domain/album'
 import { findGenre, genreAlbums, genreArtists, genreTracks, playableGenre, sameGenre } from '../domain/genre'
-import { filterBy } from '../domain/search'
 import { recentlyAdded, type Track } from '../domain/track'
 import type { SelectionTarget, TrackKey } from '../gateway/selection'
 import { t } from '../i18n'
@@ -28,11 +27,12 @@ import { albumCover, coverFor } from '../stores/enrichment'
 import { artistImage } from '../stores/artistPictures'
 import { albums, artists as allArtists, genres, titleGroups, tracks as collection } from '../stores/library'
 import { nowIsPlaying as isPlaying, nowPlaying } from '../stores/output'
-import { openTrackMenu, ui } from '../stores/ui'
+import { openTrackMenu } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiSkeleton from '../ui/UiSkeleton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumLines, albumRoute, artistRoute, BACK_LINK, genreAlbumRoute } from './captions'
+import { albumLines, albumRoute, artistRoute, genreAlbumRoute } from './captions'
+import { useCrumbs } from './crumbs'
 import CollectionGate from './CollectionGate.vue'
 import { genreRecords } from './genreRecords'
 import { useHeadingAction } from './headingAction'
@@ -46,28 +46,16 @@ const name = computed(() => String(route.params.name ?? ''))
 /** The genre in any of its spellings; the page shows its main one. */
 const genre = computed(() => findGenre(genres.value, name.value))
 const shown = computed(() => genre.value?.name ?? name.value.trim())
+useCrumbs(() => [{ text: t('genres'), to: '/genres' }, { text: shown.value }])
 const tracks = computed(() => genreTracks(collection.value, name.value))
 /** Stock plays one spelling at a time: the one most of this genre's tracks carry. */
 const literal = computed(() => (genre.value ? playableGenre(tracks.value, genre.value) : name.value))
 const spellings = computed(() => (genre.value && genre.value.variants.length > 1 ? genre.value.variants : null))
-const searching = computed(() => ui.query.trim() !== '')
 /** The heading's sleeve: two of its albums' records, as its tile shows them. */
 const records = computed(() => genreRecords(genre.value?.albums ?? []))
-const latest = computed(() =>
-  filterBy(recentlyAdded(tracks.value, searching.value ? tracks.value.length : LATEST), ui.query, (track) => [
-    track.title,
-    track.artist,
-    track.album,
-  ]).slice(0, LATEST),
-)
-const shelf = computed(() =>
-  filterBy(genre.value ? genreAlbums(albums.value, genre.value) : [], ui.query, (album) => [
-    album.title,
-    ...album.artists,
-  ]),
-)
-const genreArtistList = computed(() => genreArtists(collection.value, name.value))
-const artists = computed(() => filterBy(genreArtistList.value, ui.query, (artist) => [artist.name]))
+const latest = computed(() => recentlyAdded(tracks.value, LATEST))
+const shelf = computed(() => (genre.value ? genreAlbums(albums.value, genre.value) : []))
+const artists = computed(() => genreArtists(collection.value, name.value))
 /** An artist's albums as its page shows them (all of them, owner 2026-09-29), else its tracks here. */
 const albumCounts = computed(() => new Map(allArtists.value.map((artist) => [artist.name, artist.albumCount])))
 const artistLine = (artist: { name: string; trackCount: number }) => {
@@ -78,7 +66,7 @@ const artistLine = (artist: { name: string; trackCount: number }) => {
 const facts = computed(() =>
   [
     t('album_count', { count: genre.value?.albums.length ?? 0 }),
-    t('artist_count', { count: genreArtistList.value.length }),
+    t('artist_count', { count: artists.value.length }),
     t('track_count', { count: tracks.value.length }),
   ].join(' · '),
 )
@@ -143,9 +131,8 @@ function playAlbum(item: Album): void {
 </script>
 
 <template>
-  <CollectionGate :count="count" :searching="searching" empty-key="search_empty_tracks">
+  <CollectionGate :count="count">
     <template #heading="{ loading }">
-      <UiTextButton :class="BACK_LINK" @click="router.push('/genres')">← {{ t('back_to_genres') }}</UiTextButton>
       <DetailHeading
         :title="shown"
         :kind="t('kind_genre')"
@@ -184,7 +171,7 @@ function playAlbum(item: Album): void {
       <CoverRow :label="t('albums')"><CoverCardSkeleton v-for="n in 6" :key="n" /></CoverRow>
     </template>
     <template v-if="latest.length">
-      <SectionHeading :title="t(searching ? 'genre_tracks' : 'new_tracks')" class="mt-0!">
+      <SectionHeading :title="t('new_tracks')" class="mt-0!">
         <UiTextButton icon="arrow" @click="router.push({ path: '/tracks', query: { genre: name } })">{{
           t('all_tracks')
         }}</UiTextButton>

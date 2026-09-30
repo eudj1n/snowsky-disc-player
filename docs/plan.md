@@ -1760,28 +1760,47 @@ Order: actions first (quick, quieter headings), then search and the header,
 the track panel, placeholders, the sticky bar.
 
 - [x] Rare actions behind a round "⋯" button (`src/ui/UiActionMenu.vue`), in the heading and in the rows of the Playlists page: an automatic list's period (day, week, month; a check marks the chosen one), "Update now" and "Remove from the player"; a playlist's rename and delete. The rows say how a list is kept ("updated daily · Sep 30").
-- [ ] One search for the whole collection instead of a filter of the current
-      section: a compact search pill in the top bar (and `/`, ⌘K) opens a
+- [x] One search for the whole collection instead of a filter of the current
+      section: a search pill in the top bar (and `/`, ⌘K or Ctrl+K) opens a
       palette with instant results by kind (top result, tracks, albums,
-      artists, playlists and lists, genres; the section you came from first)
-      and commands (go to a section, theme, add music, sound, switch to the
-      browser); "All results" opens a search page. Case, diacritics and
-      ё/е do not matter; a start of a word ranks first. Phones: the icon
-      opens search full screen.
-- [ ] The top bar holds breadcrumbs (in place of the "← back" links), the
-      search pill and one settings icon. The appearance dialog becomes
-      Settings and takes the interface language; adding music moves to the
-      Card section (with a command and the empty collection's button), its
-      progress to a badge on the sidebar's Card; refreshing the collection
-      to the palette and the connection dialog; sound settings to the player
-      bar beside the volume.
+      artists, playlists and automatic lists, genres; the section you came
+      from first) and commands (go to a section, settings, the theme, add
+      music, sound, play in this browser or on DISC, refresh, the
+      connection); ⌘Enter or "All results" opens the search page
+      (`#/search?q=…`). Case, diacritics and ё/е do not matter; an equal name
+      ranks first, then its start, then a word's start. Phones: the search
+      button opens the page. The per-section filter and its empty states are
+      gone. Evidence: `tests/unit/globalSearch.test.ts`, e2e "searches the
+      whole collection from the palette…", "opens the search page from the
+      phone's top bar".
+- [x] The top bar holds breadcrumbs (in place of the "← back" links; a
+      section's own page shows none, phones only the step back), the search
+      pill and one settings icon. The appearance dialog became Settings and
+      took the interface language; adding music moved to the Card section
+      (with a command and the empty collection's button), its progress to a
+      dot on the sidebar's Card; refreshing the collection to the palette and
+      the connection dialog; sound settings to the player bar beside the
+      volume (on phones the full-screen player). Evidence: e2e "keeps albums
+      that share a title apart…" (crumbs), "keeps the interface language in
+      Settings…", "reads the collection again from the connection dialog",
+      "sound settings read on opening…" (the bar's button), "imports files,
+      scans once…" (Card's Add music).
 - [ ] A click on a track's title opens the track in the side panel (a full
       sheet on phones): cover, links, the facts block, lyrics, and Play on
       the chosen side, favorite, add to playlist, dislike, open its folder;
       a link returns to what plays. Double click and Enter play.
 - [ ] (On hold: the owner will discuss placeholders separately, 2026-09-30.) One placeholder system: genres and own playlists show a 2×2 mosaic of their albums' covers where covers are known; otherwise genres take album-like cards (records fanned on a square sleeve, the name below) and artists' circles take the records' label style.
-- [ ] The compact bar that pins over a detail page takes the album's top
-      colour (see-through, blurred); the player bar stays neutral.
+- [x] The compact bar that pins over a detail page takes the album's top
+      colour (see-through, blurred; plain under more contrast, solid under
+      less transparency); the player bar stays neutral. Evidence: e2e "keeps
+      the page's context in a compact bar…".
+- [x] The visualizer lost its Previous button to a spacer left from before
+      this browser could go back (owner, 2026-09-30: draw a control that
+      cannot act disabled, never leave its place empty). Previous is back
+      (a track played for more than three seconds restarts), the left arrow
+      works, and Next is disabled only when nothing follows (repeat counts).
+      Evidence: e2e "draws what plays in this browser as the disc
+      visualizer".
 
 ## Requests for the next service build
 

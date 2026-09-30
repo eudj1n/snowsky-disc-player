@@ -2,7 +2,8 @@
 /**
  * Right block of the player bar: where music plays (the player or this
  * browser, one switch; owner, 2026-09-30), the visualizer while this browser
- * plays, volume, lyrics and queue.
+ * plays, volume with the player's sound settings beside it (2026-09-30),
+ * lyrics and queue.
  */
 import UiIconButton from '../../ui/UiIconButton.vue'
 import VolumeControl from './VolumeControl.vue'
@@ -16,6 +17,7 @@ defineProps<{
   volumeDisabled: boolean
   volumeLabel: string
   volumeTitle: string
+  soundLabel: string
   muteLabel: string
   unmuteLabel: string
   queueLabel: string
@@ -31,6 +33,7 @@ const emit = defineEmits<{
   lyrics: [opener: HTMLElement]
   volume: [value: number]
   mute: []
+  sound: []
 }>()
 </script>
 
@@ -64,6 +67,15 @@ const emit = defineEmits<{
       :unmute-label="unmuteLabel"
       @change="(value) => emit('volume', value)"
       @mute="emit('mute')"
+    />
+    <!-- The player's gain, filter and equalizer: disabled while this browser plays, which has none of them. -->
+    <UiIconButton
+      icon="sliders"
+      :label="soundLabel"
+      :disabled="side === 'browser'"
+      class="-ml-4 rail:hidden"
+      data-testid="sound-open"
+      @click="emit('sound')"
     />
     <span class="mx-5 h-20 w-1 bg-line rail:hidden" />
     <UiIconButton

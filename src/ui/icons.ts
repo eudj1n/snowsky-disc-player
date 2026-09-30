@@ -54,6 +54,10 @@ export const ICON_PATHS = {
   check: 'M5 12.5 10 17.5 19 7',
   pencil: 'M4 20h4L19 9l-4-4L4 16Z M13.5 6.5l4 4',
   /* The switch between the player (device) and this browser (2026-09-30): a browser window. */
+  // Settings (2026-09-30): an eight-toothed gear; the sun for the light theme command.
+  settings:
+    'M10.1 4.9 10.6 2.1h2.8l.5 2.8a7.4 7.4 0 0 1 1.8.7L18 4l2 2-1.6 2.3a7.4 7.4 0 0 1 .7 1.8l2.8.5v2.8l-2.8.5a7.4 7.4 0 0 1-.7 1.8L20 18l-2 2-2.3-1.6a7.4 7.4 0 0 1-1.8.7l-.5 2.8h-2.8l-.5-2.8a7.4 7.4 0 0 1-1.8-.7L6 20l-2-2 1.6-2.3a7.4 7.4 0 0 1-.7-1.8l-2.8-.5v-2.8l2.8-.5a7.4 7.4 0 0 1 .7-1.8L4 6l2-2 2.3 1.6a7.4 7.4 0 0 1 1.8-.7Z M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z',
+  sun: 'M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z M12 2v2 M12 20v2 M4.9 4.9l1.4 1.4 M17.7 17.7l1.4 1.4 M2 12h2 M20 12h2 M4.9 19.1l1.4-1.4 M17.7 6.3l1.4-1.4',
   browser: 'M4 4h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z M3 9h18 M6.5 6.5h.01 M9.5 6.5h.01',
   'sidebar-collapse':
     'M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z M9.5 4v16 M16 9.5 13.5 12l2.5 2.5',

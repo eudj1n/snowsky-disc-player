@@ -9,18 +9,16 @@ import { computed } from 'vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
 import TrackList from '../components/track/TrackList.vue'
 import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
-import { filterBy } from '../domain/search'
 import { t } from '../i18n'
 import { disliked } from '../stores/disliked'
 import { favorites, library, trackByPath } from '../stores/library'
-import { openTrackMenu, ui } from '../stores/ui'
+import { openTrackMenu } from '../stores/ui'
 import { countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
 import { playFrom } from './playAlbum'
 
-const searching = computed(() => ui.query.trim() !== '')
-const items = computed(() => filterBy(favorites.value, ui.query, (track) => [track.title, track.artist, track.album]))
+const items = computed(() => favorites.value)
 /** Not on the card: the library, read with the favorites, has no such file. */
 const unavailable = (track: { path: string | null }) =>
   library.status === 'ready' && (track.path === null || !trackByPath.value.has(track.path))
@@ -33,12 +31,12 @@ const columns = computed(() => ({
 </script>
 
 <template>
-  <CollectionGate :count="items.length" :searching="searching" empty-key="search_empty_tracks">
+  <CollectionGate :count="items.length">
     <template #heading="{ loading }">
       <ViewHeading
         :eyebrow="t('my_collection')"
         :title="t('favorites')"
-        :meta="loading ? null : countLine(searching, items.length)"
+        :meta="loading ? null : countLine(false, items.length)"
       >
         <RouterLink
           v-if="disliked.available"

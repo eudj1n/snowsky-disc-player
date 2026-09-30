@@ -185,6 +185,28 @@
     opacity: 0.45;
   }
 }
+/* The compact bar pinned over a detail page takes the colours' top one, see-through (owner, 2026-09-30),
+ * so the colour goes on as the page scrolls; its play button keeps the theme's colours. */
+.sticky-colours {
+  background: color-mix(in oklab, var(--head-a) 88%, transparent);
+}
+:root[data-theme='dark'] .sticky-colours {
+  background: color-mix(in oklab, var(--head-a-dark) 88%, transparent);
+}
+@media (prefers-contrast: more) {
+  .sticky-colours,
+  :root[data-theme='dark'] .sticky-colours {
+    background: var(--paper);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .sticky-colours {
+    background: var(--head-a);
+  }
+  :root[data-theme='dark'] .sticky-colours {
+    background: var(--head-a-dark);
+  }
+}
 /* Over the colours the top bar keeps no rule, so the page reads as one. */
 #workspace:has(> .album-colours) > header {
   border-bottom-color: transparent;

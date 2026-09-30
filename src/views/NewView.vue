@@ -17,8 +17,7 @@ import { t } from '../i18n'
 import { albumCover, coverFor } from '../stores/enrichment'
 import { albums, loadRecentlyPlayed, tracks } from '../stores/library'
 import { nowIsPlaying as isPlaying, nowPlaying } from '../stores/output'
-import { openTrackMenu, ui } from '../stores/ui'
-import { filterBy } from '../domain/search'
+import { openTrackMenu } from '../stores/ui'
 import UiSkeleton from '../ui/UiSkeleton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { albumLines, albumCardRoute, albumRoute, artistRoute } from './captions'
@@ -29,18 +28,12 @@ import { toggleCurrent } from './trackRows'
 
 // Disliked tracks stay off the shelf (combined-008).
 const newTracks = computed(() =>
-  filterBy(
-    recentlyAdded(
-      tracks.value.filter((track) => !isDisliked(track)),
-      12,
-    ),
-    ui.query,
-    (track) => [track.title, track.artist, track.album],
+  recentlyAdded(
+    tracks.value.filter((track) => !isDisliked(track)),
+    12,
   ),
 )
-const newAlbums = computed(() =>
-  filterBy(recentAlbums(albums.value, 12), ui.query, (album) => [album.title, ...album.artists]),
-)
+const newAlbums = computed(() => recentAlbums(albums.value, 12))
 const played = ref<LibraryTrack[]>([])
 onMounted(async () => {
   try {
@@ -55,7 +48,7 @@ const artistTo = (name: string) => artistRoute(name)
 </script>
 
 <template>
-  <CollectionGate :count="tracks.length" :searching="false" empty-key="search_empty_tracks">
+  <CollectionGate :count="tracks.length">
     <template #heading>
       <HomeIntro :eyebrow="t('latest_additions')" :title="t('new_section')" />
     </template>

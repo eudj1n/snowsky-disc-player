@@ -9,7 +9,14 @@ playing on the DISC; nothing streams to the browser.
 > Status: in active development (see the [plan](docs/plan.md)). Today you can:
 >
 > - browse Home, New, albums, artists, genres, tracks, favorites and
->   playlists, with search, sorting and genre filters;
+>   playlists, with sorting and genre filters; breadcrumbs above a page lead
+>   back to its section;
+> - search the whole collection at once: press `/` or ⌘K (Ctrl+K), or the
+>   Search button, and type; tracks, albums, artists, playlists and genres
+>   appear as you type (case and accents do not matter), Enter opens one or
+>   plays a track, and All results shows every match. The same box runs
+>   commands: go to a section, switch the theme, add music, sound settings,
+>   move the music to this browser, refresh the collection;
 > - play albums, tracks, playlists, artists and genres, and pick a row in the
 >   queue;
 > - follow what is playing, seek, change volume or mute, shuffle, repeat and
@@ -17,8 +24,10 @@ playing on the DISC; nothing streams to the browser.
 > - see what is known about the playing track (quality, bit rate, year, genre,
 >   disc and track, file size and folder, how often it was played) with the
 >   whole queue below it; on a phone the panel is a full-screen player;
-> - adjust gain, balance, the DAC filter and DRE;
-> - add music: upload files or album folders, then let the player scan;
+> - adjust gain, balance, the DAC filter and DRE (the sliders button beside
+>   the volume);
+> - add music from the Card section: upload files or album folders, then let
+>   the player scan (a dot on Card shows it working);
 > - see what takes space on the player's card: music by format, the largest
 >   albums and artists, and possible duplicates in two folders;
 > - browse the card's folders, play a folder or a file, create a folder and
@@ -76,9 +85,10 @@ and eject. The [release guide](docs/release.md) has the details.
    ten minutes.
 
 The interface starts in the player's own language when it is Russian or
-English and remembers your choice of language, appearance and text size
-(Compact, Standard, Large or Extra large, under Appearance). More contrast and
-reduced transparency follow your system's settings.
+English and remembers your choice of language, theme and text size
+(Compact, Standard, Large or Extra large), all under Settings (the gear in the
+top bar). More contrast and reduced transparency follow your system's
+settings. **Refresh collection** is in the connection dialog.
 
 ## Privacy and safety
 

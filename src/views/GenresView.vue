@@ -5,31 +5,24 @@ import GenreGrid from '../components/genre/GenreGrid.vue'
 import GenreTile from '../components/genre/GenreTile.vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
 import { sortGenres } from '../domain/genre'
-import { filterBy } from '../domain/search'
 import { locale, t } from '../i18n'
 import { genres } from '../stores/library'
-import { ui } from '../stores/ui'
+
 import UiSkeleton from '../ui/UiSkeleton.vue'
 import { countLine, genreRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { genreRecords } from './genreRecords'
 
-const searching = computed(() => ui.query.trim() !== '')
-const items = computed(() =>
-  sortGenres(
-    filterBy(genres.value, ui.query, (genre) => [genre.name]),
-    locale.value,
-  ),
-)
+const items = computed(() => sortGenres(genres.value, locale.value))
 </script>
 
 <template>
-  <CollectionGate :count="items.length" :searching="searching" empty-key="search_empty_genres">
+  <CollectionGate :count="items.length">
     <template #heading="{ loading }">
       <ViewHeading
         :eyebrow="t('my_collection')"
         :title="t('genres')"
-        :meta="loading ? null : countLine(searching, items.length)"
+        :meta="loading ? null : countLine(false, items.length)"
       />
     </template>
     <template #skeleton>

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { groupArtists } from '../../src/domain/artist'
 import { sleeve } from '../../src/domain/artwork'
-import { filterBy, matchesQuery } from '../../src/domain/search'
 import type { LibraryTrack } from '../../src/domain/track'
 import { timeLabel } from '../../src/domain/track'
 import { playlists } from '../../src/gateway/library'
@@ -35,16 +34,6 @@ describe('placeholder sleeves', () => {
     expect(sleeve('  Лето внутри ')).toEqual({ palette: 4, letters: 'ЛЕ' })
     expect(sleeve('a')).toEqual({ palette: 1, letters: 'A' })
     expect(sleeve('DISC')).toEqual({ palette: 3, letters: 'DI' })
-  })
-})
-
-describe('search within a view', () => {
-  it('requires every word somewhere in the fields, case-insensitively', () => {
-    expect(matchesQuery(['Blue Hours', 'Mira Sol'], 'blue sol')).toBe(true)
-    expect(matchesQuery(['Blue Hours', 'Mira Sol'], 'blue moon')).toBe(false)
-    expect(matchesQuery(['Тихий океан'], '  ОКЕАН ')).toBe(true)
-    expect(matchesQuery(['anything'], '   ')).toBe(true)
-    expect(filterBy([1, 2, 3], '', () => [])).toEqual([1, 2, 3])
   })
 })
 

@@ -1,15 +1,17 @@
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test'
 import {
+  command,
   connectAndPair,
   disconnect,
   english,
   external,
   LANGUAGES,
   openConnection,
+  openSettings,
+  PAIRING_FIELD,
   SERIAL,
   switchSide,
   watchErrors,
-  PAIRING_FIELD,
 } from './helpers'
 
 test.describe.configure({ mode: 'serial' })
@@ -207,7 +209,8 @@ test('keeps albums that share a title apart by artist and offers more by the art
   await expect(page).toHaveURL(/#\/album\/Afterglow$/)
   await expect(scopes.getByRole('link', { name: 'All artists' })).toHaveAttribute('aria-current', 'page')
   await scopes.getByRole('link', { name: 'Northline' }).click()
-  await page.getByRole('button', { name: '← Northline' }).click()
+  // The breadcrumbs lead back to the scope's artist (phones show only that step).
+  await page.getByTestId('crumbs').getByRole('link', { name: 'Northline' }).filter({ visible: true }).click()
   await expect(page).toHaveURL(/#\/artist\/Northline$/)
   // One release with a guest: clearing the artist leaves nothing to choose, so the choice closes.
   await page.goto('/#/album/Two%20Rooms/Kite%20Lines')
@@ -747,7 +750,7 @@ test.describe('player controls on the mock', () => {
     await english(page)
     await connectAndPair(page)
     const open = async () => {
-      await page.getByRole('button', { name: 'Sound settings' }).filter({ visible: true }).first().click()
+      await command(page, 'Sound settings')
       await expect(page.getByRole('dialog').getByTestId('sound-feedback')).toHaveText(
         'Current values received from DISC.',
       )
@@ -1085,7 +1088,11 @@ test.describe('player controls on the mock', () => {
   test('sound settings read on opening, apply at once or with Apply, and verify', async ({ page }, info) => {
     await english(page)
     await connectAndPair(page)
-    await page.getByRole('button', { name: 'Sound settings' }).filter({ visible: true }).first().click()
+    // Beside the volume in the player bar; on phones from the full-screen player.
+    if (info.project.name === 'phone') {
+      await page.getByRole('region', { name: 'Player' }).getByRole('button', { name: 'Open Now Playing panel' }).click()
+      await page.getByTestId('sound-open-panel').click()
+    } else await page.getByTestId('sound-open').click()
     const dialog = page.getByRole('dialog')
     await expect(dialog.getByTestId('sound-feedback')).toHaveText('Current values received from DISC.')
     const gain = dialog.getByRole('group', { name: 'Gain' })
@@ -1123,7 +1130,9 @@ test.describe('player controls on the mock', () => {
     await english(page)
     await connectAndPair(page)
     const tag = `${info.project.name} ${Date.now()}`
-    await page.getByRole('button', { name: 'Add music' }).click()
+    // Add music lives on the Card page (and in the palette).
+    await page.goto('/#/card')
+    await page.getByTestId('card-add-music').click()
     const dialog = page.getByRole('dialog')
     await dialog.locator('input[type=file]:not([webkitdirectory])').setInputFiles([
       { name: `Fresh Tune ${tag}.flac`, mimeType: 'audio/flac', buffer: Buffer.from('fLaC-one') },
@@ -1145,7 +1154,7 @@ test.describe('player controls on the mock', () => {
     await connectAndPair(page)
     const tag = `${info.project.name} ${Date.now()}`
     const file = (name: string) => ({ name: `${name} ${tag}.flac`, mimeType: 'audio/flac', buffer: Buffer.from(name) })
-    await page.getByRole('button', { name: 'Add music' }).click()
+    await command(page, 'Add music')
     const dialog = page.getByRole('dialog')
     const picker = dialog.locator('input[type=file]:not([webkitdirectory])')
     await picker.setInputFiles([file('A Present')])
@@ -1183,7 +1192,7 @@ test.describe('player controls on the mock', () => {
       writeFileSync(join(folder, name), body)
     await english(page)
     await connectAndPair(page)
-    await page.getByRole('button', { name: 'Add music' }).click()
+    await command(page, 'Add music')
     const dialog = page.getByRole('dialog')
     await dialog.locator('input[type=file][webkitdirectory]').setInputFiles(folder)
     const files = dialog.getByTestId('import-files')
@@ -1202,7 +1211,7 @@ test.describe('player controls on the mock', () => {
     await english(page)
     await connectAndPair(page)
     const tag = `${info.project.name} ${Date.now()}`
-    await page.getByRole('button', { name: 'Add music' }).click()
+    await command(page, 'Add music')
     const dialog = page.getByRole('dialog')
     await dialog
       .locator('input[type=file]:not([webkitdirectory])')
@@ -1309,8 +1318,12 @@ test('shows a joint album as "A & B", with its first artist\'s albums and its ar
   await members.getByRole('link', { name: 'Mira Sol' }).first().click()
   await expect(page).toHaveURL(/#\/artist\/Mira%20Sol$/)
   await page.goBack()
-  // The back link names the pair and opens their page.
-  await page.getByRole('button', { name: /Kite Lines & Mira Sol/ }).click()
+  // The breadcrumbs name the pair and open their page.
+  await page
+    .getByTestId('crumbs')
+    .getByRole('link', { name: /Kite Lines & Mira Sol/ })
+    .filter({ visible: true })
+    .click()
   await expect(page).toHaveURL(/#\/artist\/Kite%20Lines(%3B|;)%20Mira%20Sol$/)
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Kite Lines & Mira Sol')
 })
@@ -1430,10 +1443,7 @@ test('gives Japanese and Korean names their language and isolates every inline n
 test('draws select arrows inside the rounded edge', async ({ page }) => {
   await english(page)
   await page.goto('/#/tracks')
-  for (const select of [
-    page.getByRole('combobox', { name: 'Genre' }),
-    page.getByRole('combobox', { name: 'Interface language' }),
-  ]) {
+  for (const select of [page.getByRole('combobox', { name: 'Genre' })]) {
     await expect(select).toHaveCSS('appearance', 'none')
     const box = await select.boundingBox()
     const arrow = await select.locator('xpath=following-sibling::*[1]').boundingBox()
@@ -1484,6 +1494,11 @@ test("keeps the page's context in a compact bar once its header scrolls away", a
   await expect(bar).toHaveCount(0)
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
   await expect(bar).toBeVisible()
+  // The bar goes on in the album's top colour, see-through (2026-09-30); the layer blends in over 0.7 s.
+  const topOf = (locator: Locator) =>
+    locator.evaluate((element) => getComputedStyle(element).getPropertyValue('--head-a'))
+  await expect(bar).toHaveCSS('background-color', /^(rgba|oklab|color)\(/)
+  await expect.poll(async () => (await topOf(bar)) === (await topOf(page.getByTestId('album-colours')))).toBe(true)
   await expect(bar.getByRole('link', { name: 'Northline' })).toBeVisible()
   // Not connected: nothing plays from here yet, but the button is there.
   await expect(bar.getByRole('button', { name: 'Play album' })).toBeVisible()
@@ -1493,14 +1508,100 @@ test("keeps the page's context in a compact bar once its header scrolls away", a
   await expect(bar).toHaveCount(0)
 })
 
+test('searches the whole collection from the palette, with commands and the full page', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'Phones open the search page (below)')
+  test.skip(external, 'Needs the mock collection')
+  const errors = watchErrors(page)
+  await english(page)
+  await page.goto('/#/albums')
+  await page.keyboard.press('/')
+  const palette = page.getByTestId('search-palette')
+  const field = palette.getByRole('combobox', { name: 'Search your collection' })
+  await expect(field).toBeFocused()
+  // Nothing typed: the commands.
+  await expect(palette.getByRole('option', { name: 'Go to Tracks', exact: true })).toBeVisible()
+  // Case and diacritics do not matter; an equal name is the top result.
+  await field.fill('NÓRTHLINE')
+  const groups = palette.getByRole('group')
+  await expect(groups.first()).toHaveAttribute('aria-labelledby', 'palette-group-top')
+  await expect(groups.first().getByRole('option')).toHaveText(/Northline\s*Artist/)
+  // Opened from Albums: albums come before the other kinds.
+  await expect(groups.nth(1)).toHaveAttribute('aria-labelledby', 'palette-group-albums')
+  await field.fill('afterglow')
+  await expect(palette.getByRole('option').first()).toHaveAttribute('aria-selected', 'true')
+  await field.press('Enter')
+  await expect(palette).toBeHidden()
+  await expect(page).toHaveURL(/#\/album\/Afterglow/)
+  // Breadcrumbs replace the back link: the section, the scope, the album.
+  const crumbs = page.getByTestId('crumbs')
+  await expect(crumbs.getByRole('link', { name: 'Albums', exact: true })).toBeVisible()
+  await expect(crumbs.locator('[aria-current=page]')).toHaveText('Afterglow')
+  // ⌘K (Ctrl+K): arrows move, the modifier with Enter opens the search page.
+  await page.keyboard.press('ControlOrMeta+k')
+  await field.fill('light')
+  await field.press('ArrowDown')
+  await expect(palette.getByRole('option').nth(1)).toHaveAttribute('aria-selected', 'true')
+  await field.press('ControlOrMeta+Enter')
+  await expect(page).toHaveURL(/#\/search\?q=light&from=albums$/)
+  // A tie between a word of an album and of a track goes to the section it was opened from.
+  await expect(page.getByTestId('search-top')).toContainText('Shared Light')
+  await expect(page.getByTestId('search-tracks').getByRole('row').nth(1)).toBeVisible()
+  await page.getByTestId('search-field').fill('zzzz')
+  await expect(page).toHaveURL(/q=zzzz/)
+  await expect(page.getByRole('heading', { name: 'Nothing found for “zzzz”' })).toBeVisible()
+  // A command: the theme.
+  await page.keyboard.press('ControlOrMeta+k')
+  await field.fill('dark theme')
+  await field.press('Enter')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await command(page, 'Light theme')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  expect(errors).toEqual([])
+})
+
+test("opens the search page from the phone's top bar", async ({ page }, info) => {
+  test.skip(info.project.name !== 'phone', 'The phone layout')
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  await page.getByRole('button', { name: 'Search', exact: true }).click()
+  await expect(page).toHaveURL(/#\/search$/)
+  const field = page.getByTestId('search-field')
+  await expect(field).toBeFocused()
+  await field.fill('mira')
+  await expect(page.getByTestId('search-top')).toContainText('Mira Sol')
+  await page.getByTestId('search-top').getByRole('link', { name: 'Mira Sol' }).click()
+  await expect(page).toHaveURL(/#\/artist\/Mira%20Sol$/)
+  // Phones show the step back as the way back.
+  await page.getByTestId('crumbs').getByRole('link', { name: 'Artists' }).filter({ visible: true }).click()
+  await expect(page).toHaveURL(/#\/artists$/)
+})
+
+test('reads the collection again from the connection dialog', async ({ page }) => {
+  test.skip(external, 'Needs the mock gateway')
+  await english(page)
+  await expect(page.getByRole('navigation').getByRole('link', { name: 'Albums' }).first()).toBeVisible()
+  await openConnection(page)
+  const read = page.waitForRequest((request) => request.url().includes('/api/data/'))
+  await page.getByRole('dialog').getByTestId('refresh-collection').click()
+  await read
+})
+
+test('keeps the interface language in Settings, with the theme and the text size', async ({ page }) => {
+  await english(page)
+  await openSettings(page)
+  const languages = page.getByRole('dialog').getByRole('group', { name: 'Interface language' })
+  await expect(languages.getByRole('button', { name: 'English' })).toHaveAttribute('aria-pressed', 'true')
+  await languages.getByRole('button', { name: 'Русский' }).click()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
+  await expect(page.getByRole('dialog').getByRole('group', { name: 'Язык интерфейса' })).toBeVisible()
+  await page.getByRole('dialog').getByRole('button', { name: 'English' }).click()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+})
+
 test('offers the tones of the theme in effect and keeps the chosen palettes', async ({ page }) => {
   await english(page)
   const html = page.locator('html')
-  await page
-    .getByRole('button', { name: /^Appearance/ })
-    .filter({ visible: true })
-    .first()
-    .click()
+  await openSettings(page)
   const dialog = page.getByRole('dialog')
   await dialog.getByRole('button', { name: 'Dark', exact: true }).click()
   await expect(dialog.getByRole('group', { name: 'Light theme tone' })).toHaveCount(0)
@@ -1517,11 +1618,7 @@ test('offers the tones of the theme in effect and keeps the chosen palettes', as
   // Applied before paint by theme.js, then kept by the store.
   await expect(html).toHaveAttribute('data-light-palette', 'paper')
   await expect(html).toHaveAttribute('data-dark-palette', 'espresso')
-  await page
-    .getByRole('button', { name: /^Appearance/ })
-    .filter({ visible: true })
-    .first()
-    .click()
+  await openSettings(page)
   await dialog.getByRole('group', { name: 'Light theme tone' }).getByRole('button', { name: 'Sage' }).click()
   await expect(html).not.toHaveAttribute('data-light-palette', /.+/)
 })
@@ -1532,12 +1629,7 @@ test('changes the text size and keeps it before the first paint', async ({ page 
   await page.goto('/#/tracks')
   const title = page.getByRole('table').getByRole('row').nth(1).locator('strong').first()
   await expect(title).toHaveCSS('font-size', '14px')
-  const openAppearance = () =>
-    page
-      .getByRole('button', { name: /^Appearance/ })
-      .filter({ visible: true })
-      .first()
-      .click()
+  const openAppearance = () => openSettings(page)
   await openAppearance()
   const sizes = page.getByRole('dialog').getByRole('group', { name: 'Text size' })
   await expect(sizes.getByRole('button')).toHaveCount(4)

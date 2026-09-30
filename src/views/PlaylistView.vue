@@ -1,29 +1,27 @@
 <script setup lang="ts">
 /** Custom playlist detail: its tracks in stock list order (data level). */
-import { BACK_LINK } from './captions'
 import { computed, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useCrumbs } from './crumbs'
+import { useRoute } from 'vue-router'
 import DetailHeading from '../components/collection/DetailHeading.vue'
 import TrackList from '../components/track/TrackList.vue'
 import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
-import { filterBy } from '../domain/search'
 import type { LibraryTrack } from '../domain/track'
 import { t } from '../i18n'
 import { library, loadPlaylistTracks, trackByPath } from '../stores/library'
-import { openPlaylistDialog, openTrackMenu, ui } from '../stores/ui'
+import { openPlaylistDialog, openTrackMenu } from '../stores/ui'
 import { playlistEdits } from '../stores/playlistEdits'
 import UiActionMenu from '../ui/UiActionMenu.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
-import UiTextButton from '../ui/UiTextButton.vue'
 import { useHeadingAction } from './headingAction'
 import { playFrom } from './playAlbum'
 import CollectionGate from './CollectionGate.vue'
 import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
 
 const route = useRoute()
-const router = useRouter()
 const id = computed(() => Number(route.params.id))
 const playlist = computed(() => library.playlists.find((item) => item.id === id.value) ?? null)
+useCrumbs(() => [{ text: t('playlists'), to: '/playlists' }, { text: playlist.value?.name ?? '' }])
 const tracks = ref<LibraryTrack[] | null>(null)
 let request = 0
 // Reload after the list changed (an edit here or elsewhere). Members are
@@ -44,25 +42,21 @@ watch(
   },
   { immediate: true },
 )
-const searching = computed(() => ui.query.trim() !== '')
 const heading = useHeadingAction({
   owns: (track) => (tracks.value ?? []).some((item) => item.path === track.path),
   label: () => t('listen_playlist'),
   disabled: () => !tracks.value?.length || !playlist.value,
   play: () => void (playlist.value && playFrom({ kind: 'playlist', name: playlist.value.name })),
 })
-const items = computed(() =>
-  filterBy(tracks.value ?? [], ui.query, (track) => [track.title, track.artist, track.album]),
-)
+const items = computed(() => tracks.value ?? [])
 /** An entry whose file was deleted stays in place, dimmed (stock keeps it; the file may come back). */
 const unavailable = (track: { path: string | null }) =>
   library.status === 'ready' && (track.path === null || !trackByPath.value.has(track.path))
 </script>
 
 <template>
-  <CollectionGate :count="items.length" :searching="searching" empty-key="search_empty_tracks" :ready="tracks !== null">
+  <CollectionGate :count="items.length" :ready="tracks !== null">
     <template #heading="{ loading }">
-      <UiTextButton :class="BACK_LINK" @click="router.push('/playlists')">← {{ t('back_to_collection') }}</UiTextButton>
       <DetailHeading
         :title="playlist?.name ?? ''"
         :kind="t('kind_playlist')"

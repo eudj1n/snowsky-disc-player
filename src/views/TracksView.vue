@@ -6,14 +6,13 @@ import TrackList from '../components/track/TrackList.vue'
 import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
 import { genreTracks, sameGenre } from '../domain/genre'
 import { sortTracks, TRACK_SORTS } from '../domain/history'
-import { filterBy } from '../domain/search'
 import type { SelectionTarget, TrackKey } from '../gateway/selection'
 import { t } from '../i18n'
 import { history, loadHistory, sourceOf } from '../stores/history'
 import { tracks, library } from '../stores/library'
 import { trackSort } from '../stores/preferences'
 import UiChips from '../ui/UiChips.vue'
-import { openTrackMenu, ui } from '../stores/ui'
+import { openTrackMenu } from '../stores/ui'
 import { countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { useGenreFilter } from './genreFilter'
@@ -22,10 +21,9 @@ import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
 import { playFrom } from './playAlbum'
 
 const { genre, options } = useGenreFilter()
-const searching = computed(() => ui.query.trim() !== '')
 const source = computed(() => (genre.value ? genreTracks(tracks.value, genre.value) : tracks.value))
 const sorted = computed(() => sortTracks(source.value, trackSort.value, history.most))
-const items = computed(() => filterBy(sorted.value, ui.query, (track) => [track.title, track.artist, track.album]))
+const items = computed(() => sorted.value)
 /** "Most played" only with recorded plays; "Recently played" with the service's history (next image). */
 const sorts = computed(() =>
   TRACK_SORTS.filter(
@@ -61,12 +59,12 @@ const columns = computed(() => ({
 </script>
 
 <template>
-  <CollectionGate :count="items.length" :searching="searching" empty-key="search_empty_tracks">
+  <CollectionGate :count="items.length">
     <template #heading="{ loading }">
       <ViewHeading
         :eyebrow="t('my_collection')"
         :title="t('tracks')"
-        :meta="loading ? null : countLine(searching || genre !== null, items.length)"
+        :meta="loading ? null : countLine(genre !== null, items.length)"
       >
         <div class="flex flex-wrap items-center gap-12 self-end">
           <GenreFilter

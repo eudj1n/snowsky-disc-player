@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * Shared view states (reference renderView/loadView): service unreachable,
- * failed with retry, empty collection, no search matches. While the
+ * failed with retry, empty collection (with Add music). While the
  * collection loads, the view's heading renders with its own skeleton in
  * place of the data, so nothing moves when the rows arrive.
  */
@@ -10,18 +10,14 @@ import ConnectCard from '../components/connection/ConnectCard.vue'
 import OfflineNotice from '../components/connection/OfflineNotice.vue'
 import EmptyState from '../components/common/EmptyState.vue'
 import HomeIntro from '../components/home/HomeIntro.vue'
-import { locale, t, type MessageKey } from '../i18n'
+import { locale, t } from '../i18n'
 import { connection, probeGateway } from '../stores/connection'
+import { setImportDestination } from '../stores/imports'
 import { library, loadCollection, loadLibraryFacts } from '../stores/library'
 import { openDialog } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
 
-const props = withDefaults(
-  defineProps<{ count: number; searching: boolean; emptyKey: MessageKey; ready?: boolean }>(),
-  {
-    ready: true,
-  },
-)
+const props = withDefaults(defineProps<{ count: number; ready?: boolean }>(), { ready: true })
 const retrying = ref(false)
 const savedText = computed(() =>
   library.savedAt === null
@@ -43,6 +39,11 @@ async function retry(): Promise<void> {
   } finally {
     retrying.value = false
   }
+}
+/** Music goes to the card's root; the card's file manager chooses a folder. */
+function addMusic(): void {
+  setImportDestination('')
+  openDialog('import')
 }
 const loading = computed(
   () =>
@@ -82,13 +83,16 @@ const loading = computed(
       @retry="retry"
     />
     <slot name="heading" :loading="false" />
-    <EmptyState v-if="!count && searching" icon="search" :title="t('no_matches_yet')" :text="t(emptyKey)" />
     <EmptyState
-      v-else-if="!count"
+      v-if="!count"
       icon="music"
       :title="t('a_little_quiet_here')"
       :text="t('collection_appears_after_adding_music')"
-    />
+    >
+      <UiPillButton v-if="connection.gateway" icon="add-music" variant="secondary" @click="addMusic">{{
+        t('import_music')
+      }}</UiPillButton>
+    </EmptyState>
     <!-- Loaded content settles in after its skeleton. -->
     <div v-else class="animate-content-in motion-reduce:animate-none"><slot /></div>
     <p v-if="library.truncated" class="mt-24 text-footnote leading-[1.55] text-muted">

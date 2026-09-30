@@ -42,7 +42,7 @@ import {
 } from '../stores/lyrics'
 import UiPillButton from '../ui/UiPillButton.vue'
 import { playerOptions } from '../stores/playerOptions'
-import { closePanel, showCover, showPanelSection, ui } from '../stores/ui'
+import { closePanel, openDialog, showCover, showPanelSection, ui } from '../stores/ui'
 import { disliked, isDisliked, toggleDislike } from '../stores/disliked'
 import UiIcon from '../ui/UiIcon.vue'
 import UiIconButton from '../ui/UiIconButton.vue'
@@ -162,6 +162,7 @@ const labels = computed(() => ({
   output: t(inBrowser.value ? 'audio_plays_in_this_browser' : 'audio_plays_on_your_disc'),
   switchSide: t(inBrowser.value ? 'side_browser' : 'side_disc'),
   visualizer: t('visualizer_open'),
+  sound: t('sound_title'),
   format: t('format_from_filename'),
   resampled: t('output_resampled'),
   playingFrom: t('playing_from'),
@@ -350,6 +351,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         @navigate="onNavigate"
         @side="switchSide"
         @visualizer="openVisualizer"
+        @sound="openDialog('sound')"
         @cover="showNowCover"
       >
         <div ref="headEnd" aria-hidden="true" />
@@ -383,11 +385,11 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
                   {{ t('queue') }}
                 </h2>
               </div>
+              <!-- Reads the player's queue: disabled while this browser plays its own. -->
               <UiIconButton
-                v-if="!inBrowser"
                 icon="refresh"
                 :label="t('refresh_queue')"
-                :disabled="connection.connection !== 'connected' || queue.status === 'loading'"
+                :disabled="inBrowser || connection.connection !== 'connected' || queue.status === 'loading'"
                 @click="loadQueue"
               />
             </div>
@@ -418,7 +420,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
             {{ nowPlaying.track?.title ?? t('lyrics_tab') }}
           </h2>
           <UiIconButton
-            v-if="nowPlaying.track"
+            :disabled="!nowPlaying.track"
             icon="karaoke"
             :label="t('karaoke_open')"
             data-testid="karaoke-open"

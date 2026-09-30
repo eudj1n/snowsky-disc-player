@@ -5,7 +5,6 @@
  * observed), listening panel, dialogs, toast.
  */
 import { computed, onBeforeUnmount, onMounted, watch, watchEffect } from 'vue'
-import { useRoute } from 'vue-router'
 import { t } from './i18n'
 import AppearanceDialog from './layout/AppearanceDialog.vue'
 import AppPlayerBar from './layout/AppPlayerBar.vue'
@@ -20,6 +19,7 @@ import VisualizerMode from './layout/VisualizerMode.vue'
 import CoverViewer from './layout/CoverViewer.vue'
 import PlaylistDialog from './layout/PlaylistDialog.vue'
 import ListeningPanel from './layout/ListeningPanel.vue'
+import SearchPalette from './layout/SearchPalette.vue'
 import SoundDialog from './layout/SoundDialog.vue'
 import TrackMenuDialog from './layout/TrackMenuDialog.vue'
 import './stores/appearance'
@@ -32,10 +32,9 @@ import { loadArtistPictures } from './stores/artistPictures'
 import { loadCollection, loadLibraryFacts, loadSavedCollection } from './stores/library'
 import { output } from './stores/output'
 import { playerVisible } from './stores/playback'
-import { setQuery, ui } from './stores/ui'
+import { ui } from './stores/ui'
 import { handleShortcut } from './views/shortcuts'
 
-const route = useRoute()
 /** The bar shows while the player has a track, and always on this browser's side: it holds the switch back. */
 const barVisible = computed(() => playerVisible.value || output.side === 'browser')
 // A player that becomes unreachable keeps the shown collection as a saved copy.
@@ -44,13 +43,6 @@ watch(
   (reachable) => {
     if (reachable === false) void loadSavedCollection()
   },
-)
-
-// A real navigation clears the search (reference hashchange handler); a
-// filter in the query string (genre) keeps it.
-watch(
-  () => route.path,
-  () => setQuery(''),
 )
 
 function skipToContent(event: MouseEvent): void {
@@ -104,6 +96,7 @@ watchEffect(() => {
   </div>
   <AppPlayerBar v-if="barVisible" />
   <ListeningPanel />
+  <SearchPalette />
   <ConnectionDialog />
   <AppearanceDialog />
   <TrackMenuDialog />

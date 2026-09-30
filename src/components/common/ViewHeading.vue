@@ -3,7 +3,8 @@
  * A null meta (count still loading) keeps its line as a skeleton. */
 import UiSkeleton from '../../ui/UiSkeleton.vue'
 
-defineProps<{ eyebrow: string; title: string; meta: string | null }>()
+/** No meta line when `meta` is left out; a skeleton while it is null (loading). */
+withDefaults(defineProps<{ eyebrow: string; title: string; meta?: string | null }>(), { meta: undefined })
 </script>
 
 <template>
@@ -11,8 +12,10 @@ defineProps<{ eyebrow: string; title: string; meta: string | null }>()
     <div>
       <span class="text-caption2 font-semibold tracking-caps text-muted uppercase">{{ eyebrow }}</span>
       <h1 class="mt-10 mb-7 text-title1 font-bold tracking-title">{{ title }}</h1>
-      <p v-if="meta !== null" class="m-0 text-footnote text-muted">{{ meta }}</p>
-      <div v-else class="flex h-[1lh] items-center text-footnote"><UiSkeleton class="h-[0.8em] w-110" /></div>
+      <p v-if="typeof meta === 'string'" class="m-0 text-footnote text-muted">{{ meta }}</p>
+      <div v-else-if="meta === null" class="flex h-[1lh] items-center text-footnote">
+        <UiSkeleton class="h-[0.8em] w-110" />
+      </div>
     </div>
     <slot />
   </div>

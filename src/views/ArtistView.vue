@@ -7,7 +7,7 @@
  * (owner, 2026-09-29), each played within its album.
  */
 import { computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import CoverCard from '../components/collection/CoverCard.vue'
 import CoverCardSkeleton from '../components/collection/CoverCardSkeleton.vue'
 import CoverGrid from '../components/collection/CoverGrid.vue'
@@ -19,7 +19,6 @@ import { creditLabel, credits } from '../domain/artist'
 import { mostPlayed } from '../domain/history'
 import type { Track } from '../domain/track'
 import type { SelectionTarget } from '../gateway/selection'
-import { filterBy } from '../domain/search'
 import { t } from '../i18n'
 import { albumCover, albumYear, coverFor } from '../stores/enrichment'
 import {
@@ -33,21 +32,22 @@ import { history, loadHistory } from '../stores/history'
 import { albums, artists, tracks } from '../stores/library'
 import { isPinnedArtist, pins, togglePinArtist } from '../stores/pins'
 import { nowIsPlaying as isPlaying, nowPlaying } from '../stores/output'
-import { openTrackMenu, showCover, ui } from '../stores/ui'
+import { openTrackMenu, showCover } from '../stores/ui'
 import { artistList, autoPlaylists, makeArtistList, removeAutoList } from '../stores/autoPlaylists'
 import { pairing } from '../stores/pairing'
 import UiCircleButton from '../ui/UiCircleButton.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumCardRoute, albumRoute, artistAlbumLines, artistRoute, BACK_LINK, withYear } from './captions'
+import { albumCardRoute, albumRoute, artistAlbumLines, artistRoute, withYear } from './captions'
+import { useCrumbs } from './crumbs'
 import CollectionGate from './CollectionGate.vue'
 import { useHeadingAction } from './headingAction'
 import { playAlbumCard, playFrom } from './playAlbum'
 import { toggleCurrent } from './trackRows'
 
 const route = useRoute()
-const router = useRouter()
 const name = computed(() => String(route.params.name ?? ''))
+useCrumbs(() => [{ text: t('artists'), to: '/artists' }, { text: creditLabel(name.value) }])
 /** The artist's automatic playlist, if the player keeps one. */
 const kept = computed(() => artistList(name.value))
 async function toggleKept(): Promise<void> {
@@ -79,10 +79,8 @@ const byYear = (list: Album[]) =>
   recentAlbums(list).sort((a, b) => (albumYear(b, scopeOf(b)) ?? 0) - (albumYear(a, scopeOf(a)) ?? 0))
 const own = computed(() => byYear(albums.value.filter((album) => role(album) === 'own')))
 const appears = computed(() => byYear(albums.value.filter((album) => role(album) === 'joint')))
-const searching = computed(() => ui.query.trim() !== '')
-const match = (album: Album) => [album.title, ...album.artists]
-const items = computed(() => filterBy(own.value, ui.query, match))
-const joined = computed(() => filterBy(appears.value, ui.query, match))
+const items = own
+const joined = appears
 
 /** Stock plays an artist it knows by that exact name (not one known only from joint credits). */
 const playable = computed(() => artists.value.some((artist) => artist.name === name.value && artist.literal))
@@ -95,14 +93,10 @@ const heading = useHeadingAction({
 /** The artist's most played tracks (each at most once), from the service's play history. */
 const HOT = 6
 const hot = computed(() =>
-  filterBy(
-    mostPlayed(
-      tracks.value.filter((track) => credits(track.artist, name.value)),
-      history.most,
-      HOT,
-    ),
-    ui.query,
-    (track) => [track.title, track.album],
+  mostPlayed(
+    tracks.value.filter((track) => credits(track.artist, name.value)),
+    history.most,
+    HOT,
   ),
 )
 onMounted(() => {
@@ -138,9 +132,8 @@ function lines(album: Album) {
 </script>
 
 <template>
-  <CollectionGate :count="items.length + joined.length" :searching="searching" empty-key="search_empty_albums">
+  <CollectionGate :count="items.length + joined.length">
     <template #heading="{ loading }">
-      <UiTextButton :class="BACK_LINK" @click="router.push('/artists')">← {{ t('back_to_collection') }}</UiTextButton>
       <DetailHeading
         :title="creditLabel(name)"
         :kind="t('kind_artist')"

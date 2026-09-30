@@ -13,6 +13,7 @@
  */
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import {
+  command,
   connectAndPair,
   disconnect,
   english,
@@ -56,7 +57,7 @@ test('scans the generated media, keeps same-titled albums apart and survives tra
   const errors = watchErrors(page)
   await english(page)
   await connectAndPair(page)
-  await page.getByRole('button', { name: 'Add music' }).click()
+  await command(page, 'Add music')
   const dialog = page.getByRole('dialog')
   await dialog.getByRole('button', { name: 'Start scan' }).click()
   await expect(dialog.getByTestId('scan-status')).toContainText('Scan ended', { timeout: 120_000 })
@@ -240,7 +241,7 @@ test('creates, fills, plays, trims, renames and deletes a playlist on stock', as
 test('reads and changes sound settings and the equalizer on stock, then restores them', async ({ page }) => {
   await english(page)
   await connectAndPair(page)
-  await page.getByRole('button', { name: 'Sound settings' }).filter({ visible: true }).first().click()
+  await command(page, 'Sound settings')
   const dialog = page.getByRole('dialog')
   const feedback = dialog.getByTestId('sound-feedback')
   await expect(feedback).toHaveText('Current values received from DISC.', { timeout: 30_000 })
@@ -930,7 +931,7 @@ test('uploads a file, scans once and shows it in New on stock', async ({ page })
   await english(page)
   await connectAndPair(page)
   const name = `Player Acceptance Upload ${String(Date.now() % 100_000)}`
-  await page.getByRole('button', { name: 'Add music' }).click()
+  await command(page, 'Add music')
   const dialog = page.getByRole('dialog')
   await dialog
     .locator('input[type=file]:not([webkitdirectory])')

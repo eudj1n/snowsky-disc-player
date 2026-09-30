@@ -5,16 +5,20 @@
  * asks for it (slim variant), and becomes the bottom navigation on phones,
  * where the device card moves to the top bar.
  */
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import BrandLogo from '../components/brand/BrandLogo.vue'
 import { t } from '../i18n'
 import { SECTIONS, sectionOf } from '../router'
 import { connection } from '../stores/connection'
+import { imports } from '../stores/imports'
 import { railShown } from '../stores/sidebar'
 import { openDialog } from '../stores/ui'
 import UiIcon from '../ui/UiIcon.vue'
 
 const route = useRoute()
+/** Music on its way to the card or being scanned: a dot on Card (it left the top bar, 2026-09-30). */
+const importActive = computed(() => imports.transferring || imports.scan.phase === 'scanning')
 const label = () =>
   connection.gateway === false
     ? t('server_unavailable')
@@ -50,7 +54,7 @@ const label = () =>
           :title="railShown ? t(section.title) : undefined"
           :aria-current="sectionOf(route.name) === section.name ? 'page' : undefined"
           :class="{ 'phone:hidden': 'phone' in section }"
-          class="group my-3 flex w-full items-center gap-12 rounded-9 px-14 py-13 text-left font-medium text-ink hover:bg-hover hover:text-ink aria-[current=page]:bg-selected aria-[current=page]:font-semibold aria-[current=page]:text-ink slim:mb-10 slim:justify-center slim:gap-0 slim:p-14 slim:text-[0px] phone:m-0 phone:w-auto phone:flex-1 phone:flex-col phone:gap-4 phone:rounded-none phone:px-4 phone:py-8 phone:text-[10px] phone:font-medium phone:text-muted phone:aria-[current=page]:bg-transparent phone:aria-[current=page]:text-secondary"
+          class="group relative my-3 flex w-full items-center gap-12 rounded-9 px-14 py-13 text-left font-medium text-ink hover:bg-hover hover:text-ink aria-[current=page]:bg-selected aria-[current=page]:font-semibold aria-[current=page]:text-ink slim:mb-10 slim:justify-center slim:gap-0 slim:p-14 slim:text-[0px] phone:m-0 phone:w-auto phone:flex-1 phone:flex-col phone:gap-4 phone:rounded-none phone:px-4 phone:py-8 phone:text-[10px] phone:font-medium phone:text-muted phone:aria-[current=page]:bg-transparent phone:aria-[current=page]:text-secondary"
         >
           <!-- Links in the ink, icons quieter, the current section's icon in the accent (owner, 2026-09-30, option B);
                the phone's tab bar keeps quiet labels. -->
@@ -59,6 +63,14 @@ const label = () =>
             class="text-secondary group-aria-[current=page]:text-accent phone:size-19 phone:text-current"
           />
           <span>{{ t(section.title) }}</span>
+          <template v-if="section.name === 'card' && importActive">
+            <span class="sr-only">, {{ t('import_workflow') }}</span>
+            <i
+              aria-hidden="true"
+              data-testid="card-import-dot"
+              class="ml-auto size-7 shrink-0 rounded-full bg-accent slim:absolute slim:top-10 slim:right-10 slim:ml-0"
+            />
+          </template>
         </RouterLink>
       </template>
     </nav>

@@ -1,6 +1,7 @@
 /**
  * Keyboard shortcuts (owner's decision, proposal 2): Space plays or pauses,
- * Left/Right select the previous/next track, "/" focuses search (reference),
+ * Left/Right select the previous/next track, "/" or ⌘K (Ctrl+K) opens the
+ * search palette (owner, 2026-09-30),
  * K opens or closes karaoke for the current track (round 16; the key, not
  * the letter, so it works in any keyboard layout), V the visualizer while
  * this browser plays (2026-09-29); one full-screen overlay at a time.
@@ -13,18 +14,24 @@ import { browserTrack, nextInBrowser, previousInBrowser, toggleBrowser } from '.
 import { connection } from '../stores/connection'
 import { transport } from '../stores/controls'
 import { inBrowser, nowPlaying } from '../stores/output'
-import { ui } from '../stores/ui'
+import { openPalette, ui } from '../stores/ui'
 
 const INTERACTIVE = 'input, textarea, select, button, a, [contenteditable], [role=menuitem], [role=slider]'
 
 export function handleShortcut(event: KeyboardEvent): void {
-  if (event.metaKey || event.ctrlKey || event.altKey || event.defaultPrevented) return
+  if (event.defaultPrevented || document.querySelector('dialog[open]')) return
   const target = event.target as HTMLElement | null
-  if (document.querySelector('dialog[open]')) return
+  // The key, not the letter: K in any keyboard layout; the palette closes itself on it.
+  if (event.code === 'KeyK' && (event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey) {
+    event.preventDefault()
+    openPalette()
+    return
+  }
+  if (event.metaKey || event.ctrlKey || event.altKey) return
   if (event.key === '/') {
     if (target?.closest('input, textarea, select, [contenteditable]')) return
     event.preventDefault()
-    document.getElementById('search')?.focus()
+    openPalette()
     return
   }
   if (event.code === 'KeyK' && !event.shiftKey) {

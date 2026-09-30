@@ -18,7 +18,7 @@ import { switchSide } from '../stores/handoff'
 import { operation } from '../stores/operation'
 import { playback } from '../stores/playback'
 import { inBrowser, nowPlaying, nowPositionMs, output } from '../stores/output'
-import { togglePanel, ui } from '../stores/ui'
+import { openDialog, togglePanel, ui } from '../stores/ui'
 import { creditArtists, creditLabel } from '../domain/artist'
 import { albumRoute, artistRoute } from '../views/captions'
 import { usePlaybackContext } from './usePlaybackContext'
@@ -109,6 +109,7 @@ const labels = computed(() => ({
       :volume-disabled="player.volumeDisabled.value"
       :volume-label="t('disc_volume')"
       :volume-title="player.volumeTitle.value"
+      :sound-label="t('sound_title')"
       :mute-label="t('mute')"
       :unmute-label="t('unmute')"
       :queue-label="t('open_queue')"
@@ -122,6 +123,7 @@ const labels = computed(() => ({
       @lyrics="(opener) => togglePanel('lyrics', opener)"
       @volume="player.onVolume"
       @mute="player.onMute"
+      @sound="openDialog('sound')"
     />
   </section>
 </template>

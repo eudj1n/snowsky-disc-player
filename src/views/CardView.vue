@@ -4,7 +4,7 @@
  * the measured music and other files, then formats, the largest albums and
  * artists, and possible duplicates. Read-only; the whole card is measured in
  * one request (combined-009; before it, one media read per file) and
- * remembered in this browser.
+ * remembered in this browser. Add music lives here (it left the top bar, 2026-09-30).
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import Artwork from '../components/artwork/Artwork.vue'
@@ -30,8 +30,11 @@ import {
 import { artistImage } from '../stores/artistPictures'
 import { history, loadHistory } from '../stores/history'
 import { loadTrash, trash } from '../stores/trash'
+import { setImportDestination } from '../stores/imports'
 import { albums, library, tracks } from '../stores/library'
+import { openDialog } from '../stores/ui'
 import UiIcon from '../ui/UiIcon.vue'
+import UiPillButton from '../ui/UiPillButton.vue'
 import UiSkeleton from '../ui/UiSkeleton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { albumCardRoute, albumLines, artistRoute, leadArtist } from './captions'
@@ -42,6 +45,11 @@ const ALBUM_ROWS = 12
 const ARTIST_ROWS = 10
 const DUPLICATE_ROWS = 8
 
+/** Music goes to the card's root; the file manager chooses a folder. */
+function addMusic(): void {
+  setImportDestination('')
+  openDialog('import')
+}
 const bytes = (value: number) => formatBytes(value, locale.value)
 const percent = (part: number, whole: number) => (whole > 0 ? `${Math.max((part / whole) * 100, 0.5)}%` : '0%')
 
@@ -152,10 +160,15 @@ watch(
 </script>
 
 <template>
-  <CollectionGate :count="withPath.length" :searching="false" empty-key="search_empty_tracks">
+  <CollectionGate :count="withPath.length">
     <template #heading="{ loading }">
       <ViewHeading :eyebrow="t('your_player')" :title="t('card_section')" :meta="loading ? null : meta">
-        <CardTabs current="space" :trash="connection.trash" />
+        <div class="flex flex-wrap items-center gap-12 self-end">
+          <UiPillButton icon="add-music" variant="secondary" data-testid="card-add-music" @click="addMusic">{{
+            t('import_music')
+          }}</UiPillButton>
+          <CardTabs current="space" :trash="connection.trash" />
+        </div>
       </ViewHeading>
     </template>
     <template #skeleton>

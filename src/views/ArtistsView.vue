@@ -4,33 +4,26 @@ import CoverCard from '../components/collection/CoverCard.vue'
 import CoverCardSkeleton from '../components/collection/CoverCardSkeleton.vue'
 import CoverGrid from '../components/collection/CoverGrid.vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
-import { filterBy } from '../domain/search'
 import { t } from '../i18n'
 import { artistImage } from '../stores/artistPictures'
 import { artists } from '../stores/library'
 import { artistPinnedAt, isPinnedArtist, pinnedFirst } from '../stores/pins'
-import { ui } from '../stores/ui'
+
 import { artistRoute, countLine } from './captions'
 import { playFrom } from './playAlbum'
 import CollectionGate from './CollectionGate.vue'
 
-const searching = computed(() => ui.query.trim() !== '')
 // Pinned artists lead the list (combined-008).
-const items = computed(() =>
-  pinnedFirst(
-    filterBy(artists.value, ui.query, (artist) => [artist.name]),
-    (artist) => artistPinnedAt(artist.name),
-  ),
-)
+const items = computed(() => pinnedFirst(artists.value, (artist) => artistPinnedAt(artist.name)))
 </script>
 
 <template>
-  <CollectionGate :count="items.length" :searching="searching" empty-key="search_empty_artists">
+  <CollectionGate :count="items.length">
     <template #heading="{ loading }">
       <ViewHeading
         :eyebrow="t('my_collection')"
         :title="t('artists')"
-        :meta="loading ? null : countLine(searching, items.length)"
+        :meta="loading ? null : countLine(false, items.length)"
       />
     </template>
     <template #skeleton>

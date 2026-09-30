@@ -6,19 +6,17 @@
 import { computed } from 'vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
 import TrackList from '../components/track/TrackList.vue'
-import { filterBy } from '../domain/search'
 import { t } from '../i18n'
 import { dislikedTracks } from '../stores/disliked'
 import { tracks } from '../stores/library'
-import { openTrackMenu, ui } from '../stores/ui'
+import { openTrackMenu } from '../stores/ui'
 import { countLine } from './captions'
 import CollectionGate from './CollectionGate.vue'
+import { useCrumbs } from './crumbs'
 import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
 
-const searching = computed(() => ui.query.trim() !== '')
-const items = computed(() =>
-  filterBy(dislikedTracks.value, ui.query, (track) => [track.title, track.artist, track.album]),
-)
+const items = dislikedTracks
+useCrumbs(() => [{ text: t('favorites'), to: '/favorites' }, { text: t('disliked_section') }])
 const columns = computed(() => ({
   title: t('column_title'),
   album: t('column_album'),
@@ -28,16 +26,12 @@ const columns = computed(() => ({
 
 <template>
   <!-- An empty list is not an empty collection: it gets its own hint below the heading. -->
-  <CollectionGate
-    :count="searching ? items.length : tracks.length"
-    :searching="searching"
-    empty-key="search_empty_tracks"
-  >
+  <CollectionGate :count="tracks.length">
     <template #heading="{ loading }">
       <ViewHeading
         :eyebrow="t('my_collection')"
         :title="t('disliked_section')"
-        :meta="loading ? null : countLine(searching, items.length)"
+        :meta="loading ? null : countLine(false, items.length)"
       >
         <p class="m-0 max-w-420 text-footnote text-muted">{{ t('disliked_hint') }}</p>
       </ViewHeading>

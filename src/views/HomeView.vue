@@ -12,7 +12,6 @@ import CoverCardSkeleton from '../components/collection/CoverCardSkeleton.vue'
 import CoverGrid from '../components/collection/CoverGrid.vue'
 import CoverRow from '../components/collection/CoverRow.vue'
 import SectionHeading from '../components/common/SectionHeading.vue'
-import ViewHeading from '../components/common/ViewHeading.vue'
 import HomeHero from '../components/home/HomeHero.vue'
 import HomeIntro from '../components/home/HomeIntro.vue'
 import SourceTile from '../components/home/SourceTile.vue'
@@ -22,7 +21,6 @@ import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
 import { recentAlbums, albumScope } from '../domain/album'
 import { creditLabel } from '../domain/artist'
 import { recentlyPlayedAlbums } from '../domain/history'
-import { filterBy } from '../domain/search'
 import { t } from '../i18n'
 import { connection } from '../stores/connection'
 import { autoPlaylists } from '../stores/autoPlaylists'
@@ -32,16 +30,15 @@ import { history, loadHistory, recentSourcesShown } from '../stores/history'
 import { isDisliked } from '../stores/disliked'
 import { albums, featuredAlbum, tracks } from '../stores/library'
 import { isPinnedAlbum, pins } from '../stores/pins'
-import { openTrackMenu, ui } from '../stores/ui'
+import { openTrackMenu } from '../stores/ui'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumCardRoute, albumLines, artistRoute, countLine } from './captions'
+import { albumCardRoute, albumLines, artistRoute } from './captions'
 import CollectionGate from './CollectionGate.vue'
 import { sourceTile } from './sourceTiles'
 import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
 import { playAlbumAction, playFrom, playAlbumCard } from './playAlbum'
 
 const router = useRouter()
-const searching = computed(() => ui.query.trim() !== '')
 const recent = computed(() => recentAlbums(albums.value, 4))
 const featured = featuredAlbum
 // Disliked tracks stay off the shelves (combined-008).
@@ -62,7 +59,6 @@ const pinnedAlbums = computed(() =>
     }),
 )
 const pinnedArtists = computed(() => [...pins.artists].sort((a, b) => b.at - a.at).map((pin) => pin.name))
-const found = computed(() => filterBy(albums.value, ui.query, (album) => [album.title, ...album.artists]))
 const played = computed(() => recentlyPlayedAlbums(history.recent, albums.value, tracks.value, 8))
 /** The service's history (next image): the sources the listener started. */
 const tiles = computed(() =>
@@ -83,33 +79,7 @@ const heroLines = computed<[string, string]>(() =>
 </script>
 
 <template>
-  <CollectionGate v-if="searching" :count="found.length" searching empty-key="search_empty_albums">
-    <template #heading="{ loading }">
-      <ViewHeading
-        :eyebrow="t('my_collection')"
-        :title="t('home')"
-        :meta="loading ? null : countLine(true, found.length)"
-      />
-    </template>
-    <template #skeleton>
-      <CoverGrid><CoverCardSkeleton v-for="n in 8" :key="n" /></CoverGrid>
-    </template>
-    <CoverGrid>
-      <CoverCard
-        v-for="album in found"
-        :key="album.key"
-        :title="album.title"
-        :pinned-label="isPinnedAlbum(album) ? t('pinned_mark') : null"
-        :to="albumCardRoute(album)"
-        :cover="albumCover(album, albumScope(album))"
-        :lines="albumLines(album)"
-        :open-label="t('open_item', { name: album.title })"
-        :play-label="t('play_item', { name: album.title })"
-        @play="playAlbumCard(album)"
-      />
-    </CoverGrid>
-  </CollectionGate>
-  <CollectionGate v-else :count="1" :searching="false" empty-key="search_empty_albums">
+  <CollectionGate :count="1">
     <template #heading="{ loading }">
       <HomeIntro
         :eyebrow="t('a_good_day_for_music')"

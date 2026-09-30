@@ -1,14 +1,14 @@
 # Themes and dark palettes
 
 The page has a light and a dark theme (`data-theme` on `<html>`, chosen in the
-appearance dialog or following the system). Colors are CSS tokens in
+Settings dialog or following the system). Colors are CSS tokens in
 `src/styles/main.css`; components use them through Tailwind theme colors
 (`bg-strong`, `text-chip-on-ink`, …) or `var(--token)`, never literal dark
 colors, so a palette changes the whole theme at once.
 
 ## Palettes
 
-Each theme has four palettes; the appearance dialog shows the swatches of the
+Each theme has four palettes; the Settings dialog shows the swatches of the
 theme in effect ("Light theme tone" or "Dark theme tone") and keeps the choice
 in this browser (`disc-player.light-palette`, `disc-player.dark-palette`).
 `public/theme.js` applies it before the stylesheet paints, and the store
@@ -73,17 +73,23 @@ must stay stable so the user does not look for it"):
 - Detail headings (album, artist, genre, playlist): a gradient of the two
   colours from the page's top edge, under the top bar (which then drops its
   rule), across the whole workspace, fading out at the heading's rule. Round
-  buttons and the back link keep one ground over any colour
+  buttons keep one ground over any colour
   (`--control-ground`, `--control-edge`: the theme's own, a little
   see-through, with a hairline edge). Each colour is fitted to
   each theme in OKLCH (light and soft in the light theme, dark in the dark
   one) so the theme's own text keeps 4.5:1 on it; a page without a cover
   takes the sleeve's colour.
+- The compact bar pinned over a detail page once its heading has scrolled
+  away (`.sticky-colours`): the top colour, a little see-through and blurred,
+  so the colour goes on while the page scrolls; its play button keeps the
+  theme's colours. The player bar stays neutral: it is the same control on
+  every page.
 - The Now Playing panel (`.on-cover`, `src/stores/nowColours.ts`): deep
   versions of the two colours, light text and see-through surfaces; the
   theme's tokens are redefined for the panel only.
 - Karaoke: the two colours blurred behind the words.
 
-More contrast (system setting) tones the heading's colours down and makes the
-panel's secondary text white; less transparency makes the panel's pinned
-lines solid.
+More contrast (system setting) tones the heading's colours down, gives the
+compact bar the page's plain ground and makes the panel's secondary text
+white; less transparency makes the compact bar and the panel's pinned lines
+solid.
