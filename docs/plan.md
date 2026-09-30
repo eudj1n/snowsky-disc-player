@@ -1634,6 +1634,10 @@ Player` replaced by `2026.09.30-325ebae` (94 files) and
       queue, one track (its icon with a small 1, "Repeat one"), off; shuffle
       stays on and off. Unit test of the cycle, a mock browser test and the
       emulator acceptance's controls case.
+      Checks with the list's name above (2026-09-30): `npm run check` 259
+      unit tests, the mock suite 158 passed, the emulator acceptance with
+      release `2026.09.30-2c05bcb`: 37 desktop cases, 30 on stock (the
+      repeat cycle, and "Playlist: <name>" for a list's play).
 
 ## Requests for the next service build
 
