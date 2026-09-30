@@ -1836,6 +1836,14 @@ ejected.
       forward arrows, the section's name or the player's state were
       proposed; the owner keeps it empty for now (2026-09-30).
 
+Checks (2026-09-30) of release `2026.09.30-ae14729`, markup and layout only:
+`npm run check` with 282 unit tests and the mock browser tests of the top
+bar, the crumbs, the search, the phone layout and the track panel (89 passed,
+43 skipped); no emulator run for a change of this kind. On the owner's card
+(2026-09-30, their go-ahead): `Apps/Disc Player` replaced by
+`2026.09.30-ae14729` (97 files); the catalog already current; the card
+ejected.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
