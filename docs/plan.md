@@ -1278,7 +1278,8 @@ Without a new image (card-only, can come first):
       of showing it through; rows of the Card views (Files, Space, Trash)
       light up under the pointer like track rows; scrolling to an element
       keeps it clear of the fixed player bar and phone navigation.
-- [ ] Interface size in the appearance settings (owner, 2026-09-28): 100 %
+- [ ] (Deferred by the owner, 2026-09-30, with legacy browsers; see Later.)
+      Interface size in the appearance settings (owner, 2026-09-28): 100 %
       (today's, the smallest), 115 % and 130 %, scaling the whole interface
       (CSS `zoom`, sizes are in pixels), for TV browsers with a remote; check
       arrow-key navigation and a clearly visible focus ring there.
@@ -1675,6 +1676,18 @@ on stock, 76 skipped; the guest cleaned up and rescanned. On the owner's card
 `2026.09.30-a247c0e` (92 files); the catalog already current; the card
 ejected.
 
+## Owner requests (2026-09-30, evening): the Now tab and lyrics, card-only
+
+- [x] The Now tab scrolls the list only: once the head (cover, title, facts)
+      has scrolled away, a compact line of the track and the queue's heading
+      stay pinned at the top and only the queue moves. The line leads back to
+      the head; on phones, where the panel is the full-screen player, it keeps
+      play and pause.
+- [x] Lyrics lines start where the heading does (the button's padding pushed
+      the text 6 px in; the hover background now reaches into the gutter).
+- [x] Lyrics in the panel and in karaoke use the same system font and the
+      same weight (700; the panel had 600), letter spacing by size.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
@@ -1770,3 +1783,8 @@ image; card-only items (catalog or query additions) are marked as such.
 - Several application roots on the card, cloud relay and voice clients follow
   the service's Stage C.
 - A user-facing demo mode (decide on the reference's fictional artwork).
+- Legacy browsers and the TV (owner, 2026-09-30, deferred): the owner's TV
+  runs a Chromium 69 browser, where nothing of the page works (the build
+  targets ES2022 and the page relies on modern CSS). Supporting it means a
+  legacy build (transpiled syntax, polyfills, fallbacks for `color-mix`, `:is`
+  and similar) and, with it, the interface size for a remote.

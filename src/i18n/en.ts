@@ -318,6 +318,7 @@ export const en = {
   minimize_player: 'Minimize player',
   player_view: 'Player view',
   now_playing: 'Now Playing',
+  now_back_to_track: 'Back to the track',
   queue: 'Queue',
   your_selection: 'YOUR SELECTION',
   refresh_queue: 'Refresh queue',

@@ -5,7 +5,8 @@
  * a line can be clicked to seek there. A pause (an empty line, or a note or
  * dots in the LRC) shows three dots, as karaoke does (owner, 2026-09-29): the
  * current pause fills them in turn until the next line. Plain lyrics read as
- * text.
+ * text. Lines are bold, as in karaoke, and their text lines up with the
+ * heading: the hover background reaches into the gutter (owner, 2026-09-30).
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type DeepReadonly } from 'vue'
 import { activeLine, livePosition, pauseDots, silentLine, type Lyrics } from '../../domain/lyrics'
@@ -85,7 +86,7 @@ watch(
         :aria-current="index === active ? 'true' : undefined"
         :aria-label="silentLine(line) ? seekLabel : undefined"
         :disabled="!seekable || line.timeMs === null"
-        class="block w-full rounded-8 px-6 py-5 text-left text-title3 leading-[1.45] font-semibold tracking-heading text-muted/70 transition-[color,opacity,transform,translate,scale,rotate] duration-300 hover:enabled:text-secondary aria-[current=true]:text-ink motion-reduce:transition-none"
+        class="-mx-6 block w-[calc(100%+12px)] rounded-8 px-6 py-5 text-left text-title3 leading-[1.45] font-bold tracking-heading text-muted/70 transition-[color,opacity,transform,translate,scale,rotate] duration-300 hover:enabled:text-secondary aria-[current=true]:text-ink motion-reduce:transition-none"
         :class="index < active ? 'opacity-60' : ''"
         @click="line.timeMs !== null && emit('seek', line.timeMs)"
       >

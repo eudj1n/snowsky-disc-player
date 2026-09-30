@@ -2,7 +2,10 @@
 /**
  * Reference listening panel (aside#now-panel), two tabs since 2026-09-29
  * (owner): Now (the track's head, its facts and, on the same scroll, the
- * whole queue, which the bar's queue button scrolls to) and Lyrics. The bar
+ * whole queue, which the bar's queue button scrolls to) and Lyrics. Once the
+ * head has scrolled away, a compact line of the track and the queue's heading
+ * stay pinned and only the list moves (owner, 2026-09-30); the line leads back
+ * to the head, and on phones it keeps play and pause. The bar
  * stays the one control surface: the panel repeats no controls, except on
  * phones, where it covers the screen as a full-screen player with the bar
  * hidden. It reserves 380px from 1200px (App.vue sets .listening-open) and
@@ -10,6 +13,7 @@
  * focus to the opener; Escape closes it only when no dialog is open.
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import Artwork from '../components/artwork/Artwork.vue'
 import NowPlayingDetails from '../components/player/NowPlayingDetails.vue'
 import TrackFacts from '../components/player/TrackFacts.vue'
 import { libraryRow, trackFacts } from '../domain/nowFacts'
@@ -39,7 +43,9 @@ import UiPillButton from '../ui/UiPillButton.vue'
 import { playerOptions } from '../stores/playerOptions'
 import { closePanel, showCover, showPanelSection, ui } from '../stores/ui'
 import { disliked, isDisliked, toggleDislike } from '../stores/disliked'
+import UiIcon from '../ui/UiIcon.vue'
 import UiIconButton from '../ui/UiIconButton.vue'
+import { creditLabel } from '../domain/artist'
 import { usePlaybackContext } from './usePlaybackContext'
 import { openKaraoke } from './karaoke'
 import { usePlayerControls } from './usePlayerControls'
@@ -47,6 +53,19 @@ import { usePlayerControls } from './usePlayerControls'
 const player = usePlayerControls()
 const close = ref<InstanceType<typeof UiIconButton> | null>(null)
 const queueSection = ref<HTMLElement | null>(null)
+const nowScroll = ref<HTMLElement | null>(null)
+const headEnd = ref<HTMLElement | null>(null)
+/** The head has scrolled out of the Now tab: the compact line of the track shows. */
+const compact = ref(false)
+function onNowScroll(): void {
+  const box = nowScroll.value?.getBoundingClientRect()
+  const end = headEnd.value?.getBoundingClientRect()
+  compact.value = Boolean(box && end && end.top <= box.top)
+}
+function backToHead(): void {
+  const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches
+  nowScroll.value?.scrollTo({ top: 0, behavior: smooth ? 'smooth' : 'auto' })
+}
 /** The playing track's facts for the Now tab. */
 const facts = computed(() => {
   const track = playback.current.track
@@ -236,8 +255,48 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
     </div>
     <div
       v-if="ui.panel === 'now'"
+      ref="nowScroll"
       class="min-h-0 flex-1 [scrollbar-width:thin] overflow-auto overscroll-contain px-24 pb-28"
+      @scroll.passive="onNowScroll"
     >
+      <!-- Pinned above the list once the head is gone; it takes no room in the flow. -->
+      <div class="sticky top-0 z-3 -mx-24 h-0">
+        <div
+          class="flex h-60 items-center gap-12 border-b border-line bg-raised px-24 transition-[opacity,translate,visibility] duration-200 motion-reduce:transition-none"
+          :class="compact ? 'visible opacity-100' : 'invisible -translate-y-4 opacity-0'"
+          :inert="!compact"
+          data-testid="now-compact"
+        >
+          <button
+            type="button"
+            class="flex min-w-0 flex-1 items-center gap-12 p-0 text-left"
+            :aria-label="t('now_back_to_track')"
+            @click="backToHead"
+          >
+            <span class="block size-40 shrink-0 overflow-hidden rounded-6 bg-soft">
+              <Artwork :title="playback.current.track?.title ?? null" :cover="nowCover" />
+            </span>
+            <span class="min-w-0">
+              <strong class="block truncate text-body font-semibold">{{
+                playback.current.track?.title ?? t('your_music_awaits')
+              }}</strong>
+              <span v-if="playback.current.track?.artist" class="block truncate text-footnote text-muted">{{
+                creditLabel(playback.current.track.artist)
+              }}</span>
+            </span>
+          </button>
+          <!-- Phones hide the bar while the panel is open: play and pause stay at hand. -->
+          <button
+            type="button"
+            class="hidden size-36 shrink-0 place-items-center rounded-full bg-strong text-strong-ink phone:grid"
+            :aria-label="playback.current.state === 'playing' ? t('pause') : t('play')"
+            :disabled="player.controlsDisabled.value"
+            @click="player.onTransport('toggle')"
+          >
+            <UiIcon filled :name="playback.current.state === 'playing' ? 'pause' : 'play'" class="size-15" />
+          </button>
+        </div>
+      </div>
       <NowPlayingDetails
         :playback="playback.current"
         :output="device.facts?.output ?? null"
@@ -266,6 +325,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         @navigate="onNavigate"
         @cover="showNowCover"
       >
+        <div ref="headEnd" aria-hidden="true" />
         <TrackFacts
           v-if="facts"
           :facts="facts"
@@ -279,26 +339,35 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         />
         <section
           ref="queueSection"
-          class="mt-30 scroll-mt-8"
+          class="mt-30 scroll-mt-68"
           data-testid="panel-queue"
           :aria-labelledby="'panel-queue-title'"
         >
-          <div class="flex items-end justify-between">
-            <div>
-              <span class="text-caption2 font-semibold tracking-caps text-muted uppercase">{{
-                t('your_selection')
-              }}</span>
-              <h2 id="panel-queue-title" class="mt-6 mb-4 text-title2 font-bold tracking-heading">{{ t('queue') }}</h2>
+          <!-- The queue's heading stays on top of its list, below the compact line of the track. -->
+          <div
+            class="sticky z-2 -mx-24 bg-raised px-24 pb-6 transition-[top] duration-200 motion-reduce:transition-none"
+            :class="compact ? 'top-60 pt-10' : 'top-0 pt-2'"
+            data-testid="panel-queue-heading"
+          >
+            <div class="flex items-end justify-between">
+              <div>
+                <span class="text-caption2 font-semibold tracking-caps text-muted uppercase">{{
+                  t('your_selection')
+                }}</span>
+                <h2 id="panel-queue-title" class="mt-6 mb-4 text-title2 font-bold tracking-heading">
+                  {{ t('queue') }}
+                </h2>
+              </div>
+              <UiIconButton
+                icon="refresh"
+                :label="t('refresh_queue')"
+                :disabled="connection.connection !== 'connected' || queue.status === 'loading'"
+                @click="loadQueue"
+              />
             </div>
-            <UiIconButton
-              icon="refresh"
-              :label="t('refresh_queue')"
-              :disabled="connection.connection !== 'connected' || queue.status === 'loading'"
-              @click="loadQueue"
-            />
+            <p class="mt-4 mb-0 text-footnote text-muted" role="status">{{ queueHint }}</p>
           </div>
-          <p class="mt-4 mb-4 text-footnote text-muted" role="status">{{ queueHint }}</p>
-          <p v-if="queue.status === 'ready'" class="mt-0 mb-14 text-footnote leading-[1.55] text-muted">
+          <p v-if="queue.status === 'ready'" class="mt-4 mb-14 text-footnote leading-[1.55] text-muted">
             {{ t('queue_snapshot_note') }}
           </p>
           <QueueRows

@@ -786,6 +786,50 @@ test.describe('player controls on the mock', () => {
     }
     await panel.getByRole('button', { name: 'Lyrics', exact: true }).click()
     await expect(page.getByTestId('lyrics').locator('[aria-current=true]')).toBeInViewport()
+    // Lines are bold like karaoke, and their text starts where the heading's does.
+    const line = lyrics.getByRole('button', { name: 'Weightless, first line' })
+    await expect(line).toHaveCSS('font-weight', '700')
+    const starts = await page.evaluate(() => {
+      const range = document.createRange()
+      const start = (element: Element | null) => {
+        if (!element) return NaN
+        range.selectNodeContents(element)
+        return range.getBoundingClientRect().left
+      }
+      return [start(document.querySelector('#now-panel h2')), start(document.querySelector('[data-line="0"]'))]
+    })
+    expect(Math.abs((starts[0] ?? 0) - (starts[1] ?? 99))).toBeLessThan(1)
+    await page.keyboard.press('Escape')
+    await disconnect(page)
+  })
+
+  test('pins a compact line of the track and the queue heading once the head scrolls away', async ({ page }, info) => {
+    test.skip(info.project.name !== 'desktop', 'The phone panel shows the same Now tab')
+    await english(page)
+    await connectAndPair(page)
+    // A short window, so that even a short queue leaves the head room to scroll away.
+    await page.setViewportSize({ width: 1280, height: 600 })
+    const compact = page.getByTestId('now-compact')
+    await page.getByRole('button', { name: 'Open queue' }).click()
+    const panel = page.getByRole('complementary', { name: 'Player view' })
+    await expect(panel.getByTestId('panel-queue-heading')).toContainText(/\d+ tracks?/)
+    await expect(compact).toBeHidden()
+    // Scrolled like a reader would, down to the list.
+    await panel.getByTestId('panel-queue').hover()
+    await page.mouse.wheel(0, 2000)
+    await expect(compact).toBeVisible()
+    await expect(compact).toHaveCSS('opacity', '1')
+    // Only the list moves: the heading sits right below the compact line.
+    const line = await compact.boundingBox()
+    const heading = await panel.getByTestId('panel-queue-heading').boundingBox()
+    expect(line && heading && Math.abs(heading.y - (line.y + line.height))).toBeLessThanOrEqual(1)
+    await compact.getByRole('button', { name: 'Back to the track' }).click()
+    await expect(compact).toBeHidden()
+    // Back at the head: the tab is scrolled to its top again.
+    const scroller = panel
+      .getByTestId('panel-queue')
+      .locator('xpath=ancestor::div[contains(@class,"overflow-auto")][1]')
+    await expect.poll(() => scroller.evaluate((element) => element.scrollTop)).toBe(0)
     await page.keyboard.press('Escape')
     await disconnect(page)
   })

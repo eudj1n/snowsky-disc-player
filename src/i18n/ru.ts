@@ -324,6 +324,7 @@ export const ru: Messages = {
   minimize_player: 'Свернуть плеер',
   player_view: 'Вид плеера',
   now_playing: 'Сейчас играет',
+  now_back_to_track: 'Вернуться к треку',
   queue: 'Очередь',
   your_selection: 'ВАША МУЗЫКА',
   refresh_queue: 'Обновить очередь',

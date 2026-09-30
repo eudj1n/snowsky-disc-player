@@ -276,7 +276,7 @@ onBeforeUnmount(() => {
       <div
         v-if="lines.length"
         ref="column"
-        class="px-[6vw] text-center font-bold tracking-[-0.02em] text-balance motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-out"
+        class="px-[6vw] text-center font-bold tracking-title text-balance motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-out"
         :class="synced ? 'absolute inset-x-0 top-0' : 'py-[8vh]'"
         :style="{ transform: `translateY(${offset}px)`, fontSize: 'clamp(24px, min(6.4vh, 6.6vw), 88px)' }"
         data-testid="karaoke-lines"
