@@ -1813,7 +1813,10 @@ Checks (2026-09-30) of release `2026.09.30-d0a6849`, which carries the "⋯"
 menus, the global search with the new top bar, the track panel, the coloured
 compact bar and the visualizer's Previous: `npm run check` with 282 unit
 tests; the mock suite 171 passed, 71 skipped; the emulator acceptance 40
-desktop cases passed (30 on stock), the guest cleaned up afterwards.
+desktop cases passed (30 on stock), the guest cleaned up afterwards. On the
+owner's card (2026-09-30, their go-ahead): `Apps/Disc Player` replaced by
+`2026.09.30-d0a6849` (97 files); the catalog already current; the card
+ejected.
 
 ## Requests for the next service build
 
