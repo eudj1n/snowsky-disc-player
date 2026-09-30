@@ -1734,7 +1734,9 @@ the lyrics' alignment: `npm run check` with 280 unit tests; the mock suite
 stock. Two earlier runs broke on the guest, not the page: its two-hour boot
 ended during the first, and the second met a folder the interrupted run had
 left; the guest was booted again, its test media reset and the run repeated
-whole.
+whole. On the owner's card (2026-09-30, their go-ahead): `Apps/Disc Player`
+replaced by `2026.09.30-4e5070d` (90 files); the catalog already current;
+the card ejected.
 
 ## Requests for the next service build
 
