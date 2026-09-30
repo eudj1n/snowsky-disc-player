@@ -1590,6 +1590,9 @@ browser on its own.
       emulator acceptance with release `2026.09.30-325ebae` and the card
       catalogs: 35 desktop cases, 28 on stock, among them an artist's list
       played from a row (`0100` with its position).
+      On the owner's card (2026-09-30, the owner's go-ahead): `Apps/Disc
+    Player` replaced by `2026.09.30-325ebae` (94 files) and
+      `.disc/catalog/store.json` by `d1151cca…` (with `daily_mix`).
 - [x] On the owner's card (2026-09-30, the owner's go-ahead, storage mode):
       `Apps/Disc Player` replaced by `2026.09.30-039adb5` (87 files) and
       `install-catalog` wrote `.disc/catalog/queries.json` (the image's own,
