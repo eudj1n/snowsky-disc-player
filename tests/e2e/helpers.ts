@@ -10,7 +10,11 @@ export const LANGUAGES = ['zh-Hans', 'zh-Hant', 'en', 'ja', 'ko', 'es', 'it', 'd
 export function watchErrors(page: Page): string[] {
   const errors: string[] = []
   page.on('console', (message) => {
-    if (message.type() === 'error') errors.push(message.text())
+    if (message.type() !== 'error') return
+    // Combined-009: a query of a table stock has dropped (after a scan) answers 409, which the page reads
+    // as nothing there; the browser still logs the answer. Other conflicts (a reused request ID) count.
+    if (message.text().includes('status of 409') && message.location().url.includes('/api/data/')) return
+    errors.push(message.text())
   })
   page.on('pageerror', (error) => errors.push(error.message))
   return errors

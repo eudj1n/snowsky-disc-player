@@ -1533,6 +1533,13 @@ browser on its own.
       picture opens in full size on a click (the album and artist headers,
       the listening panel), drawn on a canvas under the CSP, with its pixel
       size; the typographic sleeve opens nothing.
+- Checks (2026-09-30): `npm run check` 242 unit tests, the full mock suite
+  153 passed, the emulator acceptance on combined-009 (MIPS `a64ce31ab892`)
+  with release `2026.09.30-b8ce251` in the guest's `Apps/Disc Player`: 34
+  desktop cases, 27 on stock (the card walk, folders through the service, a
+  play in this browser recorded with its album). The acceptance's error
+  watch lets pass the documented 409 of a data query whose stock table a
+  scan dropped (`resume_point` after the first scan).
 
 ## Requests for the next service build
 

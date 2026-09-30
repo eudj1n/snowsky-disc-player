@@ -441,10 +441,10 @@ test('shows the remembered track after the queue ended and continues it with Pla
   await disconnect(page)
 })
 
-test('measures what takes space on the card through the media route on stock', async ({ page }) => {
+test('measures what takes space on the card in one walk of the card on stock', async ({ page }) => {
   await english(page)
   await page.goto('/#/card')
-  // Every library file on the guest card is measured by the MIPS service.
+  // Every library file on the guest card is measured by the MIPS service in one walk (combined-009).
   await expect(page.getByText(/^Measured (\d+) of \1 files$/)).toBeVisible({ timeout: 120_000 })
   await expect(page.getByTestId('card-usage')).toContainText(/used of .+ free/)
   // The generated guest media: FLAC and WAV tones.
