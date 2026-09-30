@@ -1766,6 +1766,10 @@ test('shows what takes space on the card by format, album and artist', async ({ 
   await expect(first).toContainText('Blue Hours')
   await expect(first).toContainText('FLAC Hi-Res')
   await expect(page.getByTestId('space-artists').getByRole('listitem').first()).toContainText('Mira Sol')
+  // An artist shows its picture, else the cover of the album that stands for it, as on the Artists page.
+  await expect(page.getByTestId('space-artists').getByRole('listitem').first().locator('canvas')).toHaveCount(1, {
+    timeout: 15_000,
+  })
   await expect(page.getByRole('heading', { name: /Possible duplicates/ })).toBeVisible()
   // Album rows link the album (title and cover) and its artist.
   await first.getByRole('link', { name: 'Mira Sol' }).click()

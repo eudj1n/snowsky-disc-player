@@ -27,6 +27,7 @@ import {
   sizeUnreadable,
   wantSizes,
 } from '../stores/enrichment'
+import { artistImage } from '../stores/artistPictures'
 import { history, loadHistory } from '../stores/history'
 import { loadTrash, trash } from '../stores/trash'
 import { albums, library, tracks } from '../stores/library'
@@ -302,7 +303,7 @@ watch(
             aria-hidden="true"
             class="group size-44 shrink-0 overflow-hidden rounded-full"
           >
-            <Artwork :title="artist.name" artist />
+            <Artwork :title="artist.name" artist :cover="artistImage(artist.name)" />
           </RouterLink>
           <span
             v-else
