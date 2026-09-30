@@ -4,7 +4,7 @@ import { t } from '../../i18n'
 
 withDefaults(defineProps<{ current: 'space' | 'files' | 'trash'; trash?: boolean }>(), { trash: false })
 const TAB =
-  'rounded-20 px-14 py-7 text-12 font-[550] text-muted hover:bg-hover hover:text-ink aria-[current=page]:bg-selected aria-[current=page]:text-ink'
+  'rounded-20 px-14 py-7 text-12 font-medium text-muted hover:bg-hover hover:text-ink aria-[current=page]:bg-selected aria-[current=page]:text-ink'
 </script>
 
 <template>

@@ -241,7 +241,7 @@ function contextMenu(event: MouseEvent, index: number): void {
     />
     <template v-for="(track, index) in rows" :key="`${track.path ?? ''}#${index}`">
       <div v-if="discHeadings.has(index)" role="row" class="pt-18 pb-6">
-        <span role="rowheader" class="text-10 font-[650] tracking-[1.8px] text-muted uppercase">{{
+        <span role="rowheader" class="text-10 font-semibold tracking-[1.8px] text-muted uppercase">{{
           discHeadings.get(index)
         }}</span>
       </div>
@@ -319,7 +319,7 @@ function contextMenu(event: MouseEvent, index: number): void {
           <span v-else class="text-11 text-muted tabular-nums" :class="dim(track)">{{ numberOf(track, index) }}</span>
         </span>
         <div role="cell" class="min-w-0" :class="dim(track)">
-          <strong class="block truncate font-[550]"
+          <strong class="block truncate font-medium"
             >{{ track.title
             }}<span v-if="unavailable(track) && unavailableLabel" class="sr-only"
               >, {{ unavailableLabel }}</span

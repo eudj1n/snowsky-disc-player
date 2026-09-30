@@ -136,7 +136,7 @@ function openNew(): void {
     </p>
 
     <section class="border-t border-line pt-16">
-      <span class="text-10 font-[650] tracking-[1.8px] text-muted">{{ t('import_step_transfer') }}</span>
+      <span class="text-10 font-semibold tracking-[1.8px] text-muted">{{ t('import_step_transfer') }}</span>
       <div
         class="rounded-16 mt-10 grid place-items-center gap-8 border border-dashed px-16 py-22 text-center transition-colors duration-150"
         :class="dragging ? 'border-secondary bg-banner' : 'border-line bg-raised'"
@@ -185,7 +185,7 @@ function openNew(): void {
           <div class="flex items-center gap-10 text-11">
             <UiIcon :name="item.phase === 'done' ? 'music' : 'upload'" class="size-15 shrink-0 text-secondary" />
             <span class="min-w-0 flex-1">
-              <strong class="block truncate font-[550]" :title="item.path">{{ splitPath(item.path).name }}</strong>
+              <strong class="block truncate font-medium" :title="item.path">{{ splitPath(item.path).name }}</strong>
               <small class="block truncate text-11 text-muted"
                 >{{ splitPath(item.path).folder || '/' }} · {{ sizeLabel(item.size) }}</small
               >
@@ -253,7 +253,7 @@ function openNew(): void {
     </section>
 
     <section class="mt-18 border-t border-line pt-16">
-      <span class="text-10 font-[650] tracking-[1.8px] text-muted">{{ t('import_step_scan') }}</span>
+      <span class="text-10 font-semibold tracking-[1.8px] text-muted">{{ t('import_step_scan') }}</span>
       <h3 class="mt-8 mb-4 text-15 font-semibold">{{ t('import_scan_title') }}</h3>
       <p class="m-0 text-11 leading-[1.6] text-muted">{{ t('import_scan_description') }}</p>
       <div class="mt-12 flex flex-wrap items-center justify-between gap-10">
@@ -277,7 +277,7 @@ function openNew(): void {
     </section>
 
     <section class="mt-18 border-t border-line pt-16">
-      <span class="text-10 font-[650] tracking-[1.8px] text-muted">{{ t('import_step_sync') }}</span>
+      <span class="text-10 font-semibold tracking-[1.8px] text-muted">{{ t('import_step_sync') }}</span>
       <h3 class="mt-8 mb-4 text-15 font-semibold">{{ t('import_sync_title') }}</h3>
       <label class="mt-6 flex items-center gap-8 text-11 text-muted">
         <input

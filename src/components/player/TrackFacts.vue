@@ -107,7 +107,7 @@ const rows = computed<Row[]>(() => {
           :aria-expanded="open"
           aria-controls="track-facts-list"
           data-testid="facts-toggle"
-          class="-mx-6 flex items-center gap-6 rounded-8 px-6 py-3 text-10 font-[650] tracking-[1.8px] text-muted uppercase hover:text-ink"
+          class="-mx-6 flex items-center gap-6 rounded-8 px-6 py-3 text-10 font-semibold tracking-[1.8px] text-muted uppercase hover:text-ink"
           @click="open = !open"
         >
           {{ t('facts_heading') }}

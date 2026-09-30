@@ -17,7 +17,7 @@ defineProps<{ letters?: string | null; cover?: Blob | null }>()
     <span class="absolute inset-[9%] rounded-full shadow-[0_0_0_1px_var(--groove)]" />
     <span class="absolute inset-[20%] rounded-full shadow-[0_0_0_1px_var(--groove)]" />
     <span
-      class="relative grid size-[40%] place-items-center overflow-hidden rounded-full bg-(--label) text-[13cqw] leading-none font-[700] tracking-[-0.02em] text-(--label-ink)"
+      class="relative grid size-[40%] place-items-center overflow-hidden rounded-full bg-(--label) text-[13cqw] leading-none font-bold tracking-[-0.02em] text-(--label-ink)"
     >
       <CoverCanvas v-if="cover" :blob="cover" class="absolute inset-0 size-full" />
       <span v-else-if="letters" class="@max-[76px]:hidden">{{ letters }}</span>

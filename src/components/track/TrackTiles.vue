@@ -105,11 +105,11 @@ const LINK = 'hover:underline hover:underline-offset-3 focus-visible:underline'
         <RouterLink
           v-if="titleTo(track)"
           :to="titleTo(track) ?? ''"
-          class="block w-fit max-w-full truncate text-12 font-[550]"
+          class="block w-fit max-w-full truncate text-12 font-medium"
           :class="LINK"
           >{{ track.title }}</RouterLink
         >
-        <strong v-else class="block truncate text-12 font-[550]">{{ track.title }}</strong>
+        <strong v-else class="block truncate text-12 font-medium">{{ track.title }}</strong>
         <span v-if="subtitleOf?.(track)" class="mt-3 block max-w-full truncate text-11 text-muted">
           <RouterLink
             v-if="subtitleOf(track)?.to"

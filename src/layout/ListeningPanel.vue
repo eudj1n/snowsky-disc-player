@@ -219,7 +219,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
     class="fixed top-0 right-0 bottom-(--player) z-25 flex w-380 animate-listening-enter flex-col border-l border-line bg-raised text-left shadow-[-15px_0_65px_#26301418] phone:bottom-0 phone:z-40 phone:w-full phone:border-l-0"
   >
     <div class="flex items-center justify-between px-24 pt-22 pb-12 phone:px-24 phone:pt-16 phone:pb-10">
-      <span class="text-10 font-[650] tracking-[1.8px] text-muted uppercase">SNOWSKY DISC</span>
+      <span class="text-10 font-semibold tracking-[1.8px] text-muted uppercase">SNOWSKY DISC</span>
       <UiIconButton ref="close" icon="close" :label="t('minimize_player')" @click="closePanel(true)" />
     </div>
     <div class="mx-24 mb-20 flex shrink-0 gap-4 rounded-24 border border-line p-4 phone:mb-16" role="group">
@@ -285,7 +285,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         >
           <div class="flex items-end justify-between">
             <div>
-              <span class="text-10 font-[650] tracking-[1.8px] text-muted uppercase">{{ t('your_selection') }}</span>
+              <span class="text-10 font-semibold tracking-[1.8px] text-muted uppercase">{{ t('your_selection') }}</span>
               <h2 id="panel-queue-title" class="mt-6 mb-4 text-24 font-bold tracking-[-0.8px]">{{ t('queue') }}</h2>
             </div>
             <UiIconButton

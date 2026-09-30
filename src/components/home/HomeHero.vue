@@ -44,11 +44,11 @@ const emit = defineEmits<{ play: [] }>()
     <div
       class="max-w-[61%] px-36 py-30 wide:pl-44 compact:p-28 rail:max-w-[75%] phone:max-w-[87%] phone:px-23 phone:py-26"
     >
-      <span class="text-9 font-[650] tracking-[2.2px] text-white/70 uppercase phone:text-8 phone:tracking-[1.5px]">{{
+      <span class="text-9 font-semibold tracking-[2.2px] text-white/70 uppercase phone:text-8 phone:tracking-[1.5px]">{{
         eyebrow
       }}</span>
       <h2
-        class="mt-19 mb-16 text-43 leading-[1.07] font-[550] tracking-[-1.7px] wide:text-55 compact:text-36 phone:text-35 [:lang(en)_&]:text-39 [:lang(en)_&]:phone:text-32"
+        class="mt-19 mb-16 text-43 leading-[1.07] font-semibold tracking-[-1.7px] wide:text-55 compact:text-36 phone:text-35 [:lang(en)_&]:text-39 [:lang(en)_&]:phone:text-32"
       >
         {{ titleLines[0] }}<br />{{ titleLines[1] }}
       </h2>

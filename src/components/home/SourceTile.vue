@@ -43,7 +43,7 @@ const emit = defineEmits<{ play: [] }>()
         ><ListArt v-if="art" :title="title" :background="art" thumb /><Artwork v-else :title="title" :cover="cover"
       /></span>
       <span class="min-w-0">
-        <strong class="block truncate text-12 font-[600]">{{ title }}</strong>
+        <strong class="block truncate text-12 font-semibold">{{ title }}</strong>
         <small class="mt-3 block truncate text-10 text-muted">{{ caption }}</small>
       </span>
     </RouterLink>

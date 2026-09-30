@@ -31,3 +31,27 @@ The owner chose (2026-09-30): the system font, the Standard text size as the
 default, no compact density, contrast and transparency only following the
 system settings. The user should be comfortable without extra settings, so
 the text size is the only new setting.
+
+## Fonts and weights
+
+The page uses the system font (`--font-sans` in `src/styles/main.css`): SF on
+Apple systems, Segoe UI Variable or Segoe UI on Windows, Roboto on Android,
+Noto Sans, Ubuntu or Cantarell on Linux, then Helvetica Neue and Arial, and
+the colour emoji faces. It costs no download, looks native like Apple Music
+on a Mac or an iPhone, and covers the most scripts: whatever a face lacks
+comes from the system's fallback (checked in Chrome on macOS: Armenian,
+Georgian, Hebrew, Arabic, Devanagari, Thai and CJK). The whole page is
+antialiased in grayscale.
+
+Four weights, each with one job:
+
+| Weight | Class           | Used for                                             |
+| ------ | --------------- | ---------------------------------------------------- |
+| 400    | (default)       | Running text, secondary lines                        |
+| 500    | `font-medium`   | Titles in lists, navigation, tabs, chips             |
+| 600    | `font-semibold` | Uppercase labels, buttons, the player's title, tiles |
+| 700    | `font-bold`     | Headings, the word mark, list artwork                |
+
+Intermediate weights (550, 620, 650, 750) are not used: static faces snap
+them to their neighbours, and 750 became Black on Windows. The light weight
+remains only for the "···" glyph of the row menus.

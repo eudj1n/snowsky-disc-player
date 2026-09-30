@@ -40,8 +40,12 @@
 
 @theme {
   --spacing: 1px;
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-sleeve: Georgia, 'Times New Roman', serif;
+  /* The system font on every platform (owner, 2026-09-30; docs/typography.md): SF on Apple
+   * systems, Segoe UI Variable or Segoe UI on Windows, Roboto on Android, then Linux faces
+   * and colour emoji. Scripts these faces lack come from the system's own fallback. */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', Roboto, 'Noto Sans', Ubuntu, Cantarell,
+    'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji';
 
   --text-6: 6px;
   --text-7: 7px;
@@ -318,7 +322,9 @@
     scrollbar-gutter: stable;
     /* Scrolling to an element (focus, anchors) keeps it clear of the fixed player bar and navigation. */
     scroll-padding-bottom: var(--player);
-    @apply bg-paper font-sans text-ink;
+    /* Grayscale antialiasing everywhere, as Apple Music and Spotify set it: without it only some
+     * labels were thinner on macOS. */
+    @apply bg-paper font-sans text-ink antialiased;
   }
   /* Tailwind 4 resets buttons to the default cursor; interactive ones point. */
   button:not(:disabled),

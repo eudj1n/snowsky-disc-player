@@ -7,7 +7,7 @@
 
 <template>
   <span
-    class="inline-block rounded-none bg-[#f5c400] px-6 py-3 align-middle text-10 leading-none font-[800] tracking-[0.4px] text-[#111]"
+    class="inline-block rounded-none bg-[#f5c400] px-6 py-3 align-middle text-10 leading-none font-bold tracking-[0.4px] text-[#111]"
     >Hi-Res</span
   >
 </template>

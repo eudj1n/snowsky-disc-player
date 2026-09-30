@@ -7,7 +7,7 @@ defineProps<{ label: string }>()
   <a
     href="#/"
     :aria-label="label"
-    class="flex items-center gap-10 px-12 text-43 leading-none font-[750] tracking-[-3px] compact:text-38 slim:px-10 phone:hidden"
+    class="flex items-center gap-10 px-12 text-43 leading-none font-bold tracking-[-3px] compact:text-38 slim:px-10 phone:hidden"
   >
     <span
       aria-hidden="true"

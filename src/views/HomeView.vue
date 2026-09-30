@@ -162,7 +162,7 @@ const heroLines = computed<[string, string]>(() =>
         <li v-for="name in pinnedArtists" :key="name">
           <RouterLink
             :to="artistRoute(name)"
-            class="block rounded-20 bg-soft px-14 py-7 text-12 font-[550] text-ink hover:bg-hover"
+            class="block rounded-20 bg-soft px-14 py-7 text-12 font-medium text-ink hover:bg-hover"
             >{{ creditLabel(name) }}</RouterLink
           >
         </li>

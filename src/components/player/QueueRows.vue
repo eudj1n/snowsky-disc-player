@@ -65,7 +65,7 @@ const REVEAL = 'opacity-0 group-hover/row:opacity-100 group-focus-within/row:opa
         </span>
       </button>
       <span class="min-w-0">
-        <strong class="block truncate font-[550]">{{ item.title }}</strong>
+        <strong class="block truncate font-medium">{{ item.title }}</strong>
         <small class="mt-5 block truncate text-11 text-muted">{{ item.artist ? creditLabel(item.artist) : '—' }}</small>
       </span>
     </li>

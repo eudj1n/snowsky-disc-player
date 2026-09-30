@@ -4,7 +4,7 @@ defineProps<{ eyebrow: string; titleLines: [string, string]; lines: [string, str
 
 <template>
   <div class="relative min-h-175 overflow-hidden rounded-12 border border-line bg-soft p-25">
-    <span class="text-10 font-[650] tracking-[1.8px] text-muted uppercase">{{ eyebrow }}</span>
+    <span class="text-10 font-semibold tracking-[1.8px] text-muted uppercase">{{ eyebrow }}</span>
     <h3 class="my-13 text-21 leading-[1.2] font-bold tracking-[-0.6px]">
       {{ titleLines[0] }}<br />{{ titleLines[1] }}
     </h3>

@@ -28,7 +28,7 @@ const colours = computed(() => sleeveColours(props.title))
   >
     <span
       v-if="artist"
-      class="text-[30cqw] leading-none font-[700] tracking-[-0.04em] text-(--tint-ink) @max-[48px]:hidden"
+      class="text-[30cqw] leading-none font-bold tracking-[-0.04em] text-(--tint-ink) @max-[48px]:hidden"
       >{{ letters }}</span
     >
     <SleeveRecord v-else :letters="letters" class="relative h-[84%]" />
