@@ -1492,8 +1492,7 @@ Stages:
 - [x] The browser engine: a start position, previous, seek, volume, repeat, skipping files it cannot play (by name before starting, by a decoding error while playing; a network error stops with the reason), the queue's rows kept in place for the way back (`src/stores/browser.ts`, `src/domain/browserQueue.ts`).
 - [x] The bar, the Now tab, lyrics, karaoke, the rows' marks and the shortcuts show and control whichever side plays (`src/stores/output.ts`); every Play follows the chosen side (`playFrom`, `src/stores/browserTargets.ts`); the "Play in this browser" entries and the separate browser card are gone; the visualizer button shows in the bar (on phones in the full-screen player) while the browser plays.
 - [x] The switch both ways (`src/stores/handoff.ts`): to the browser after a confirmed pause, from the player's position, with its queue and repeat; back through the same queue row when the player's queue did not change, else the source from the track, then the seek at once; refusals with reasons; the player started by hand pauses the browser.
-- [ ] The icon in the bar, tests on the mock, then the emulator acceptance
-      (it sends player commands) before the owner's card.
+- [x] The icon in the bar (a device or a browser window; on phones in the full-screen player), tests on the mock, then the emulator acceptance. Checks (2026-09-30): 275 unit tests; the mock suite 163 passed, 67 skipped; the emulator acceptance with release `2026.09.30-3f2570f`: 38 desktop cases (the switch's own case re-run after a fix to its last step: play and pause report only problems), among them stock paused before the browser sounds, the play recorded, and stock back on the same row sought to the browser's position; the guest cleaned up and rescanned.
 - [x] Plays in this browser go into the play history (owner, 2026-09-29;
       done 2026-09-30 on combined-009): the observer sees only the player's
       open files, so the page applies its rule (30 s, or half with at least
@@ -1715,6 +1714,27 @@ ejected.
       the text 6 px in; the hover background now reaches into the gutter).
 - [x] Lyrics in the panel and in karaoke use the same system font and the
       same weight (700; the panel had 600), letter spacing by size.
+
+## Album colours (owner, 2026-09-30), card-only
+
+The page took one colour from a cover: the average of all its pixels, as a
+soft glow behind the detail heading; dark or many-coloured covers averaged to
+grey or mud (Under My Skin gave `#8d8a88`). The owner compared variants on
+twelve covers of their player and chose:
+
+- [ ] Two colours per cover: buckets of a 48×48 copy, near-black, near-white
+      and grey weigh little, the frequent and saturated colour wins, the
+      second clearly differs; both are fitted to the theme in OKLCH so the
+      theme's own text stays readable (`src/domain/coverColours.ts`).
+- [ ] The album, artist and other detail headings: a two-colour gradient
+      behind the heading, fading into the page, in place of the glow.
+- [ ] The Now Playing panel on a background from the cover's colours,
+      darkened, with light text and see-through cards.
+- [ ] Karaoke over blurred colours of the cover.
+- Controls stay the theme's (owner: "the button must stay stable so the user
+  does not look for it"): the Play button, the progress bar and every other
+  control keep their colours on every album. More contrast and less
+  transparency (system settings) tone the album colours down.
 
 ## Requests for the next service build
 

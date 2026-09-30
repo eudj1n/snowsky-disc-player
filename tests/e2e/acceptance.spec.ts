@@ -862,7 +862,9 @@ test('switches stock’s music to this browser and back, carrying the track and 
   await expect(bar).toHaveAttribute('data-disc-state', 'playing', { timeout: 30_000 })
   await expect(bar.getByTestId('track-title')).toHaveText(title)
   await expect(bar).toContainText(/0:1\d/, { timeout: 15_000 })
-  await verified(page, () => toggle.click())
+  // Play and pause report only problems: the toggle's own state confirms the pause.
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-label', 'Play', { timeout: 30_000 })
   await disconnect(page)
   expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])
 })
