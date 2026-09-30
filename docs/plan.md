@@ -1568,8 +1568,11 @@ browser on its own.
       passed, the emulator acceptance with release `2026.09.30-039adb5` and
       the service's card catalogs (`install-catalog`) on the guest: 35
       desktop cases, 28 on stock.
-- [ ] On the owner's card (with their go-ahead): the release and
-      `app_bundle.py install-catalog` (the store's `auto_playlists`).
+- [x] On the owner's card (2026-09-30, the owner's go-ahead, storage mode):
+      `Apps/Disc Player` replaced by `2026.09.30-039adb5` (87 files) and
+      `install-catalog` wrote `.disc/catalog/queries.json` (the image's own,
+      `b6ca8321…`) and `store.json` (`585d2b71…`, with `auto_playlists`);
+      the card ejected.
 
 ## Requests for the next service build
 
