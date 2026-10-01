@@ -1982,6 +1982,12 @@ is unchanged) and passed after a media reset. One case fewer passed than for
 code; not traced further. The test key the owner gave for fanart.tv is in
 neither repository, their history nor the zip.
 
+On the owner's card (2026-10-01, their go-ahead): `Apps/Disc Player`
+replaced by `2026.10.01-e2fcef6` (101 files); the catalog updated (`store.json`
+gained `external_sources`, `musicbrainz` and `artist_images`; `queries.json`
+unchanged; `hosted.json` written as the image's own); the card ejected. Every
+outside source starts off on the player until the owner allows it.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
