@@ -1,18 +1,21 @@
 <script setup lang="ts">
 /**
- * The details (i) of an artist or album in the listening panel (owner,
- * 2026-10-01, after the specimen): what MusicBrainz identifies ("Refine…"
- * among the candidates or editions, nothing asked until the listener
- * presses), the images with their source and licence (the artist's photo and
- * background, the album's cover and where it lies on the card), the links,
- * and later the files' tags. Laid out as the track panel; its credits used to
- * sit under the page's heading.
+ * The details of an artist or album (owner, 2026-10-01; laid out as the
+ * track's, 2026-10-02): its images first (the album's cover, or the artist's
+ * background with the round photo over it), the actions on them, then the
+ * facts as a table like the track's: what MusicBrainz identifies (refined in
+ * a window among candidates or editions; nothing is asked before), where the
+ * cover lies, the images' credits and the links. A sheet of its own, without
+ * the player's tabs.
  */
 import { computed, ref, watch } from 'vue'
+import Artwork from '../components/artwork/Artwork.vue'
 import CoverCanvas from '../components/artwork/CoverCanvas.vue'
+import FactTable from '../components/common/FactTable.vue'
+import type { FactPart, FactRow } from '../components/common/facts'
+import { albumTracks } from '../domain/album'
 import { regionName } from '../domain/artistFacts'
-import type { ArtistCandidate, ReleaseCandidate } from '../gateway/musicbrainz'
-import { locale, t, type MessageKey } from '../i18n'
+import { locale, t } from '../i18n'
 import {
   artistBackground,
   artistImage,
@@ -31,23 +34,13 @@ import {
   type CoverOnCard,
 } from '../stores/coverSearch'
 import { albumCover, albumCoverState } from '../stores/enrichment'
-import { albumTracks } from '../domain/album'
 import { titleGroups, tracks } from '../stores/library'
-import {
-  albumIdentity,
-  artistIdentity,
-  chooseArtistCandidate,
-  confirmEdition,
-  findArtistCandidates,
-  findEditions,
-  forgetCandidates,
-  identifyAllowed,
-  identifying,
-} from '../stores/musicbrainzIds'
-import { ui } from '../stores/ui'
-import UiPillButton from '../ui/UiPillButton.vue'
-import UiTextButton from '../ui/UiTextButton.vue'
-import { artistFactsLine } from '../views/captions'
+import { albumIdentity, artistIdentity, identifyAllowed } from '../stores/musicbrainzIds'
+import { showCover, ui } from '../stores/ui'
+import UiIcon from '../ui/UiIcon.vue'
+import { artistTypeName } from '../views/captions'
+import IdentifyDialog from './IdentifyDialog.vue'
+import type { IdentifyTarget } from './identify'
 
 const emit = defineEmits<{ navigate: [] }>()
 
@@ -59,72 +52,24 @@ const album = computed(() => {
 })
 const scope = computed(() => (info.value?.kind === 'album' ? info.value.scope : null))
 const albumKey = computed(() => (album.value ? albumIdentityKey(album.value, scope.value) : null))
-
-/* MusicBrainz. */
 const artistId = computed(() => (artistName.value ? artistIdentity(artistName.value) : null))
 const edition = computed(() => (albumKey.value ? albumIdentity(albumKey.value) : null))
-const searchKey = computed(() => artistName.value ?? albumKey.value)
-const searching = computed(() => identifying.key !== null && identifying.key === searchKey.value)
-watch(searchKey, () => forgetCandidates())
-const SEARCH: Partial<Record<string, MessageKey>> = {
-  searching: 'info_searching',
-  missing: 'info_missing',
-  failed: 'info_failed',
-}
-const searchMessage = computed(() => (searching.value ? (SEARCH[identifying.status] ?? null) : null))
-
-function identify(): void {
-  if (artistName.value) void findArtistCandidates(artistName.value)
-  else if (album.value && albumKey.value) {
-    const artist = scope.value ?? album.value.artists[0]
-    if (!artist) return
-    const count = albumTracks(tracks.value, album.value.title, scope.value).length
-    void findEditions(albumKey.value, album.value.title, artist, count || null)
-  }
-}
-/** A candidate from the read-only search, as a plain one (its aliases copied). */
-const chooseArtist = (candidate: Omit<ArtistCandidate, 'aliases'> & { aliases: readonly string[] }) =>
-  artistName.value && chooseArtistCandidate(artistName.value, { ...candidate, aliases: [...candidate.aliases] })
-const chooseEdition = (release: ReleaseCandidate) => albumKey.value && confirmEdition(albumKey.value, release)
-
-const year = (date: string | null | undefined) => (date && /^\d{4}/.test(date) ? date.slice(0, 4) : null)
-const editionLine = (release: {
-  label: string | null
-  catalogNumber: string | null
-  country: string | null
-  format: string | null
-  date: string | null
-}) =>
-  [
-    [release.label, release.catalogNumber].filter(Boolean).join(' '),
-    release.country ? regionName(release.country, locale.value) : null,
-    release.format,
-    year(release.date),
-  ]
-    .filter(Boolean)
-    .join(' · ')
-const firstRelease = computed(() => {
-  const facts = edition.value?.facts
-  if (!facts) return null
-  const parts = [year(facts.firstRelease), facts.type, ...(facts.secondaryTypes ?? [])].filter(Boolean)
-  return parts.length ? parts.join(' · ') : null
-})
 
 /* Images. */
-const SOURCE_NAMES = { wikimedia: 'Wikimedia Commons', fanarttv: 'fanart.tv' } as const
-function credit(role: ImageRole) {
-  const name = artistName.value
-  if (!name) return null
-  const chosen = chosenImage(name, role)
-  if (chosen) return { ...chosen.image, source: SOURCE_NAMES[chosen.image.source], kept: chosen.kept }
-  const legacy = role === 'photo' ? artistPictures.pictures[name] : undefined
-  return legacy ? { ...legacy, source: SOURCE_NAMES.wikimedia, kept: 'browser' as const } : null
-}
 const photo = computed(() => (artistName.value ? artistImage(artistName.value) : null))
 const background = computed(() => (artistName.value ? artistBackground(artistName.value) : null))
 const cover = computed(() => (album.value ? albumCover(album.value, scope.value) : null))
+const imagesBusy = computed(() => !artistImagesAllowed() || artistPictures.picker !== null)
+/** The background's band shows once there is one, or once one can be chosen. */
+const band = computed(() => background.value !== null || artistImagesAllowed())
+/*
+ * Changing an image is an action on the image itself (owner, 2026-10-02): shown on hover or keyboard focus,
+ * and always on touch screens, which have no hover. A click on the image still opens it in full size.
+ */
+const CHIP =
+  'absolute inline-flex items-center gap-6 rounded-20 border border-line/60 bg-paper/90 text-footnote font-medium text-ink shadow-[0_4px_14px_#0000001f] backdrop-blur-[8px] transition-opacity duration-150 focus-visible:opacity-100 disabled:opacity-60 motion-reduce:transition-none [@media(hover:none)]:opacity-100 [&>svg]:size-15'
 
-/* Where the album's cover lies on the card, read when the panel shows the album. */
+/* Where the album's cover lies on the card, read when the sheet shows the album. */
 const onCard = ref<CoverOnCard | null>(null)
 watch(
   () => [album.value?.key, scope.value, album.value ? albumCoverState(album.value, scope.value) : null] as const,
@@ -137,16 +82,161 @@ watch(
   },
   { immediate: true },
 )
-const coverWhere = computed<string>(() => {
-  const value = onCard.value
-  if (!value) return t('info_cover_reading')
-  if (value.kind === 'folder') return t('info_cover_folder', { name: value.name })
-  if (value.kind === 'embedded') return t('info_cover_embedded')
-  if (value.kind === 'none') return t('info_cover_none')
-  return t('info_cover_unknown')
-})
 const coverChoosable = computed(() => coverLookupAllowed() && onCard.value !== null && onCard.value.kind !== 'embedded')
-const LINK = 'text-secondary underline-offset-3 hover:text-ink hover:underline'
+const coverNote = computed(() => {
+  if (onCard.value?.kind === 'embedded') return t('cover_embedded')
+  if (!coverLookupAllowed()) return t('info_cover_off')
+  return onCard.value?.kind === 'folder' ? t('cover_replace_note') : null
+})
+
+/* MusicBrainz, refined in its own window. */
+const identifyTarget = ref<IdentifyTarget | null>(null)
+watch(info, () => (identifyTarget.value = null))
+function identify(): void {
+  if (artistName.value) identifyTarget.value = { kind: 'artist', name: artistName.value }
+  else if (album.value && albumKey.value) {
+    const artist = scope.value ?? album.value.artists[0]
+    if (!artist) return
+    const count = albumTracks(tracks.value, album.value.title, scope.value).length
+    identifyTarget.value = {
+      kind: 'album',
+      key: albumKey.value,
+      title: album.value.title,
+      artist,
+      trackCount: count || null,
+    }
+  }
+}
+
+const SOURCE_NAMES = { wikimedia: 'Wikimedia Commons', fanarttv: 'fanart.tv' } as const
+const year = (date: string | null | undefined) => (date && /^\d{4}/.test(date) ? date.slice(0, 4) : null)
+const parts = (...values: (FactPart | null | undefined | false)[]): FactPart[] =>
+  values.filter((value): value is FactPart => Boolean(value))
+
+/** An image's credit: its author or source (linked to its page), licence, where it is kept, and Remove. */
+function credit(role: ImageRole): FactPart[] | null {
+  const name = artistName.value
+  if (!name) return null
+  const chosen = chosenImage(name, role)
+  const legacy = role === 'photo' && !chosen ? artistPictures.pictures[name] : undefined
+  const image = chosen?.image ?? (legacy ? { ...legacy, source: 'wikimedia' as const } : null)
+  if (!image) return null
+  const source = SOURCE_NAMES[image.source]
+  const who = image.author ?? source
+  return parts(
+    image.page ? { text: who, href: image.page } : who,
+    image.license && (image.licenseUrl ? { text: image.license, href: image.licenseUrl } : image.license),
+    image.author ? source : null,
+    t(chosen?.kept === 'player' ? 'image_kept_player' : 'photo_kept'),
+    { text: t('info_remove'), action: `remove-${role}` },
+  )
+}
+
+const identityParts = (kept: boolean): FactPart[] =>
+  parts(
+    t(kept ? 'info_kept_player' : 'info_kept_tab'),
+    identifyAllowed() && { text: t('info_refine'), action: 'identify' },
+  )
+const missingParts = (
+  label: 'info_not_identified' | 'info_no_edition',
+  action: 'info_identify' | 'info_choose_edition',
+) => (identifyAllowed() ? [t(label), { text: t(action), action: 'identify' }] : [t('info_musicbrainz_off')])
+const LINK_NAMES: Record<string, string> = { bandcamp: 'Bandcamp', discogs: 'Discogs', wikidata: 'Wikidata' }
+
+const artistRows = computed<FactRow[]>(() => {
+  const identity = artistId.value
+  const facts = identity?.facts
+  const rows: FactRow[] = []
+  if (facts) {
+    const type = artistTypeName(facts.type)
+    if (type) rows.push({ key: 'type', label: t('fact_type'), parts: [type] })
+    if (facts.country)
+      rows.push({ key: 'country', label: t('fact_country'), parts: [regionName(facts.country, locale.value)] })
+    const begin = year(facts.begin)
+    const end = year(facts.end)
+    if (begin || end) rows.push({ key: 'years', label: t('fact_years'), parts: [`${begin ?? '?'}–${end ?? ''}`] })
+    if (facts.aliases.length)
+      rows.push({ key: 'aliases', label: t('fact_aliases'), parts: [facts.aliases.slice(0, 4).join(', ')] })
+  }
+  rows.push({ key: 'photo', label: t('images_photo'), parts: credit('photo') ?? [t('info_photo_stand_in')] })
+  rows.push({
+    key: 'background',
+    label: t('images_background'),
+    parts: credit('background') ?? [t('info_background_none')],
+  })
+  if (identity) {
+    const links = Object.entries(facts?.links ?? {}).map(([kind, url]) => ({
+      text: kind === 'official' ? t('artist_link_site') : (LINK_NAMES[kind] ?? kind),
+      href: url,
+    }))
+    rows.push({
+      key: 'links',
+      label: t('info_links'),
+      parts: [{ text: 'MusicBrainz', href: `https://musicbrainz.org/artist/${identity.mbid}` }, ...links],
+    })
+  }
+  rows.push({
+    key: 'musicbrainz',
+    label: 'MusicBrainz',
+    parts: identity ? identityParts(identity.kept) : missingParts('info_not_identified', 'info_identify'),
+  })
+  return rows
+})
+
+const coverWhere = computed(() => {
+  const where = onCard.value
+  if (!where) return t('info_cover_reading')
+  if (where.kind === 'folder') return t('info_cover_folder', { name: where.name })
+  if (where.kind === 'embedded') return t('info_cover_embedded')
+  return t(where.kind === 'none' ? 'info_cover_none' : 'info_cover_unknown')
+})
+
+const albumRows = computed<FactRow[]>(() => {
+  const identity = edition.value
+  const facts = identity?.facts
+  const rows: FactRow[] = []
+  if (facts) {
+    const label = [facts.label, facts.catalogNumber].filter(Boolean).join(' ')
+    if (label) rows.push({ key: 'label', label: t('fact_label'), parts: [label] })
+    const issue = [
+      year(facts.date),
+      facts.country ? regionName(facts.country, locale.value) : null,
+      facts.format,
+    ].filter(Boolean)
+    if (issue.length) rows.push({ key: 'issue', label: t('fact_issue'), parts: [issue.join(' · ')] })
+    const first = [year(facts.firstRelease), facts.type, ...(facts.secondaryTypes ?? [])].filter(Boolean)
+    if (first.length) rows.push({ key: 'first', label: t('fact_first_release'), parts: [first.join(' · ')] })
+    if (facts.barcode) rows.push({ key: 'barcode', label: t('fact_barcode'), parts: [facts.barcode] })
+  }
+  rows.push({ key: 'cover', label: t('info_cover'), parts: [coverWhere.value] })
+  if (identity)
+    rows.push({
+      key: 'links',
+      label: t('info_links'),
+      parts: parts(
+        { text: t('info_link_edition'), href: `https://musicbrainz.org/release/${identity.mbid}` },
+        identity.group && {
+          text: t('info_link_editions'),
+          href: `https://musicbrainz.org/release-group/${identity.group}`,
+        },
+      ),
+    })
+  rows.push({
+    key: 'musicbrainz',
+    label: 'MusicBrainz',
+    parts: identity ? identityParts(identity.kept) : missingParts('info_no_edition', 'info_choose_edition'),
+  })
+  return rows
+})
+
+function onAction(id: string): void {
+  if (id === 'identify') identify()
+  else if (artistName.value && (id === 'remove-photo' || id === 'remove-background'))
+    void forgetArtistImage(artistName.value, id === 'remove-photo' ? 'photo' : 'background')
+}
+const settingsNeeded = computed(() =>
+  artistName.value ? !artistImagesAllowed() || !identifyAllowed() : !coverLookupAllowed() || !identifyAllowed(),
+)
 </script>
 
 <template>
@@ -155,255 +245,120 @@ const LINK = 'text-secondary underline-offset-3 hover:text-ink hover:underline'
     class="min-h-0 flex-1 [scrollbar-width:thin] overflow-auto overscroll-contain px-24 pb-28"
     data-testid="info-panel"
   >
-    <span class="block text-caption2 font-semibold tracking-caps text-muted uppercase">{{ t('info_eyebrow') }}</span>
-    <h2 class="mt-6 mb-4 text-title2 font-bold tracking-heading" data-testid="info-title">
-      {{ artistName ?? album?.title }}
-    </h2>
-    <p class="m-0 text-footnote text-muted">
-      {{ artistName ? t('kind_artist') : `${t('kind_album')} · ${scope ?? album?.artists[0] ?? ''}` }}
-    </p>
-
-    <section class="mt-24" aria-labelledby="info-musicbrainz" data-testid="info-musicbrainz">
-      <h3 id="info-musicbrainz" class="mt-0 mb-10 text-title3 font-bold tracking-heading">MusicBrainz</h3>
-      <div class="grid gap-6 rounded-12 border border-line bg-paper px-14 py-12 text-footnote leading-[1.5]">
-        <template v-if="artistName && artistId">
-          <p class="m-0 text-secondary">
-            <strong class="font-semibold text-ink">{{ artistId.facts?.name ?? artistName }}</strong
-            ><template v-if="artistId.facts && artistFactsLine(artistId.facts)">
-              · {{ artistFactsLine(artistId.facts) }}</template
-            >
-          </p>
-          <p class="m-0 text-caption text-muted">{{ t(artistId.kept ? 'info_kept_player' : 'info_kept_tab') }}</p>
-        </template>
-        <template v-else-if="album && edition">
-          <p class="m-0 text-secondary">
-            <strong class="font-semibold text-ink">{{ edition.facts?.title ?? album.title }}</strong
-            ><template v-if="edition.facts && editionLine(edition.facts)"> · {{ editionLine(edition.facts) }}</template>
-          </p>
-          <p v-if="firstRelease" class="m-0 text-secondary">{{ t('info_first_release', { facts: firstRelease }) }}</p>
-          <p class="m-0 text-caption text-muted">
-            <template v-if="edition.facts?.barcode"
-              >{{ t('info_barcode', { code: edition.facts.barcode }) }} · </template
-            >{{ t(edition.kept ? 'info_kept_player' : 'info_kept_tab') }}
-          </p>
-        </template>
-        <template v-else-if="identifyAllowed()">
-          <p class="m-0 font-semibold text-ink">{{ t(artistName ? 'info_not_identified' : 'info_no_edition') }}</p>
-          <p class="m-0 text-caption text-muted">{{ t(artistName ? 'info_identify_sends' : 'info_edition_sends') }}</p>
-        </template>
-        <template v-else>
-          <p class="m-0 font-semibold text-ink">{{ t('info_musicbrainz_off') }}</p>
-          <p class="m-0 text-secondary">{{ t('info_musicbrainz_off_note') }}</p>
-        </template>
-        <div class="flex flex-wrap items-center gap-x-14 gap-y-8">
-          <template v-if="identifyAllowed()">
-            <UiTextButton
-              v-if="artistId || edition"
-              :disabled="identifying.saving"
-              data-testid="info-refine"
-              @click="identify"
-              >{{ t(artistName ? 'info_refine' : 'info_other_edition') }}</UiTextButton
-            >
-            <UiPillButton
-              v-else
-              variant="secondary"
-              :disabled="identifying.saving || identifying.status === 'searching'"
-              data-testid="info-identify"
-              @click="identify"
-              >{{ t(artistName ? 'info_identify' : 'info_choose_edition') }}</UiPillButton
-            >
-          </template>
-          <RouterLink
-            v-else
-            class="text-footnote text-secondary underline underline-offset-2 hover:text-ink"
-            :to="{ path: '/settings', query: { part: 'sources' } }"
-            @click="emit('navigate')"
-            >{{ t('external_sources') }}</RouterLink
+    <template v-if="artistName">
+      <!-- The background as a band with the round photo over it; without one to show or choose, the photo alone. -->
+      <div data-testid="info-artist-images">
+        <div
+          v-if="band"
+          class="group/background relative aspect-[16/9] w-full overflow-hidden rounded-14 bg-soft shadow-[0_12px_28px_#07100820]"
+          data-testid="info-background-image"
+        >
+          <button
+            v-if="background"
+            type="button"
+            class="block size-full cursor-zoom-in p-0"
+            :aria-label="t('cover_full_size', { name: artistName })"
+            @click="background && artistName && showCover(background, artistName)"
           >
+            <CoverCanvas :blob="background" />
+          </button>
+          <button
+            type="button"
+            :class="[
+              CHIP,
+              'px-12 py-6',
+              background
+                ? 'top-10 right-10 opacity-0 group-focus-within/background:opacity-100 group-hover/background:opacity-100'
+                : 'inset-0 m-auto h-fit w-fit',
+            ]"
+            :disabled="imagesBusy"
+            data-testid="info-background-choose"
+            @click="artistName && openArtistImages(artistName, 'background')"
+          >
+            <UiIcon name="image" />{{ t(background ? 'info_change_background' : 'info_choose_background') }}
+          </button>
         </div>
-        <p v-if="searchMessage" role="status" class="m-0 text-secondary" data-testid="info-status">
-          {{ t(searchMessage) }}
-        </p>
-        <div v-if="searching && identifying.status === 'ready'" class="grid gap-6" data-testid="info-candidates">
-          <template v-if="artistName">
-            <button
-              v-for="candidate in identifying.artists"
-              :key="candidate.id"
-              type="button"
-              :aria-pressed="candidate.id === artistId?.mbid"
-              :disabled="identifying.saving"
-              class="rounded-10 border border-line bg-raised px-12 py-9 text-left text-secondary hover:bg-hover aria-pressed:border-accent aria-pressed:text-ink"
-              @click="chooseArtist(candidate)"
-            >
-              <strong class="font-semibold text-ink">{{ candidate.name }}</strong
-              ><template v-if="artistFactsLine(candidate)"> · {{ artistFactsLine(candidate) }}</template>
-            </button>
-          </template>
-          <template v-else>
-            <button
-              v-for="release in identifying.editions"
-              :key="release.id"
-              type="button"
-              :aria-pressed="release.id === edition?.mbid"
-              :disabled="identifying.saving"
-              class="rounded-10 border border-line bg-raised px-12 py-9 text-left text-secondary hover:bg-hover aria-pressed:border-accent aria-pressed:text-ink"
-              @click="chooseEdition(release)"
-            >
-              <strong class="font-semibold text-ink">{{ release.title }}</strong
-              ><template v-if="editionLine(release)"> · {{ editionLine(release) }}</template>
-            </button>
-          </template>
+        <div
+          class="group/photo relative"
+          :class="band ? '-mt-52 ml-18 size-104' : 'mx-auto size-200 phone:size-[min(200px,26dvh)]'"
+        >
+          <button
+            type="button"
+            class="block size-full overflow-hidden rounded-full bg-soft p-0 text-ink shadow-[0_12px_28px_#07100820] disabled:cursor-default"
+            :class="{ 'ring-4 ring-raised': band }"
+            :aria-label="t('cover_full_size', { name: artistName })"
+            :disabled="!photo"
+            @click="photo && artistName && showCover(photo, artistName)"
+          >
+            <Artwork :title="artistName" artist :cover="photo" />
+          </button>
+          <button
+            type="button"
+            :class="[
+              CHIP,
+              'right-0 bottom-0 size-34 justify-center p-0 opacity-0 group-focus-within/photo:opacity-100 group-hover/photo:opacity-100',
+            ]"
+            :aria-label="t('info_choose_photo')"
+            :title="t('info_choose_photo')"
+            :disabled="imagesBusy"
+            data-testid="info-photo-choose"
+            @click="artistName && openArtistImages(artistName, 'photo')"
+          >
+            <UiIcon name="image" />
+          </button>
         </div>
       </div>
-    </section>
+      <span class="mt-22 block text-caption2 font-semibold tracking-caps text-muted uppercase">{{
+        t('kind_artist')
+      }}</span>
+      <h2 class="mt-6 mb-4 text-title2 font-bold tracking-heading" data-testid="info-title">{{ artistName }}</h2>
+      <FactTable class="mt-24" :heading="t('facts_artist')" :rows="artistRows" @action="onAction" />
+    </template>
 
-    <section class="mt-24" aria-labelledby="info-images" data-testid="info-images">
-      <h3 id="info-images" class="mt-0 mb-10 text-title3 font-bold tracking-heading">
-        {{ t(artistName ? 'info_images' : 'info_cover') }}
-      </h3>
-      <template v-if="artistName">
-        <div
-          v-for="role in ['photo', 'background'] as const"
-          :key="role"
-          class="grid grid-cols-[auto_1fr] items-center gap-12 border-t border-line py-10 first-of-type:border-t-0 first-of-type:pt-0"
-          :data-testid="`info-${role}`"
+    <template v-else-if="album">
+      <div class="group/cover relative mx-auto aspect-square w-full phone:w-[min(100%,30dvh)]">
+        <button
+          type="button"
+          class="block size-full overflow-hidden rounded-14 bg-soft p-0 text-ink shadow-[0_12px_28px_#07100820] disabled:cursor-default"
+          :aria-label="t('cover_full_size', { name: album.title })"
+          :disabled="!cover"
+          @click="cover && album && showCover(cover, album.title)"
         >
-          <span
-            class="block overflow-hidden bg-soft"
-            :class="role === 'photo' ? 'size-56 rounded-full' : 'h-54 w-96 rounded-10'"
-          >
-            <CoverCanvas
-              v-if="role === 'photo' ? photo : background"
-              :blob="(role === 'photo' ? photo : background)!"
-            />
-          </span>
-          <div class="min-w-0 text-footnote leading-[1.45]">
-            <p class="m-0 font-semibold text-ink">{{ t(role === 'photo' ? 'images_photo' : 'images_background') }}</p>
-            <p v-if="credit(role)" class="m-0 text-secondary">
-              <a
-                v-if="credit(role)?.page"
-                :href="credit(role)?.page ?? ''"
-                target="_blank"
-                rel="noopener noreferrer"
-                :class="LINK"
-                >{{ credit(role)?.author ?? credit(role)?.source }}</a
-              ><template v-else>{{ credit(role)?.author ?? credit(role)?.source }}</template
-              ><template v-if="credit(role)?.license">
-                ·
-                <a
-                  v-if="credit(role)?.licenseUrl"
-                  :href="credit(role)?.licenseUrl ?? ''"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  :class="LINK"
-                  >{{ credit(role)?.license }}</a
-                ><template v-else>{{ credit(role)?.license }}</template></template
-              ><template v-if="credit(role)?.author"> · {{ credit(role)?.source }}</template> ·
-              {{ t(credit(role)?.kept === 'player' ? 'image_kept_player' : 'photo_kept') }}
-            </p>
-            <p v-else class="m-0 text-muted">
-              {{ t(role === 'photo' ? 'info_photo_stand_in' : 'info_background_none') }}
-            </p>
-            <div class="mt-2 flex flex-wrap gap-x-14">
-              <UiTextButton
-                :disabled="!artistImagesAllowed() || artistPictures.picker !== null"
-                :data-testid="`info-${role}-choose`"
-                @click="openArtistImages(artistName)"
-                >{{ t('info_choose') }}</UiTextButton
-              >
-              <UiTextButton
-                v-if="credit(role)"
-                :data-testid="`${role}-remove`"
-                @click="forgetArtistImage(artistName, role)"
-                >{{ t('info_remove') }}</UiTextButton
-              >
-            </div>
-          </div>
-        </div>
-        <p v-if="!artistImagesAllowed()" class="mt-6 mb-0 text-footnote leading-[1.5] text-secondary">
-          {{ t('info_images_off') }}
-        </p>
-      </template>
-      <template v-else-if="album">
-        <div class="grid grid-cols-[auto_1fr] items-center gap-12" data-testid="info-cover">
-          <span class="block size-56 overflow-hidden rounded-10 bg-soft">
-            <CoverCanvas v-if="cover" :blob="cover" />
-          </span>
-          <div class="min-w-0 text-footnote leading-[1.45]">
-            <p class="m-0 font-semibold text-ink">{{ t('info_cover') }}</p>
-            <p class="m-0 text-secondary" data-testid="info-cover-where">{{ coverWhere }}</p>
-            <div class="mt-2 flex flex-wrap gap-x-14">
-              <UiTextButton
-                :disabled="!coverChoosable"
-                data-testid="info-cover-choose"
-                @click="album && openCoverPicker(album, scope)"
-                >{{ t(onCard?.kind === 'folder' ? 'info_choose_other' : 'info_choose') }}</UiTextButton
-              >
-            </div>
-          </div>
-        </div>
-        <p class="mt-8 mb-0 text-footnote leading-[1.5] text-secondary">
-          {{
-            onCard?.kind === 'embedded'
-              ? t('cover_embedded')
-              : !coverLookupAllowed()
-                ? t('info_cover_off')
-                : onCard?.kind === 'folder'
-                  ? t('cover_replace_note')
-                  : ''
-          }}
-        </p>
-      </template>
-    </section>
+          <Artwork :title="album.title" :cover="cover" />
+        </button>
+        <button
+          type="button"
+          :class="[
+            CHIP,
+            'right-12 bottom-12 px-12 py-6 opacity-0 group-focus-within/cover:opacity-100 group-hover/cover:opacity-100',
+          ]"
+          :disabled="!coverChoosable"
+          data-testid="info-cover-choose"
+          @click="album && openCoverPicker(album, scope)"
+        >
+          <UiIcon name="image" />{{ t(onCard?.kind === 'folder' ? 'info_change_cover' : 'info_choose_cover') }}
+        </button>
+      </div>
+      <span class="mt-22 block text-caption2 font-semibold tracking-caps text-muted uppercase">{{
+        t('kind_album')
+      }}</span>
+      <h2 class="mt-6 mb-4 text-title2 font-bold tracking-heading" data-testid="info-title">{{ album.title }}</h2>
+      <p class="m-0 text-footnote text-muted">{{ scope ?? album.artists[0] ?? '' }}</p>
+      <p v-if="coverNote" class="mt-10 mb-0 text-footnote leading-[1.5] text-muted" data-testid="info-cover-note">
+        {{ coverNote }}
+      </p>
+      <FactTable class="mt-24" :heading="t('facts_album')" :rows="albumRows" @action="onAction" />
+    </template>
 
-    <section class="mt-24" aria-labelledby="info-links" data-testid="info-links">
-      <h3 id="info-links" class="mt-0 mb-10 text-title3 font-bold tracking-heading">{{ t('info_links') }}</h3>
-      <p v-if="artistName && artistId" class="m-0 text-footnote leading-[1.7] text-muted">
-        <a
-          :href="`https://musicbrainz.org/artist/${artistId.mbid}`"
-          target="_blank"
-          rel="noopener noreferrer"
-          :class="LINK"
-          >MusicBrainz</a
-        ><template v-for="(url, kind) in artistId.facts?.links ?? {}" :key="kind">
-          ·
-          <a :href="url" target="_blank" rel="noopener noreferrer" :class="LINK">{{
-            kind === 'official'
-              ? t('artist_link_site')
-              : kind === 'bandcamp'
-                ? 'Bandcamp'
-                : kind === 'discogs'
-                  ? 'Discogs'
-                  : 'Wikidata'
-          }}</a></template
-        >
-      </p>
-      <p v-else-if="album && edition" class="m-0 text-footnote leading-[1.7] text-muted">
-        <a
-          :href="`https://musicbrainz.org/release/${edition.mbid}`"
-          target="_blank"
-          rel="noopener noreferrer"
-          :class="LINK"
-          >{{ t('info_link_edition') }}</a
-        ><template v-if="edition.group">
-          ·
-          <a
-            :href="`https://musicbrainz.org/release-group/${edition.group}`"
-            target="_blank"
-            rel="noopener noreferrer"
-            :class="LINK"
-            >{{ t('info_link_editions') }}</a
-          ></template
-        >
-      </p>
-      <p v-else class="m-0 text-footnote text-muted">{{ t('info_links_later') }}</p>
-    </section>
-
-    <section class="mt-24" aria-labelledby="info-tags">
-      <h3 id="info-tags" class="mt-0 mb-10 text-title3 font-bold tracking-heading">{{ t('info_tags') }}</h3>
-      <p class="m-0 rounded-12 border border-dashed border-line px-14 py-12 text-footnote leading-[1.5] text-muted">
-        {{ t('info_tags_later') }}
-      </p>
-    </section>
+    <p v-if="settingsNeeded" class="mt-14 mb-0 text-footnote leading-[1.5] text-muted">
+      {{ t('info_sources_note') }}
+      <RouterLink
+        class="text-secondary underline underline-offset-2 hover:text-ink"
+        :to="{ path: '/settings', query: { part: 'sources' } }"
+        @click="emit('navigate')"
+        >{{ t('external_sources') }}</RouterLink
+      >
+    </p>
+    <IdentifyDialog :target="identifyTarget" @close="identifyTarget = null" />
   </div>
 </template>

@@ -124,8 +124,9 @@ export async function connectAndPair(page: Page): Promise<void> {
 }
 
 export async function disconnect(page: Page): Promise<void> {
-  // On phones the listening panel covers the top bar; minimize it first.
-  if (await page.getByRole('complementary', { name: 'Player view' }).isVisible()) await page.keyboard.press('Escape')
+  // On phones the listening panel or a details sheet covers the top bar; close it first.
+  if (await page.getByRole('complementary', { name: /^(Player view|Details)$/ }).isVisible())
+    await page.keyboard.press('Escape')
   await openConnection(page)
   await page.getByRole('dialog').getByRole('button', { name: 'Disconnect' }).click()
   await expect(page.getByRole('dialog').getByTestId('connection-state')).toContainText('Disconnected')

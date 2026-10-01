@@ -76,6 +76,8 @@ const without = (images: Partial<Record<ImageRole, ArtistImage>> | undefined, ro
 export type PickerStatus = 'identifying' | 'searching' | 'ready' | 'missing' | 'failed' | 'saving'
 interface Picker {
   name: string
+  /** What is being chosen (owner, 2026-10-02: a photo and a background are two actions, each its own window). */
+  role: ImageRole
   status: PickerStatus
   /** MusicBrainz's artists for the name, once asked. */
   candidates: ArtistCandidate[]
@@ -383,11 +385,12 @@ const emptyCandidate: ArtistCandidate = {
 }
 
 /** Opens the picker for an artist: its confirmed id, else the artist MusicBrainz takes for the name. */
-export async function openArtistImages(name: string): Promise<void> {
+export async function openArtistImages(name: string, role: ImageRole = 'photo'): Promise<void> {
   if (!artistImagesAllowed()) return
   const known = artistIdentity(name)
   state.picker = {
     name,
+    role,
     status: 'identifying',
     candidates: [],
     mbid: known?.mbid ?? null,

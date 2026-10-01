@@ -615,7 +615,7 @@ test("finds a cover on Cover Art Archive and saves it into the album's folder th
   // The details (i, 2026-10-01): where the cover lies, read from the service's media facts and folder.
   await page.getByTestId('info-open').click({ timeout: 60_000 })
   const panel = page.getByTestId('info-panel')
-  const where = panel.getByTestId('info-cover-where')
+  const where = panel.locator('[data-fact="cover"]')
   await expect(where).toHaveText('The album has no cover yet', { timeout: 30_000 })
   await panel.getByTestId('info-cover-choose').click()
   // The editions to choose from; the chosen one becomes the offer.
@@ -693,9 +693,10 @@ test("finds an artist's photo on Wikimedia Commons within the service's policy",
   await photos.first().click({ timeout: 30_000 })
   await page.getByTestId('images-save').click()
   // Not paired here: the choice stays in this browser.
-  await expect(page.getByTestId('info-photo')).toContainText('A Photographer · CC BY 4.0', { timeout: 30_000 })
-  await expect(page.getByTestId('info-photo')).toContainText('kept in this browser')
-  await page.getByTestId('photo-remove').click()
+  const credit = page.locator('[data-fact="photo"]')
+  await expect(credit).toContainText('A Photographer · CC BY 4.0', { timeout: 30_000 })
+  await expect(credit).toContainText('kept in this browser')
+  await page.getByTestId('fact-remove-photo').click()
   await chooseSources(page)
   expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])
 })

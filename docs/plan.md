@@ -2055,6 +2055,31 @@ replaced by `2026.10.01-e2a8bcb` (102 files); the catalog already current
 (`queries.json` and `store.json` as reviewed, `hosted.json` the same apart from
 its profile binding); the card ejected.
 
+## Details as sheets of their own (owner, 2026-10-02), card-only
+
+After using the details panel on the player the owner found it foreign (its
+own elements and grid), the photo and background sharing one picker, a
+"later" section for tags, and details mixed into the player's Now Playing and
+Lyrics tabs. Decided: separate sheets in every case, no "⋯" menu, nothing
+added to the pages, the sheets laid out as the track's.
+
+- [x] The track's, album's and artist's details open as a sheet of their own
+      in the panel's place, without the player's header and tabs (a close
+      button only; on narrow screens it closes when the page changes). The
+      album's: its cover, title, artist, then a facts table like the
+      track's (label and catalogue number, this edition, first release,
+      barcode, where the cover lies, links, MusicBrainz). The artist's: the
+      background as a band with the round photo over it, then the table
+      (type, country, years, also known as, the photo's and background's
+      credit with Remove, links, MusicBrainz). Identifying opens a window of
+      candidates or editions; the photo and the background each have their
+      own picker; choosing an image is an action on the image (on hover or
+      focus, always on touch screens); a click on the image still opens it in
+      full size. The tags section is gone (no features that do not work).
+      Evidence: e2e "chooses an artist's photo and background…", "chooses a
+      cover among the editions…", "opens a track from its title…";
+      screenshots in light, dark and on a phone (touch).
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

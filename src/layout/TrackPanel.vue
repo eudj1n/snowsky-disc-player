@@ -127,7 +127,7 @@ const LINK = 'hover:text-ink hover:underline hover:underline-offset-3'
   >
     <button
       type="button"
-      class="mx-auto block aspect-square w-full overflow-hidden rounded-14 bg-soft p-0 shadow-[0_12px_28px_#07100820] disabled:cursor-default phone:w-[min(100%,30dvh)]"
+      class="mx-auto block aspect-square w-full overflow-hidden rounded-14 bg-soft p-0 text-ink shadow-[0_12px_28px_#07100820] disabled:cursor-default phone:w-[min(100%,30dvh)]"
       :aria-label="t('cover_full_size', { name: track.album || track.title })"
       :disabled="!cover"
       @click="cover && showCover(cover, track.album || track.title)"

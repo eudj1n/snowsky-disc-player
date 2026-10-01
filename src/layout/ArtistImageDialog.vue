@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The artist image picker (owner, 2026-10-01): which MusicBrainz artist the
+ * The artist image picker (owner, 2026-10-01; one window per image, 2026-10-02): which MusicBrainz artist the
  * name is (another one can be chosen among namesakes), then the photos and
  * wide backgrounds the allowed sources hold for it, as small previews to
  * choose from; Save keeps the choice on the player when this browser is
@@ -53,7 +53,11 @@ const status = computed<MessageKey | null>(() => {
   if (value.status === 'identifying') return 'images_identifying'
   if (value.status === 'searching') return 'images_searching'
   if (value.status === 'failed') return 'images_failed'
-  if (value.status === 'missing') return value.mbid ? 'images_missing' : 'images_no_artist'
+  if (
+    value.status === 'missing' ||
+    (value.status === 'ready' && !(value.role === 'photo' ? value.photos : value.backgrounds).length)
+  )
+    return value.mbid ? 'images_missing' : 'images_no_artist'
   return null
 })
 const keptOnPlayer = computed(() => pairing.stored && musicbrainzIds.available)
@@ -69,20 +73,19 @@ async function another(mbid: string): Promise<void> {
   listing.value = false
   await chooseArtist(mbid)
 }
-const sections = computed(() =>
-  picker.value
-    ? ([
-        { role: 'photo', title: 'images_photo', offers: picker.value.photos },
-        { role: 'background', title: 'images_background', offers: picker.value.backgrounds },
-      ] as const)
-    : [],
-)
+const sections = computed(() => {
+  const value = picker.value
+  if (!value) return []
+  return value.role === 'photo'
+    ? ([{ role: 'photo', title: 'images_photo', offers: value.photos }] as const)
+    : ([{ role: 'background', title: 'images_background', offers: value.backgrounds }] as const)
+})
 </script>
 
 <template>
   <UiDialog
     :open="picker !== null"
-    :eyebrow="t('images_eyebrow')"
+    :eyebrow="t(picker?.role === 'background' ? 'images_background_eyebrow' : 'images_photo_eyebrow')"
     :close-label="t('close')"
     size="xl"
     @close="closeArtistImages"
@@ -175,7 +178,7 @@ const sections = computed(() =>
       <div class="mt-18 flex justify-end gap-8">
         <UiPillButton variant="secondary" @click="closeArtistImages">{{ t('cancel') }}</UiPillButton>
         <UiPillButton
-          :disabled="picker.status === 'saving' || (!chosen.photo && !chosen.background)"
+          :disabled="picker.status === 'saving' || !chosen[picker.role]"
           data-testid="images-save"
           @click="saveArtistImages(chosen)"
           >{{ t('images_save') }}</UiPillButton

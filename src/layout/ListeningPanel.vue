@@ -14,6 +14,7 @@
  * focus to the opener; Escape closes it only when no dialog is open.
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import Artwork from '../components/artwork/Artwork.vue'
 import NowPlayingDetails from '../components/player/NowPlayingDetails.vue'
 import InfoPanel from './InfoPanel.vue'
@@ -59,7 +60,10 @@ import { nowColourStyle } from '../stores/nowColours'
 
 const player = usePlayerControls()
 /** The playing track's cover colours; an opened track keeps the theme's. */
-const onCover = computed(() => Boolean(nowColourStyle.value) && ui.panel !== 'track' && ui.panel !== 'info')
+const route = useRoute()
+/** A track's or an artist's or album's details: a sheet of its own, without the player's header and tabs (owner, 2026-10-02). */
+const details = computed(() => ui.panel === 'track' || ui.panel === 'info')
+const onCover = computed(() => Boolean(nowColourStyle.value) && !details.value)
 const close = ref<InstanceType<typeof UiIconButton> | null>(null)
 const queueSection = ref<HTMLElement | null>(null)
 const nowScroll = ref<HTMLElement | null>(null)
@@ -240,6 +244,14 @@ function onNavigate(): void {
   // Below 1200px the panel covers the page: close it before navigating.
   if (matchMedia('(max-width: 1199px)').matches) closePanel(false)
 }
+// A details sheet belongs to the page it was opened on: below 1200px, where it covers the page, it closes when
+// the page changes (Back included); the player's own panel stays.
+watch(
+  () => route.fullPath,
+  () => {
+    if (details.value) onNavigate()
+  },
+)
 
 watch(
   () => ui.panel,
@@ -263,17 +275,29 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   <aside
     v-if="ui.panel"
     id="now-panel"
-    :aria-label="t('player_view')"
+    :aria-label="details ? t('details_view') : t('player_view')"
     class="fixed top-0 right-0 bottom-(--player) z-25 flex w-380 animate-listening-enter flex-col border-l border-line bg-raised text-left shadow-[-15px_0_65px_#26301418] phone:bottom-0 phone:z-40 phone:w-full phone:border-l-0"
     :class="{ 'on-cover': onCover }"
     :style="onCover ? nowColourStyle : undefined"
     :data-on-cover="onCover ? 'true' : undefined"
   >
-    <div class="flex items-center justify-between px-24 pt-22 pb-12 phone:px-24 phone:pt-16 phone:pb-10">
-      <span class="text-caption2 font-semibold tracking-caps text-muted uppercase">SNOWSKY DISC</span>
-      <UiIconButton ref="close" icon="close" :label="t('minimize_player')" @click="closePanel(true)" />
+    <div
+      class="flex items-center justify-between px-24 pt-22 pb-12 phone:px-24 phone:pt-16 phone:pb-10"
+      :class="{ 'justify-end! pt-16 pb-6': details }"
+    >
+      <span v-if="!details" class="text-caption2 font-semibold tracking-caps text-muted uppercase">SNOWSKY DISC</span>
+      <UiIconButton
+        ref="close"
+        icon="close"
+        :label="details ? t('close') : t('minimize_player')"
+        @click="closePanel(true)"
+      />
     </div>
-    <div class="mx-24 mb-20 flex shrink-0 gap-4 rounded-24 border border-line p-4 phone:mb-16" role="group">
+    <div
+      v-if="!details"
+      class="mx-24 mb-20 flex shrink-0 gap-4 rounded-24 border border-line p-4 phone:mb-16"
+      role="group"
+    >
       <button
         v-for="section in ['now', 'lyrics'] as const"
         :key="section"

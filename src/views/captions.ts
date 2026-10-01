@@ -73,6 +73,11 @@ const ARTIST_TYPE_NAMES: Record<ArtistType, MessageKey> = {
   Character: 'artist_type_character',
   Other: 'artist_type_other',
 }
+/** MusicBrainz's artist type in the page's words, or null for one it does not know. */
+export const artistTypeName = (type: string | null): string | null => {
+  const known = (Object.keys(ARTIST_TYPE_NAMES) as ArtistType[]).find((name) => name === type)
+  return known ? t(ARTIST_TYPE_NAMES[known]) : null
+}
 /** An artist's MusicBrainz facts as one line ("Group · United Kingdom · 2001–"), with MusicBrainz's note when asked. */
 export const artistFactsLine = (facts: FactsSource, note = true): string =>
   factParts(note ? facts : { ...facts, disambiguation: null }, locale.value, (type) => t(ARTIST_TYPE_NAMES[type])).join(
