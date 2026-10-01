@@ -608,7 +608,7 @@ test("finds a cover on Cover Art Archive and saves it into the album's folder th
     route.fulfill({ headers: cors, contentType: 'image/png', path: 'tests/e2e/fixtures/cover.png' }),
   )
   const errors = watchErrors(page)
-  await chooseSources(page, { coverartarchive: { allowed: true } })
+  await chooseSources(page, { musicbrainz: { allowed: true }, coverartarchive: { allowed: true } })
   await english(page)
   await connectAndPair(page)
   await page.goto('/#/album/Night%20Lines/Lumen')
@@ -665,7 +665,7 @@ test("finds an artist's photo on Wikimedia Commons within the service's policy",
     route.fulfill({ headers: cors, contentType: 'image/png', path: 'tests/e2e/fixtures/cover.png' }),
   )
   const errors = watchErrors(page)
-  await chooseSources(page, { wikimedia: { allowed: true } })
+  await chooseSources(page, { musicbrainz: { allowed: true }, wikimedia: { allowed: true } })
   await english(page)
   await page.goto('/#/artist/Lumen')
   await page.getByTestId('photo-find').click({ timeout: 60_000 })

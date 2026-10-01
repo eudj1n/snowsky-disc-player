@@ -3,15 +3,19 @@
  * The Settings page's outside sources (owner, 2026-10-01): grouped by what
  * they bring, each off until allowed, and automatic only when also chosen.
  * The choice is kept on the player, so changing it needs pairing; a source
- * the release's origins do not admit stays unavailable here.
+ * the release's origins do not admit stays unavailable here, and so does one
+ * whose needs (MusicBrainz for the sources found by its ids) are not allowed:
+ * its saved choice stays in place, dimmed.
  */
 import { computed } from 'vue'
 import { t, type MessageKey } from '../i18n'
 import { artistPhotoOriginsAdmitted } from '../stores/artistPictures'
+import { originAllowed } from '../stores/connection'
 import { coverOriginsAdmitted } from '../stores/coverSearch'
 import {
   chooseSource,
   externalSources,
+  missingNeeds,
   SOURCE_KINDS,
   SOURCES,
   type SourceKind,
@@ -23,6 +27,7 @@ import { openDialog } from '../stores/ui'
 import UiTextButton from '../ui/UiTextButton.vue'
 
 const KIND_TITLES: Record<SourceKind, MessageKey> = {
+  metadata: 'source_kind_metadata',
   lyrics: 'source_kind_lyrics',
   album_covers: 'source_kind_album_covers',
   artist_images: 'source_kind_artist_images',
@@ -30,10 +35,17 @@ const KIND_TITLES: Record<SourceKind, MessageKey> = {
 interface SourceText {
   about: MessageKey
   sends: MessageKey
-  auto: MessageKey
+  /** When it is asked automatically; none for a source used only through others. */
+  auto: MessageKey | null
   admitted: () => boolean
 }
 const TEXTS: Record<SourceName, SourceText> = {
+  musicbrainz: {
+    about: 'source_musicbrainz_about',
+    sends: 'source_musicbrainz_sends',
+    auto: null,
+    admitted: () => originAllowed('musicbrainz'),
+  },
   lrclib: {
     about: 'source_lrclib_about',
     sends: 'source_lrclib_sends',
@@ -65,7 +77,11 @@ const blocked = computed<MessageKey | null>(() =>
 )
 const allowed = (name: SourceName) => externalSources.choices[name]?.allowed === true
 const automatic = (name: SourceName) => allowed(name) && externalSources.choices[name]?.auto === true
-const locked = (name: SourceName) => blocked.value !== null || externalSources.busy !== null || !TEXTS[name].admitted()
+const titleOf = (name: SourceName) => SOURCES.find((source) => source.name === name)?.title ?? name
+/** What the source waits for, as its names. */
+const waiting = (name: SourceName) => missingNeeds(name).map(titleOf).join(', ')
+const locked = (name: SourceName) =>
+  blocked.value !== null || externalSources.busy !== null || !TEXTS[name].admitted() || waiting(name) !== ''
 /** Asks the player; the box then shows what the player keeps, whatever the click showed. */
 async function choose(event: Event, name: SourceName, field: 'allowed' | 'auto'): Promise<void> {
   const input = event.target as HTMLInputElement
@@ -116,6 +132,13 @@ const hostOf = (site: string) => new URL(site).host
         <p v-if="!TEXTS[source.name].admitted()" class="mt-6 mb-0 text-caption text-muted">
           {{ t('source_not_admitted') }}
         </p>
+        <p
+          v-else-if="waiting(source.name)"
+          class="mt-6 mb-0 text-caption text-muted"
+          :data-testid="`source-${source.name}-needs`"
+        >
+          {{ t('source_needs', { names: waiting(source.name) }) }}
+        </p>
         <div class="mt-10 flex flex-wrap gap-x-24 gap-y-8">
           <label class="flex items-center gap-8 text-footnote text-ink has-disabled:text-muted">
             <input
@@ -128,7 +151,7 @@ const hostOf = (site: string) => new URL(site).host
             />
             {{ t('source_allow') }}
           </label>
-          <label class="flex items-center gap-8 text-footnote text-ink has-disabled:text-muted">
+          <label v-if="source.automatic" class="flex items-center gap-8 text-footnote text-ink has-disabled:text-muted">
             <input
               type="checkbox"
               class="accent-progress-fill"
@@ -138,7 +161,8 @@ const hostOf = (site: string) => new URL(site).host
               @change="choose($event, source.name, 'auto')"
             />
             <span
-              >{{ t('source_auto') }} <span class="text-muted">· {{ t(TEXTS[source.name].auto) }}</span></span
+              >{{ t('source_auto') }}
+              <span v-if="TEXTS[source.name].auto" class="text-muted">· {{ t(TEXTS[source.name].auto!) }}</span></span
             >
           </label>
         </div>

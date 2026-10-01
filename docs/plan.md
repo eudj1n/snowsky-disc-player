@@ -1907,13 +1907,28 @@ dialog, the first window when starting.
       allowed from the panel's link), "finds an artist's photo…" (automatic),
       and the cover and synced-lyrics cases; the emulator acceptance cases
       allow their source first.
-- [ ] fanart.tv (artist images and the wide background, the user's key kept
-      in the same record) and
-      TheAudioDB (the public key `123` unless the user enters theirs) for
-      artist images; a search started by the listener shows every candidate
-      of the allowed sources to choose from (editions of a release, several
-      images of an artist), the automatic one takes the best without asking
-      and never writes to the card.
+- [x] MusicBrainz is a source of its own under Metadata (owner, 2026-10-01:
+      "честно и прозрачно"): "Allow" only, since it is asked only through
+      the sources that find covers and pictures by its ids (Cover Art
+      Archive, Wikimedia Commons, later fanart.tv); those cannot be allowed
+      while it is off, and their saved choice stays in place, dimmed, with
+      "Needs MusicBrainz". Evidence: `tests/unit/externalSources.test.ts`,
+      e2e "keeps the outside sources on the player…".
+- [ ] fanart.tv (artist photos and the wide background on the artist page;
+      the owner's personal key kept in the source's record; images under CC
+      BY 3.0, fanart.tv named beside them); a search started by the listener
+      shows every candidate of the allowed sources to choose from (editions
+      of a release, several images of an artist), the automatic one takes
+      the best without asking and never writes to the card. The chosen
+      artist's or album's MusicBrainz ids and facts (artist: type, country,
+      years, sort name, aliases, links; album: first release year, type,
+      label, catalogue number, format) and the chosen artist images with
+      their credit and licence are kept in the player's store, so every
+      browser shares them; MusicBrainz core data is CC0, its tags and
+      ratings CC BY-NC-SA 3.0. TheAudioDB is set aside (owner, 2026-10-01):
+      its image host sends no CORS, so its images could only be shown by
+      address, and a public CORS proxy would open the page's policy to any
+      host.
 
 ## Requests for the next service build
 

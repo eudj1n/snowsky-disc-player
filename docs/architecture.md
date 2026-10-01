@@ -92,7 +92,8 @@ reads the same file through `loadOrigins()` and `originAllowed()` before
 offering a provider), and only once the owner allowed the source in
 Settings: `stores/externalSources.ts` reads and writes the store's
 `external_sources` collection (allowed, automatic; off without a record or
-without the collection), and `views/ExternalSourcesSettings.vue` groups the
+without the collection; a source found by MusicBrainz ids also needs
+MusicBrainz allowed), and `views/ExternalSourcesSettings.vue` groups the
 sources by what they bring. Each provider's store checks both
 (`lyricsLookupAvailable`, `coverLookupAllowed`, `artistPhotosAllowed`); an
 automatic lookup runs once per album or artist page in a tab, and for the

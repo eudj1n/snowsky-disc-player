@@ -219,6 +219,12 @@ export const en = {
   sources_unavailable: 'This player cannot keep the choice yet: update Disc Player on its card.',
   sources_pair: "Pair this browser with the player's serial number to change them.",
   sources_pair_open: 'Pair…',
+  source_kind_metadata: 'Metadata',
+  source_musicbrainz_about:
+    'The open music encyclopedia: it identifies albums and artists, so the sources that find covers and pictures by its ids know what to look for.',
+  source_musicbrainz_sends:
+    'Sends album titles and artist names to musicbrainz.org when a source that needs it is asked.',
+  source_needs: 'Needs {names}: allow it first.',
   source_kind_lyrics: 'Lyrics',
   source_kind_album_covers: 'Album covers',
   source_kind_artist_images: 'Artist images',
@@ -229,13 +235,12 @@ export const en = {
   source_lrclib_sends: 'Sends the artist, title, album and length of the track.',
   source_lrclib_auto: 'when a track without synced lyrics plays',
   source_coverartarchive_about:
-    'A front cover for an album without one, found through MusicBrainz; saved into its folder only when you choose.',
-  source_coverartarchive_sends:
-    "Sends the album's title and artist to musicbrainz.org; the image comes from archive.org.",
+    'A front cover for an album without one, by its MusicBrainz release; saved into its folder only when you choose.',
+  source_coverartarchive_sends: "Asks coverartarchive.org for the release's cover; the image comes from archive.org.",
   source_coverartarchive_auto: 'when the page of an album without a cover opens',
   source_wikimedia_about:
     'The photo MusicBrainz or Wikidata links to an artist, with its author and licence; kept in this browser.',
-  source_wikimedia_sends: "Sends the artist's name to musicbrainz.org.",
+  source_wikimedia_sends: 'Asks Wikidata and Commons for the image MusicBrainz links to the artist.',
   source_wikimedia_auto: 'when the page of an artist without a photo opens',
   lrclib_searching: 'Looking up LRCLIB…',
   lrclib_missing: 'LRCLIB has no lyrics for this track.',

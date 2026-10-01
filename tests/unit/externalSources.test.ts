@@ -29,7 +29,7 @@ vi.mock('../../src/gateway/store', () => ({
   },
 }))
 
-const { chooseSource, externalSources, loadExternalSources, sourceAllowed, sourceAutomatic } =
+const { chooseSource, externalSources, loadExternalSources, missingNeeds, sourceAllowed, sourceAutomatic } =
   await import('../../src/stores/externalSources')
 
 const record = (value: Record<string, unknown>) => ({ key: [value.source], value: { at: 1, ...value }, updated: 1 })
@@ -67,14 +67,26 @@ describe('external sources', () => {
   })
 
   it('writes the choice with the serial number; stopping a source stops its automatic use', async () => {
-    await chooseSource('coverartarchive', { auto: true })
-    expect(store.puts.at(-1)).toMatchObject({ source: 'coverartarchive', allowed: false, auto: false })
-    await chooseSource('coverartarchive', { allowed: true })
-    await chooseSource('coverartarchive', { auto: true })
-    expect(sourceAutomatic('coverartarchive')).toBe(true)
-    await chooseSource('coverartarchive', { allowed: false })
-    expect(store.puts.at(-1)).toMatchObject({ source: 'coverartarchive', allowed: false, auto: false })
-    expect(sourceAllowed('coverartarchive')).toBe(false)
+    await chooseSource('lrclib', { auto: true })
+    expect(store.puts.at(-1)).toMatchObject({ source: 'lrclib', allowed: false, auto: false })
+    await chooseSource('lrclib', { allowed: true })
+    await chooseSource('lrclib', { auto: true })
+    expect(sourceAutomatic('lrclib')).toBe(true)
+    await chooseSource('lrclib', { allowed: false })
+    expect(store.puts.at(-1)).toMatchObject({ source: 'lrclib', allowed: false, auto: false })
+    expect(sourceAllowed('lrclib')).toBe(false)
+  })
+
+  it('keeps the sources found by MusicBrainz ids off while MusicBrainz is not allowed', async () => {
+    store.records = [record({ source: 'coverartarchive', allowed: true, auto: true })]
+    await loadExternalSources()
+    expect([sourceAllowed('coverartarchive'), sourceAutomatic('coverartarchive')]).toEqual([false, false])
+    expect(missingNeeds('coverartarchive')).toEqual(['musicbrainz'])
+    await chooseSource('musicbrainz', { allowed: true, auto: true })
+    // MusicBrainz is asked only through other sources: never automatically by itself.
+    expect(store.puts.at(-1)).toMatchObject({ source: 'musicbrainz', allowed: true, auto: false })
+    expect([sourceAllowed('coverartarchive'), sourceAutomatic('coverartarchive')]).toEqual([true, true])
+    expect(sourceAllowed('lrclib')).toBe(false)
   })
 
   it('changes nothing without pairing or when the player does not confirm', async () => {

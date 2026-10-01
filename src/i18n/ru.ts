@@ -224,6 +224,12 @@ export const ru: Messages = {
   sources_unavailable: 'Плеер пока не может сохранить выбор: обновите Disc Player на его карте.',
   sources_pair: 'Чтобы изменить выбор, свяжите браузер с плеером по серийному номеру.',
   sources_pair_open: 'Связать…',
+  source_kind_metadata: 'Метаданные',
+  source_musicbrainz_about:
+    'Открытая музыкальная энциклопедия: опознаёт альбомы и исполнителей, чтобы источники, которые ищут обложки и изображения по её идентификаторам, знали, что искать.',
+  source_musicbrainz_sends:
+    'Отправляет названия альбомов и имена исполнителей на musicbrainz.org, когда обращается источник, которому он нужен.',
+  source_needs: 'Нужен {names}: сначала разрешите его.',
   source_kind_lyrics: 'Тексты песен',
   source_kind_album_covers: 'Обложки альбомов',
   source_kind_artist_images: 'Изображения исполнителей',
@@ -235,13 +241,14 @@ export const ru: Messages = {
   source_lrclib_sends: 'Отправляет исполнителя, название, альбом и длительность трека.',
   source_lrclib_auto: 'когда играет трек без синхронизированного текста',
   source_coverartarchive_about:
-    'Обложка для альбома без неё, найденная через MusicBrainz; в папку альбома — только по вашему выбору.',
+    'Обложка для альбома без неё, по его изданию в MusicBrainz; в папку альбома — только по вашему выбору.',
   source_coverartarchive_sends:
-    'Отправляет название альбома и исполнителя на musicbrainz.org; изображение загружается с archive.org.',
+    'Запрашивает обложку издания на coverartarchive.org; изображение загружается с archive.org.',
   source_coverartarchive_auto: 'когда открывается альбом без обложки',
   source_wikimedia_about:
     'Фото, на которое MusicBrainz или Викиданные ссылаются для исполнителя, с автором и лицензией; хранится в этом браузере.',
-  source_wikimedia_sends: 'Отправляет имя исполнителя на musicbrainz.org.',
+  source_wikimedia_sends:
+    'Запрашивает у Викиданных и Commons изображение, на которое MusicBrainz ссылается для исполнителя.',
   source_wikimedia_auto: 'когда открывается исполнитель без фото',
   lrclib_searching: 'Ищу на LRCLIB…',
   lrclib_missing: 'На LRCLIB нет текста для этого трека.',

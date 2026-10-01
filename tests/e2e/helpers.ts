@@ -42,7 +42,7 @@ export async function english(page: Page): Promise<void> {
 }
 
 /** The outside sources of the page (2026-10-01). */
-const SOURCE_NAMES = ['lrclib', 'coverartarchive', 'wikimedia']
+const SOURCE_NAMES = ['musicbrainz', 'lrclib', 'coverartarchive', 'wikimedia']
 
 /**
  * Sets the outside sources the owner allowed in the player's store, as Settings would (the serial

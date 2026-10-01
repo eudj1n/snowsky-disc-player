@@ -1851,7 +1851,7 @@ test('finds a cover on Cover Art Archive for an album without one and saves it i
   })
   // First archive.org does not answer, as on some networks.
   await page.route('https://coverartarchive.org/**', (route) => route.abort('timedout'))
-  await chooseSources(page, { coverartarchive: { allowed: true } })
+  await chooseSources(page, { musicbrainz: { allowed: true }, coverartarchive: { allowed: true } })
   await english(page)
   await connectAndPair(page)
   await page.goto('/#/album/Night%20Drive/Northline')
@@ -1934,7 +1934,7 @@ test("finds an artist's photo on Wikimedia Commons, credits it, and lets an albu
       pictureHosts.push(new URL(route.request().url()).hostname)
       return route.fulfill({ headers: cors, contentType: 'image/png', path: 'tests/e2e/fixtures/cover.png' })
     })
-  await chooseSources(page, { wikimedia: { allowed: true } })
+  await chooseSources(page, { musicbrainz: { allowed: true }, wikimedia: { allowed: true } })
   await english(page)
   // Without a photo, the cover of an album of the artist stands in on the Artists page.
   await page.goto('/#/artists')
@@ -1958,7 +1958,7 @@ test("finds an artist's photo on Wikimedia Commons, credits it, and lets an albu
   await expect(credit).toHaveCount(0)
   await expect(page.getByTestId('photo-find')).toBeVisible()
   // Set to work automatically, the photo is looked up as the artist's page opens, without a click.
-  await chooseSources(page, { wikimedia: { allowed: true, auto: true } })
+  await chooseSources(page, { musicbrainz: { allowed: true }, wikimedia: { allowed: true, auto: true } })
   asked.length = 0
   await page.reload()
   await expect(credit).toBeVisible({ timeout: 15_000 })
@@ -1989,11 +1989,23 @@ test('keeps the outside sources on the player: off until allowed, changed only w
   await expect(sources.getByTestId('sources-blocked')).toHaveCount(0)
   const allow = sources.getByTestId('source-wikimedia-allow')
   const auto = sources.getByTestId('source-wikimedia-auto')
+  // Commons is found by MusicBrainz ids: it waits for MusicBrainz, which is asked only through other sources.
+  await expect(sources.getByTestId('source-wikimedia-needs')).toHaveText('Needs MusicBrainz: allow it first.')
+  await expect(allow).toBeDisabled()
+  await expect(sources.getByTestId('source-musicbrainz-auto')).toHaveCount(0)
+  const musicbrainz = sources.getByTestId('source-musicbrainz-allow')
+  await musicbrainz.check()
+  await expect(sources.getByTestId('source-wikimedia-needs')).toHaveCount(0)
   await allow.check()
   await auto.check()
   // Kept on the player: read back after a reload.
   await page.reload()
   await expect(auto).toBeChecked({ timeout: 15_000 })
+  // Without MusicBrainz the choice stays in place, dimmed and out of reach.
+  await musicbrainz.uncheck()
+  await expect(allow).toBeDisabled()
+  await expect(allow).toBeChecked()
+  await musicbrainz.check()
   // Stopping a source stops its automatic use too.
   await allow.uncheck()
   await expect(auto).not.toBeChecked()

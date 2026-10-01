@@ -48,7 +48,8 @@ playing on the DISC; nothing streams to the browser.
 >   their most played album;
 > - choose which of these outside sources may be asked under Settings →
 >   External sources: each stays off until you allow it, and is asked without
->   a click only when you also set it to work automatically;
+>   a click only when you also set it to work automatically; covers and
+>   photos are found through MusicBrainz, which you allow there too;
 > - see what you played last, on the player and in this browser;
 > - listen to automatic playlists made from your listening (Most played,
 >   Daily mix, Recently added, Not played lately, and one artist's most
