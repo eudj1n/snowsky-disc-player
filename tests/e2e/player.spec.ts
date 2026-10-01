@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page, type TestInfo } from '@playwrigh
 import {
   chooseSources,
   command,
+  forgetRecord,
   connectAndPair,
   disconnect,
   english,
@@ -11,6 +12,7 @@ import {
   openSettings,
   PAIRING_FIELD,
   SERIAL,
+  storeRecords,
   switchSide,
   watchErrors,
 } from './helpers'
@@ -1885,8 +1887,13 @@ test('finds a cover on Cover Art Archive for an album without one and saves it i
   await chooseSources(page)
 })
 
-test("finds an artist's photo on Wikimedia Commons, credits it, and lets an album cover stand in", async ({ page }) => {
+test("chooses an artist's photo and background among the sources, keeps them on the player with their credit", async ({
+  page,
+}) => {
   test.skip(external, 'Needs the mock collection')
+  test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
+  const NORTHLINE = '6f1d2c3b-0000-4000-8000-00000000a001'
+  const NAMESAKE = '6f1d2c3b-0000-4000-8000-00000000a002'
   const asked: URL[] = []
   const cors = { 'Access-Control-Allow-Origin': '*' }
   await page.route('https://musicbrainz.org/ws/2/**', async (route) => {
@@ -1896,12 +1903,29 @@ test("finds an artist's photo on Wikimedia Commons, credits it, and lets an albu
       headers: cors,
       json:
         url.pathname === '/ws/2/artist/'
-          ? { artists: [{ id: 'northline', name: 'Northline', score: 100 }] }
-          : {
-              relations: [
-                { type: 'image', url: { resource: 'https://commons.wikimedia.org/wiki/File:Northline_live.jpg' } },
+          ? {
+              artists: [
+                { id: NAMESAKE, name: 'Northline', score: 96, type: 'Person', country: 'US', disambiguation: 'singer' },
+                {
+                  id: NORTHLINE,
+                  name: 'Northline',
+                  'sort-name': 'Northline',
+                  score: 100,
+                  type: 'Group',
+                  country: 'GB',
+                  'life-span': { begin: '2001-03' },
+                  disambiguation: 'synth-pop band',
+                },
               ],
-            },
+            }
+          : url.pathname.endsWith(NORTHLINE)
+            ? {
+                relations: [
+                  { type: 'image', url: { resource: 'https://commons.wikimedia.org/wiki/File:Northline_live.jpg' } },
+                  { type: 'official homepage', url: { resource: 'https://northline.example/' } },
+                ],
+              }
+            : { relations: [] },
     })
   })
   await page.route('https://commons.wikimedia.org/**', (route) =>
@@ -1930,13 +1954,38 @@ test("finds an artist's photo on Wikimedia Commons, credits it, and lets an albu
       },
     }),
   )
+  const fanartAsked: URL[] = []
+  await page.route('https://webservice.fanart.tv/**', async (route) => {
+    const url = new URL(route.request().url())
+    fanartAsked.push(url)
+    await route.fulfill({
+      headers: cors,
+      json: url.pathname.endsWith(NORTHLINE)
+        ? {
+            artistthumb: [
+              { id: '1', url: 'https://assets.fanart.tv/fanart/northline-a.jpg', likes: '3' },
+              { id: '2', url: 'https://assets.fanart.tv/fanart/northline-b.jpg', likes: '1' },
+            ],
+            artistbackground: [{ id: '3', url: 'https://assets.fanart.tv/fanart/northline-wide.jpg', likes: '2' }],
+          }
+        : {},
+    })
+  })
   const pictureHosts: string[] = []
-  for (const host of ['https://thumb.wikimedia.org/**', 'https://upload.wikimedia.org/**'])
+  for (const host of [
+    'https://thumb.wikimedia.org/**',
+    'https://upload.wikimedia.org/**',
+    'https://assets.fanart.tv/**',
+  ])
     await page.route(host, (route) => {
       pictureHosts.push(new URL(route.request().url()).hostname)
       return route.fulfill({ headers: cors, contentType: 'image/png', path: 'tests/e2e/fixtures/cover.png' })
     })
-  await chooseSources(page, { musicbrainz: { allowed: true }, wikimedia: { allowed: true } })
+  await chooseSources(page, {
+    musicbrainz: { allowed: true },
+    wikimedia: { allowed: true },
+    fanarttv: { allowed: true, key: 'personal-test-key' },
+  })
   await english(page)
   // Without a photo, the cover of an album of the artist stands in on the Artists page.
   await page.goto('/#/artists')
@@ -1944,30 +1993,78 @@ test("finds an artist's photo on Wikimedia Commons, credits it, and lets an albu
     timeout: 15_000,
   })
   expect(asked).toHaveLength(0)
+  await connectAndPair(page)
   await page.goto('/#/artist/Northline')
-  await page.getByTestId('photo-find').click()
-  const credit = page.getByTestId('photo-credit')
-  await expect(credit).toContainText('Photo: P.B. Rage · CC BY-SA 2.0 · Wikimedia Commons · kept in this browser', {
-    timeout: 15_000,
+  await page.getByTestId('images-choose').click()
+  const dialog = page.getByRole('dialog')
+  // The artist MusicBrainz is sure of: named exactly so, the best score.
+  await expect(dialog.getByTestId('images-identity')).toContainText(
+    'MusicBrainz: Northline · Group · United Kingdom · 2001– · synth-pop band',
+    { timeout: 15_000 },
+  )
+  expect(asked[0]?.searchParams.get('query')).toBe('artist:"Northline" OR alias:"Northline"')
+  const photos = dialog.getByTestId('images-photos').getByRole('button')
+  await expect(photos).toHaveCount(3)
+  await expect(photos.first()).toHaveAccessibleName('Photo: fanart.tv')
+  await expect(photos.last()).toHaveAccessibleName('Photo: Wikimedia Commons')
+  expect(fanartAsked[0]?.searchParams.get('api_key')).toBe('personal-test-key')
+  // A namesake can be chosen instead; its sources hold nothing here.
+  await dialog.getByTestId('images-other-artist').click()
+  const artists = dialog.getByTestId('images-artists').getByRole('button')
+  await expect(artists).toHaveCount(2)
+  await artists.filter({ hasText: 'singer' }).click()
+  await expect(dialog.getByTestId('images-status')).toHaveText('The allowed sources have no images of this artist.')
+  await dialog.getByTestId('images-other-artist').click()
+  await artists.filter({ hasText: 'synth-pop band' }).click()
+  await expect(photos).toHaveCount(3, { timeout: 15_000 })
+  await photos.last().click()
+  await dialog.getByTestId('images-backgrounds').getByRole('button').first().click()
+  await dialog.getByTestId('images-save').click()
+  await expect(dialog).toBeHidden({ timeout: 15_000 })
+  // Kept on the player with the credit and licence of each image.
+  const photoCredit = page.getByTestId('photo-credit')
+  const backgroundCredit = page.getByTestId('background-credit')
+  await expect(photoCredit).toContainText('Photo: P.B. Rage · CC BY-SA 2.0 · Wikimedia Commons · kept on the player')
+  await expect(backgroundCredit).toContainText('Background: fanart.tv · CC BY 3.0 · kept on the player')
+  await expect(page.getByTestId('heading-backdrop')).toBeAttached()
+  expect((await storeRecords(page, 'artist_images')).map((record) => record.key)).toEqual([
+    ['Northline', 'photo'],
+    ['Northline', 'background'],
+  ])
+  expect((await storeRecords(page, 'musicbrainz'))[0]?.value).toMatchObject({
+    kind: 'artist',
+    name: 'Northline',
+    mbid: NORTHLINE,
   })
-  expect(asked[0]?.searchParams.get('query')).toBe('artist:"Northline"')
-  expect(pictureHosts).toEqual(['thumb.wikimedia.org'])
-  await expect(page.getByTestId('photo-find')).toHaveCount(0)
-  // Kept in this browser across a reload; removable.
+  // Another browser reads the choice from the player: a reload with nothing kept here.
+  await page.evaluate(
+    () =>
+      new Promise<void>((done) => {
+        const request = indexedDB.deleteDatabase('disc-player')
+        request.onsuccess = request.onerror = request.onblocked = () => done()
+      }),
+  )
   await page.reload()
-  await expect(credit).toBeVisible({ timeout: 15_000 })
+  await expect(photoCredit).toContainText('kept on the player', { timeout: 15_000 })
   await page.getByTestId('photo-remove').click()
-  await expect(credit).toHaveCount(0)
-  await expect(page.getByTestId('photo-find')).toBeVisible()
-  // Set to work automatically, the photo is looked up as the artist's page opens, without a click.
-  await chooseSources(page, { musicbrainz: { allowed: true }, wikimedia: { allowed: true, auto: true } })
-  asked.length = 0
+  await page.getByTestId('background-remove').click()
+  await expect(photoCredit).toHaveCount(0)
+  await expect(backgroundCredit).toHaveCount(0)
+  // Set to work automatically, the best images are taken as the page opens and kept in this browser only.
+  await chooseSources(page, {
+    musicbrainz: { allowed: true },
+    wikimedia: { allowed: true, auto: true },
+    fanarttv: { allowed: true, auto: true, key: 'personal-test-key' },
+  })
   await page.reload()
-  await expect(credit).toBeVisible({ timeout: 15_000 })
-  expect(asked[0]?.searchParams.get('query')).toBe('artist:"Northline"')
+  await expect(photoCredit).toContainText('Photo: fanart.tv · CC BY 3.0 · kept in this browser', { timeout: 15_000 })
+  await expect(backgroundCredit).toContainText('kept in this browser')
+  expect(await storeRecords(page, 'artist_images')).toEqual([])
   await page.getByTestId('photo-remove').click()
-  await expect(credit).toHaveCount(0)
+  await page.getByTestId('background-remove').click()
+  await forgetRecord(page, 'musicbrainz', { kind: 'artist', name: 'Northline' })
   await chooseSources(page)
+  await disconnect(page)
 })
 
 test('keeps the outside sources on the player: off until allowed, changed only when paired', async ({ page }) => {
@@ -1998,6 +2095,22 @@ test('keeps the outside sources on the player: off until allowed, changed only w
   const musicbrainz = sources.getByTestId('source-musicbrainz-allow')
   await musicbrainz.check()
   await expect(sources.getByTestId('source-wikimedia-needs')).toHaveCount(0)
+  // fanart.tv takes the owner's personal key: without it the source cannot be allowed.
+  const fanart = sources.getByTestId('source-fanarttv')
+  await expect(sources.getByTestId('source-fanarttv-needs')).toHaveText('Needs your personal key: enter it below.')
+  await expect(sources.getByTestId('source-fanarttv-allow')).toBeDisabled()
+  const keyField = fanart.getByLabel('Personal API key')
+  await keyField.fill('not a key')
+  await fanart.getByRole('button', { name: 'Save key' }).click()
+  await expect(fanart).toContainText('A key has letters, digits, dots, dashes and underscores only.')
+  await keyField.fill('personal-test-key')
+  await fanart.getByRole('button', { name: 'Save key' }).click()
+  await expect(fanart).toContainText('Your personal key is saved.')
+  await expect(sources.getByTestId('source-fanarttv-allow')).toBeEnabled()
+  const record = (await storeRecords(page, 'external_sources')).find((item) => item.value.source === 'fanarttv')
+  expect(record?.value.api_key).toBe('personal-test-key')
+  await fanart.getByRole('button', { name: 'Forget key' }).click()
+  await expect(sources.getByTestId('source-fanarttv-allow')).toBeDisabled()
   await allow.check()
   await auto.check()
   // Kept on the player: read back after a reload.

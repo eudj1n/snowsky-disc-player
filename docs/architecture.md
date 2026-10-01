@@ -105,9 +105,18 @@ lyrics and saves what it found beside the track through the upload route.
 release and the folder a cover may go to, and `stores/coverSearch.ts` offers,
 previews and saves it as the album folder's cover through the upload route.
 `gateway/wikimedia.ts` reads an artist's photo (a Wikidata image, Commons
-image information with author and licence, the thumbnail's bytes);
-`stores/artistPictures.ts` keeps photos in IndexedDB and gives artist cards
-their photo or a stand-in album cover.
+image information with author and licence, the thumbnail's bytes) and
+`gateway/fanart.ts` fanart.tv's photos, backgrounds and covers by
+MusicBrainz id. `gateway/musicbrainz.ts` offers an artist's candidates with
+their facts (`searchArtists`, `bestArtist`) and its links;
+`stores/musicbrainzIds.ts` keeps the ids the owner confirmed in the store's
+`musicbrainz` collection. `stores/artistPictures.ts` holds the chosen photo
+and background (the store's `artist_images`, else this browser), reads their
+bytes from the source into IndexedDB, runs the picker
+(`layout/ArtistImageDialog.vue`) and the automatic lookup, and gives artist
+cards their photo or a stand-in album cover; `views/ArtistImageCredit.vue`
+credits each image under the heading, whose `backdrop` draws the
+background.
 
 The listening panel (`layout/ListeningPanel.vue`) has two tabs. Now shows
 the track's head (`components/player/NowPlayingDetails.vue`, whose controls

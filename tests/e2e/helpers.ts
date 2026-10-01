@@ -42,25 +42,54 @@ export async function english(page: Page): Promise<void> {
 }
 
 /** The outside sources of the page (2026-10-01). */
-const SOURCE_NAMES = ['musicbrainz', 'lrclib', 'coverartarchive', 'wikimedia']
+const SOURCE_NAMES = ['musicbrainz', 'lrclib', 'coverartarchive', 'wikimedia', 'fanarttv']
+const changeHeaders = () => {
+  if (!SERIAL) throw new Error('E2E_SERIAL is required to change the store')
+  return { 'X-Disc-Token': SERIAL, 'X-Disc-Request': requestId() }
+}
 
 /**
  * Sets the outside sources the owner allowed in the player's store, as Settings would (the serial
- * number, a fresh request ID); no argument turns every one off. The page reads the choice when it loads.
+ * number, a fresh request ID), with a source's key where given; no argument turns every one off.
+ * The page reads the choice when it loads.
  */
 export async function chooseSources(
   page: Page,
-  choices: Partial<Record<string, { allowed?: boolean; auto?: boolean }>> = {},
+  choices: Partial<Record<string, { allowed?: boolean; auto?: boolean; key?: string }>> = {},
 ): Promise<void> {
-  if (!SERIAL) throw new Error('E2E_SERIAL is required to choose sources')
   for (const source of SOURCE_NAMES) {
-    const allowed = choices[source]?.allowed === true
+    const choice = choices[source]
+    const allowed = choice?.allowed === true
     const reply = await page.request.put('/api/store/external_sources/record', {
-      headers: { 'X-Disc-Token': SERIAL, 'X-Disc-Request': requestId() },
-      data: { source, allowed, auto: allowed && choices[source]?.auto === true, at: Math.floor(Date.now() / 1000) },
+      headers: changeHeaders(),
+      data: {
+        source,
+        allowed,
+        auto: allowed && choice.auto === true,
+        ...(choice?.key ? { api_key: choice.key } : {}),
+        at: Math.floor(Date.now() / 1000),
+      },
     })
     expect(reply.status(), source).toBe(200)
   }
+}
+
+/** A collection of the player's store as the page reads it. */
+export async function storeRecords(
+  page: Page,
+  collection: string,
+): Promise<{ key: unknown[]; value: Record<string, unknown> }[]> {
+  const reply = await page.request.get(`/api/store/${collection}/records`)
+  expect(reply.status(), collection).toBe(200)
+  return ((await reply.json()) as { records: { key: unknown[]; value: Record<string, unknown> }[] }).records
+}
+
+/** Takes a record out of the player's store, so the shared store is as it was. */
+export async function forgetRecord(page: Page, collection: string, key: Record<string, string>): Promise<void> {
+  const reply = await page.request.delete(`/api/store/${collection}/record?${new URLSearchParams(key).toString()}`, {
+    headers: changeHeaders(),
+  })
+  expect(reply.status(), collection).toBe(200)
 }
 
 /** Runs a command of the search palette (⌘K or Ctrl+K), such as Add music or Sound settings. */

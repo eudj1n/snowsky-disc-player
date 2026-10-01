@@ -1914,20 +1914,41 @@ dialog, the first window when starting.
       while it is off, and their saved choice stays in place, dimmed, with
       "Needs MusicBrainz". Evidence: `tests/unit/externalSources.test.ts`,
       e2e "keeps the outside sources on the player…".
-- [ ] fanart.tv (artist photos and the wide background on the artist page;
-      the owner's personal key kept in the source's record; images under CC
-      BY 3.0, fanart.tv named beside them); a search started by the listener
-      shows every candidate of the allowed sources to choose from (editions
-      of a release, several images of an artist), the automatic one takes
-      the best without asking and never writes to the card. The chosen
-      artist's or album's MusicBrainz ids and facts (artist: type, country,
-      years, sort name, aliases, links; album: first release year, type,
-      label, catalogue number, format) and the chosen artist images with
-      their credit and licence are kept in the player's store, so every
-      browser shares them; MusicBrainz core data is CC0, its tags and
-      ratings CC BY-NC-SA 3.0. TheAudioDB is set aside (owner, 2026-10-01):
-      its image host sends no CORS, so its images could only be shown by
-      address, and a public CORS proxy would open the page's policy to any
+- [x] Artist images chosen among the sources (owner, 2026-10-01): "Choose
+      an image" on the artist page opens a picker that first settles which
+      MusicBrainz artist the name is (named exactly so, by name or alias,
+      score 90 or more; namesakes listed with type, country, years and
+      MusicBrainz's note under "Another artist"), then shows what the
+      allowed sources hold for that id, fanart.tv first (photos and wide
+      backgrounds, the owner's personal key; CC BY 3.0) and Wikimedia
+      Commons (the file MusicBrainz or Wikidata links), as small previews.
+      Save keeps the MusicBrainz id with a few CC0 facts (`musicbrainz`) and
+      the chosen photo and background by address with author and licence
+      (`artist_images`) on the player when the browser is paired, else in
+      this browser; each browser reads the bytes from the source once it is
+      allowed and keeps them in IndexedDB. The background lies faint under
+      the heading's colours; credits under the heading name the author,
+      licence, source and where the choice is kept, with Remove. A source
+      set to work automatically fills an artist without a photo by the id
+      MusicBrainz is sure of, in this browser only. Photos kept before stay.
+      Evidence: `tests/unit/artistSources.test.ts`,
+      `tests/unit/artistIdentity.test.ts`; e2e "chooses an artist's photo
+      and background among the sources…" (identity, a namesake, both
+      sources, kept on the player and read back by a browser with nothing
+      kept, automatic), "keeps the outside sources on the player…" (the
+      fanart.tv key); screenshots in light, dark and on a phone.
+- [ ] MusicBrainz facts on the artist page (type, country, years, links),
+      then album covers chosen among Cover Art Archive's editions and
+      fanart.tv's covers, with the release group and the album's facts.
+- [ ] Later, stage D (owner's question, 2026-10-01): a batch that enriches
+      the collection by the allowed sources: what is missing counted first
+      and what will be sent named; MusicBrainz paced (about two requests an
+      artist, 500 artists in some 17 minutes); only sure matches taken, the
+      rest listed for the listener's choice; "searched, nothing found"
+      remembered; ids, facts and image choices written to the player with a
+      report and undo; files on the card (covers, .lrc) only after review.
+      TheAudioDB stays set aside (owner, 2026-10-01): its image host sends
+      no CORS, and a public CORS proxy would open the page's policy to any
       host.
 
 ## Requests for the next service build

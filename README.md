@@ -43,9 +43,11 @@ playing on the DISC; nothing streams to the browser.
 > - find a cover for an album that has none on Cover Art Archive and save it
 >   into the album's folder (Cover Art Archive's images are served by
 >   archive.org, which some networks cannot reach);
-> - find an artist's photo on Wikimedia Commons, shown with its author and
->   licence and kept in your browser; artists without one show the cover of
->   their most played album;
+> - choose an artist's photo and a wide background from fanart.tv (with your
+>   own free key) and Wikimedia Commons, after confirming which artist of
+>   that name is meant; the choice is shown with its author and licence and
+>   kept on the player for every browser; artists without one show the cover
+>   of their most played album;
 > - choose which of these outside sources may be asked under Settings →
 >   External sources: each stays off until you allow it, and is asked without
 >   a click only when you also set it to work automatically; covers and

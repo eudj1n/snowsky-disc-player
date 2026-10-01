@@ -7,7 +7,7 @@
  * whose needs (MusicBrainz for the sources found by its ids) are not allowed:
  * its saved choice stays in place, dimmed.
  */
-import { computed } from 'vue'
+import { computed, reactive } from 'vue'
 import { t, type MessageKey } from '../i18n'
 import { artistPhotoOriginsAdmitted } from '../stores/artistPictures'
 import { originAllowed } from '../stores/connection'
@@ -15,7 +15,10 @@ import { coverOriginsAdmitted } from '../stores/coverSearch'
 import {
   chooseSource,
   externalSources,
+  missingKey,
   missingNeeds,
+  setSourceKey,
+  SOURCE_KEY,
   SOURCE_KINDS,
   SOURCES,
   type SourceKind,
@@ -24,6 +27,7 @@ import {
 import { lrclibAdmitted } from '../stores/lyrics'
 import { pairing } from '../stores/pairing'
 import { openDialog } from '../stores/ui'
+import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 
 const KIND_TITLES: Record<SourceKind, MessageKey> = {
@@ -64,6 +68,12 @@ const TEXTS: Record<SourceName, SourceText> = {
     auto: 'source_wikimedia_auto',
     admitted: artistPhotoOriginsAdmitted,
   },
+  fanarttv: {
+    about: 'source_fanarttv_about',
+    sends: 'source_fanarttv_sends',
+    auto: 'source_fanarttv_auto',
+    admitted: () => originAllowed('fanart_api') && originAllowed('fanart_assets'),
+  },
 }
 
 const groups = computed(() =>
@@ -80,8 +90,18 @@ const automatic = (name: SourceName) => allowed(name) && externalSources.choices
 const titleOf = (name: SourceName) => SOURCES.find((source) => source.name === name)?.title ?? name
 /** What the source waits for, as its names. */
 const waiting = (name: SourceName) => missingNeeds(name).map(titleOf).join(', ')
-const locked = (name: SourceName) =>
-  blocked.value !== null || externalSources.busy !== null || !TEXTS[name].admitted() || waiting(name) !== ''
+/** Nothing about the source can change now. */
+const frozen = (name: SourceName) => blocked.value !== null || externalSources.busy !== null || !TEXTS[name].admitted()
+const locked = (name: SourceName) => frozen(name) || waiting(name) !== '' || missingKey(name)
+const keyOf = (name: SourceName) => externalSources.choices[name]?.key ?? null
+/** Keys being typed, and whether the last one was refused as malformed. */
+const drafts = reactive<Partial<Record<SourceName, string>>>({})
+const malformed = reactive<Partial<Record<SourceName, boolean>>>({})
+async function saveKey(name: SourceName): Promise<void> {
+  const value = drafts[name]?.trim() ?? ''
+  malformed[name] = !SOURCE_KEY.test(value)
+  if (!malformed[name] && (await setSourceKey(name, value))) drafts[name] = ''
+}
 /** Asks the player; the box then shows what the player keeps, whatever the click showed. */
 async function choose(event: Event, name: SourceName, field: 'allowed' | 'auto'): Promise<void> {
   const input = event.target as HTMLInputElement
@@ -111,62 +131,121 @@ const hostOf = (site: string) => new URL(site).host
       >
         {{ t(KIND_TITLES[group.kind]) }}
       </h3>
-      <article
-        v-for="source in group.sources"
-        :key="source.name"
-        class="rounded-12 border border-line px-16 py-14"
-        :data-testid="`source-${source.name}`"
-      >
-        <h4 class="m-0 flex flex-wrap items-baseline gap-x-8 text-callout font-semibold">
-          {{ source.title }}
-          <a
-            :href="source.site"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-footnote font-normal text-muted underline-offset-2 hover:text-ink hover:underline"
-            >{{ hostOf(source.site) }}</a
-          >
-        </h4>
-        <p class="mt-4 mb-0 text-footnote leading-[1.5] text-secondary">{{ t(TEXTS[source.name].about) }}</p>
-        <p class="mt-2 mb-0 text-caption leading-[1.5] text-muted">{{ t(TEXTS[source.name].sends) }}</p>
-        <p v-if="!TEXTS[source.name].admitted()" class="mt-6 mb-0 text-caption text-muted">
-          {{ t('source_not_admitted') }}
-        </p>
-        <p
-          v-else-if="waiting(source.name)"
-          class="mt-6 mb-0 text-caption text-muted"
-          :data-testid="`source-${source.name}-needs`"
+      <div class="grid gap-10">
+        <article
+          v-for="source in group.sources"
+          :key="source.name"
+          class="rounded-12 border border-line px-16 py-14"
+          :data-testid="`source-${source.name}`"
         >
-          {{ t('source_needs', { names: waiting(source.name) }) }}
-        </p>
-        <div class="mt-10 flex flex-wrap gap-x-24 gap-y-8">
-          <label class="flex items-center gap-8 text-footnote text-ink has-disabled:text-muted">
-            <input
-              type="checkbox"
-              class="accent-progress-fill"
-              :checked="allowed(source.name)"
-              :disabled="locked(source.name)"
-              :data-testid="`source-${source.name}-allow`"
-              @change="choose($event, source.name, 'allowed')"
-            />
-            {{ t('source_allow') }}
-          </label>
-          <label v-if="source.automatic" class="flex items-center gap-8 text-footnote text-ink has-disabled:text-muted">
-            <input
-              type="checkbox"
-              class="accent-progress-fill"
-              :checked="automatic(source.name)"
-              :disabled="locked(source.name) || !allowed(source.name)"
-              :data-testid="`source-${source.name}-auto`"
-              @change="choose($event, source.name, 'auto')"
-            />
-            <span
-              >{{ t('source_auto') }}
-              <span v-if="TEXTS[source.name].auto" class="text-muted">· {{ t(TEXTS[source.name].auto!) }}</span></span
+          <h4 class="m-0 flex flex-wrap items-baseline gap-x-8 text-callout font-semibold">
+            {{ source.title }}
+            <a
+              :href="source.site"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-footnote font-normal text-muted underline-offset-2 hover:text-ink hover:underline"
+              >{{ hostOf(source.site) }}</a
             >
-          </label>
-        </div>
-      </article>
+          </h4>
+          <p class="mt-4 mb-0 text-footnote leading-[1.5] text-secondary">{{ t(TEXTS[source.name].about) }}</p>
+          <p class="mt-2 mb-0 text-caption leading-[1.5] text-muted">{{ t(TEXTS[source.name].sends) }}</p>
+          <p v-if="!TEXTS[source.name].admitted()" class="mt-6 mb-0 text-caption text-muted">
+            {{ t('source_not_admitted') }}
+          </p>
+          <p
+            v-else-if="waiting(source.name)"
+            class="mt-6 mb-0 text-caption text-muted"
+            :data-testid="`source-${source.name}-needs`"
+          >
+            {{ t('source_needs', { names: waiting(source.name) }) }}
+          </p>
+          <p
+            v-else-if="missingKey(source.name)"
+            class="mt-6 mb-0 text-caption text-muted"
+            :data-testid="`source-${source.name}-needs`"
+          >
+            {{ t('source_needs_key') }}
+          </p>
+          <div class="mt-10 flex flex-wrap gap-x-24 gap-y-8">
+            <label class="flex items-center gap-8 text-footnote text-ink has-disabled:text-muted">
+              <input
+                type="checkbox"
+                class="accent-progress-fill"
+                :checked="allowed(source.name)"
+                :disabled="locked(source.name)"
+                :data-testid="`source-${source.name}-allow`"
+                @change="choose($event, source.name, 'allowed')"
+              />
+              {{ t('source_allow') }}
+            </label>
+            <label
+              v-if="source.automatic"
+              class="flex items-center gap-8 text-footnote text-ink has-disabled:text-muted"
+            >
+              <input
+                type="checkbox"
+                class="accent-progress-fill"
+                :checked="automatic(source.name)"
+                :disabled="locked(source.name) || !allowed(source.name)"
+                :data-testid="`source-${source.name}-auto`"
+                @change="choose($event, source.name, 'auto')"
+              />
+              <span
+                >{{ t('source_auto') }}
+                <span v-if="TEXTS[source.name].auto" class="text-muted">· {{ t(TEXTS[source.name].auto!) }}</span></span
+              >
+            </label>
+          </div>
+          <form
+            v-if="source.key"
+            class="mt-14 flex flex-col gap-10 border-t border-line pt-14"
+            :data-testid="`source-${source.name}-key`"
+            @submit.prevent="saveKey(source.name)"
+          >
+            <div v-if="keyOf(source.name)" class="flex items-center justify-between gap-14">
+              <p class="m-0 text-footnote text-secondary">{{ t('source_key_saved') }}</p>
+              <UiTextButton :disabled="frozen(source.name)" @click="setSourceKey(source.name, null)">{{
+                t('source_key_forget')
+              }}</UiTextButton>
+            </div>
+            <template v-else>
+              <label class="flex min-w-0 flex-col gap-7 text-footnote text-muted">
+                {{ t('source_key') }}
+                <input
+                  v-model="drafts[source.name]"
+                  type="password"
+                  autocomplete="off"
+                  spellcheck="false"
+                  :disabled="frozen(source.name)"
+                  :aria-invalid="malformed[source.name] === true"
+                  class="w-full min-w-0 rounded-10 border border-line bg-raised p-12 text-body text-ink outline-offset-3 focus:border-secondary disabled:opacity-60 aria-invalid:border-accent"
+                />
+              </label>
+              <p class="m-0 text-caption leading-[1.5] text-muted">
+                {{ t('source_key_note') }}
+                <a
+                  :href="source.key"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-secondary underline underline-offset-2 hover:text-ink"
+                  >{{ t('source_key_get') }}</a
+                >
+              </p>
+              <p v-if="malformed[source.name]" role="status" class="m-0 text-footnote text-notice">
+                {{ t('source_key_invalid') }}
+              </p>
+              <UiPillButton
+                type="submit"
+                variant="secondary"
+                class="self-end"
+                :disabled="frozen(source.name) || !drafts[source.name]?.trim()"
+                >{{ t('source_key_save') }}</UiPillButton
+              >
+            </template>
+          </form>
+        </article>
+      </div>
     </section>
   </div>
 </template>

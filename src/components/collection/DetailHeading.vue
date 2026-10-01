@@ -9,13 +9,16 @@
  * it from the content below. Once the header has scrolled away, a compact bar on the top
  * colour, see-through (2026-09-30), keeps the page's context at the top: small cover, name (back to the top), the
  * `sticky` slot's line and one play/pause button (owner, round 14, option A).
- * The `artwork` slot replaces the sleeve in both places (a genre's records). */
+ * The `artwork` slot replaces the sleeve in both places (a genre's records).
+ * A `backdrop` (an artist's wide background, owner 2026-10-01) lies under the
+ * same reach, faint and fading out above the rule, the colours over it. */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { sleeve, SLEEVE_TONES } from '../../domain/artwork'
 import { hex, tint, toLch, type CoverColours, type Rgb } from '../../domain/coverColours'
 import { t } from '../../i18n'
 import UiIcon from '../../ui/UiIcon.vue'
 import Artwork from '../artwork/Artwork.vue'
+import CoverCanvas from '../artwork/CoverCanvas.vue'
 import type { HeadingAction } from './headingAction'
 
 const props = withDefaults(
@@ -25,12 +28,14 @@ const props = withDefaults(
     kind?: string | null
     artist?: boolean
     cover?: Blob | null
+    backdrop?: Blob | null
     stickyAction?: HeadingAction | null
   }>(),
   {
     kind: null,
     artist: false,
     cover: null,
+    backdrop: null,
     stickyAction: null,
   },
 )
@@ -122,9 +127,19 @@ function toTop(): void {
     <!-- The colours reach from the page's top edge, under the top bar, across the whole workspace (owner, 2026-09-30). -->
     <Teleport to="#workspace" defer>
       <span
+        v-if="backdrop"
+        aria-hidden="true"
+        data-testid="heading-backdrop"
+        class="heading-backdrop pointer-events-none absolute inset-x-0 top-0 -z-10 overflow-hidden"
+        :style="{ height: `${reach}px` }"
+      >
+        <CoverCanvas :blob="backdrop" />
+      </span>
+      <span
         aria-hidden="true"
         data-testid="album-colours"
         class="album-colours pointer-events-none absolute inset-x-0 top-0 -z-10"
+        :class="{ 'over-backdrop': backdrop }"
         :style="{ ...colours, height: `${reach}px` }"
       />
     </Teleport>

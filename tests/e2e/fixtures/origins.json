@@ -48,6 +48,16 @@
       "origin": "https://thumb.wikimedia.org",
       "directives": ["connect-src", "img-src"],
       "purpose": "Commons now serves an image's thumbnails from this host; the artist photo's thumbnail is read as bytes."
+    },
+    "fanart_api": {
+      "origin": "https://webservice.fanart.tv",
+      "directives": ["connect-src"],
+      "purpose": "Artist photos, wide backgrounds and album covers by MusicBrainz id (fanart.tv API v3), asked with the owner's personal key once the owner allowed the source."
+    },
+    "fanart_assets": {
+      "origin": "https://assets.fanart.tv",
+      "directives": ["connect-src"],
+      "purpose": "fanart.tv's images and their small previews, read as bytes and drawn on a canvas."
     }
   }
 }

@@ -185,6 +185,23 @@
     opacity: 0.45;
   }
 }
+/* An artist's wide background under the colours (owner, 2026-10-01): faint, fading out before the rule,
+ * the colours over it a little lighter so the image shows through while the name stays legible. */
+.heading-backdrop {
+  opacity: 0.8;
+  mask-image: linear-gradient(180deg, #000 0%, #000 45%, transparent 100%);
+}
+.album-colours.over-backdrop {
+  opacity: 0.6;
+}
+@media (prefers-contrast: more) {
+  .heading-backdrop {
+    display: none;
+  }
+  .album-colours.over-backdrop {
+    opacity: 0.45;
+  }
+}
 /* The compact bar pinned over a detail page takes the colours' top one, see-through (owner, 2026-09-30),
  * so the colour goes on as the page scrolls; its play button keeps the theme's colours. */
 .sticky-colours {

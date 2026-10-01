@@ -73,6 +73,8 @@ const STORE_KEYS = {
   pinned_albums: ['album'],
   auto_playlists: ['name'],
   external_sources: ['source'],
+  musicbrainz: ['kind', 'name'],
+  artist_images: ['name', 'role'],
 }
 const STORE_LIMITS = {
   disliked: 20000,
@@ -80,6 +82,8 @@ const STORE_LIMITS = {
   pinned_albums: 500,
   auto_playlists: 200,
   external_sources: 32,
+  musicbrainz: 20000,
+  artist_images: 10000,
 }
 /** Combined-009 M3U lists by scope: name → entries (absolute card paths). */
 const LISTS = { internal: new Map(), external: new Map() }

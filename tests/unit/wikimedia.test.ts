@@ -37,8 +37,11 @@ describe("an artist's photo", () => {
       name: 'Nirvana',
       commonsFile: 'Nirvana_around_1992.jpg',
       wikidata: 'Q11649',
+      official: null,
+      bandcamp: null,
+      discogs: null,
     })
-    expect(asked[0]?.searchParams.get('query')).toBe('artist:"nirvana"')
+    expect(asked[0]?.searchParams.get('query')).toBe('artist:"nirvana" OR alias:"nirvana"')
     expect(asked[1]?.pathname).toBe('/ws/2/artist/us')
     expect(asked[1]?.searchParams.get('inc')).toBe('url-rels')
   })

@@ -78,18 +78,90 @@ export async function findReleases(
   return releases.map(candidate).filter((found) => found !== null)
 }
 
-/** A MusicBrainz artist and where its photo may be found. */
-export interface ArtistLinks {
+/**
+ * An artist MusicBrainz offers for a name, with what tells namesakes apart
+ * (owner, 2026-10-01: the listener confirms which one is meant, and its id
+ * and these facts are kept on the player). MusicBrainz core data is CC0.
+ */
+export interface ArtistCandidate {
   id: string
   name: string
+  sortName: string | null
+  /** Person, Group, Orchestra, Choir, Character or Other. */
+  type: string | null
+  /** ISO 3166 code, else the area's name. */
+  country: string | null
+  begin: string | null
+  end: string | null
+  disambiguation: string | null
+  aliases: string[]
+  score: number
+}
+
+function artistCandidate(value: unknown): ArtistCandidate | null {
+  if (!value || typeof value !== 'object') return null
+  const artist = value as Record<string, unknown>
+  const id = text(artist.id)
+  const name = text(artist.name)
+  if (!id || !name) return null
+  const span = (artist['life-span'] ?? {}) as Record<string, unknown>
+  const area = (artist.area ?? {}) as Record<string, unknown>
+  const aliases = Array.isArray(artist.aliases) ? (artist.aliases as Record<string, unknown>[]) : []
+  return {
+    id,
+    name,
+    sortName: text(artist['sort-name']),
+    type: text(artist.type),
+    country: text(artist.country) ?? text(area.name),
+    begin: text(span.begin),
+    end: text(span.end),
+    disambiguation: text(artist.disambiguation),
+    aliases: [...new Set(aliases.map((alias) => text(alias.name)).filter((alias) => alias !== null))],
+    score: typeof artist.score === 'number' ? artist.score : 0,
+  }
+}
+
+const folded = (value: string): string => value.trim().toLocaleLowerCase()
+/** The candidate carries exactly this name, as its own or as an alias. */
+export const namedExactly = (candidate: ArtistCandidate, name: string): boolean =>
+  [candidate.name, ...candidate.aliases].some((known) => folded(known) === folded(name))
+
+/**
+ * Artists named so, as their name or an alias (another script, a former
+ * spelling): those carrying the name exactly first, then by score. Throws
+ * when MusicBrainz cannot answer.
+ */
+export async function searchArtists(name: string, fetchImpl: typeof fetch = fetch): Promise<ArtistCandidate[]> {
+  const found = (await getJson(
+    '/artist/',
+    { query: `artist:${phrase(name)} OR alias:${phrase(name)}`, fmt: 'json', limit: '8' },
+    fetchImpl,
+  )) as { artists?: unknown } | null
+  const artists = Array.isArray(found?.artists) ? found.artists : []
+  return artists
+    .map(artistCandidate)
+    .filter((artist) => artist !== null)
+    .sort((a, b) => Number(namedExactly(b, name)) - Number(namedExactly(a, name)) || b.score - a.score)
+}
+
+/** The artist to take without asking: named exactly so and scored at least 90. */
+export const bestArtist = (candidates: readonly ArtistCandidate[], name: string): ArtistCandidate | null =>
+  candidates.find((candidate) => namedExactly(candidate, name) && candidate.score >= 90) ?? null
+
+/** Where an artist's pictures and pages are, by its MusicBrainz links. */
+export interface ArtistLinks {
   /** A Wikimedia Commons file linked as the artist's image ("File:…" without the prefix). */
   commonsFile: string | null
   /** The artist's Wikidata item ("Q…"). */
   wikidata: string | null
+  official: string | null
+  bandcamp: string | null
+  discogs: string | null
 }
 
 const COMMONS_FILE = /^https?:\/\/commons\.wikimedia\.org\/wiki\/File:(.+)$/
 const WIKIDATA_ITEM = /^https?:\/\/www\.wikidata\.org\/wiki\/(Q\d+)$/
+const PAGE = /^https?:\/\/\S+$/
 
 async function getJson(path: string, params: Record<string, string>, fetchImpl: typeof fetch): Promise<unknown> {
   await paced()
@@ -102,43 +174,37 @@ async function getJson(path: string, params: Record<string, string>, fetchImpl: 
   return response.json()
 }
 
-/**
- * The artist of exactly this name that MusicBrainz scores best (at least 90),
- * with its image and Wikidata links; null when none matches. Two requests,
- * paced.
- */
-export async function findArtist(name: string, fetchImpl: typeof fetch = fetch): Promise<ArtistLinks | null> {
-  const found = (await getJson(
-    '/artist/',
-    { query: `artist:${phrase(name)}`, fmt: 'json', limit: '5' },
-    fetchImpl,
-  )) as {
-    artists?: { id?: unknown; name?: unknown; score?: unknown }[]
-  } | null
-  const wanted = name.trim().toLowerCase()
-  const best = (found?.artists ?? [])
-    .filter((artist) => typeof artist.id === 'string' && typeof artist.name === 'string')
-    .filter((artist) => (artist.name as string).trim().toLowerCase() === wanted && Number(artist.score) >= 90)
-    .sort((a, b) => Number(b.score) - Number(a.score))[0]
-  if (!best) return null
-  const id = best.id as string
+/** The artist's links (one request, paced); null when MusicBrainz no longer knows the id. */
+export async function artistLinks(id: string, fetchImpl: typeof fetch = fetch): Promise<ArtistLinks | null> {
   const detail = (await getJson(`/artist/${encodeURIComponent(id)}`, { inc: 'url-rels', fmt: 'json' }, fetchImpl)) as {
     relations?: { type?: unknown; url?: { resource?: unknown } }[]
   } | null
-  const link = (type: string, pattern: RegExp) => {
-    for (const relation of detail?.relations ?? []) {
+  if (!detail) return null
+  const link = (type: string, pattern: RegExp, whole = false) => {
+    for (const relation of detail.relations ?? []) {
       const resource = relation.url?.resource
       const match = relation.type === type && typeof resource === 'string' ? pattern.exec(resource) : null
-      if (match?.[1]) return decodeURIComponent(match[1])
+      if (match) return whole ? match[0] : match[1] ? decodeURIComponent(match[1]) : null
     }
     return null
   }
   return {
-    id,
-    name: best.name as string,
     commonsFile: link('image', COMMONS_FILE),
     wikidata: link('wikidata', WIKIDATA_ITEM),
+    official: link('official homepage', PAGE, true),
+    bandcamp: link('bandcamp', PAGE, true),
+    discogs: link('discogs', PAGE, true),
   }
+}
+
+/** The artist MusicBrainz takes for the name without asking, with its links; null when none matches. */
+export async function findArtist(
+  name: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<(ArtistLinks & { id: string; name: string }) | null> {
+  const best = bestArtist(await searchArtists(name, fetchImpl), name)
+  const links = best ? await artistLinks(best.id, fetchImpl) : null
+  return best && links ? { id: best.id, name: best.name, ...links } : null
 }
 
 /** For tests: forget the last request time. */
