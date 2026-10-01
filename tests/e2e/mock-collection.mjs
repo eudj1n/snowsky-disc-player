@@ -375,7 +375,8 @@ export function mediaRoute(kind, path) {
 }
 
 /** Adds a file published by an upload to the library, as a scan would. */
-export function indexUpload(path, size) {
+/** A file the scan found; `addedAt` (seconds) is when it reached the card, so files sent earlier are older. */
+export function indexUpload(path, size, addedAt = Math.floor(Date.now() / 1000)) {
   const parts = path.replace('/tmp/sdcard/', '').split('/')
   const name = parts.at(-1) ?? path
   const album = parts.length > 1 ? parts.at(-2) : null
@@ -391,7 +392,7 @@ export function indexUpload(path, size) {
     ALBUM_ARTIST: 'Imported',
     TRACK: 1,
     DURATION: 0,
-    ADD_TIME: Math.floor(Date.now() / 1000),
+    ADD_TIME: addedAt,
     SIZE: size,
   })
 }

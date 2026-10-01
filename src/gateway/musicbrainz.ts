@@ -239,6 +239,28 @@ export async function findArtist(
   return best && links ? { id: best.id, name: best.name, ...links } : null
 }
 
+/** What a release group adds to an edition (owner, 2026-10-01): when the album first came out, and its kind. */
+export interface ReleaseGroupFacts {
+  firstRelease: string | null
+  type: string | null
+  secondaryTypes: string[]
+}
+
+/** The release group's first release date and types (one request, paced); null when MusicBrainz does not know it. */
+export async function releaseGroup(id: string, fetchImpl: typeof fetch = fetch): Promise<ReleaseGroupFacts | null> {
+  const group = (await getJson(`/release-group/${encodeURIComponent(id)}`, { fmt: 'json' }, fetchImpl)) as Record<
+    string,
+    unknown
+  > | null
+  if (!group) return null
+  const secondary = Array.isArray(group['secondary-types']) ? (group['secondary-types'] as unknown[]) : []
+  return {
+    firstRelease: text(group['first-release-date']),
+    type: text(group['primary-type']),
+    secondaryTypes: secondary.map(text).filter((value) => value !== null),
+  }
+}
+
 /** For tests: forget the last request time. */
 export function resetPacing(): void {
   last = 0

@@ -29,13 +29,12 @@ import {
   artistPictures,
   hasArtistPhoto,
   lookUpArtistImagesAutomatically,
-  openArtistImages,
 } from '../stores/artistPictures'
 import { history, loadHistory } from '../stores/history'
 import { albums, artists, tracks } from '../stores/library'
 import { isPinnedArtist, pins, togglePinArtist } from '../stores/pins'
 import { nowIsPlaying as isPlaying, nowPlaying } from '../stores/output'
-import { openTrackMenu, showCover } from '../stores/ui'
+import { openInfoPanel, openTrackMenu, showCover, ui } from '../stores/ui'
 import { artistList, autoPlaylists, makeArtistList, removeAutoList } from '../stores/autoPlaylists'
 import { pairing } from '../stores/pairing'
 import UiCircleButton from '../ui/UiCircleButton.vue'
@@ -43,7 +42,6 @@ import UiPillButton from '../ui/UiPillButton.vue'
 import { artistIdentity } from '../stores/musicbrainzIds'
 import { albumCardRoute, albumRoute, artistAlbumLines, artistFactsLine, artistRoute, withYear } from './captions'
 import { useCrumbs } from './crumbs'
-import ArtistImageCredit from './ArtistImageCredit.vue'
 import CollectionGate from './CollectionGate.vue'
 import { useHeadingAction } from './headingAction'
 import { playAlbumCard, playFrom } from './playAlbum'
@@ -121,24 +119,13 @@ const hotSubtitle = (track: Track) =>
 
 /*
  * What MusicBrainz says of the artist once its id is confirmed (owner, 2026-10-01): type, country and
- * years beside the album count, and its pages under the heading, MusicBrainz first.
+ * years beside the album count; the rest is in the details panel (i).
  */
 const identity = computed(() => artistIdentity(name.value))
 const facts = computed(() => (identity.value?.facts ? artistFactsLine(identity.value.facts, false) : ''))
-const LINK_TITLES = { bandcamp: 'Bandcamp', discogs: 'Discogs', wikidata: 'Wikidata' } as const
-const links = computed(() => {
-  const found = identity.value
-  if (!found) return []
-  const own = (['official', 'bandcamp', 'discogs', 'wikidata'] as const).flatMap((kind) => {
-    const url = found.facts?.links[kind]
-    const label = kind === 'official' ? t('artist_link_site') : LINK_TITLES[kind]
-    return url ? [{ kind, url, label }] : []
-  })
-  return [{ kind: 'musicbrainz', url: `https://musicbrainz.org/artist/${found.mbid}`, label: 'MusicBrainz' }, ...own]
-})
 /*
  * The artist's photo and wide background (2026-09-29; chosen among the allowed sources, 2026-10-01),
- * credited under the heading. A source that works automatically fills an artist without a photo.
+ * credited in the details panel. A source that works automatically fills an artist without a photo.
  */
 watch(
   () =>
@@ -192,28 +179,14 @@ function lines(album: Album) {
           @click="togglePinArtist(name)"
         />
         <UiCircleButton
-          v-if="artistImagesAllowed() && name"
-          icon="image"
-          :label="t('images_choose')"
-          data-testid="images-choose"
-          :disabled="artistPictures.picker !== null"
-          @click="openArtistImages(name)"
+          v-if="name"
+          icon="info"
+          :label="t('info_open')"
+          data-testid="info-open"
+          :pressed="ui.panel === 'info' && ui.panelInfo?.kind === 'artist' && ui.panelInfo.name === name"
+          @click="openInfoPanel({ kind: 'artist', name }, $event.currentTarget as HTMLElement)"
         />
       </DetailHeading>
-      <p v-if="links.length" class="-mt-8 mb-12 text-footnote text-muted" data-testid="artist-links">
-        <template v-for="(link, index) in links" :key="link.kind"
-          ><template v-if="index"> · </template
-          ><a
-            :href="link.url"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-secondary underline-offset-3 hover:text-ink hover:underline"
-            >{{ link.label }}</a
-          ></template
-        >
-      </p>
-      <ArtistImageCredit :name="name" role="photo" />
-      <ArtistImageCredit :name="name" role="background" />
       <ArtistImageDialog />
     </template>
     <template #skeleton>

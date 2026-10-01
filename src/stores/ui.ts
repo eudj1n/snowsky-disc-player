@@ -7,7 +7,10 @@ import type { MessageKey } from '../i18n'
 
 export type DialogName = 'connection' | 'sound' | 'import'
 /** The listening panel's tabs (owner, 2026-09-29: the queue joined Now), and a track opened from a row (2026-09-30). */
-export type PanelSection = 'now' | 'lyrics' | 'track'
+export type PanelSection = 'now' | 'lyrics' | 'track' | 'info'
+/** What the details panel (i) shows (owner, 2026-10-01): an artist, or an album by its key and scope. */
+export type PanelInfo =
+  { kind: 'artist'; name: string } | { kind: 'album'; key: string; title: string; scope: string | null }
 /** What an opener asks for: a tab, or the queue (the Now tab scrolled to it). */
 export type PanelTarget = PanelSection | 'queue'
 
@@ -58,6 +61,8 @@ const state = reactive({
   panelTarget: null as PanelTarget | null,
   /** The track a row's title opened in the panel, with what its Play selects. */
   panelTrack: null as { track: Track; play: SelectionTarget | null; playlist: string | null } | null,
+  /** The artist or album the details panel shows. */
+  panelInfo: null as PanelInfo | null,
   /** Increments each time an opener asks for the queue. */
   queueRequest: 0,
   toast: null as Toast | null,
@@ -177,6 +182,23 @@ export function openTrackPanel(
   state.panelTarget = 'track'
 }
 
+const sameInfo = (a: PanelInfo, b: PanelInfo): boolean =>
+  a.kind === 'artist'
+    ? b.kind === 'artist' && a.name === b.name
+    : b.kind === 'album' && a.key === b.key && a.scope === b.scope
+
+/** The details (i) of an artist or album in the panel; the same button again closes it. */
+export function openInfoPanel(info: PanelInfo, opener: HTMLElement | null): void {
+  if (state.panel === 'info' && state.panelInfo && sameInfo(state.panelInfo, info)) {
+    closePanel(true)
+    return
+  }
+  if (state.panel === null) panelOpener = opener
+  state.panelInfo = { ...info }
+  state.panel = 'info'
+  state.panelTarget = 'info'
+}
+
 export function showPanelSection(section: PanelSection): void {
   state.panel = section
   state.panelTarget = section
@@ -186,6 +208,7 @@ export function closePanel(restoreFocus: boolean): void {
   state.panel = null
   state.panelTarget = null
   state.panelTrack = null
+  state.panelInfo = null
   // On phones the opener's bar hides while the panel is open: focus it once it is back.
   const opener = panelOpener
   if (restoreFocus && opener) void nextTick(() => opener.focus({ preventScroll: true }))

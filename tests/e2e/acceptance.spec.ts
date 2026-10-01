@@ -612,16 +612,32 @@ test("finds a cover on Cover Art Archive and saves it into the album's folder th
   await english(page)
   await connectAndPair(page)
   await page.goto('/#/album/Night%20Lines/Lumen')
-  await page.getByTestId('cover-find').click({ timeout: 60_000 })
-  // The editions to choose from (2026-10-01); the chosen one becomes the offer.
+  // The details (i, 2026-10-01): where the cover lies, read from the service's media facts and folder.
+  await page.getByTestId('info-open').click({ timeout: 60_000 })
+  const panel = page.getByTestId('info-panel')
+  const where = panel.getByTestId('info-cover-where')
+  await expect(where).toHaveText('The album has no cover yet', { timeout: 30_000 })
+  await panel.getByTestId('info-cover-choose').click()
+  // The editions to choose from; the chosen one becomes the offer.
   await page.getByTestId('covers-coverartarchive').getByRole('button').first().click({ timeout: 30_000 })
   await page.getByTestId('cover-use').click()
   await expect(page.getByTestId('cover-offer')).toContainText('Not on the card yet', { timeout: 30_000 })
   await page.getByTestId('cover-save').click()
   await expect(page.getByTestId('cover-offer')).toBeHidden({ timeout: 30_000 })
+  await expect(where).toHaveText(/^On the card: cover\.png in the album.s folder$/, { timeout: 30_000 })
+  // Another cover replaces it under its name: the service sends the old file to the trash.
+  await panel.getByTestId('info-cover-choose').click()
+  await page.getByTestId('covers-coverartarchive').getByRole('button').first().click({ timeout: 30_000 })
+  await page.getByTestId('cover-use').click()
+  await page.getByTestId('cover-save').filter({ hasText: 'Replace on the card' }).click({ timeout: 30_000 })
+  await expect(
+    page
+      .getByRole('status')
+      .filter({ hasText: "Replaced the album's cover; the old one is in the card's trash." })
+      .first(),
+  ).toBeAttached({ timeout: 30_000 })
   await page.reload()
   await expect(page.locator('main canvas').first()).toBeVisible({ timeout: 30_000 })
-  await expect(page.getByTestId('cover-find')).toHaveCount(0)
   await disconnect(page)
   await chooseSources(page)
   expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])
@@ -671,13 +687,14 @@ test("finds an artist's photo on Wikimedia Commons within the service's policy",
   await chooseSources(page, { musicbrainz: { allowed: true }, wikimedia: { allowed: true } })
   await english(page)
   await page.goto('/#/artist/Lumen')
-  await page.getByTestId('images-choose').click({ timeout: 60_000 })
+  await page.getByTestId('info-open').click({ timeout: 60_000 })
+  await page.getByTestId('info-photo-choose').click()
   const photos = page.getByRole('dialog').getByTestId('images-photos').getByRole('button')
   await photos.first().click({ timeout: 30_000 })
   await page.getByTestId('images-save').click()
   // Not paired here: the choice stays in this browser.
-  await expect(page.getByTestId('photo-credit')).toContainText('A Photographer · CC BY 4.0', { timeout: 30_000 })
-  await expect(page.getByTestId('photo-credit')).toContainText('kept in this browser')
+  await expect(page.getByTestId('info-photo')).toContainText('A Photographer · CC BY 4.0', { timeout: 30_000 })
+  await expect(page.getByTestId('info-photo')).toContainText('kept in this browser')
   await page.getByTestId('photo-remove').click()
   await chooseSources(page)
   expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])

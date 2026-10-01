@@ -961,19 +961,37 @@ const server = createServer((request, response) => {
         busyOnce.add(path)
         return send(response, 503, 'Card busy\n')
       }
-      if (TRACKS.some((track) => track.PATH === path) || player.uploads.some((upload) => upload.path === path)) {
+      // `X-Disc-Replace: trash` (combined-008): a lyrics or cover file of that name goes to the trash first.
+      const replace = request.headers['x-disc-replace']
+      if (replace !== undefined && (replace !== 'trash' || !/\.(lrc|jpe?g|png)$/i.test(path)))
+        return send(response, 400, 'Only lyrics and covers can be replaced, into the trash\n')
+      const old = player.uploads.findIndex((upload) => upload.path === path)
+      if (replace === 'trash' && old >= 0) {
+        const [gone] = player.uploads.splice(old, 1)
+        trash.entries.unshift({
+          id: trash.next++,
+          path,
+          kind: 'file',
+          bytes: gone.bytes,
+          files: 1,
+          trashed: Math.floor(Date.now() / 1000),
+          complete: true,
+        })
+      } else if (TRACKS.some((track) => track.PATH === path) || old >= 0) {
         return send(response, 409, 'File already exists; no overwrite\n')
       }
+      const replaced = replace === 'trash' && old >= 0
       // A lyrics file keeps its text and a folder cover its bytes: the media route serves them for its tracks.
       const lower = path.toLowerCase()
       player.uploads.push({
         path,
         bytes,
+        at: Math.floor(Date.now() / 1000),
         text: lower.endsWith('.lrc') ? body.toString('utf8') : null,
         image: /\/cover\.(jpe?g|png)$/.test(lower) ? body : null,
       })
       listed = null
-      send(response, 201, JSON.stringify({ path, bytes, indexed: false }), 'application/json')
+      send(response, 201, JSON.stringify({ path, bytes, indexed: false, replaced }), 'application/json')
     })
     return
   }
@@ -1000,6 +1018,16 @@ const server = createServer((request, response) => {
       if (player.infoMissing.has(mediaFile)) return send(response, 404, 'No such file\n')
     }
     const result = mediaRoute(match[1], mediaFile)
+    // A folder cover uploaded beside the track is its cover when its files carry none.
+    if (match[1] === 'info' && result.status === 200) {
+      const folder = mediaFile.slice(0, mediaFile.lastIndexOf('/'))
+      const info = JSON.parse(result.body)
+      if (
+        info.cover === null &&
+        player.uploads.some((upload) => upload.image && upload.path.startsWith(`${folder}/cover.`))
+      )
+        result.body = JSON.stringify({ ...info, cover: 'folder' })
+    }
     if (result.cover) return send(response, 200, readFileSync(new URL('cover.png', FIXTURES)), 'image/png')
     return send(response, result.status, result.body, result.type ?? 'text/plain; charset=utf-8', result.headers ?? {})
   }
@@ -1203,7 +1231,7 @@ server.on('upgrade', (request, socket, head) => {
           setTimeout(() => ws.send(record('a622', hex4(TRACKS.length))), 300)
           setTimeout(() => {
             for (const upload of player.uploads.splice(0))
-              if (AUDIO_NAME.test(upload.path)) indexUpload(upload.path, upload.bytes)
+              if (AUDIO_NAME.test(upload.path)) indexUpload(upload.path, upload.bytes, upload.at)
             ws.send(record('a622', hex4(TRACKS.length)))
             ws.send(record('a60a', '0005'))
           }, 900)

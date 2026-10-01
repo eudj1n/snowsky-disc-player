@@ -1152,6 +1152,25 @@ test.describe('player controls on the mock', () => {
     await disconnect(page)
   })
 
+  test('keeps a long selection inside its own list, not stretching the dialog', async ({ page }) => {
+    await english(page)
+    await page.goto('/#/card')
+    await page.getByTestId('card-add-music').click()
+    const dialog = page.getByRole('dialog')
+    const files = Array.from({ length: 150 }, (_, n) => ({
+      name: `Long ${String(n).padStart(3, '0')}.flac`,
+      mimeType: 'audio/flac',
+      buffer: Buffer.from('fLaC'),
+    }))
+    await dialog.locator('input[type=file]:not([webkitdirectory])').setInputFiles(files)
+    await expect(dialog.getByTestId('import-files').getByRole('listitem')).toHaveCount(150)
+    // Each row's hidden status label is absolutely placed: the list holds them (owner, 2026-10-01: the
+    // dialog grew by the whole list's height and scrolled into empty space).
+    const overflow = await dialog.evaluate((element) => element.scrollHeight - element.clientHeight)
+    expect(overflow).toBeLessThan(700)
+    await page.keyboard.press('Escape')
+  })
+
   test('resumes a stopped transfer as a whole and connects from the dialog, keeping the list', async ({
     page,
   }, info) => {
@@ -1912,16 +1931,19 @@ test('chooses a cover among the editions and fanart.tv, keeps the edition and sa
     'release-group': { id: GROUP, 'primary-type': 'Album' },
   })
   await page.route('https://musicbrainz.org/ws/2/**', async (route) => {
-    asked.push(new URL(route.request().url()))
+    const url = new URL(route.request().url())
+    asked.push(url)
     await route.fulfill({
       headers: cors,
-      json: {
-        releases: [
-          edition(FIRST, 100, '2004-06-01', 'GB', 'CD'),
-          edition(VINYL, 95, '2010-02-01', 'JP', 'Vinyl'),
-          edition(BARE, 92, '2012', 'US', 'Digital Media'),
-        ],
-      },
+      json: url.pathname.startsWith('/ws/2/release-group/')
+        ? { id: GROUP, 'first-release-date': '2003-11-02', 'primary-type': 'Album', 'secondary-types': [] }
+        : {
+            releases: [
+              edition(FIRST, 100, '2004-06-01', 'GB', 'CD'),
+              edition(VINYL, 95, '2010-02-01', 'JP', 'Vinyl'),
+              edition(BARE, 92, '2012', 'US', 'Digital Media'),
+            ],
+          },
     })
   })
   await page.route('https://webservice.fanart.tv/**', (route) =>
@@ -1947,8 +1969,11 @@ test('chooses a cover among the editions and fanart.tv, keeps the edition and sa
   await english(page)
   await connectAndPair(page)
   await page.goto('/#/album/Night%20Drive/Northline')
-  const find = page.getByTestId('cover-find')
-  await expect(find).toBeVisible({ timeout: 15_000 })
+  // The details (i), always in the heading (owner, 2026-10-01), lead to the cover.
+  await page.getByTestId('info-open').click()
+  const panel = page.getByTestId('info-panel')
+  await expect(panel.getByTestId('info-cover-where')).toHaveText('The album has no cover yet', { timeout: 15_000 })
+  const find = panel.getByTestId('info-cover-choose')
   await find.click()
   const dialog = page.getByRole('dialog')
   await expect(dialog.getByTestId('covers-fanarttv').getByRole('button')).toHaveCount(1, { timeout: 15_000 })
@@ -1973,22 +1998,43 @@ test('chooses a cover among the editions and fanart.tv, keeps the edition and sa
   await expect(offer).toContainText('Cover Art Archive: Night Drive · Northline · 2004. Not on the card yet.', {
     timeout: 15_000,
   })
-  // The chosen edition is the album's MusicBrainz identity, kept on the player.
-  await expect(page.getByTestId('album-edition')).toHaveText(
-    'MusicBrainz · Lumen Records NL-001 · United Kingdom · CD · 2004',
-  )
+  // The chosen edition is the album's MusicBrainz identity, kept on the player, with its release group's facts.
+  const identity = panel.getByTestId('info-musicbrainz')
+  await expect(identity).toContainText('Night Drive · Lumen Records NL-001 · United Kingdom · CD · 2004')
+  await expect(identity).toContainText('First released: 2003 · Album')
+  await expect(identity).toContainText('Confirmed and kept on the player')
   const albums = (await storeRecords(page, 'musicbrainz')).filter((record) => record.value.kind === 'album')
   expect(albums.map((record) => [record.value.mbid, record.value.group])).toEqual([[FIRST, GROUP]])
   await page.getByTestId('cover-save').click()
   await expect(
     page.getByRole('status').filter({ hasText: "Saved into the album's folder as its cover." }).first(),
   ).toBeAttached({ timeout: 15_000 })
-  // Read back from the card: the album now has a cover of its own and offers none.
+  // Read back from the card: the album now has a folder cover of its own.
   await expect(offer).toBeHidden()
-  await expect(find).toBeHidden({ timeout: 15_000 })
+  const where = panel.getByTestId('info-cover-where')
+  await expect(where).toHaveText(/^On the card: cover\.png in the album.s folder$/, { timeout: 15_000 })
+  // Another cover replaces it under its own name; the old one goes to the card's trash (owner, 2026-10-01).
+  await expect(find).toHaveText('Choose another…')
+  await find.click()
+  await dialog.getByTestId('covers-fanarttv').getByRole('button').first().click({ timeout: 15_000 })
+  await dialog.getByTestId('cover-use').click()
+  await expect(offer).toContainText('fanart.tv, CC BY 3.0: Night Drive · Northline · 2004. Not on the card yet.', {
+    timeout: 15_000,
+  })
+  await expect(offer).toContainText("The old cover goes to the card's trash, where it can be restored.")
+  await page.getByTestId('cover-save').filter({ hasText: 'Replace on the card' }).click()
+  await expect(
+    page
+      .getByRole('status')
+      .filter({ hasText: "Replaced the album's cover; the old one is in the card's trash." })
+      .first(),
+  ).toBeAttached({ timeout: 15_000 })
+  const trash = (await (await page.request.get('/api/trash')).json()) as { entries: { path: string }[] }
+  expect(trash.entries.some((entry) => entry.path.endsWith('/cover.png'))).toBe(true)
   await page.reload()
   await expect(page.locator('main canvas').first()).toBeVisible({ timeout: 15_000 })
-  await expect(page.getByTestId('cover-find')).toHaveCount(0)
+  await page.getByTestId('info-open').click()
+  await expect(page.getByTestId('info-cover-where')).toHaveText(/cover\.png/, { timeout: 15_000 })
   for (const record of albums)
     await forgetRecord(page, 'musicbrainz', { kind: 'album', name: String(record.value.name) })
   await disconnect(page)
@@ -2103,23 +2149,46 @@ test("chooses an artist's photo and background among the sources, keeps them on 
   expect(asked).toHaveLength(0)
   await connectAndPair(page)
   await page.goto('/#/artist/Northline')
-  await page.getByTestId('images-choose').click()
+  // The details (i): nothing is asked until the listener identifies the artist (owner, 2026-10-01).
+  await page.getByTestId('info-open').click()
+  const panel = page.getByTestId('info-panel')
+  const identity = panel.getByTestId('info-musicbrainz')
+  await expect(identity).toContainText('Not identified yet')
+  expect(asked).toHaveLength(0)
+  await identity.getByTestId('info-identify').click()
+  const candidates = identity.getByTestId('info-candidates').getByRole('button')
+  await expect(candidates).toHaveCount(2, { timeout: 15_000 })
+  // Named exactly so, the best score first; the namesake shows what tells it apart.
+  await expect(candidates.first()).toHaveText('Northline · Group · United Kingdom · 2001– · synth-pop band')
+  expect(asked[0]?.searchParams.get('query')).toBe('artist:"Northline" OR alias:"Northline"')
+  await candidates.first().click()
+  await expect(identity).toContainText('Northline · Group · United Kingdom · 2001– · synth-pop band', {
+    timeout: 15_000,
+  })
+  await expect(identity).toContainText('Confirmed and kept on the player')
+  const links = panel.getByTestId('info-links')
+  await expect(links.getByRole('link', { name: 'MusicBrainz' })).toHaveAttribute(
+    'href',
+    `https://musicbrainz.org/artist/${NORTHLINE}`,
+  )
+  await expect(links.getByRole('link', { name: 'Website' })).toHaveAttribute('href', 'https://northline.example/')
+  await expect(page.getByText(/albums? · Group · United Kingdom · 2001–$/)).toBeVisible()
+  // The images: the picker takes the confirmed artist and offers both sources, fanart.tv first.
+  await panel.getByTestId('info-photo-choose').click()
   const dialog = page.getByRole('dialog')
-  // The artist MusicBrainz is sure of: named exactly so, the best score.
   await expect(dialog.getByTestId('images-identity')).toContainText(
     'MusicBrainz: Northline · Group · United Kingdom · 2001– · synth-pop band',
     { timeout: 15_000 },
   )
-  expect(asked[0]?.searchParams.get('query')).toBe('artist:"Northline" OR alias:"Northline"')
   const photos = dialog.getByTestId('images-photos').getByRole('button')
-  await expect(photos).toHaveCount(3)
+  await expect(photos).toHaveCount(3, { timeout: 15_000 })
   await expect(photos.first()).toHaveAccessibleName('Photo: fanart.tv')
   await expect(photos.last()).toHaveAccessibleName('Photo: Wikimedia Commons')
   expect(fanartAsked[0]?.searchParams.get('api_key')).toBe('personal-test-key')
   // A namesake can be chosen instead; its sources hold nothing here.
   await dialog.getByTestId('images-other-artist').click()
   const artists = dialog.getByTestId('images-artists').getByRole('button')
-  await expect(artists).toHaveCount(2)
+  await expect(artists).toHaveCount(2, { timeout: 15_000 })
   await artists.filter({ hasText: 'singer' }).click()
   await expect(dialog.getByTestId('images-status')).toHaveText('The allowed sources have no images of this artist.')
   await dialog.getByTestId('images-other-artist').click()
@@ -2129,20 +2198,12 @@ test("chooses an artist's photo and background among the sources, keeps them on 
   await dialog.getByTestId('images-backgrounds').getByRole('button').first().click()
   await dialog.getByTestId('images-save').click()
   await expect(dialog).toBeHidden({ timeout: 15_000 })
-  // Kept on the player with the credit and licence of each image.
-  const photoCredit = page.getByTestId('photo-credit')
-  const backgroundCredit = page.getByTestId('background-credit')
-  await expect(photoCredit).toContainText('Photo: P.B. Rage · CC BY-SA 2.0 · Wikimedia Commons · kept on the player')
-  await expect(backgroundCredit).toContainText('Background: fanart.tv · CC BY 3.0 · kept on the player')
+  // Kept on the player with the credit and licence of each image, shown in the panel.
+  const photoCredit = panel.getByTestId('info-photo')
+  const backgroundCredit = panel.getByTestId('info-background')
+  await expect(photoCredit).toContainText('P.B. Rage · CC BY-SA 2.0 · Wikimedia Commons · kept on the player')
+  await expect(backgroundCredit).toContainText('fanart.tv · CC BY 3.0 · kept on the player')
   await expect(page.getByTestId('heading-backdrop')).toBeAttached()
-  // What MusicBrainz says of the confirmed artist: beside the album count, and its pages under the heading.
-  await expect(page.getByText(/albums? · Group · United Kingdom · 2001–$/)).toBeVisible()
-  const links = page.getByTestId('artist-links')
-  await expect(links.getByRole('link', { name: 'MusicBrainz' })).toHaveAttribute(
-    'href',
-    `https://musicbrainz.org/artist/${NORTHLINE}`,
-  )
-  await expect(links.getByRole('link', { name: 'Website' })).toHaveAttribute('href', 'https://northline.example/')
   expect((await storeRecords(page, 'artist_images')).map((record) => record.key)).toEqual([
     ['Northline', 'photo'],
     ['Northline', 'background'],
@@ -2161,11 +2222,12 @@ test("chooses an artist's photo and background among the sources, keeps them on 
       }),
   )
   await page.reload()
+  await page.getByTestId('info-open').click()
   await expect(photoCredit).toContainText('kept on the player', { timeout: 15_000 })
-  await page.getByTestId('photo-remove').click()
-  await page.getByTestId('background-remove').click()
-  await expect(photoCredit).toHaveCount(0)
-  await expect(backgroundCredit).toHaveCount(0)
+  await panel.getByTestId('photo-remove').click()
+  await panel.getByTestId('background-remove').click()
+  await expect(photoCredit).toContainText('For now, the cover of the album you play most')
+  await expect(backgroundCredit).toContainText('None yet')
   // Set to work automatically, the best images are taken as the page opens and kept in this browser only.
   await chooseSources(page, {
     musicbrainz: { allowed: true },
@@ -2173,11 +2235,12 @@ test("chooses an artist's photo and background among the sources, keeps them on 
     fanarttv: { allowed: true, auto: true, key: 'personal-test-key' },
   })
   await page.reload()
-  await expect(photoCredit).toContainText('Photo: fanart.tv · CC BY 3.0 · kept in this browser', { timeout: 15_000 })
+  await page.getByTestId('info-open').click()
+  await expect(photoCredit).toContainText('fanart.tv · CC BY 3.0 · kept in this browser', { timeout: 15_000 })
   await expect(backgroundCredit).toContainText('kept in this browser')
   expect(await storeRecords(page, 'artist_images')).toEqual([])
-  await page.getByTestId('photo-remove').click()
-  await page.getByTestId('background-remove').click()
+  await panel.getByTestId('photo-remove').click()
+  await panel.getByTestId('background-remove').click()
   await forgetRecord(page, 'musicbrainz', { kind: 'artist', name: 'Northline' })
   await chooseSources(page)
   await disconnect(page)

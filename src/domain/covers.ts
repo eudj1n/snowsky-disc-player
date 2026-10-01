@@ -37,6 +37,30 @@ export function rankReleases<T extends { score: number; trackCount: number | nul
     .slice(0, 12)
 }
 
+/**
+ * The folder covers the service's media route reads, in its order (device
+ * media.c; FAT ignores case, so the order is by name and type).
+ */
+const FOLDER_COVERS = [
+  'cover.jpg',
+  'folder.jpg',
+  'front.jpg',
+  'cover.jpeg',
+  'folder.jpeg',
+  'cover.png',
+  'folder.png',
+  'front.png',
+]
+
+/** The folder's file the media route shows as the cover, by its own spelling; null when none is there. */
+export function folderCoverName(names: readonly string[]): string | null {
+  for (const wanted of FOLDER_COVERS) {
+    const found = names.find((name) => name.toLowerCase() === wanted)
+    if (found) return found
+  }
+  return null
+}
+
 export type CoverPlace = { folder: string } | { refused: 'folders' | 'shared' | 'outside' }
 
 const folderOf = (path: string) => path.slice(0, path.lastIndexOf('/'))

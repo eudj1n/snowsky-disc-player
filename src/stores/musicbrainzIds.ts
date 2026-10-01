@@ -7,9 +7,20 @@
  * choice lasts for this tab.
  */
 import { reactive, readonly, watch } from 'vue'
-import type { ArtistCandidate, ArtistLinks, ReleaseCandidate } from '../gateway/musicbrainz'
+import {
+  artistLinks,
+  findReleases,
+  releaseGroup,
+  searchArtists,
+  type ArtistCandidate,
+  type ArtistLinks,
+  type ReleaseCandidate,
+  type ReleaseGroupFacts,
+} from '../gateway/musicbrainz'
+import { rankReleases } from '../domain/covers'
 import { putRecord, readCollection } from '../gateway/store'
-import { connection, http } from './connection'
+import { connection, http, originAllowed } from './connection'
+import { sourceAllowed } from './externalSources'
 import { pairingToken } from './pairing'
 
 /** The facts kept with an artist's id (MusicBrainz core data, CC0). */
@@ -41,6 +52,9 @@ export interface AlbumFacts {
   catalogNumber: string | null
   barcode: string | null
   type: string | null
+  /** From the release group: when the album first came out, and its secondary types (Live, Compilation…). */
+  firstRelease?: string | null
+  secondaryTypes?: string[]
 }
 export interface AlbumIdentity {
   /** The edition (MusicBrainz release). */
@@ -112,8 +126,8 @@ export const artistIdentity = (name: string): ArtistIdentity | null => state.art
 /** The edition confirmed for an album, by the page's album key. */
 export const albumIdentity = (key: string): AlbumIdentity | null => state.albums[key] ?? null
 
-/** An edition's facts as the store keeps them. */
-export const albumFacts = (release: ReleaseCandidate): AlbumFacts => ({
+/** An edition's facts as the store keeps them, with its release group's when read. */
+export const albumFacts = (release: ReleaseCandidate, group: ReleaseGroupFacts | null = null): AlbumFacts => ({
   title: release.title,
   artist: release.artist,
   date: release.date,
@@ -122,15 +136,20 @@ export const albumFacts = (release: ReleaseCandidate): AlbumFacts => ({
   label: release.label,
   catalogNumber: release.catalogNumber,
   barcode: release.barcode,
-  type: release.type,
+  type: group?.type ?? release.type,
+  ...(group ? { firstRelease: group.firstRelease, secondaryTypes: group.secondaryTypes.slice(0, 6) } : {}),
 })
 
 /** Confirms which edition an album is (its MusicBrainz release and group); the player keeps it when paired. */
-export async function confirmAlbum(key: string, release: ReleaseCandidate): Promise<boolean> {
+export async function confirmAlbum(
+  key: string,
+  release: ReleaseCandidate,
+  group: ReleaseGroupFacts | null = null,
+): Promise<boolean> {
   const identity: AlbumIdentity = {
     mbid: release.id,
     group: release.group && MBID.test(release.group) ? release.group : null,
-    facts: albumFacts(release),
+    facts: albumFacts(release, group),
     kept: false,
   }
   state.albums = { ...state.albums, [key]: identity }
@@ -205,5 +224,85 @@ export async function confirmArtist(name: string, mbid: string, facts: ArtistFac
     return true
   } catch {
     return false
+  }
+}
+
+/** MusicBrainz may be asked: the owner allowed it and the release's origins admit it. */
+export const identifyAllowed = (): boolean => sourceAllowed('musicbrainz') && originAllowed('musicbrainz')
+
+export type IdentifyStatus = 'idle' | 'searching' | 'ready' | 'missing' | 'failed'
+interface Identify {
+  /** The artist's name or the album's key the candidates are for. */
+  key: string | null
+  status: IdentifyStatus
+  artists: ArtistCandidate[]
+  editions: ReleaseCandidate[]
+  /** A confirmation waits for MusicBrainz or the player. */
+  saving: boolean
+}
+const search = reactive<Identify>({ key: null, status: 'idle', artists: [], editions: [], saving: false })
+/** The details panel's search: candidates for an artist, or editions for an album (owner, 2026-10-01). */
+export const identifying = readonly(search)
+
+export function forgetCandidates(): void {
+  Object.assign(search, { key: null, status: 'idle', artists: [], editions: [], saving: false })
+}
+
+/** The artists MusicBrainz offers for a name, on the listener's request (the name leaves the network). */
+export async function findArtistCandidates(name: string): Promise<void> {
+  if (!identifyAllowed()) return
+  Object.assign(search, { key: name, status: 'searching', artists: [], editions: [] })
+  try {
+    const artists = await searchArtists(name)
+    if (search.key !== name) return
+    search.artists = artists
+    search.status = artists.length ? 'ready' : 'missing'
+  } catch {
+    if (search.key === name) search.status = 'failed'
+  }
+}
+
+/** The listener says which artist the name is: its links are read and the identity kept. */
+export async function chooseArtistCandidate(name: string, candidate: ArtistCandidate): Promise<boolean> {
+  search.saving = true
+  try {
+    const links = await artistLinks(candidate.id).catch(() => null)
+    const kept = await confirmArtist(name, candidate.id, artistFacts(candidate, links))
+    forgetCandidates()
+    return kept
+  } finally {
+    search.saving = false
+  }
+}
+
+/** The album's editions MusicBrainz offers, on the listener's request (its title and artist leave the network). */
+export async function findEditions(
+  key: string,
+  title: string,
+  artist: string,
+  trackCount: number | null,
+): Promise<void> {
+  if (!identifyAllowed()) return
+  Object.assign(search, { key, status: 'searching', artists: [], editions: [] })
+  try {
+    const editions = rankReleases(await findReleases(title, artist), trackCount)
+    if (search.key !== key) return
+    search.editions = editions
+    search.status = editions.length ? 'ready' : 'missing'
+  } catch {
+    if (search.key === key) search.status = 'failed'
+  }
+}
+
+/** The listener says which edition the album is: its release group is read too, and the identity kept. */
+export async function confirmEdition(key: string, release: ReleaseCandidate): Promise<boolean> {
+  search.saving = true
+  try {
+    const group = release.group && identifyAllowed() ? await releaseGroup(release.group).catch(() => null) : null
+    const kept = await confirmAlbum(key, release, group)
+    if (search.key === key) forgetCandidates()
+    return kept
+  } finally {
+    search.saving = false
   }
 }

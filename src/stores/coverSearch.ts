@@ -19,15 +19,18 @@
  */
 import { reactive, readonly } from 'vue'
 import { albumTracks, type Album } from '../domain/album'
-import { coverPlace, pickRelease, rankReleases } from '../domain/covers'
+import { coverPlace, folderCoverName, pickRelease, rankReleases } from '../domain/covers'
 import { coverBytes, CoverUnreachable, frontCover, releaseFront } from '../gateway/coverart'
 import { fanartArtist, fanartBytes, FanartKeyRefused } from '../gateway/fanart'
+import { listFolder } from '../gateway/files'
+import { mediaInfo } from '../gateway/media'
 import { findReleases, type ReleaseCandidate } from '../gateway/musicbrainz'
 import { uploadFile } from '../gateway/upload'
-import { originAllowed } from './connection'
+import { reencode } from '../lib/image'
+import { http, originAllowed } from './connection'
 import { sourceAllowed, sourceAutomatic, sourceKey } from './externalSources'
-import { confirmAlbum } from './musicbrainzIds'
-import { recheckAlbumCover } from './enrichment'
+import { confirmEdition } from './musicbrainzIds'
+import { albumCoverState, recheckAlbumCover } from './enrichment'
 import { tracks } from './library'
 import { run } from './operation'
 import { pairingToken } from './pairing'
@@ -59,6 +62,8 @@ interface CoverSearchModel {
   status: CoverSearchStatus
   cover: Blob | null
   release: { title: string; artist: string; date: string | null; source: CoverSource } | null
+  /** The album already has a cover: saving the offer replaces it (the old one goes to the card's trash). */
+  replacing: boolean
   saving: boolean
   picker: CoverPicker | null
 }
@@ -68,6 +73,7 @@ const state = reactive<CoverSearchModel>({
   status: 'idle',
   cover: null,
   release: null,
+  replacing: false,
   saving: false,
   picker: null,
 })
@@ -194,8 +200,9 @@ export async function useCoverOffer(album: Album, scope: string | null, offer: C
     state.cover = cover
     const { title, artist, date } = offer.release
     state.release = { title, artist, date, source: offer.source }
+    state.replacing = albumCoverState(album, scope) === 'found'
     state.status = 'found'
-    void confirmAlbum(albumIdentityKey(album, scope), offer.release)
+    void confirmEdition(albumIdentityKey(album, scope), offer.release)
   } catch (error) {
     if (state.key === key) state.status = error instanceof CoverUnreachable ? 'unreachable' : 'failed'
   }
@@ -217,6 +224,28 @@ export function dismissCover(): void {
   state.status = 'idle'
   state.cover = null
   state.release = null
+  state.replacing = false
+}
+
+/** Where the album's cover on the card is: in its files, a file of its folder (by name), or none. */
+export type CoverOnCard =
+  { kind: 'none' } | { kind: 'embedded' } | { kind: 'folder'; name: string } | { kind: 'unknown' }
+
+/** Reads where the album's cover comes from (the first track's media facts, then its folder's names). */
+export async function coverOnCard(album: Album, scope: string | null): Promise<CoverOnCard> {
+  const members = albumTracks(tracks.value, album.title, scope)
+  const first = members.find((track) => track.path && !track.cue)?.path
+  const info = first ? await mediaInfo(http, first).catch(() => null) : null
+  if (!info) return { kind: 'unknown' }
+  if (info.cover === 'embedded') return { kind: 'embedded' }
+  if (info.cover === null) return { kind: 'none' }
+  const place = coverPlace(members, tracks.value)
+  if ('refused' in place) return { kind: 'unknown' }
+  const listing = await listFolder(http, place.folder, false, true).catch(() => null)
+  const name = listing
+    ? folderCoverName(listing.entries.filter((entry) => !entry.folder).map((entry) => entry.name))
+    : null
+  return name ? { kind: 'folder', name } : { kind: 'unknown' }
 }
 
 /** Looks a cover up for the album (its title and artist leave the network). */
@@ -263,17 +292,30 @@ export async function saveCover(album: Album, scope: string | null): Promise<voi
     toast('pair_to_control', true)
     return
   }
-  const path = `${place.folder}/${cover.type === 'image/png' ? 'cover.png' : 'cover.jpg'}`
   state.saving = true
   try {
+    // A cover already there is replaced under its own name and type, the old file going to the trash
+    // (owner, 2026-10-01); one in the files themselves stays until tags can be edited.
+    let path = `${place.folder}/${cover.type === 'image/png' ? 'cover.png' : 'cover.jpg'}`
+    let file: Blob = cover
+    if (state.replacing) {
+      const present = await coverOnCard(album, scope)
+      if (present.kind !== 'folder') {
+        toast(present.kind === 'embedded' ? 'cover_embedded' : 'cover_save_failed', true)
+        return
+      }
+      path = `${place.folder}/${present.name}`
+      file = await reencode(cover, /\.png$/i.test(present.name) ? 'image/png' : 'image/jpeg')
+    }
+    const replace = state.replacing
     const outcome = await run('upload', async (context) => {
       await context.pace()
       context.guard()
       context.attempted()
-      return uploadFile({ file: cover, path, token })
+      return uploadFile({ file, path, token, ...(replace ? { replace: 'trash' as const } : {}) })
     }).catch(() => 'not-sent' as const)
     if (outcome === 'confirmed') {
-      toast('cover_saved')
+      toast(replace ? 'cover_replaced' : 'cover_saved')
       dismissCover()
       await recheckAlbumCover(album, scope)
     } else if (outcome === 'exists') toast('cover_save_exists', true)

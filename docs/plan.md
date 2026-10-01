@@ -2012,7 +2012,7 @@ details panel's four proposals ([specimen](https://claude.ai/artifact/Sh1BfYhPsD
       title's sleeve palette, not from its own cover's colours. Now the
       heading takes the list's palette (its base and first glow). Evidence:
       `tests/unit/listArt.test.ts`; screenshots in light and dark.
-- [ ] The details panel (i) for artists and albums, always shown: MusicBrainz
+- [x] The details panel (i) for artists and albums, always shown: MusicBrainz
       (what is identified, "Refine…" among candidates or editions), images
       (photo and background, or the cover, with source and licence,
       "Choose…"), links, and later the files' tags. Owner's decisions: the
@@ -2022,6 +2022,24 @@ details panel's four proposals ([specimen](https://claude.ai/artifact/Sh1BfYhPsD
       also reads its release group (first release year and type). The
       credits under the heading move into the panel; the heading's image
       button gives way to (i). A "⋯" menu waits until there are more actions.
+      Built as `layout/InfoPanel.vue` in the listening panel (a sheet on
+      phones): "Identify" lists MusicBrainz's candidates or editions with what
+      tells them apart, the choice is kept on the player (else for the tab);
+      a confirmed edition also reads its release group. The album's cover
+      shows where it lies (a folder file by name, inside the files, or none;
+      read from the service's media facts and folder listing); another cover
+      replaces a folder file under its own name and type through
+      `X-Disc-Replace: trash`, while one inside the files waits for tag
+      editing. Evidence: e2e "chooses a cover among the editions and
+      fanart.tv…" (choose, save, replace into the trash), "chooses an
+      artist's photo and background…" (identify, candidates, images, links,
+      automatic), the emulator acceptance cases of the cover and the photo;
+      screenshots in light, dark and on a phone.
+- [x] A long selection in adding music stretched the dialog by the list's
+      whole height (each row's hidden status label is absolutely placed and
+      escaped the list's scroll box): the list now holds them. Evidence: e2e
+      "keeps a long selection inside its own list…" (7,812 px of empty
+      scroll before the fix).
 
 ## Requests for the next service build
 

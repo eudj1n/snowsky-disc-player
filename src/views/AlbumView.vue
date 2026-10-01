@@ -20,28 +20,24 @@ import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
 import { albumScope, albumTracks, albumsBy, byTrackNumber, discOf, recentAlbums } from '../domain/album'
 import { creditArtists, creditLabel, creditSeparator, leadCredit, sameCredit } from '../domain/artist'
 import type { SelectionTarget, TrackKey } from '../gateway/selection'
-import { locale, t } from '../i18n'
+import { t } from '../i18n'
 import { albumCover, albumCoverState, albumQuality, albumYear } from '../stores/enrichment'
 import {
   coverLookupAllowed,
   coverSearch,
   coverSearchKey,
-  albumIdentityKey,
   dismissCover,
   lookUpCoverAutomatically,
-  openCoverPicker,
   saveCover,
 } from '../stores/coverSearch'
-import { albumIdentity } from '../stores/musicbrainzIds'
 import AlbumCoverDialog from '../layout/AlbumCoverDialog.vue'
-import { regionName } from '../domain/artistFacts'
 import { isHiRes, qualityLabel } from '../domain/quality'
 import { formatBadge } from '../domain/track'
 import { findGenre, playableGenre, sameGenre } from '../domain/genre'
 import { albums, artists, genres, titleGroups, tracks as collection } from '../stores/library'
 import { connection } from '../stores/connection'
 import { isPinnedAlbum, pins, togglePinAlbum } from '../stores/pins'
-import { openPlaylistDialog, openTrackMenu, openTrackPanel, showCover } from '../stores/ui'
+import { openInfoPanel, openPlaylistDialog, openTrackMenu, openTrackPanel, showCover, ui } from '../stores/ui'
 import UiCircleButton from '../ui/UiCircleButton.vue'
 import UiHiResBadge from '../ui/UiHiResBadge.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
@@ -107,20 +103,6 @@ const coverOffered = computed(
     albumCoverState(group.value, scope.value) === 'missing',
 )
 const searchHere = computed(() => group.value !== null && coverSearch.key === coverSearchKey(group.value, scope.value))
-/* The edition confirmed in the cover picker (2026-10-01): its label and catalogue number, country, format and year. */
-const edition = computed(() => (group.value ? albumIdentity(albumIdentityKey(group.value, scope.value)) : null))
-const editionLine = computed(() => {
-  const facts = edition.value?.facts
-  if (!facts) return ''
-  return [
-    [facts.label, facts.catalogNumber].filter(Boolean).join(' '),
-    facts.country ? regionName(facts.country, locale.value) : null,
-    facts.format,
-    facts.date?.slice(0, 4),
-  ]
-    .filter(Boolean)
-    .join(' · ')
-})
 const sleeve = computed(() =>
   searchHere.value && coverSearch.cover ? coverSearch.cover : group.value ? albumCover(group.value, scope.value) : null,
 )
@@ -299,14 +281,7 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
           :disabled="loading || !tracks.length"
           @click="openPlaylistDialog({ mode: 'add', tracks: tracks.map((track) => ({ ...track })), title: name })"
         />
-        <UiCircleButton
-          v-if="coverOffered && !(searchHere && coverSearch.status === 'found')"
-          icon="image"
-          :label="t('cover_find')"
-          data-testid="cover-find"
-          :disabled="searchHere && coverSearch.status === 'searching'"
-          @click="group && openCoverPicker(group, scope)"
-        />
+
         <UiCircleButton
           v-if="pins.available && pinTarget"
           icon="pin"
@@ -316,16 +291,21 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
           :disabled="pins.busy"
           @click="pinTarget && togglePinAlbum(pinTarget)"
         />
+        <UiCircleButton
+          v-if="group"
+          icon="info"
+          :label="t('info_open')"
+          data-testid="info-open"
+          :pressed="ui.panel === 'info' && ui.panelInfo?.kind === 'album' && ui.panelInfo.key === group.key"
+          @click="
+            group &&
+            openInfoPanel(
+              { kind: 'album', key: group.key, title: group.title, scope },
+              $event.currentTarget as HTMLElement,
+            )
+          "
+        />
       </DetailHeading>
-      <p v-if="edition" class="-mt-8 mb-20 text-footnote text-muted" data-testid="album-edition">
-        <a
-          :href="`https://musicbrainz.org/release/${edition.mbid}`"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-secondary underline-offset-3 hover:text-ink hover:underline"
-          >MusicBrainz</a
-        ><template v-if="editionLine"> · {{ editionLine }}</template>
-      </p>
       <AlbumCoverDialog :album="group" :scope="scope" />
       <section
         v-if="coverMessage"
@@ -335,6 +315,9 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
       >
         <p class="m-0 min-w-0 flex-1 text-footnote leading-[1.55] text-secondary" role="status">
           {{ coverMessage }}
+          <span v-if="coverSearch.status === 'found' && coverSearch.replacing" class="block text-caption text-muted">{{
+            t('cover_replace_note')
+          }}</span>
           <span v-if="coverSearch.status === 'searching'" class="block text-caption text-muted">{{
             t('cover_note')
           }}</span>
@@ -345,7 +328,7 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
             :disabled="coverSearch.saving"
             data-testid="cover-save"
             @click="group && saveCover(group, scope)"
-            >{{ t('cover_save') }}</UiPillButton
+            >{{ t(coverSearch.replacing ? 'cover_replace' : 'cover_save') }}</UiPillButton
           >
           <UiTextButton class="text-footnote" @click="dismissCover">{{ t('cover_dismiss') }}</UiTextButton>
         </template>

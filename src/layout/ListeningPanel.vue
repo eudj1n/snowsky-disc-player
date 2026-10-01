@@ -16,6 +16,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Artwork from '../components/artwork/Artwork.vue'
 import NowPlayingDetails from '../components/player/NowPlayingDetails.vue'
+import InfoPanel from './InfoPanel.vue'
 import TrackPanel from './TrackPanel.vue'
 import TrackFacts from '../components/player/TrackFacts.vue'
 import { libraryRow, trackFacts } from '../domain/nowFacts'
@@ -58,7 +59,7 @@ import { nowColourStyle } from '../stores/nowColours'
 
 const player = usePlayerControls()
 /** The playing track's cover colours; an opened track keeps the theme's. */
-const onCover = computed(() => Boolean(nowColourStyle.value) && ui.panel !== 'track')
+const onCover = computed(() => Boolean(nowColourStyle.value) && ui.panel !== 'track' && ui.panel !== 'info')
 const close = ref<InstanceType<typeof UiIconButton> | null>(null)
 const queueSection = ref<HTMLElement | null>(null)
 const nowScroll = ref<HTMLElement | null>(null)
@@ -420,6 +421,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
       </NowPlayingDetails>
     </div>
     <TrackPanel v-else-if="ui.panel === 'track'" @navigate="onNavigate" />
+    <InfoPanel v-else-if="ui.panel === 'info'" @navigate="onNavigate" />
     <template v-else-if="ui.panel === 'lyrics'">
       <!-- The tab already says Lyrics: the header names the track only (owner, round 14). -->
       <div class="shrink-0 px-24 pb-10">

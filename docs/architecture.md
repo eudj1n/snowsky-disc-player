@@ -117,8 +117,12 @@ their facts (`searchArtists`, `bestArtist`) and its links;
 and background (the store's `artist_images`, else this browser), reads their
 bytes from the source into IndexedDB, runs the picker
 (`layout/ArtistImageDialog.vue`) and the automatic lookup, and gives artist
-cards their photo or a stand-in album cover; `views/ArtistImageCredit.vue`
-credits each image under the heading, whose `backdrop` draws the
+cards their photo or a stand-in album cover. The details panel
+(`layout/InfoPanel.vue`, the listening panel's `info` section opened by the
+heading's (i)) shows an artist's or album's MusicBrainz identity with its
+candidates or editions (`identifying` in `stores/musicbrainzIds.ts`), the
+images with their credit, the album cover's place on the card
+(`coverOnCard`) and the links; the heading's `backdrop` draws the
 background.
 
 The listening panel (`layout/ListeningPanel.vue`) has two tabs. Now shows

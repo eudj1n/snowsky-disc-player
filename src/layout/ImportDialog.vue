@@ -197,7 +197,7 @@ function openNew(): void {
       </p>
       <ul
         v-if="imports.items.length"
-        class="mt-12 mb-0 max-h-220 list-none overflow-auto overscroll-contain p-0"
+        class="relative mt-12 mb-0 max-h-220 list-none overflow-auto overscroll-contain p-0"
         data-testid="import-files"
       >
         <li v-for="item in imports.items" :key="item.id" class="border-t border-line/70 py-8 first:border-t-0">
