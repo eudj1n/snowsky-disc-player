@@ -2041,6 +2041,15 @@ details panel's four proposals ([specimen](https://claude.ai/artifact/Sh1BfYhPsD
       "keeps a long selection inside its own list…" (7,812 px of empty
       scroll before the fix).
 
+Checks (2026-10-02) of release `2026.10.01-e2a8bcb` (the details panel, the
+testing remarks, the long selection fix): `npm run check` with 297 unit
+tests; the full mock suite (177 passed, 71 skipped; an earlier run lost the
+phone's import case to another test's unscanned uploads, fixed in the mock);
+the emulator acceptance of this exact zip on the V2.57 guest with the card
+catalogs installed: 39 passed, 85 skipped (desktop), the cover case saving a
+cover and replacing it through the service's trash. The test key for fanart.tv
+is not in the zip.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
