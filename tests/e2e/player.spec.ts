@@ -1152,6 +1152,66 @@ test.describe('player controls on the mock', () => {
     await disconnect(page)
   })
 
+  test('resumes a stopped transfer as a whole and connects from the dialog, keeping the list', async ({
+    page,
+  }, info) => {
+    await english(page)
+    await connectAndPair(page)
+    const tag = `${info.project.name} ${Date.now()}`
+    const file = (name: string) => ({ name: `${name} ${tag}.flac`, mimeType: 'audio/flac', buffer: Buffer.from(name) })
+    await command(page, 'Add music')
+    const dialog = page.getByRole('dialog')
+    await dialog
+      .locator('input[type=file]:not([webkitdirectory])')
+      .setInputFiles([file('A Busy Once'), file('B After')])
+    await dialog.getByRole('button', { name: 'Transfer to DISC' }).click()
+    // The card was busy for the first file: the batch stopped and resumes as a whole (owner, 2026-10-01).
+    const resume = dialog.getByTestId('import-resume')
+    await expect(resume).toHaveText('Retry and continue (1)', { timeout: 20_000 })
+    // The working strip over the player stays for the whole transfer instead of blinking between files.
+    await expect(page.getByTestId('player-working')).toHaveCount(0)
+    await page.evaluate(() => {
+      const seen = { count: 0 }
+      ;(window as unknown as { strips: typeof seen }).strips = seen
+      new MutationObserver((records) => {
+        for (const record of records)
+          for (const node of record.addedNodes)
+            if (node instanceof HTMLElement && node.dataset.testid === 'player-working') seen.count++
+      }).observe(document.body, { childList: true, subtree: true })
+    })
+    await resume.click()
+    await expect(dialog.getByTestId('import-flow')).toHaveText(/confirmed files are on the card/, { timeout: 20_000 })
+    await expect(resume).toHaveCount(0)
+    await expect(page.getByTestId('player-working')).toHaveCount(0)
+    expect(await page.evaluate(() => (window as unknown as { strips: { count: number } }).strips.count)).toBe(1)
+    // Disconnected, the dialog keeps its list and connects in place with the kept serial number.
+    await page.keyboard.press('Escape')
+    await disconnect(page)
+    await command(page, 'Add music')
+    await expect(dialog.getByTestId('import-files')).toContainText(`B After ${tag}`)
+    await expect(dialog.getByTestId('import-connect')).toHaveText('Connect DISC →')
+    await dialog.getByTestId('import-connect').click()
+    await expect(dialog.getByTestId('import-connect')).toHaveCount(0, { timeout: 15_000 })
+    await page.keyboard.press('Escape')
+    // Without a kept serial number, pairing opens the connection dialog, which brings adding music back.
+    await disconnect(page)
+    await openConnection(page)
+    await page.getByRole('dialog').getByRole('button', { name: 'Forget serial number' }).click()
+    await page.keyboard.press('Escape')
+    await command(page, 'Add music')
+    await dialog.getByTestId('import-connect').click()
+    await expect(dialog.getByLabel(PAIRING_FIELD)).toBeVisible()
+    await dialog.getByLabel(PAIRING_FIELD).fill(SERIAL ?? '')
+    await dialog.getByRole('button', { name: 'Pair' }).click()
+    await dialog.getByRole('button', { name: 'Connect', exact: true }).click()
+    await expect(dialog.getByTestId('connection-state')).toContainText('Connected')
+    await page.keyboard.press('Escape')
+    await expect(dialog.getByTestId('import-files')).toContainText(`B After ${tag}`)
+    await expect(dialog.getByTestId('import-connect')).toHaveCount(0)
+    await page.keyboard.press('Escape')
+    await disconnect(page)
+  })
+
   test('skips files already on the card and lets the list be trimmed', async ({ page }, info) => {
     await english(page)
     await connectAndPair(page)

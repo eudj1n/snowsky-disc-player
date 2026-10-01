@@ -7,7 +7,7 @@
  * It shows and controls whichever side plays, the player or this browser,
  * and holds the one switch between them (owner, 2026-09-30).
  */
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import NowPlayingSummary from '../components/player/NowPlayingSummary.vue'
 import PlayerTools from '../components/player/PlayerTools.vue'
 import PlayerTransport from '../components/player/PlayerTransport.vue'
@@ -15,6 +15,7 @@ import { t } from '../i18n'
 import { connection } from '../stores/connection'
 import { coverFor } from '../stores/enrichment'
 import { switchSide } from '../stores/handoff'
+import { imports } from '../stores/imports'
 import { operation } from '../stores/operation'
 import { playback } from '../stores/playback'
 import { inBrowser, nowPlaying, nowPositionMs, output } from '../stores/output'
@@ -24,6 +25,23 @@ import { albumRoute, artistRoute } from '../views/captions'
 import { usePlaybackContext } from './usePlaybackContext'
 import { usePlayerControls } from './usePlayerControls'
 import { openVisualizer } from './visualizer'
+
+/*
+ * The working strip: one strip for a run of operations (a transfer is one operation a file, owner
+ * 2026-10-01: it blinked between files), gone only after a quiet moment.
+ */
+const working = ref(false)
+let quiet: ReturnType<typeof setTimeout> | undefined
+watch(
+  () => operation.busy || imports.transferring,
+  (busy) => {
+    clearTimeout(quiet)
+    if (busy) working.value = true
+    else quiet = setTimeout(() => (working.value = false), 600)
+  },
+  { immediate: true },
+)
+onBeforeUnmount(() => clearTimeout(quiet))
 
 const player = usePlayerControls()
 const track = player.track
@@ -62,7 +80,7 @@ const labels = computed(() => ({
     :data-disc-state="playback.current.state"
   >
     <span
-      v-if="operation.busy"
+      v-if="working"
       aria-hidden="true"
       data-testid="player-working"
       class="player-working pointer-events-none absolute inset-x-0 -top-px h-2 overflow-hidden"

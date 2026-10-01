@@ -14,7 +14,7 @@ import { useRoute, useRouter } from 'vue-router'
 import ListArt from '../components/artwork/ListArt.vue'
 import DetailHeading from '../components/collection/DetailHeading.vue'
 import TrackList from '../components/track/TrackList.vue'
-import { listArtists, listBackground, shortDay } from '../domain/listArt'
+import { listArtists, listBackground, listTones, shortDay } from '../domain/listArt'
 import type { LibraryTrack } from '../domain/track'
 import { locale, t } from '../i18n'
 import { autoPlaylists, autoPreviews } from '../stores/autoPlaylists'
@@ -55,6 +55,7 @@ const rows = computed(() =>
 const tracks = computed<LibraryTrack[]>(() => rows.value.map((row) => row.track))
 const items = computed(() => tracks.value)
 const background = computed(() => listBackground(list.value?.kind ?? preview.value ?? 'most_played', name.value))
+const tones = computed(() => listTones(list.value?.kind ?? preview.value ?? 'most_played', name.value))
 const artists = computed(() => {
   const { names, more } = listArtists(entries.value ?? [], trackByPath.value)
   return names.length ? (more ? t('list_artists_more', { names: names.join(', ') }) : names.join(', ')) : null
@@ -106,6 +107,7 @@ async function onAction(id: string): Promise<void> {
       <DetailHeading
         :title="name"
         :kind="t('kind_auto_playlist')"
+        :tones="tones"
         :sticky-action="loading ? null : heading.action.value"
         @sticky="heading.run"
       >

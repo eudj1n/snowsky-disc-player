@@ -51,6 +51,8 @@ const state = reactive({
   /** The search palette (owner, 2026-09-30): the whole collection and the page's commands. */
   palette: false,
   dialog: null as DialogName | null,
+  /** The dialog to come back to when this one closes (adding music opened the connection, 2026-10-01). */
+  dialogReturn: null as DialogName | null,
   panel: null as PanelSection | null,
   /** What the panel was opened for; the queue asks the Now tab to scroll to it. */
   panelTarget: null as PanelTarget | null,
@@ -105,8 +107,9 @@ export function closePalette(): void {
   state.palette = false
 }
 
-export function openDialog(name: DialogName): void {
+export function openDialog(name: DialogName, returnTo: DialogName | null = null): void {
   state.dialog = name
+  state.dialogReturn = returnTo
 }
 
 export function setKaraoke(open: boolean): void {
@@ -118,7 +121,8 @@ export function setVisualizer(open: boolean): void {
 }
 
 export function closeDialog(): void {
-  state.dialog = null
+  state.dialog = state.dialogReturn
+  state.dialogReturn = null
 }
 
 /** One toast slot; 4.5 s, errors 11 s (reference app.js toast()). */

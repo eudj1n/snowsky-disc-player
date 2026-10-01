@@ -1988,6 +1988,41 @@ gained `external_sources`, `musicbrainz` and `artist_images`; `queries.json`
 unchanged; `hosted.json` written as the image's own); the card ejected. Every
 outside source starts off on the player until the owner allows it.
 
+## Owner's testing remarks and the details panel (2026-10-01, evening), card-only
+
+The owner tested the release on the player ("всё работает") and agreed to the
+details panel's four proposals ([specimen](https://claude.ai/artifact/Sh1BfYhPsD3RHwe9AA2asw)).
+
+- [x] Adding music after a disconnect: the dialog said to connect but offered
+      no way to; the pairing link opened the connection dialog and did not
+      come back; a stopped batch could be resumed only file by file. The queue
+      itself survives closing the dialog (a store of the tab). Now "Connect
+      DISC" connects in place with the kept serial number (else "Pairing"
+      opens the connection dialog, which brings adding music back), and
+      "Retry and continue (n)" sends a stopped batch again as a whole (safe:
+      the upload route creates a file exclusively and never overwrites).
+      Evidence: e2e "resumes a stopped transfer as a whole and connects from
+      the dialog, keeping the list".
+- [x] The working strip over the player bar blinked during a transfer: every
+      file is its own operation, so the strip went and came back between
+      files and its animation started again. Now it stays for the whole
+      transfer and goes 0.6 s after the last operation. Evidence: the same
+      e2e counts one strip for a two-file transfer.
+- [x] An automatic playlist's page took its heading colours from the
+      title's sleeve palette, not from its own cover's colours. Now the
+      heading takes the list's palette (its base and first glow). Evidence:
+      `tests/unit/listArt.test.ts`; screenshots in light and dark.
+- [ ] The details panel (i) for artists and albums, always shown: MusicBrainz
+      (what is identified, "Refine…" among candidates or editions), images
+      (photo and background, or the cover, with source and licence,
+      "Choose…"), links, and later the files' tags. Owner's decisions: the
+      sections in that order; an album with a cover on the card may take
+      another, the old `cover.jpg` going to the card's trash (reversible);
+      nothing is looked up until "Identify" is pressed; an edition confirmed
+      also reads its release group (first release year and type). The
+      credits under the heading move into the panel; the heading's image
+      button gives way to (i). A "⋯" menu waits until there are more actions.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

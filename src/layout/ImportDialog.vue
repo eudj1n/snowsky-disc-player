@@ -10,11 +10,12 @@ import { useRouter } from 'vue-router'
 import { sizeLabel, splitPath } from '../domain/imports'
 import { t, type MessageKey } from '../i18n'
 import { droppedFiles, pickedFiles } from '../lib/dropFiles'
-import { connection } from '../stores/connection'
+import { connect, connection } from '../stores/connection'
 import {
   addSelection,
   clearSelection,
   removeItem,
+  resumeTransfer,
   retryItem,
   importFlow,
   imports,
@@ -42,12 +43,18 @@ const dragging = ref(false)
 const ready = computed(
   () => connection.connection === 'connected' && connection.identity?.compatible === true && pairing.paired,
 )
+/** Not ready: connect here when the serial number is kept, else pair in the connection dialog, which comes back here. */
+function reconnect(): void {
+  if (pairing.stored && connection.connection === 'disconnected') void connect()
+  else openDialog('connection', 'import')
+}
 const locked = computed(() => imports.transferring || imports.scan.phase === 'scanning' || operation.busy)
 const limit = computed(() => sizeLabel(uploadLimit.value))
 const counts = computed(() => ({
   done: imports.items.filter((item) => item.phase === 'done').length,
   waiting: imports.items.filter((item) => item.phase === 'waiting').length,
   present: imports.items.filter((item) => item.phase === 'exists').length,
+  stopped: imports.items.filter((item) => item.phase === 'not-sent' || item.phase === 'uncertain').length,
   total: imports.items.length,
 }))
 const STEPS: MessageKey[] = ['import_step_card', 'import_step_index', 'import_step_saved']
@@ -131,8 +138,20 @@ function openNew(): void {
         >{{ t(step) }}
       </li>
     </ol>
-    <p role="status" class="mt-0 mb-18 text-footnote leading-[1.55] text-secondary" data-testid="import-flow">
+    <p
+      role="status"
+      class="mt-0 mb-18 flex flex-wrap items-center gap-x-12 gap-y-6 text-footnote leading-[1.55] text-secondary"
+      data-testid="import-flow"
+    >
       {{ ready ? t(importFlow.message) : t('import_connect') }}
+      <UiTextButton
+        v-if="!ready"
+        class="inline-flex text-footnote"
+        :disabled="connection.connection === 'connecting'"
+        data-testid="import-connect"
+        @click="reconnect"
+        >{{ t(pairing.stored ? 'import_connect_action' : 'pairing') }} →</UiTextButton
+      >
     </p>
 
     <section class="border-t border-line pt-16">
@@ -241,10 +260,18 @@ function openNew(): void {
           >{{ counts.total ? t('import_batch_count', counts) : ''
           }}<template v-if="counts.present"> · {{ t('import_batch_present', counts) }}</template></small
         >
-        <div class="flex gap-10">
+        <div class="flex flex-wrap items-center gap-10">
           <UiTextButton :disabled="locked || !counts.total" @click="clearSelection">{{
             t('import_clear')
           }}</UiTextButton>
+          <UiPillButton
+            v-if="counts.stopped && !imports.transferring"
+            variant="secondary"
+            :disabled="locked || !ready"
+            data-testid="import-resume"
+            @click="resumeTransfer"
+            >{{ t('import_resume', { count: counts.stopped }) }}</UiPillButton
+          >
           <UiPillButton icon="upload" :disabled="locked || !counts.waiting || !ready" @click="transferSelection">{{
             t('import_send')
           }}</UiPillButton>
@@ -305,10 +332,5 @@ function openNew(): void {
         </div>
       </div>
     </section>
-    <p v-if="!pairing.paired" class="mt-16 text-footnote text-muted">
-      <UiTextButton class="inline-flex text-footnote" @click="openDialog('connection')"
-        >{{ t('pairing') }} →</UiTextButton
-      >
-    </p>
   </UiDialog>
 </template>

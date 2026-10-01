@@ -29,6 +29,8 @@ const props = withDefaults(
     artist?: boolean
     cover?: Blob | null
     backdrop?: Blob | null
+    /** The page's own colours when its artwork is drawn, not a cover (an automatic playlist's). */
+    tones?: CoverColours | null
     stickyAction?: HeadingAction | null
   }>(),
   {
@@ -36,6 +38,7 @@ const props = withDefaults(
     artist: false,
     cover: null,
     backdrop: null,
+    tones: null,
     stickyAction: null,
   },
 )
@@ -62,7 +65,7 @@ function sleeveColoursOf(title: string): CoverColours {
 }
 /** The gradient's colours for both themes; the stylesheet picks the theme's pair. */
 const colours = computed(() => {
-  const { first, second } = observed.value ?? sleeveColoursOf(props.title)
+  const { first, second } = observed.value ?? props.tones ?? sleeveColoursOf(props.title)
   return {
     '--head-a': hex(tint(first, 'light')),
     '--head-b': hex(tint(second, 'light', 0.85)),

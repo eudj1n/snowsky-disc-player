@@ -143,6 +143,21 @@ export function retryItem(id: number): void {
   }
 }
 
+/**
+ * Sends again every file a stopped transfer left (owner, 2026-10-01: after a
+ * disconnect), then the files still waiting. Safe for the same reason as a
+ * single retry: a file that did arrive answers "already on the card".
+ */
+export async function resumeTransfer(): Promise<void> {
+  if (state.transferring) return
+  for (const item of state.items)
+    if (item.phase === 'not-sent' || item.phase === 'uncertain') {
+      item.phase = 'waiting'
+      item.sent = 0
+    }
+  await transferSelection()
+}
+
 export function clearSelection(): void {
   if (state.transferring) return
   state.items = []

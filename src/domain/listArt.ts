@@ -8,6 +8,7 @@
  * nothing the page's policy forbids.
  */
 import { creditArtists } from './artist'
+import { toLch, type CoverColours, type Rgb } from './coverColours'
 import type { AutoKind } from './autoPlaylists'
 import type { LibraryTrack } from './track'
 
@@ -43,6 +44,19 @@ export function listBackground(kind: AutoKind, name: string): string {
     `radial-gradient(80% 70% at 28% 96%, ${second}cc 0%, transparent 70%)`,
     base,
   ].join(', ')
+}
+
+const rgb = (value: string): Rgb => [1, 3, 5].map((at) => parseInt(value.slice(at, at + 2), 16)) as unknown as Rgb
+
+/**
+ * The list page's heading colours (owner, 2026-10-01: they came from the
+ * title, not the cover): the cover's base and its first glow.
+ */
+export function listTones(kind: AutoKind, name: string): CoverColours {
+  const [base, first] = palette(kind, name)
+  const a = toLch(rgb(base))
+  const b = toLch(rgb(first))
+  return { first: a, second: b, grey: a.C < 0.035 }
 }
 
 /** The artists a list holds most, most first (joint credits count for each artist). */

@@ -481,6 +481,8 @@ export const en = {
   import_scan_uncertain: 'Completion unconfirmed. Your player may still be scanning.',
   import_scan_not_sent: 'Scan not started. Check the connection and player state.',
   import_invalid: 'Choose up to 1,000 audio files, each between 1 byte and {limit}. Paths must be valid and unique.',
+  import_connect_action: 'Connect DISC',
+  import_resume: 'Retry and continue ({count})',
   import_connect: 'Connect your DISC to transfer music.',
   import_stop_batch: 'Transfer stopped. Remaining files have not been sent.',
   import_skipped: 'other files skipped: {count}',

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { listArtists, listBackground, titleSize } from '../../src/domain/listArt'
+import { fromLch, hex } from '../../src/domain/coverColours'
+import { listArtists, listBackground, listTones, titleSize } from '../../src/domain/listArt'
 
 describe('automatic playlist covers', () => {
   it('give each list that is not an artist’s its own palette, and an artist’s list one by its name', () => {
@@ -28,5 +29,15 @@ describe('automatic playlist covers', () => {
   it('size a title so its longest word fits the card', () => {
     expect(titleSize('Daily mix')).toBe(13)
     expect(titleSize('Самое прослушиваемое')).toBeCloseTo(138 / 14)
+  })
+
+  it("gives the list page's heading the cover's own colours, not the title's", () => {
+    const most = listTones('most_played', 'Most played')
+    expect(hex(fromLch(most.first))).toBe('#f5a02e')
+    expect(hex(fromLch(most.second))).toBe('#ffd95a')
+    expect(most.grey).toBe(false)
+    // An artist's list takes the palette its name picks, as its cover does.
+    const artist = listTones('artist_most_played', 'Lumen')
+    expect(listBackground('artist_most_played', 'Lumen')).toContain(hex(fromLch(artist.second)))
   })
 })
