@@ -613,6 +613,9 @@ test("finds a cover on Cover Art Archive and saves it into the album's folder th
   await connectAndPair(page)
   await page.goto('/#/album/Night%20Lines/Lumen')
   await page.getByTestId('cover-find').click({ timeout: 60_000 })
+  // The editions to choose from (2026-10-01); the chosen one becomes the offer.
+  await page.getByTestId('covers-coverartarchive').getByRole('button').first().click({ timeout: 30_000 })
+  await page.getByTestId('cover-use').click()
   await expect(page.getByTestId('cover-offer')).toContainText('Not on the card yet', { timeout: 30_000 })
   await page.getByTestId('cover-save').click()
   await expect(page.getByTestId('cover-offer')).toBeHidden({ timeout: 30_000 })

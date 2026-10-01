@@ -1969,6 +1969,19 @@ dialog, the first window when starting.
       no CORS, and a public CORS proxy would open the page's policy to any
       host.
 
+Checks (2026-10-01) of release `2026.10.01-e2fcef6` (Settings, the outside
+sources, artist images and album covers chosen among the sources): `npm run
+check` with 296 unit tests; the full mock suite (173 passed, 71 skipped);
+the emulator acceptance of this exact zip on the V2.57 guest with the card
+catalogs installed (`store.json` with `external_sources`, `musicbrainz` and
+`artist_images`; the app's `origins.json` with fanart.tv): 39 passed, 83
+skipped (desktop). The first acceptance run found the cover case still on the
+old "Find" button; the case now chooses an edition in the picker (the release
+is unchanged) and passed after a media reset. One case fewer passed than for
+`2026.09.30-418fa1e` (40) with the same cases and the same skips in the
+code; not traced further. The test key the owner gave for fanart.tv is in
+neither repository, their history nor the zip.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
