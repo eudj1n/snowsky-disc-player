@@ -6,13 +6,16 @@ import { sameTrack, type Track } from '../domain/track'
 import type { MessageKey } from '../i18n'
 
 export type DialogName = 'connection' | 'sound' | 'import'
-/** The listening panel's tabs (owner, 2026-09-29: the queue joined Now), and a track opened from a row (2026-09-30). */
-export type PanelSection = 'now' | 'lyrics' | 'track' | 'info'
+/**
+ * The listening panel's sheets, without tabs (owner, 2026-10-02): what plays with its lyrics, the queue, a track
+ * opened from a row (2026-09-30) and an artist's or album's details.
+ */
+export type PanelSection = 'now' | 'queue' | 'track' | 'info'
 /** What the details panel (i) shows (owner, 2026-10-01): an artist, or an album by its key and scope. */
 export type PanelInfo =
   { kind: 'artist'; name: string } | { kind: 'album'; key: string; title: string; scope: string | null }
-/** What an opener asks for: a tab, or the queue (the Now tab scrolled to it). */
-export type PanelTarget = PanelSection | 'queue'
+/** What an opener asks for: a sheet, or the lyrics (the Now sheet at its lyrics). */
+export type PanelTarget = PanelSection | 'lyrics'
 
 /** The open track actions menu: the row's track, what Play selects, and
  * where to anchor (reference openTrackMenu: right-aligned below the ⋯). */
@@ -57,14 +60,16 @@ const state = reactive({
   /** The dialog to come back to when this one closes (adding music opened the connection, 2026-10-01). */
   dialogReturn: null as DialogName | null,
   panel: null as PanelSection | null,
-  /** What the panel was opened for; the queue asks the Now tab to scroll to it. */
+  /** What the panel was opened for; the lyrics ask the Now sheet to scroll to them. */
   panelTarget: null as PanelTarget | null,
+  /** The sheet the close button leads back to: the full-screen player that opened the queue (phones). */
+  panelReturn: null as PanelSection | null,
   /** The track a row's title opened in the panel, with what its Play selects. */
   panelTrack: null as { track: Track; play: SelectionTarget | null; playlist: string | null } | null,
   /** The artist or album the details panel shows. */
   panelInfo: null as PanelInfo | null,
-  /** Increments each time an opener asks for the queue. */
-  queueRequest: 0,
+  /** Increments each time an opener asks for a sheet or the lyrics, so the panel can show the place asked for. */
+  panelRequest: 0,
   toast: null as Toast | null,
   trackMenu: null as TrackMenu | null,
   playlistDialog: null as PlaylistDialog | null,
@@ -148,8 +153,8 @@ let panelOpener: HTMLElement | null = null
 
 /**
  * The listening panel (reference toggleListeningPanel): the opener of what is
- * shown closes it, another opener switches to its tab. The queue opener shows
- * the Now tab at the queue. Explicit closes return focus to the opener.
+ * shown closes it, another opener switches to its sheet. The lyrics opener
+ * shows the Now sheet at the lyrics. Explicit closes return focus to the opener.
  */
 export function togglePanel(target: PanelTarget, opener: HTMLElement | null): void {
   if (state.panel !== null && state.panelTarget === target) {
@@ -157,14 +162,36 @@ export function togglePanel(target: PanelTarget, opener: HTMLElement | null): vo
     return
   }
   if (state.panel === null) panelOpener = opener
-  state.panel = target === 'queue' ? 'now' : target
+  state.panel = target === 'lyrics' ? 'now' : target
   state.panelTarget = target
-  if (target === 'queue') state.queueRequest++
+  state.panelReturn = null
+  state.panelRequest++
+}
+
+/** The queue from the full-screen player (phones, where the bar hides): its sheet leads back to the player. */
+export function openQueueSheet(): void {
+  state.panelReturn = state.panel
+  state.panel = 'queue'
+  state.panelTarget = 'queue'
+  state.panelRequest++
+}
+
+/** The sheet's close button and Escape: back to the sheet that opened this one, else the panel closes. */
+export function leaveSheet(): void {
+  const back = state.panelReturn
+  if (!back) {
+    closePanel(true)
+    return
+  }
+  state.panel = back
+  state.panelTarget = back
+  state.panelReturn = null
+  state.panelRequest++
 }
 
 /**
  * A row's title opens its track in the panel (owner, 2026-09-30); the same title again closes it,
- * another switches to that track. The tabs lead back to what plays.
+ * another switches to that track.
  */
 export function openTrackPanel(
   track: Track,
@@ -180,6 +207,7 @@ export function openTrackPanel(
   state.panelTrack = { track: { ...track }, play, playlist }
   state.panel = 'track'
   state.panelTarget = 'track'
+  state.panelReturn = null
 }
 
 const sameInfo = (a: PanelInfo, b: PanelInfo): boolean =>
@@ -197,16 +225,13 @@ export function openInfoPanel(info: PanelInfo, opener: HTMLElement | null): void
   state.panelInfo = { ...info }
   state.panel = 'info'
   state.panelTarget = 'info'
-}
-
-export function showPanelSection(section: PanelSection): void {
-  state.panel = section
-  state.panelTarget = section
+  state.panelReturn = null
 }
 
 export function closePanel(restoreFocus: boolean): void {
   state.panel = null
   state.panelTarget = null
+  state.panelReturn = null
   state.panelTrack = null
   state.panelInfo = null
   // On phones the opener's bar hides while the panel is open: focus it once it is back.

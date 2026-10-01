@@ -2080,6 +2080,29 @@ added to the pages, the sheets laid out as the track's.
       cover among the editions…", "opens a track from its title…";
       screenshots in light, dark and on a phone (touch).
 
+## The player without tabs: lyrics in Now, the queue its own sheet (owner, 2026-10-02), card-only
+
+The lyrics and the queue already have buttons of their own on the bar, so the
+listening panel's tabs only got in the way. Decided: lyrics move into Now
+Playing, the queue becomes a sheet of its own, no tabs.
+
+- [x] Now Playing is one scroll: the head as before (cover, title, links,
+      the controls on phones), the folded "About this track", then the
+      lyrics with karaoke, the LRCLIB lookup and saving. The bar's Lyrics
+      button opens it at the lyrics: their start below the pinned line of
+      the track (the head folded into it), the current line of synced lyrics
+      in the middle, followed as it plays. A scroll by hand that leaves the
+      current line out of view pauses the following until the line is in
+      view again; opening Now shows the head and follows nothing until the
+      listener gets to the lyrics. Karaoke stays full screen. Evidence: unit
+      `lyrics-view.test.ts`; e2e "shows the lyrics of the current track…",
+      "pins a compact line of the track…".
+- [x] The queue is a sheet of its own: the bar's queue button, on phones a
+      button in the full-screen player, whose sheet leads back to the player
+      (its button and Escape). Evidence: e2e "plays a track from an album
+      page and shows it in Now Playing and Queue", "the listening panel
+      repeats no controls…".
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

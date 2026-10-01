@@ -87,7 +87,7 @@ test('scans the generated media, keeps same-titled albums apart and survives tra
   await expect(title).toBeVisible()
   // Queue rows show the album's folder cover: their paths come from the persisted queue (LIST_SONG_0).
   await page.getByRole('button', { name: 'Open queue' }).click()
-  const queue = page.getByRole('complementary', { name: 'Player view' })
+  const queue = page.getByRole('complementary', { name: 'Queue' })
   await expect(queue.locator('[data-cover=true] canvas')).toHaveCount(3, { timeout: 30_000 })
   await page.keyboard.press('Escape')
   await disconnect(page)
@@ -180,7 +180,7 @@ test('controls transport, seek, volume and mute, modes, favorite and the queue o
   await flip(favorite)
 
   await page.getByRole('button', { name: 'Open queue' }).click()
-  const queue = page.getByRole('complementary', { name: 'Player view' })
+  const queue = page.getByRole('complementary', { name: 'Queue' })
   await queue
     .getByRole('button', { name: /^Select in queue / })
     .first()

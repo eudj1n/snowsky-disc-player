@@ -6,7 +6,7 @@
  * track), the favorite heart and Add to playlist, drawn and disabled where
  * they cannot act; then the facts the playing track gets (quality, year,
  * genre, disc, size, folder, plays, dislike) and its own lyrics, read once
- * when it opens. The panel's tabs lead back to what plays.
+ * when it opens.
  */
 import { computed, ref, watch } from 'vue'
 import Artwork from '../components/artwork/Artwork.vue'
@@ -181,7 +181,9 @@ const LINK = 'hover:text-ink hover:underline hover:underline-offset-3'
       @navigate="emit('navigate')"
     />
     <section class="mt-30" aria-labelledby="track-panel-lyrics" data-testid="track-panel-lyrics">
-      <h3 id="track-panel-lyrics" class="mt-0 mb-10 text-title3 font-bold tracking-heading">{{ t('lyrics_tab') }}</h3>
+      <h3 id="track-panel-lyrics" class="mt-0 mb-10 text-title3 font-bold tracking-heading">
+        {{ t('lyrics_heading') }}
+      </h3>
       <div v-if="lyrics.status === 'ready'" class="text-body leading-[1.55] whitespace-pre-line text-secondary">
         <p v-for="(line, index) in lyrics.lyrics.lines" :key="index" class="m-0 min-h-[1lh]">{{ line.text }}</p>
         <p class="mt-20 mb-0 text-footnote text-muted">{{ lyrics.source }}</p>

@@ -4,8 +4,9 @@
  * with format badge, title, artist and album links and where playback comes
  * from. On phones, where the open panel is a full-screen player, the timeline
  * with seek feedback, transport, modes, favorite and volume follow; on wider
- * screens the bottom bar is the one control surface (owner, 2026-09-29). The
- * default slot takes what the tab shows below (the facts, the queue).
+ * screens the bottom bar is the one control surface (owner, 2026-09-29); the
+ * queue opens from there in a sheet of its own (2026-10-02). The default slot
+ * takes what the sheet shows below (the facts, the lyrics).
  */
 import { computed } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
@@ -32,6 +33,8 @@ const props = defineProps<{
   modesDisabled: boolean
   seekDisabled: boolean
   favoriteDisabled: boolean
+  /** The queue cannot be read (the player is not connected and this browser does not play). */
+  queueDisabled?: boolean
   shuffle: boolean
   repeat: boolean
   /** Stock repeats one track (the repeat button's third state). */
@@ -64,6 +67,8 @@ const props = defineProps<{
     playingFrom: string
     /** The button that shows an observed cover in full size. */
     coverFullSize: string
+    /** The full-screen player's button to the queue's sheet. */
+    queue: string
   }
   /** Where playback comes from, when known. */
   context?: { text: string; to: RouteLocationRaw | null } | null
@@ -96,6 +101,8 @@ const emit = defineEmits<{
   volume: [value: number]
   mute: []
   navigate: []
+  /** Open the queue's sheet (phones; the bar holds the button elsewhere). */
+  queue: []
   /** Show the observed cover in full size. */
   cover: []
 }>()
@@ -276,6 +283,14 @@ const emit = defineEmits<{
           :disabled="side === 'browser'"
           data-testid="sound-open-panel"
           @click="emit('sound')"
+        />
+        <UiIconButton
+          icon="queue"
+          :label="labels.queue"
+          :disabled="queueDisabled"
+          class="ml-auto"
+          data-testid="queue-open-panel"
+          @click="emit('queue')"
         />
       </div>
     </div>

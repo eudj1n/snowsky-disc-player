@@ -1,17 +1,19 @@
 <script setup lang="ts">
 /**
- * Reference listening panel (aside#now-panel), two tabs since 2026-09-29
- * (owner): Now (the track's head, its facts and, on the same scroll, the
- * whole queue, which the bar's queue button scrolls to) and Lyrics; a row's
- * title shows its track here instead (TrackPanel.vue, 2026-09-30). Once the
- * head has scrolled away, a compact line of the track and the queue's heading
- * stay pinned and only the list moves (owner, 2026-09-30); the line leads back
- * to the head, and on phones it keeps play and pause. The bar
- * stays the one control surface: the panel repeats no controls, except on
- * phones, where it covers the screen as a full-screen player with the bar
- * hidden. It reserves 380px from 1200px (App.vue sets .listening-open) and
- * overlays below. Opening focuses the minimize button; explicit closes return
- * focus to the opener; Escape closes it only when no dialog is open.
+ * Reference listening panel (aside#now-panel): one sheet at a time, without
+ * tabs (owner, 2026-10-02). Now holds the track's head, its folded facts and
+ * its lyrics on one scroll (the bar's Lyrics button opens it at the lyrics);
+ * the queue is a sheet of its own (the bar's queue button, on phones a button
+ * of the full-screen player, whose sheet leads back to the player); a row's
+ * title shows its track (TrackPanel.vue, 2026-09-30) and an artist's or
+ * album's (i) its details (InfoPanel.vue). Once the head has scrolled away, a
+ * compact line of the track stays pinned (owner, 2026-09-30); it leads back to
+ * the head, and on phones it keeps play and pause. The bar stays the one
+ * control surface: the panel repeats no controls, except on phones, where it
+ * covers the screen as a full-screen player with the bar hidden. It reserves
+ * 380px from 1200px (App.vue sets .listening-open) and overlays below. Opening
+ * focuses the close button; explicit closes return focus to the opener;
+ * Escape closes it only when no dialog is open.
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
@@ -24,7 +26,6 @@ import { libraryRow, trackFacts } from '../domain/nowFacts'
 import { trackKey } from '../domain/track'
 import { device } from '../stores/device'
 import LyricsView from '../components/player/LyricsView.vue'
-import ArtistCredit from '../components/track/ArtistCredit.vue'
 import QueueRows from '../components/player/QueueRows.vue'
 import { t } from '../i18n'
 import { connection } from '../stores/connection'
@@ -47,7 +48,7 @@ import {
 } from '../stores/lyrics'
 import UiPillButton from '../ui/UiPillButton.vue'
 import { playerOptions } from '../stores/playerOptions'
-import { closePanel, openDialog, showCover, showPanelSection, ui } from '../stores/ui'
+import { closePanel, leaveSheet, openDialog, openQueueSheet, showCover, ui } from '../stores/ui'
 import { disliked, isDisliked, toggleDislike } from '../stores/disliked'
 import UiIcon from '../ui/UiIcon.vue'
 import UiIconButton from '../ui/UiIconButton.vue'
@@ -65,21 +66,23 @@ const route = useRoute()
 const details = computed(() => ui.panel === 'track' || ui.panel === 'info')
 const onCover = computed(() => Boolean(nowColourStyle.value) && !details.value)
 const close = ref<InstanceType<typeof UiIconButton> | null>(null)
-const queueSection = ref<HTMLElement | null>(null)
 const nowScroll = ref<HTMLElement | null>(null)
 const headEnd = ref<HTMLElement | null>(null)
-/** The head has scrolled out of the Now tab: the compact line of the track shows. */
+const lyricsView = ref<InstanceType<typeof LyricsView> | null>(null)
+/** The compact line's height: it covers the top of the sheet's scroll. */
+const COMPACT = 60
+/** The head has scrolled under the compact line, out of the Now sheet: the line shows. */
 const compact = ref(false)
 function onNowScroll(): void {
   const box = nowScroll.value?.getBoundingClientRect()
   const end = headEnd.value?.getBoundingClientRect()
-  compact.value = Boolean(box && end && end.top <= box.top)
+  compact.value = Boolean(box && end && end.top <= box.top + COMPACT)
 }
-function backToHead(): void {
-  const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches
-  nowScroll.value?.scrollTo({ top: 0, behavior: smooth ? 'smooth' : 'auto' })
+const smooth = () => !matchMedia('(prefers-reduced-motion: reduce)').matches
+function backToHead(motion = true): void {
+  nowScroll.value?.scrollTo({ top: 0, behavior: motion && smooth() ? 'smooth' : 'auto' })
 }
-/** The playing track's facts for the Now tab. */
+/** The playing track's facts for the Now sheet. */
 const facts = computed(() => {
   const track = nowPlaying.value.track
   if (!track) return null
@@ -109,7 +112,7 @@ watch(
     if (
       key &&
       !inBrowser.value &&
-      ui.panel &&
+      ui.panel === 'queue' &&
       connection.connection === 'connected' &&
       queue.status === 'ready' &&
       queueCurrent.value === null
@@ -117,13 +120,14 @@ watch(
       void loadQueue()
   },
 )
-// The bar's queue button shows the Now tab at the queue.
+// The bar's Lyrics button shows the Now sheet at the lyrics; Now, asked again while it is open, its head.
 watch(
-  () => ui.queueRequest,
+  () => ui.panelRequest,
   async () => {
+    const open = Boolean(nowScroll.value)
     await nextTick()
-    const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches
-    queueSection.value?.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' })
+    if (ui.panelTarget === 'lyrics') lyricsView.value?.follow(open)
+    else if (ui.panelTarget === 'now' && open) backToHead()
   },
 )
 /** The queue the panel lists: this browser's own while it plays here, else the player's snapshot. */
@@ -177,6 +181,7 @@ const labels = computed(() => ({
   resampled: t('output_resampled'),
   playingFrom: t('playing_from'),
   coverFullSize: t('cover_full_size', { name: coverName.value }),
+  queue: t('open_queue'),
 }))
 const nowCover = computed(() => (nowPlaying.value.track ? coverFor(nowPlaying.value.track) : null))
 /** What the full-size cover is named by: the album, else the track. */
@@ -237,7 +242,7 @@ function onKeydown(event: KeyboardEvent): void {
     !event.defaultPrevented &&
     !document.querySelector('dialog[open]')
   )
-    closePanel(true)
+    leaveSheet()
 }
 
 function onNavigate(): void {
@@ -256,11 +261,12 @@ watch(
 watch(
   () => ui.panel,
   async (section, previous) => {
-    if (section && !previous) {
-      if (!inBrowser.value && connection.connection === 'connected') void loadQueue()
-      await nextTick()
-      ;(close.value?.$el as HTMLElement | undefined)?.focus({ preventScroll: true })
-    }
+    if (section === 'queue' && !inBrowser.value && connection.connection === 'connected') void loadQueue()
+    if (!section || section === previous) return
+    await nextTick()
+    // Opening, or a sheet that replaced the button that led to it (the queue, back to the player): its close button.
+    if (!previous || document.activeElement === document.body)
+      (close.value?.$el as HTMLElement | undefined)?.focus({ preventScroll: true })
   },
 )
 watch(
@@ -275,7 +281,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   <aside
     v-if="ui.panel"
     id="now-panel"
-    :aria-label="details ? t('details_view') : t('player_view')"
+    :aria-label="details ? t('details_view') : ui.panel === 'queue' ? t('queue') : t('player_view')"
     class="fixed top-0 right-0 bottom-(--player) z-25 flex w-380 animate-listening-enter flex-col border-l border-line bg-raised text-left shadow-[-15px_0_65px_#26301418] phone:bottom-0 phone:z-40 phone:w-full phone:border-l-0"
     :class="{ 'on-cover': onCover }"
     :style="onCover ? nowColourStyle : undefined"
@@ -283,39 +289,26 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   >
     <div
       class="flex items-center justify-between px-24 pt-22 pb-12 phone:px-24 phone:pt-16 phone:pb-10"
-      :class="{ 'justify-end! pt-16 pb-6': details }"
+      :class="{ 'pt-16 pb-6': ui.panel !== 'now', 'justify-end!': ui.panel !== 'now' && !ui.panelReturn }"
     >
-      <span v-if="!details" class="text-caption2 font-semibold tracking-caps text-muted uppercase">SNOWSKY DISC</span>
+      <span v-if="ui.panel === 'now'" class="text-caption2 font-semibold tracking-caps text-muted uppercase"
+        >SNOWSKY DISC</span
+      >
       <UiIconButton
         ref="close"
-        icon="close"
-        :label="details ? t('close') : t('minimize_player')"
-        @click="closePanel(true)"
+        :icon="ui.panelReturn ? 'back' : 'close'"
+        :label="ui.panelReturn ? t('back_to_player') : ui.panel === 'now' ? t('minimize_player') : t('close')"
+        data-testid="panel-close"
+        @click="leaveSheet"
       />
-    </div>
-    <div
-      v-if="!details"
-      class="mx-24 mb-20 flex shrink-0 gap-4 rounded-24 border border-line p-4 phone:mb-16"
-      role="group"
-    >
-      <button
-        v-for="section in ['now', 'lyrics'] as const"
-        :key="section"
-        type="button"
-        :aria-pressed="ui.panel === section"
-        class="flex-1 rounded-20 px-12 py-9 text-footnote text-muted aria-pressed:bg-paper aria-pressed:text-ink aria-pressed:shadow-[0_1px_5px_#0001]"
-        @click="showPanelSection(section)"
-      >
-        {{ t(section === 'now' ? 'now_playing' : 'lyrics_tab') }}
-      </button>
     </div>
     <div
       v-if="ui.panel === 'now'"
       ref="nowScroll"
-      class="min-h-0 flex-1 [scrollbar-width:thin] overflow-auto overscroll-contain px-24 pb-28"
+      class="[container-type:size] min-h-0 flex-1 [scrollbar-width:thin] overflow-auto overscroll-contain px-24 pb-28"
       @scroll.passive="onNowScroll"
     >
-      <!-- Pinned above the list once the head is gone; it takes no room in the flow. -->
+      <!-- Pinned above the lyrics once the head is gone; it takes no room in the flow. -->
       <div class="sticky top-0 z-3 -mx-24 h-0">
         <div
           class="flex h-60 items-center gap-12 border-b border-line bg-raised px-24 backdrop-blur-[18px] transition-[opacity,translate,visibility] duration-200 motion-reduce:transition-none"
@@ -327,7 +320,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
             type="button"
             class="flex min-w-0 flex-1 items-center gap-12 p-0 text-left"
             :aria-label="t('now_back_to_track')"
-            @click="backToHead"
+            @click="backToHead()"
           >
             <span class="block size-40 shrink-0 overflow-hidden rounded-6 bg-soft">
               <Artwork :title="nowPlaying.track?.title ?? null" :cover="nowCover" />
@@ -367,6 +360,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         :modes-disabled="player.modesDisabled.value"
         :seek-disabled="player.seekDisabled.value"
         :favorite-disabled="player.favoriteDisabled.value"
+        :queue-disabled="!inBrowser && connection.connection !== 'connected'"
         :shuffle="player.shuffle.value"
         :repeat="player.repeat.value"
         :repeat-one="player.repeatOne.value"
@@ -384,6 +378,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         @side="switchSide"
         @visualizer="openVisualizer"
         @sound="openDialog('sound')"
+        @queue="openQueueSheet"
         @cover="showNowCover"
       >
         <div ref="headEnd" aria-hidden="true" />
@@ -396,128 +391,116 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
           @dislike="nowPlaying.track && toggleDislike(nowPlaying.track)"
           @navigate="onNavigate"
         />
-        <section
-          ref="queueSection"
-          class="mt-30 scroll-mt-68"
-          data-testid="panel-queue"
-          :aria-labelledby="'panel-queue-title'"
-        >
-          <!-- The queue's heading stays on top of its list, below the compact line of the track. -->
-          <div
-            class="sticky z-2 -mx-24 bg-raised px-24 pb-6 backdrop-blur-[18px] transition-[top] duration-200 motion-reduce:transition-none"
-            :class="compact ? 'top-60 pt-10' : 'top-0 pt-2'"
-            data-testid="panel-queue-heading"
+        <section class="mt-30" aria-labelledby="now-lyrics-title" data-testid="now-lyrics">
+          <LyricsView
+            ref="lyricsView"
+            :lyrics="lyrics.lyrics"
+            :position-ms="nowPositionMs"
+            :position-at="nowPositionAt"
+            :playing="nowIsPlaying"
+            :message="lyricsMessage"
+            :source="lyricsSource"
+            :seek-label="t('lyrics_seek')"
+            :seekable="!player.seekDisabled.value"
+            :scroller="nowScroll"
+            :covered="compact ? COMPACT : 0"
+            @seek="(ms) => player.identity.value && player.onSeek(Math.floor(ms / 1000), player.identity.value)"
           >
-            <div class="flex items-end justify-between">
-              <div>
-                <span class="text-caption2 font-semibold tracking-caps text-muted uppercase">{{
-                  t('your_selection')
-                }}</span>
-                <h2 id="panel-queue-title" class="mt-6 mb-4 text-title2 font-bold tracking-heading">
-                  {{ t('queue') }}
-                </h2>
-              </div>
-              <!-- Reads the player's queue: disabled while this browser plays its own. -->
+            <div class="mb-10 flex items-center gap-10">
+              <h3 id="now-lyrics-title" class="m-0 min-w-0 flex-1 text-title3 font-bold tracking-heading">
+                {{ t('lyrics_heading') }}
+              </h3>
               <UiIconButton
-                icon="refresh"
-                :label="t('refresh_queue')"
-                :disabled="inBrowser || connection.connection !== 'connected' || queue.status === 'loading'"
-                @click="loadQueue"
+                :disabled="!nowPlaying.track"
+                icon="karaoke"
+                :label="t('karaoke_open')"
+                data-testid="karaoke-open"
+                @click="openKaraoke"
               />
             </div>
-            <p class="mt-4 mb-0 text-footnote text-muted" role="status">{{ queueHint }}</p>
-          </div>
-          <p v-if="!inBrowser && queue.status === 'ready'" class="mt-4 mb-14 text-footnote leading-[1.55] text-muted">
-            {{ t('queue_snapshot_note') }}
-          </p>
-          <QueueRows
-            :items="items"
-            :current="listCurrent"
-            :playing="nowIsPlaying"
-            :select-label="t('select_in_queue')"
-            :play-label="t('play')"
-            :pause-label="t('pause')"
-            :disabled="!player.ready.value || (!inBrowser && queue.status !== 'ready')"
-            @select="selectRow"
-            @toggle="player.onTransport('toggle')"
-          />
+            <div v-if="lookupOffered || lyrics.source === 'lrclib'" class="mb-14" data-testid="lyrics-lookup">
+              <UiPillButton
+                v-if="lyrics.source === 'lrclib'"
+                variant="secondary"
+                :disabled="lyrics.saving"
+                data-testid="lyrics-save"
+                @click="saveFoundLyrics"
+                >{{ t('lyrics_save') }}</UiPillButton
+              >
+              <template v-else>
+                <p v-if="lookupMessage" class="mt-0 mb-8 text-footnote text-secondary" role="status">
+                  {{ lookupMessage }}
+                </p>
+                <UiPillButton
+                  v-if="lyrics.lookup !== 'searching'"
+                  variant="secondary"
+                  data-testid="lyrics-find"
+                  @click="lookUpLyrics"
+                  >{{ t(plainLyricsOnly() ? 'lrclib_find_synced' : 'lrclib_find') }}</UiPillButton
+                >
+                <p class="mt-8 mb-0 text-caption leading-[1.5] text-muted">{{ t('lrclib_note') }}</p>
+              </template>
+            </div>
+            <p
+              v-else-if="lookupOff"
+              class="mt-0 mb-14 text-footnote leading-[1.5] text-secondary"
+              data-testid="lyrics-source-off"
+            >
+              {{ t('lrclib_off') }}
+              <RouterLink
+                class="text-ink underline underline-offset-2"
+                :to="{ path: '/settings', query: { part: 'sources' } }"
+                @click="onNavigate"
+                >{{ t('external_sources') }}</RouterLink
+              >
+            </p>
+          </LyricsView>
         </section>
       </NowPlayingDetails>
     </div>
-    <TrackPanel v-else-if="ui.panel === 'track'" @navigate="onNavigate" />
-    <InfoPanel v-else-if="ui.panel === 'info'" @navigate="onNavigate" />
-    <template v-else-if="ui.panel === 'lyrics'">
-      <!-- The tab already says Lyrics: the header names the track only (owner, round 14). -->
-      <div class="shrink-0 px-24 pb-10">
-        <div class="flex items-center gap-10">
-          <h2 class="mt-0 mb-0 min-w-0 flex-1 truncate text-title2 font-bold tracking-heading">
-            {{ nowPlaying.track?.title ?? t('lyrics_tab') }}
-          </h2>
+    <template v-else-if="ui.panel === 'queue'">
+      <div class="shrink-0 px-24 pb-12" data-testid="panel-queue-heading">
+        <div class="flex items-end justify-between">
+          <div>
+            <span class="text-caption2 font-semibold tracking-caps text-muted uppercase">{{
+              t('your_selection')
+            }}</span>
+            <h2 id="panel-queue-title" class="mt-6 mb-4 text-title2 font-bold tracking-heading">
+              {{ t('queue') }}
+            </h2>
+          </div>
+          <!-- Reads the player's queue: disabled while this browser plays its own. -->
           <UiIconButton
-            :disabled="!nowPlaying.track"
-            icon="karaoke"
-            :label="t('karaoke_open')"
-            data-testid="karaoke-open"
-            @click="openKaraoke"
+            icon="refresh"
+            :label="t('refresh_queue')"
+            :disabled="inBrowser || connection.connection !== 'connected' || queue.status === 'loading'"
+            @click="loadQueue"
           />
         </div>
-        <p
-          v-if="nowPlaying.track?.artist"
-          class="mt-2 mb-0 truncate text-footnote text-muted"
-          @click="($event.target as HTMLElement).closest('a') && onNavigate()"
-        >
-          <ArtistCredit
-            :credit="nowPlaying.track.artist"
-            :to="(name) => ({ name: 'artist', params: { name } })"
-            link-class="hover:text-ink hover:underline"
-          />
-        </p>
+        <p class="mt-4 mb-0 text-footnote text-muted" role="status">{{ queueHint }}</p>
       </div>
-      <div v-if="lookupOffered || lyrics.source === 'lrclib'" class="shrink-0 px-24 pb-12" data-testid="lyrics-lookup">
-        <UiPillButton
-          v-if="lyrics.source === 'lrclib'"
-          variant="secondary"
-          :disabled="lyrics.saving"
-          data-testid="lyrics-save"
-          @click="saveFoundLyrics"
-          >{{ t('lyrics_save') }}</UiPillButton
-        >
-        <template v-else>
-          <p v-if="lookupMessage" class="mt-0 mb-8 text-footnote text-secondary" role="status">{{ lookupMessage }}</p>
-          <UiPillButton
-            v-if="lyrics.lookup !== 'searching'"
-            variant="secondary"
-            data-testid="lyrics-find"
-            @click="lookUpLyrics"
-            >{{ t(plainLyricsOnly() ? 'lrclib_find_synced' : 'lrclib_find') }}</UiPillButton
-          >
-          <p class="mt-8 mb-0 text-caption leading-[1.5] text-muted">{{ t('lrclib_note') }}</p>
-        </template>
-      </div>
-      <p
-        v-else-if="lookupOff"
-        class="mt-0 shrink-0 px-24 pb-12 text-footnote leading-[1.5] text-secondary"
-        data-testid="lyrics-source-off"
+      <section
+        class="min-h-0 flex-1 [scrollbar-width:thin] overflow-auto overscroll-contain px-24 pb-28"
+        data-testid="panel-queue"
+        aria-labelledby="panel-queue-title"
       >
-        {{ t('lrclib_off') }}
-        <RouterLink
-          class="text-ink underline underline-offset-2"
-          :to="{ path: '/settings', query: { part: 'sources' } }"
-          @click="onNavigate"
-          >{{ t('external_sources') }}</RouterLink
-        >
-      </p>
-      <LyricsView
-        :lyrics="lyrics.lyrics"
-        :position-ms="nowPositionMs"
-        :position-at="nowPositionAt"
-        :playing="nowIsPlaying"
-        :message="lyricsMessage"
-        :source="lyricsSource"
-        :seek-label="t('lyrics_seek')"
-        :seekable="!player.seekDisabled.value"
-        @seek="(ms) => player.identity.value && player.onSeek(Math.floor(ms / 1000), player.identity.value)"
-      />
+        <p v-if="!inBrowser && queue.status === 'ready'" class="mt-0 mb-14 text-footnote leading-[1.55] text-muted">
+          {{ t('queue_snapshot_note') }}
+        </p>
+        <QueueRows
+          :items="items"
+          :current="listCurrent"
+          :playing="nowIsPlaying"
+          :select-label="t('select_in_queue')"
+          :play-label="t('play')"
+          :pause-label="t('pause')"
+          :disabled="!player.ready.value || (!inBrowser && queue.status !== 'ready')"
+          @select="selectRow"
+          @toggle="player.onTransport('toggle')"
+        />
+      </section>
     </template>
+    <TrackPanel v-else-if="ui.panel === 'track'" @navigate="onNavigate" />
+    <InfoPanel v-else-if="ui.panel === 'info'" @navigate="onNavigate" />
   </aside>
 </template>

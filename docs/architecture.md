@@ -125,14 +125,23 @@ images with their credit, the album cover's place on the card
 (`coverOnCard`) and the links; the heading's `backdrop` draws the
 background.
 
-The listening panel (`layout/ListeningPanel.vue`) has two tabs. Now shows
-the track's head (`components/player/NowPlayingDetails.vue`, whose controls
-render only on phones, where the panel is a full-screen player and the bar is
-hidden), its facts (`components/player/TrackFacts.vue` from the pure
+The listening panel (`layout/ListeningPanel.vue`) shows one sheet at a time,
+without tabs (`PanelSection` in `stores/ui.ts`). Now shows the track's head
+(`components/player/NowPlayingDetails.vue`, whose controls render only on
+phones, where the panel is a full-screen player and the bar is hidden), its
+folded facts (`components/player/TrackFacts.vue` from the pure
 `domain/nowFacts.ts`: stock's play state, the library row, the file measured
-through the media route and the service's play history) and the whole queue;
-Lyrics holds the lyrics and karaoke. On wider screens the bottom bar is the
-only control surface. A row's title opens its track in the same panel
+through the media route and the service's play history) and its lyrics with
+karaoke and the LRCLIB lookup (`components/player/LyricsView.vue`). The bar's
+Lyrics button opens Now at the lyrics (the `lyrics` panel target and
+`panelRequest`); while the listener follows them, `LyricsView` scrolls the
+sheet itself: the lyrics' start below the pinned line of the track, the
+current line in the middle, and a scroll by hand that leaves the current line
+out of view pauses it until the line is back. The queue is a sheet of its own,
+opened by the bar's queue button or, on phones, by the full-screen player's
+(`openQueueSheet`, whose `panelReturn` makes the close button and Escape lead
+back to the player). On wider screens the bottom bar is the only control
+surface. A row's title opens its track in the same panel
 (`layout/TrackPanel.vue`, `openTrackPanel` in `stores/ui.ts`): the facts come
 from the same `domain/nowFacts.ts`, the lyrics from `ownLyrics()` (the file's
 own, read once), and Play selects what the row's play button would.

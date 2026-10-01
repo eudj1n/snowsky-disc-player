@@ -129,7 +129,7 @@ test('plays the featured album from Home with a verified result', async ({ page 
   expect(errors).toEqual([])
 })
 
-test('plays a track from an album page and shows it in Now Playing and Queue', async ({ page }) => {
+test('plays a track from an album page and shows it in Now Playing and Queue', async ({ page }, info) => {
   test.skip(!SERIAL || external, 'Needs the mock collection and a serial number')
   const errors = watchErrors(page)
   await english(page)
@@ -143,17 +143,25 @@ test('plays a track from an album page and shows it in Now Playing and Queue', a
   await page.getByRole('button', { name: 'Open Now Playing panel' }).click()
   const panel = page.getByRole('complementary', { name: 'Player view' })
   await expect(panel.getByRole('heading', { name: 'Window Seat' })).toBeVisible()
-  // The queue sits below the track's facts in the same tab (2026-09-29).
-  await expect(panel.getByRole('button', { name: 'Queue', exact: true })).toHaveCount(0)
-  const playing = panel.getByTestId('panel-queue').locator('[aria-current=true]')
+  // The queue is a sheet of its own (owner, 2026-10-02): the bar's button, on phones the full-screen player's.
+  await expect(panel.getByTestId('panel-queue')).toHaveCount(0)
+  const openQueue = () => page.getByRole('button', { name: 'Open queue' }).filter({ visible: true }).first().click()
+  await openQueue()
+  const sheet = page.getByRole('complementary', { name: 'Queue' })
+  const playing = sheet.getByTestId('panel-queue').locator('[aria-current=true]')
   await expect(playing).toContainText('Window Seat')
   // Queue rows show the album's cover (their paths come from the persisted queue), not the sleeve.
-  const rows = panel.getByRole('listitem')
+  const rows = sheet.getByRole('listitem')
   await expect(rows).toHaveCount(4)
   await expect(rows.locator('[data-cover=true] canvas')).toHaveCount(4, { timeout: 15_000 })
-  // The mark follows playback without reading the queue again (the bar is hidden on phones).
-  const next = page.getByRole('button', { name: 'Next track' }).filter({ visible: true }).first()
-  await next.click()
+  // The mark follows playback without reading the queue again. On phones the sheet covers the bar and
+  // leads back to the full-screen player, whose controls move on.
+  if (info.project.name === 'phone') {
+    await sheet.getByRole('button', { name: 'Back to player' }).click()
+    await panel.getByRole('button', { name: 'Next track' }).click()
+    await expect(panel.getByRole('heading', { name: 'An Open Door' })).toBeVisible({ timeout: 15_000 })
+    await openQueue()
+  } else await page.getByRole('button', { name: 'Next track' }).filter({ visible: true }).first().click()
   await expect(playing).toContainText('An Open Door', { timeout: 15_000 })
   await expect(playing).toHaveCount(1)
   // As in the collection's rows, the playing row's cover pauses and resumes it.
@@ -162,8 +170,14 @@ test('plays a track from an album page and shows it in Now Playing and Queue', a
   await expect(playing.getByRole('button', { name: 'Play An Open Door' })).toBeAttached({ timeout: 15_000 })
   await playing.getByRole('button', { name: 'Play An Open Door' }).click()
   await expect(playing.getByRole('button', { name: 'Pause An Open Door' })).toBeAttached({ timeout: 15_000 })
+  // Escape leaves the sheet as its button does: on phones back to the player first.
+  if (info.project.name === 'phone') {
+    await page.keyboard.press('Escape')
+    await expect(panel).toBeVisible()
+  }
   await page.keyboard.press('Escape')
   await expect(panel).toBeHidden()
+  await expect(sheet).toBeHidden()
   await expect(page.getByRole('button', { name: 'Open Now Playing panel' })).toBeFocused()
   await disconnect(page)
   expect(errors).toEqual([])
@@ -455,7 +469,7 @@ test.describe('player controls on the mock', () => {
 
   async function openPanel(page: Page, section: 'Open Now Playing panel' | 'Open queue') {
     await page.getByRole('button', { name: section }).click()
-    return page.getByRole('complementary', { name: 'Player view' })
+    return page.getByRole('complementary', { name: section === 'Open queue' ? 'Queue' : 'Player view' })
   }
 
   /**
@@ -577,9 +591,10 @@ test.describe('player controls on the mock', () => {
     await connectAndPair(page)
     const panel = await openPanel(page, 'Open Now Playing panel')
     const bar = page.getByRole('region', { name: 'Player' })
-    await expect(panel.getByRole('button', { name: 'Now Playing', exact: true })).toBeVisible()
-    await expect(panel.getByRole('button', { name: 'Lyrics', exact: true })).toBeVisible()
+    // One sheet, no tabs (owner, 2026-10-02): the head, the folded facts, then the lyrics.
+    await expect(panel.getByRole('button', { name: 'Now Playing', exact: true })).toHaveCount(0)
     await expect(panel.getByTestId('track-facts')).toBeVisible()
+    await expect(panel.getByRole('heading', { name: 'Lyrics', exact: true })).toBeAttached()
     // The facts are folded until asked for (owner, 2026-09-30).
     const toggle = panel.getByTestId('facts-toggle')
     await expect(toggle).toHaveAttribute('aria-expanded', 'false')
@@ -588,24 +603,36 @@ test.describe('player controls on the mock', () => {
     await expect(toggle).toHaveAttribute('aria-expanded', 'true')
     await expect(panel.locator('#track-facts-list [data-fact]').first()).toBeVisible()
     await toggle.click()
-    await expect(panel.getByTestId('panel-queue')).toBeAttached()
+    await expect(panel.getByTestId('panel-queue')).toHaveCount(0)
+    const sheet = page.getByRole('complementary', { name: 'Queue' })
     if (info.project.name === 'phone') {
       await expect(panel.getByRole('button', { name: 'Next track' })).toBeVisible()
       await expect(panel.getByRole('slider', { name: 'Player volume' })).toBeVisible()
       await expect(bar).toBeHidden()
       const box = await panel.boundingBox()
       expect(box?.height).toBe(page.viewportSize()?.height)
+      // The queue opens from the full-screen player, as a sheet that leads back to it.
+      await panel.getByRole('button', { name: 'Open queue' }).click()
+      await expect(sheet.getByRole('heading', { name: 'Queue' })).toBeVisible()
+      await expect(sheet.getByRole('button', { name: 'Back to player' })).toBeFocused()
+      await sheet.getByRole('button', { name: 'Back to player' }).click()
+      await expect(panel.getByRole('heading', { name: 'Lyrics', exact: true })).toBeAttached()
     } else {
       await expect(panel.getByRole('button', { name: 'Next track' })).toBeHidden()
       await expect(panel.getByRole('slider', { name: 'Player volume' })).toBeHidden()
+      await expect(panel.getByRole('button', { name: 'Open queue' })).toBeHidden()
       await expect(bar).toBeVisible()
-      // The bar's queue button shows the queue in the same tab.
-      await bar.getByRole('button', { name: 'Open queue' }).click()
-      await expect(panel.getByRole('heading', { name: 'Queue' })).toBeInViewport()
-      await expect(panel.getByRole('button', { name: 'Now Playing', exact: true })).toHaveAttribute(
-        'aria-pressed',
-        'true',
-      )
+      // The bar's queue button shows the queue's sheet; its Lyrics button the Now sheet at the lyrics.
+      const queueButton = bar.getByRole('button', { name: 'Open queue' })
+      await queueButton.click()
+      await expect(sheet.getByRole('heading', { name: 'Queue' })).toBeVisible()
+      await expect(queueButton).toHaveAttribute('aria-expanded', 'true')
+      const lyricsButton = bar.getByRole('button', { name: 'Lyrics', exact: true })
+      await lyricsButton.click()
+      await expect(panel.getByRole('heading', { name: 'Lyrics', exact: true })).toBeInViewport()
+      await expect(lyricsButton).toHaveAttribute('aria-expanded', 'true')
+      await expect(queueButton).toHaveAttribute('aria-expanded', 'false')
+      await expect(page.getByTestId('now-compact')).toBeVisible()
     }
     await page.keyboard.press('Escape')
     await expect(panel).toBeHidden()
@@ -791,19 +818,23 @@ test.describe('player controls on the mock', () => {
     await expect(lyrics.getByRole('button', { name: 'Weightless, first line' })).toBeVisible({ timeout: 15_000 })
     await expect(lyrics.locator('[aria-current=true]')).toHaveCount(1, { timeout: 15_000 })
     await expect(lyrics).toContainText('From the .lrc file beside the track')
-    // Paused, away and back: the tab opens at the current line. Phones pause from the
-    // full-screen player's Now tab, which covers the bar.
+    // The bar's Lyrics button opens the Now sheet at the current line, the head folded into the pinned line.
+    await expect(lyrics.locator('[aria-current=true]')).toBeInViewport()
     const panel = page.getByRole('complementary', { name: 'Player view' })
+    const compact = panel.getByTestId('now-compact')
+    await expect(compact).toBeVisible()
+    // Paused, away and back: Lyrics again opens at the current line. Phones pause from the pinned line,
+    // as the full-screen player covers the bar.
     if (info.project.name === 'phone') {
-      await panel.getByRole('button', { name: 'Now Playing', exact: true }).click()
-      await panel.getByRole('button', { name: 'Pause', exact: true }).click()
-      await expect(panel.getByRole('button', { name: 'Play', exact: true })).toBeVisible({ timeout: 15_000 })
+      await compact.getByRole('button', { name: 'Pause', exact: true }).click()
+      await expect(compact.getByRole('button', { name: 'Play', exact: true })).toBeVisible({ timeout: 15_000 })
     } else {
       await page.getByTestId('toggle').click()
       await expect(page.getByTestId('toggle')).toHaveAttribute('aria-label', 'Play', { timeout: 15_000 })
-      await panel.getByRole('button', { name: 'Now Playing', exact: true }).click()
     }
-    await panel.getByRole('button', { name: 'Lyrics', exact: true }).click()
+    await page.keyboard.press('Escape')
+    await expect(panel).toBeHidden()
+    await page.getByRole('button', { name: 'Lyrics' }).filter({ visible: true }).first().click()
     await expect(page.getByTestId('lyrics').locator('[aria-current=true]')).toBeInViewport()
     // Lines are bold like karaoke, and their text starts where the heading's does.
     const line = lyrics.getByRole('button', { name: 'Weightless, first line' })
@@ -815,7 +846,7 @@ test.describe('player controls on the mock', () => {
         range.selectNodeContents(element)
         return range.getBoundingClientRect().left
       }
-      return [start(document.querySelector('#now-panel h2')), start(document.querySelector('[data-line="0"]'))]
+      return [start(document.querySelector('#now-lyrics-title')), start(document.querySelector('[data-line="0"]'))]
     })
     expect(Math.abs((starts[0] ?? 0) - (starts[1] ?? 99))).toBeLessThan(1)
     await page.keyboard.press('Escape')
@@ -862,7 +893,6 @@ test.describe('player controls on the mock', () => {
     await expect(panel).toHaveAttribute('data-on-cover', 'true', { timeout: 15_000 })
     // Light text on the cover's deep colours.
     await expect(panel.getByRole('heading', { name: 'Weightless' })).toHaveCSS('color', 'rgb(255, 255, 255)')
-    await panel.getByRole('button', { name: 'Lyrics', exact: true }).click()
     await page.getByTestId('karaoke-open').click()
     await expect(page.getByTestId('karaoke-colours')).toBeAttached()
     await page.keyboard.press('Escape')
@@ -871,32 +901,30 @@ test.describe('player controls on the mock', () => {
     await disconnect(page)
   })
 
-  test('pins a compact line of the track and the queue heading once the head scrolls away', async ({ page }, info) => {
-    test.skip(info.project.name !== 'desktop', 'The phone panel shows the same Now tab')
+  test('pins a compact line of the track once the head scrolls away', async ({ page }, info) => {
+    test.skip(info.project.name !== 'desktop', 'The phone panel shows the same Now sheet')
     await english(page)
     await connectAndPair(page)
-    // A short window, so that even a short queue leaves the head room to scroll away.
+    // A short window, so that even short lyrics leave the head room to scroll away.
     await page.setViewportSize({ width: 1280, height: 600 })
     const compact = page.getByTestId('now-compact')
-    await page.getByRole('button', { name: 'Open queue' }).click()
+    await page.getByRole('button', { name: 'Open Now Playing panel' }).click()
     const panel = page.getByRole('complementary', { name: 'Player view' })
-    await expect(panel.getByTestId('panel-queue-heading')).toContainText(/\d+ tracks?/)
+    await expect(panel.getByRole('heading', { level: 2 })).toBeVisible()
     await expect(compact).toBeHidden()
-    // Scrolled like a reader would, down to the list.
-    await panel.getByTestId('panel-queue').hover()
+    // Scrolled like a reader would, down to the lyrics.
+    await panel.getByTestId('track-facts').hover()
     await page.mouse.wheel(0, 2000)
     await expect(compact).toBeVisible()
     await expect(compact).toHaveCSS('opacity', '1')
-    // Only the list moves: the heading sits right below the compact line.
+    // Pinned to the top of the sheet's scroll, over the lyrics.
+    const scroller = panel.getByTestId('now-lyrics').locator('xpath=ancestor::div[contains(@class,"overflow-auto")][1]')
     const line = await compact.boundingBox()
-    const heading = await panel.getByTestId('panel-queue-heading').boundingBox()
-    expect(line && heading && Math.abs(heading.y - (line.y + line.height))).toBeLessThanOrEqual(1)
+    const top = await scroller.boundingBox()
+    expect(line && top && Math.abs(line.y - top.y)).toBeLessThanOrEqual(1)
     await compact.getByRole('button', { name: 'Back to the track' }).click()
     await expect(compact).toBeHidden()
-    // Back at the head: the tab is scrolled to its top again.
-    const scroller = panel
-      .getByTestId('panel-queue')
-      .locator('xpath=ancestor::div[contains(@class,"overflow-auto")][1]')
+    // Back at the head: the sheet is scrolled to its top again.
     await expect.poll(() => scroller.evaluate((element) => element.scrollTop)).toBe(0)
     await page.keyboard.press('Escape')
     await disconnect(page)
@@ -957,10 +985,9 @@ test.describe('player controls on the mock', () => {
       await expect(panel.getByRole('link', { name, exact: true }).first()).toBeVisible()
     await panel.getByTestId('facts-toggle').click()
     await expect(panel.getByTestId('track-facts').locator('[data-fact=album-artist]')).toHaveText('Kite Lines')
-    await panel.getByRole('button', { name: 'Lyrics', exact: true }).click()
-    await expect(panel.getByRole('link', { name: 'Mira Sol', exact: true })).toBeVisible()
     await expect(panel).not.toContainText('Kite Lines; Mira Sol')
-    // The tab names the lyrics; the header above them names only the track.
+    // The lyrics below the head repeat neither the track nor its credit.
+    await expect(panel.getByTestId('now-lyrics').getByRole('link')).toHaveCount(0)
     await expect(panel.getByText('Lyrics', { exact: true })).toHaveCount(1)
     await page.keyboard.press('Escape')
     await disconnect(page)
@@ -2645,7 +2672,7 @@ test('reads no queue while stock has dropped its queue table, and shows none', a
     await english(page)
     await connectAndPair(page)
     await page.getByRole('button', { name: 'Open queue' }).click()
-    const panel = page.getByRole('complementary', { name: 'Player view' })
+    const panel = page.getByRole('complementary', { name: 'Queue' })
     await expect(panel).toBeVisible()
     await expect.poll(() => reads.length).toBeGreaterThan(0)
     // Only the cheap check: the queue itself, which would answer busy, is never asked for.

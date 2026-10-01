@@ -22,8 +22,9 @@ playing on the DISC; nothing streams to the browser.
 > - follow what is playing, seek, change volume or mute, shuffle, repeat and
 >   mark the current track as a favorite;
 > - see what is known about the playing track (quality, bit rate, year, genre,
->   disc and track, file size and folder, how often it was played) with the
->   whole queue below it; on a phone the panel is a full-screen player;
+>   disc and track, file size and folder, how often it was played) with its
+>   lyrics below, which follow the song when they are synced; the queue opens
+>   on its own; on a phone the panel is a full-screen player;
 > - click any track's title to see the same about it, with its lyrics, and
 >   play it, add it to a playlist or mark it; double-click a row to play it;
 > - adjust gain, balance, the DAC filter and DRE (the sliders button beside
