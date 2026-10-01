@@ -2050,6 +2050,11 @@ catalogs installed: 39 passed, 85 skipped (desktop), the cover case saving a
 cover and replacing it through the service's trash. The test key for fanart.tv
 is not in the zip.
 
+On the owner's card (2026-10-02, their go-ahead): `Apps/Disc Player`
+replaced by `2026.10.01-e2a8bcb` (102 files); the catalog already current
+(`queries.json` and `store.json` as reviewed, `hosted.json` the same apart from
+its profile binding); the card ejected.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
