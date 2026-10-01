@@ -2103,6 +2103,16 @@ Playing, the queue becomes a sheet of its own, no tabs.
       page and shows it in Now Playing and Queue", "the listening panel
       repeats no controls…".
 
+Checks (2026-10-02) of release `2026.10.01-38f381f` (the details as sheets of
+their own, the lyrics in Now Playing, the queue's sheet): `npm run check` with
+302 unit tests; the full mock suite (177 passed, 71 skipped); screenshots of
+the Now sheet at its head and at the lyrics and of the queue's sheet, in light
+and dark on a desktop and on a phone (the full-screen player's queue button,
+the sheet's way back); the emulator acceptance of this exact zip on the V2.57
+guest with the card catalogs installed: 39 passed, 85 skipped (desktop), the
+queue and lyrics cases through the new sheets. The test key for fanart.tv is
+not in the zip.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
