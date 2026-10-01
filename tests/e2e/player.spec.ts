@@ -1550,6 +1550,8 @@ test('searches the whole collection from the palette, with commands and the full
   const errors = watchErrors(page)
   await english(page)
   await page.goto('/#/albums')
+  // The view has rendered first: a "/" pressed while the route still settled was lost in 2 of 8 runs.
+  await expect(page.getByRole('heading', { name: 'Albums', level: 1 })).toBeVisible()
   await page.keyboard.press('/')
   const palette = page.getByTestId('search-palette')
   const field = palette.getByRole('combobox', { name: 'Search your collection' })
