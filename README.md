@@ -88,8 +88,8 @@ and eject. The [release guide](docs/release.md) has the details.
 
 The interface starts in the player's own language when it is Russian or
 English and remembers your choice of language, theme and text size
-(Compact, Standard, Large or Extra large), all under Settings (the gear in the
-top bar). More contrast and reduced transparency follow your system's
+(Compact, Standard, Large or Extra large), all on the Settings page (in the
+sidebar, or the gear in the top bar). More contrast and reduced transparency follow your system's
 settings. **Refresh collection** is in the connection dialog.
 
 ## Privacy and safety

@@ -20,22 +20,24 @@ export function watchErrors(page: Page): string[] {
   return errors
 }
 
-/** Settings (the top bar's gear): theme, text size and the interface language. */
+/** The Settings page (the top bar's gear, 2026-10-01): theme, text size and the interface language. */
 export async function openSettings(page: Page): Promise<void> {
   await page
     .getByRole('button', { name: /^(Settings|Настройки)$/ })
     .filter({ visible: true })
     .first()
     .click()
-  await expect(page.getByRole('dialog')).toBeVisible()
+  await expect(page).toHaveURL(/#\/settings/)
+  await expect(page.getByTestId('settings-appearance')).toBeVisible()
 }
 
 export async function english(page: Page): Promise<void> {
   await page.goto('/')
   await openSettings(page)
-  await page.getByRole('dialog').getByRole('button', { name: 'English', exact: true }).click()
-  await page.keyboard.press('Escape')
-  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await page.getByTestId('settings-appearance').getByRole('button', { name: 'English', exact: true }).click()
+  await page.goto('/')
+  // The app has mounted (its shortcuts and views are live) before the test goes on.
+  await expect(page.locator('#main')).toBeAttached()
 }
 
 /** Runs a command of the search palette (⌘K or Ctrl+K), such as Add music or Sound settings. */

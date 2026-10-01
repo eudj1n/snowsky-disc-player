@@ -16,6 +16,8 @@ export const SECTIONS = [
   { name: 'tracks', path: '/tracks', icon: 'music', title: 'tracks' },
   { name: 'favorites', path: '/favorites', icon: 'heart', title: 'favorites' },
   { name: 'playlists', path: '/playlists', icon: 'playlist', title: 'playlists' },
+  // Settings (owner, 2026-10-01: a page under Your player); on phones the top bar's gear opens it.
+  { name: 'settings', path: '/settings', icon: 'settings', title: 'settings', phone: false },
   // The player's own card (round 16); on phones it opens from the connection dialog.
   { name: 'card', path: '/card', icon: 'card', title: 'card_section', phone: false },
 ] as const satisfies readonly { name: string; path: string; icon: IconName; title: MessageKey; phone?: false }[]
@@ -47,6 +49,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/playlists', name: 'playlists', component: () => import('./views/PlaylistsView.vue') },
   // The global search's page (owner, 2026-09-30): #/search?q=…&from=albums.
   { path: '/search', name: 'search', component: () => import('./views/SearchView.vue') },
+  { path: '/settings', name: 'settings', component: () => import('./views/SettingsView.vue') },
   { path: '/card', name: 'card', component: () => import('./views/CardView.vue') },
   { path: '/card/files', name: 'cardFiles', component: () => import('./views/CardFilesView.vue') },
   { path: '/card/trash', name: 'cardTrash', component: () => import('./views/CardTrashView.vue') },

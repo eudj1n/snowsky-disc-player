@@ -6,7 +6,6 @@
  */
 import { computed, onBeforeUnmount, onMounted, watch, watchEffect } from 'vue'
 import { t } from './i18n'
-import AppearanceDialog from './layout/AppearanceDialog.vue'
 import AppPlayerBar from './layout/AppPlayerBar.vue'
 import AppSidebar from './layout/AppSidebar.vue'
 import SidebarToggle from './layout/SidebarToggle.vue'
@@ -104,7 +103,6 @@ watchEffect(() => {
   <ListeningPanel />
   <SearchPalette />
   <ConnectionDialog />
-  <AppearanceDialog />
   <TrackMenuDialog />
   <SoundDialog />
   <ImportDialog />

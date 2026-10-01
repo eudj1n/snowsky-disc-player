@@ -1875,6 +1875,34 @@ or its IP. The service admits the site's exact origin from its reviewed
       them correct (service repository,
       `docs/combined-010-installation-observation.md`).
 
+## Settings and external sources (owner, 2026-10-01), card-only
+
+The owner asked for a Settings page and for one block where every outside
+source is allowed explicitly: all off by default, each with "Allow" and
+"Automatically", grouped by what it brings (lyrics, album covers, artist
+images, later tags and other metadata). Pairing stays in the connection
+dialog, the first window when starting.
+
+- [x] Settings is a page under "Your player" in the sidebar (Settings, then
+      Card; the gear in the top bar opens it), one page with anchors to its
+      parts (`#/settings?part=…`). The appearance dialog's content (theme,
+      tones, text size, language) moved there; the palette finds the page by
+      "language" and "appearance" too. Evidence: e2e "keeps the interface
+      language in Settings…", "offers the tones of the theme…", "changes the
+      text size and keeps it…", the sidebar and phone layout cases.
+- [ ] External sources: a store collection with each source's "Allow",
+      "Automatically" and the user's API key, kept on the player; LRCLIB,
+      MusicBrainz with Cover Art Archive and Wikimedia Commons are asked only
+      when allowed, automatically only when also set so; the lyrics panel's
+      automatic search moves there. No migration (the owner's automatic
+      search was off).
+- [ ] fanart.tv (artist images and the wide background, the user's key) and
+      TheAudioDB (the public key `123` unless the user enters theirs) for
+      artist images; a search started by the listener shows every candidate
+      of the allowed sources to choose from (editions of a release, several
+      images of an artist), the automatic one takes the best without asking
+      and never writes to the card.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

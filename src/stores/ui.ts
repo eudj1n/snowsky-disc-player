@@ -5,7 +5,7 @@ import type { SelectionTarget } from '../gateway/selection'
 import { sameTrack, type Track } from '../domain/track'
 import type { MessageKey } from '../i18n'
 
-export type DialogName = 'connection' | 'settings' | 'sound' | 'import'
+export type DialogName = 'connection' | 'sound' | 'import'
 /** The listening panel's tabs (owner, 2026-09-29: the queue joined Now), and a track opened from a row (2026-09-30). */
 export type PanelSection = 'now' | 'lyrics' | 'track'
 /** What an opener asks for: a tab, or the queue (the Now tab scrolled to it). */

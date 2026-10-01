@@ -79,7 +79,7 @@ const shortcut = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl K'
         <UiIconButton icon="search" :label="t('search')" class="w-28" @click="$router.push({ name: 'search' })" />
         <UiIconButton icon="device" :label="t('disc_connection')" class="w-28" @click="openDialog('connection')" />
       </span>
-      <UiIconButton icon="settings" :label="t('settings')" class="phone:w-28" @click="openDialog('settings')" />
+      <UiIconButton icon="settings" :label="t('settings')" class="phone:w-28" @click="$router.push('/settings')" />
     </div>
   </header>
 </template>

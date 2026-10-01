@@ -31,9 +31,10 @@ export const commands = computed<Command[]>(() => [
     id: `go:${section.name}`,
     label: t('go_to_section', { name: t(section.title) }),
     icon: section.icon,
+    // Settings is also found by what it holds.
+    words: section.name === 'settings' ? `${t('language')} ${t('appearance')}` : undefined,
     run: (router) => void router.push(section.path),
   })),
-  { id: 'settings', label: t('settings'), icon: 'settings', words: t('language'), run: () => openDialog('settings') },
   {
     id: 'theme',
     label: t(darkActive.value ? 'cmd_light_theme' : 'cmd_dark_theme'),
