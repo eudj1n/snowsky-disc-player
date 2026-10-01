@@ -1869,8 +1869,11 @@ or its IP. The service admits the site's exact origin from its reviewed
 - [x] Release `2026.09.30-418fa1e` passed the emulator acceptance (40 desktop
       cases, 30 on stock) as the app of combined-010; the kept-list case now
       waits for the list's file, which follows the store's record.
-- [ ] The real player: an image with `hosted.json` (its own authorization),
-      then Chrome on desktop and Android at `ingenic.local` and at an IP.
+- [x] The real player (2026-10-01): combined-010 with `hosted.json` written
+      to the owner's player at their authorization; the owner tested the
+      latest improvements on it, the hosted page among them, and reported
+      them correct (service repository,
+      `docs/combined-010-installation-observation.md`).
 
 ## Requests for the next service build
 
