@@ -1937,9 +1937,14 @@ dialog, the first window when starting.
       sources, kept on the player and read back by a browser with nothing
       kept, automatic), "keeps the outside sources on the player…" (the
       fanart.tv key); screenshots in light, dark and on a phone.
-- [ ] MusicBrainz facts on the artist page (type, country, years, links),
-      then album covers chosen among Cover Art Archive's editions and
-      fanart.tv's covers, with the release group and the album's facts.
+- [x] MusicBrainz facts on the artist page once its id is confirmed: type,
+      country and years beside the album count, and a line of its pages
+      under the heading (MusicBrainz first, then the website, Bandcamp,
+      Discogs and Wikidata where MusicBrainz links them). Evidence: e2e
+      "chooses an artist's photo and background…"; screenshots in light,
+      dark and on a phone.
+- [ ] Album covers chosen among Cover Art Archive's editions and fanart.tv's
+      covers, with the release group and the album's facts.
 - [ ] Later, stage D (owner's question, 2026-10-01): a batch that enriches
       the collection by the allowed sources: what is missing counted first
       and what will be sent named; MusicBrainz paced (about two requests an

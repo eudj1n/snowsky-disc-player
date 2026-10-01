@@ -8,8 +8,7 @@
  * bordered button, the accent border on the one chosen.
  */
 import { computed, ref, watch } from 'vue'
-import { factParts, type ArtistType } from '../domain/artistFacts'
-import { locale, t, type MessageKey } from '../i18n'
+import { t, type MessageKey } from '../i18n'
 import {
   artistPictures,
   chooseArtist,
@@ -26,6 +25,7 @@ import UiPillButton from '../ui/UiPillButton.vue'
 import UiSkeleton from '../ui/UiSkeleton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import CoverCanvas from '../components/artwork/CoverCanvas.vue'
+import { artistFactsLine } from '../views/captions'
 
 const picker = computed(() => artistPictures.picker)
 const chosen = ref<Partial<Record<ImageRole, ImageOffer>>>({})
@@ -43,16 +43,7 @@ watch(
   },
 )
 
-const TYPE_NAMES: Record<ArtistType, MessageKey> = {
-  Person: 'artist_type_person',
-  Group: 'artist_type_group',
-  Orchestra: 'artist_type_orchestra',
-  Choir: 'artist_type_choir',
-  Character: 'artist_type_character',
-  Other: 'artist_type_other',
-}
-const line = (facts: Parameters<typeof factParts>[0]) =>
-  factParts(facts, locale.value, (type) => t(TYPE_NAMES[type])).join(' · ')
+const line = artistFactsLine
 const identity = computed(() => picker.value?.facts ?? null)
 const SOURCE_NAMES = { wikimedia: 'Wikimedia Commons', fanarttv: 'fanart.tv' } as const
 

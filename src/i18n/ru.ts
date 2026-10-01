@@ -305,6 +305,7 @@ export const ru: Messages = {
   images_save_failed: 'Изображение не сохранено.',
   image_kept_player: 'хранится на плеере',
   background_remove: 'Убрать фон',
+  artist_link_site: 'Сайт',
   artist_type_person: 'Исполнитель',
   artist_type_group: 'Группа',
   artist_type_orchestra: 'Оркестр',

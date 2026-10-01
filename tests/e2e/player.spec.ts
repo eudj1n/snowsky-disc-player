@@ -2027,6 +2027,14 @@ test("chooses an artist's photo and background among the sources, keeps them on 
   await expect(photoCredit).toContainText('Photo: P.B. Rage · CC BY-SA 2.0 · Wikimedia Commons · kept on the player')
   await expect(backgroundCredit).toContainText('Background: fanart.tv · CC BY 3.0 · kept on the player')
   await expect(page.getByTestId('heading-backdrop')).toBeAttached()
+  // What MusicBrainz says of the confirmed artist: beside the album count, and its pages under the heading.
+  await expect(page.getByText(/albums? · Group · United Kingdom · 2001–$/)).toBeVisible()
+  const links = page.getByTestId('artist-links')
+  await expect(links.getByRole('link', { name: 'MusicBrainz' })).toHaveAttribute(
+    'href',
+    `https://musicbrainz.org/artist/${NORTHLINE}`,
+  )
+  await expect(links.getByRole('link', { name: 'Website' })).toHaveAttribute('href', 'https://northline.example/')
   expect((await storeRecords(page, 'artist_images')).map((record) => record.key)).toEqual([
     ['Northline', 'photo'],
     ['Northline', 'background'],

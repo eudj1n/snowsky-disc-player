@@ -296,6 +296,7 @@ export const en = {
   images_save_failed: 'The image was not kept.',
   image_kept_player: 'kept on the player',
   background_remove: 'Remove background',
+  artist_link_site: 'Website',
   artist_type_person: 'Person',
   artist_type_group: 'Group',
   artist_type_orchestra: 'Orchestra',

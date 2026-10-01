@@ -2,8 +2,9 @@
 import type { CardLine } from '../components/collection/cardLine'
 import { albumScope, type Album } from '../domain/album'
 import { creditArtists, creditLabel, credits } from '../domain/artist'
+import { factParts, type ArtistType, type FactsSource } from '../domain/artistFacts'
 import type { Playlist } from '../domain/playlist'
-import { t } from '../i18n'
+import { locale, t, type MessageKey } from '../i18n'
 
 /** An album link; the artist scope separates releases that share a title. */
 export const albumRoute = (title: string, artist: string | null = null) =>
@@ -63,3 +64,17 @@ export function playlistLines(playlist: Playlist): CardLine[] {
 export function countLine(searching: boolean, count: number): string {
   return `${t(searching ? 'found' : 'in_this_section')}: ${count}`
 }
+
+const ARTIST_TYPE_NAMES: Record<ArtistType, MessageKey> = {
+  Person: 'artist_type_person',
+  Group: 'artist_type_group',
+  Orchestra: 'artist_type_orchestra',
+  Choir: 'artist_type_choir',
+  Character: 'artist_type_character',
+  Other: 'artist_type_other',
+}
+/** An artist's MusicBrainz facts as one line ("Group · United Kingdom · 2001–"), with MusicBrainz's note when asked. */
+export const artistFactsLine = (facts: FactsSource, note = true): string =>
+  factParts(note ? facts : { ...facts, disambiguation: null }, locale.value, (type) => t(ARTIST_TYPE_NAMES[type])).join(
+    ' · ',
+  )

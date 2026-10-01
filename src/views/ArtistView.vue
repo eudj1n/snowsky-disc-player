@@ -40,7 +40,8 @@ import { artistList, autoPlaylists, makeArtistList, removeAutoList } from '../st
 import { pairing } from '../stores/pairing'
 import UiCircleButton from '../ui/UiCircleButton.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
-import { albumCardRoute, albumRoute, artistAlbumLines, artistRoute, withYear } from './captions'
+import { artistIdentity } from '../stores/musicbrainzIds'
+import { albumCardRoute, albumRoute, artistAlbumLines, artistFactsLine, artistRoute, withYear } from './captions'
 import { useCrumbs } from './crumbs'
 import ArtistImageCredit from './ArtistImageCredit.vue'
 import CollectionGate from './CollectionGate.vue'
@@ -119,6 +120,23 @@ const hotSubtitle = (track: Track) =>
   track.artist === name.value && track.album ? { text: track.album, to: hotTitleTo(track) } : null
 
 /*
+ * What MusicBrainz says of the artist once its id is confirmed (owner, 2026-10-01): type, country and
+ * years beside the album count, and its pages under the heading, MusicBrainz first.
+ */
+const identity = computed(() => artistIdentity(name.value))
+const facts = computed(() => (identity.value?.facts ? artistFactsLine(identity.value.facts, false) : ''))
+const LINK_TITLES = { bandcamp: 'Bandcamp', discogs: 'Discogs', wikidata: 'Wikidata' } as const
+const links = computed(() => {
+  const found = identity.value
+  if (!found) return []
+  const own = (['official', 'bandcamp', 'discogs', 'wikidata'] as const).flatMap((kind) => {
+    const url = found.facts?.links[kind]
+    const label = kind === 'official' ? t('artist_link_site') : LINK_TITLES[kind]
+    return url ? [{ kind, url, label }] : []
+  })
+  return [{ kind: 'musicbrainz', url: `https://musicbrainz.org/artist/${found.mbid}`, label: 'MusicBrainz' }, ...own]
+})
+/*
  * The artist's photo and wide background (2026-09-29; chosen among the allowed sources, 2026-10-01),
  * credited under the heading. A source that works automatically fills an artist without a photo.
  */
@@ -152,7 +170,9 @@ function lines(album: Album) {
         <template #sticky>{{ t('album_count', { count: own.length }) }}</template>
         <template #meta>
           <span v-if="loading" class="inline-block h-10 w-90 animate-pulse rounded-4 bg-soft align-middle" />
-          <template v-else>{{ t('album_count', { count: own.length }) }}</template>
+          <template v-else
+            >{{ t('album_count', { count: own.length }) }}<template v-if="facts"> · {{ facts }}</template></template
+          >
         </template>
         <UiPillButton
           v-if="playable"
@@ -180,6 +200,18 @@ function lines(album: Album) {
           @click="openArtistImages(name)"
         />
       </DetailHeading>
+      <p v-if="links.length" class="-mt-8 mb-12 text-footnote text-muted" data-testid="artist-links">
+        <template v-for="(link, index) in links" :key="link.kind"
+          ><template v-if="index"> · </template
+          ><a
+            :href="link.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-secondary underline-offset-3 hover:text-ink hover:underline"
+            >{{ link.label }}</a
+          ></template
+        >
+      </p>
       <ArtistImageCredit :name="name" role="photo" />
       <ArtistImageCredit :name="name" role="background" />
       <ArtistImageDialog />
