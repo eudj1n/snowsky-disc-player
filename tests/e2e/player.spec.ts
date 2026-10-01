@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test'
 import {
+  chooseSources,
   command,
   connectAndPair,
   disconnect,
@@ -1719,6 +1720,7 @@ test('finds lyrics on LRCLIB for a track without any and saves them beside it', 
       },
     })
   })
+  await chooseSources(page)
   await english(page)
   await connectAndPair(page)
   await page.goto('/#/album/Inner%20Space/Forma')
@@ -1731,10 +1733,20 @@ test('finds lyrics on LRCLIB for a track without any and saves them beside it', 
   await expect(title).toHaveText('Orbit', { timeout: 15_000 })
   await page.getByRole('button', { name: 'Lyrics' }).filter({ visible: true }).first().click()
   const panel = page.getByRole('complementary', { name: 'Player view' })
-  // Offered once the track has no lyrics of its own (stock's text is awaited for a few seconds);
-  // nothing leaves the network until asked, the automatic lookup being off by default.
-  await expect(panel.getByTestId('lyrics-find')).toBeVisible({ timeout: 20_000 })
-  await expect(panel.getByTestId('lyrics-auto')).not.toBeChecked()
+  // The track has no lyrics of its own (stock's text is awaited for a few seconds), but LRCLIB stays
+  // off until the owner allows it (2026-10-01): the panel says where, and nothing leaves the network.
+  const off = panel.getByTestId('lyrics-source-off')
+  await expect(off).toBeVisible({ timeout: 20_000 })
+  await off.getByRole('link', { name: 'External sources' }).click()
+  await expect(page).toHaveURL(/#\/settings\?part=sources/)
+  const auto = page.getByTestId('source-lrclib-auto')
+  await expect(auto).toBeDisabled()
+  await page.getByTestId('source-lrclib-allow').check()
+  await expect(auto).toBeEnabled()
+  await expect(auto).not.toBeChecked()
+  await page.goBack()
+  // Offered once allowed; asked only on request, the automatic lookup being off.
+  await expect(panel.getByTestId('lyrics-find')).toBeVisible({ timeout: 15_000 })
   expect(asked).toHaveLength(0)
   await panel.getByTestId('lyrics-find').click()
   const lyrics = page.getByTestId('lyrics')
@@ -1758,6 +1770,7 @@ test('finds lyrics on LRCLIB for a track without any and saves them beside it', 
   await expect(page.getByTestId('lyrics-find')).toHaveCount(0)
   await page.keyboard.press('Escape')
   await disconnect(page)
+  await chooseSources(page)
 })
 
 test('offers synced lyrics from LRCLIB beside plain ones in the tags, and a saved .lrc wins', async ({
@@ -1777,6 +1790,7 @@ test('offers synced lyrics from LRCLIB beside plain ones in the tags, and a save
       },
     }),
   )
+  await chooseSources(page, { lrclib: { allowed: true } })
   await english(page)
   await connectAndPair(page)
   await page.goto('/#/album/Blue%20Hours/Mira%20Sol')
@@ -1805,6 +1819,7 @@ test('offers synced lyrics from LRCLIB beside plain ones in the tags, and a save
   await expect(page.getByTestId('lyrics-find')).toHaveCount(0)
   await page.keyboard.press('Escape')
   await disconnect(page)
+  await chooseSources(page)
 })
 
 test('finds a cover on Cover Art Archive for an album without one and saves it into its folder', async ({
@@ -1836,6 +1851,7 @@ test('finds a cover on Cover Art Archive for an album without one and saves it i
   })
   // First archive.org does not answer, as on some networks.
   await page.route('https://coverartarchive.org/**', (route) => route.abort('timedout'))
+  await chooseSources(page, { coverartarchive: { allowed: true } })
   await english(page)
   await connectAndPair(page)
   await page.goto('/#/album/Night%20Drive/Northline')
@@ -1864,6 +1880,7 @@ test('finds a cover on Cover Art Archive for an album without one and saves it i
   await expect(page.locator('main canvas').first()).toBeVisible({ timeout: 15_000 })
   await expect(page.getByTestId('cover-find')).toHaveCount(0)
   await disconnect(page)
+  await chooseSources(page)
 })
 
 test("finds an artist's photo on Wikimedia Commons, credits it, and lets an album cover stand in", async ({ page }) => {
@@ -1917,6 +1934,7 @@ test("finds an artist's photo on Wikimedia Commons, credits it, and lets an albu
       pictureHosts.push(new URL(route.request().url()).hostname)
       return route.fulfill({ headers: cors, contentType: 'image/png', path: 'tests/e2e/fixtures/cover.png' })
     })
+  await chooseSources(page, { wikimedia: { allowed: true } })
   await english(page)
   // Without a photo, the cover of an album of the artist stands in on the Artists page.
   await page.goto('/#/artists')
@@ -1939,6 +1957,56 @@ test("finds an artist's photo on Wikimedia Commons, credits it, and lets an albu
   await page.getByTestId('photo-remove').click()
   await expect(credit).toHaveCount(0)
   await expect(page.getByTestId('photo-find')).toBeVisible()
+  // Set to work automatically, the photo is looked up as the artist's page opens, without a click.
+  await chooseSources(page, { wikimedia: { allowed: true, auto: true } })
+  asked.length = 0
+  await page.reload()
+  await expect(credit).toBeVisible({ timeout: 15_000 })
+  expect(asked[0]?.searchParams.get('query')).toBe('artist:"Northline"')
+  await page.getByTestId('photo-remove').click()
+  await expect(credit).toHaveCount(0)
+  await chooseSources(page)
+})
+
+test('keeps the outside sources on the player: off until allowed, changed only when paired', async ({ page }) => {
+  test.skip(external, 'Needs the mock store')
+  test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
+  await chooseSources(page)
+  await english(page)
+  await page.goto('/#/settings?part=sources')
+  // The address opens the page at its part.
+  await expect(page.getByRole('heading', { name: /^External sources/ })).toBeInViewport()
+  const sources = page.getByTestId('settings-sources')
+  await expect(sources.getByTestId('sources-blocked')).toContainText(
+    "Pair this browser with the player's serial number",
+  )
+  for (const name of ['lrclib', 'coverartarchive', 'wikimedia']) {
+    await expect(sources.getByTestId(`source-${name}-allow`)).toBeDisabled()
+    await expect(sources.getByTestId(`source-${name}-allow`)).not.toBeChecked()
+  }
+  await expect(sources.getByRole('heading', { name: 'Artist images' })).toBeVisible()
+  await connectAndPair(page)
+  await expect(sources.getByTestId('sources-blocked')).toHaveCount(0)
+  const allow = sources.getByTestId('source-wikimedia-allow')
+  const auto = sources.getByTestId('source-wikimedia-auto')
+  await allow.check()
+  await auto.check()
+  // Kept on the player: read back after a reload.
+  await page.reload()
+  await expect(auto).toBeChecked({ timeout: 15_000 })
+  // Stopping a source stops its automatic use too.
+  await allow.uncheck()
+  await expect(auto).not.toBeChecked()
+  await expect(auto).toBeDisabled()
+  // A card release without the collection keeps every source off and says why.
+  expect((await page.request.post('/__mock/sources-missing?on=1')).status()).toBe(204)
+  await page.reload()
+  await expect(sources.getByTestId('sources-blocked')).toContainText('update Disc Player on its card', {
+    timeout: 15_000,
+  })
+  expect((await page.request.post('/__mock/sources-missing?on=0')).status()).toBe(204)
+  await chooseSources(page)
+  await disconnect(page)
 })
 
 test('shows a karaoke line without word timings white among grey ones, as the side panel', async ({ page }) => {

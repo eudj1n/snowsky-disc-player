@@ -72,8 +72,15 @@ const STORE_KEYS = {
   pinned_artists: ['name'],
   pinned_albums: ['album'],
   auto_playlists: ['name'],
+  external_sources: ['source'],
 }
-const STORE_LIMITS = { disliked: 20000, pinned_artists: 500, pinned_albums: 500, auto_playlists: 200 }
+const STORE_LIMITS = {
+  disliked: 20000,
+  pinned_artists: 500,
+  pinned_albums: 500,
+  auto_playlists: 200,
+  external_sources: 32,
+}
 /** Combined-009 M3U lists by scope: name → entries (absolute card paths). */
 const LISTS = { internal: new Map(), external: new Map() }
 const LIST_FOLDERS = { internal: '/tmp/sdcard/.disc/playlists', external: '/tmp/sdcard/Playlists' }
@@ -159,6 +166,8 @@ const player = {
   browserPlays: [],
   /** The card's store catalog predates the rotation periods (/__mock/store-old). */
   storeOld: false,
+  /** The card's store catalog predates the outside sources (/__mock/sources-missing). */
+  sourcesMissing: false,
   state: 1,
   list: TRACKS.filter((track) => track.ALBUM === 'Afterglow'),
   index: 0,
@@ -610,17 +619,19 @@ const server = createServer((request, response) => {
   // The store: collections of the card catalog, the same operations for each.
   if (url.pathname === '/api/store') {
     const collections = Object.fromEntries(
-      Object.keys(STORE_KEYS).map((name) => [
-        name,
-        { records: storeData[name].size, max_records: STORE_LIMITS[name], skip: name === 'disliked' },
-      ]),
+      Object.keys(STORE_KEYS)
+        .filter((name) => !(player.sourcesMissing && name === 'external_sources'))
+        .map((name) => [
+          name,
+          { records: storeData[name].size, max_records: STORE_LIMITS[name], skip: name === 'disliked' },
+        ]),
     )
     return send(response, 200, JSON.stringify({ collections }), 'application/json')
   }
   const storeRoute = /^\/api\/store\/([a-z_]+)\/(records|count|record|batch)$/.exec(url.pathname)
   if (storeRoute) {
     const [, collection, operation] = storeRoute
-    const records = storeData[collection]
+    const records = player.sourcesMissing && collection === 'external_sources' ? undefined : storeData[collection]
     if (!records) return send(response, 404, 'No such collection or operation\n')
     if (operation === 'records' && request.method === 'GET') {
       const all = [...records.values()]
@@ -828,6 +839,10 @@ const server = createServer((request, response) => {
   }
   if (url.pathname === '/__mock/store-old' && request.method === 'POST') {
     player.storeOld = url.searchParams.get('on') === '1'
+    return send(response, 204, '')
+  }
+  if (url.pathname === '/__mock/sources-missing' && request.method === 'POST') {
+    player.sourcesMissing = url.searchParams.get('on') === '1'
     return send(response, 204, '')
   }
   // Forgets every list and automatic playlist record, so the shared mock is as it was.

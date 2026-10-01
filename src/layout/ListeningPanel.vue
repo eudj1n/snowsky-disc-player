@@ -34,13 +34,14 @@ import { browserPlayback, selectInBrowser } from '../stores/browser'
 import { switchSide } from '../stores/handoff'
 import { inBrowser, nowIsPlaying, nowPlaying, nowPositionAt, nowPositionMs, output } from '../stores/output'
 import { loadQueue, queue, queueCurrent } from '../stores/queue'
+import { sourceAllowed } from '../stores/externalSources'
 import {
   lookUpLyrics,
   lyrics,
   lyricsLookupAvailable,
+  lyricsLookupFits,
   plainLyricsOnly,
   saveFoundLyrics,
-  setAutoLookup,
 } from '../stores/lyrics'
 import UiPillButton from '../ui/UiPillButton.vue'
 import { playerOptions } from '../stores/playerOptions'
@@ -186,6 +187,8 @@ const lyricsMessage = computed(() => {
 })
 /** LRCLIB: offered for a track without lyrics, and what it found waits to be saved (2026-09-29). */
 const lookupOffered = computed(() => lyricsLookupAvailable())
+/** LRCLIB could help but is not allowed: where to allow it (2026-10-01, Settings' outside sources). */
+const lookupOff = computed(() => lyricsLookupFits() && !sourceAllowed('lrclib'))
 const lookupMessage = computed(() =>
   lyrics.lookup === 'searching'
     ? t('lrclib_searching')
@@ -462,18 +465,22 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
             @click="lookUpLyrics"
             >{{ t(plainLyricsOnly() ? 'lrclib_find_synced' : 'lrclib_find') }}</UiPillButton
           >
-          <p class="mt-8 mb-6 text-caption leading-[1.5] text-muted">{{ t('lrclib_note') }}</p>
-          <label class="flex items-center gap-8 text-footnote text-secondary">
-            <input
-              type="checkbox"
-              :checked="lyrics.autoLookup"
-              data-testid="lyrics-auto"
-              @change="setAutoLookup(($event.target as HTMLInputElement).checked)"
-            />
-            {{ t('lrclib_auto') }}
-          </label>
+          <p class="mt-8 mb-0 text-caption leading-[1.5] text-muted">{{ t('lrclib_note') }}</p>
         </template>
       </div>
+      <p
+        v-else-if="lookupOff"
+        class="mt-0 shrink-0 px-24 pb-12 text-footnote leading-[1.5] text-secondary"
+        data-testid="lyrics-source-off"
+      >
+        {{ t('lrclib_off') }}
+        <RouterLink
+          class="text-ink underline underline-offset-2"
+          :to="{ path: '/settings', query: { part: 'sources' } }"
+          @click="onNavigate"
+          >{{ t('external_sources') }}</RouterLink
+        >
+      </p>
       <LyricsView
         :lyrics="lyrics.lyrics"
         :position-ms="nowPositionMs"

@@ -89,7 +89,14 @@ the media route, a CUE track from its offset, without touching the player.
 External providers are reached only through origins the release's reviewed
 `origins.json` names (the service adds them to the page's policy; the page
 reads the same file through `loadOrigins()` and `originAllowed()` before
-offering a provider). `gateway/lrclib.ts` asks LRCLIB for a track's lyrics
+offering a provider), and only once the owner allowed the source in
+Settings: `stores/externalSources.ts` reads and writes the store's
+`external_sources` collection (allowed, automatic; off without a record or
+without the collection), and `views/ExternalSourcesSettings.vue` groups the
+sources by what they bring. Each provider's store checks both
+(`lyricsLookupAvailable`, `coverLookupAllowed`, `artistPhotosAllowed`); an
+automatic lookup runs once per album or artist page in a tab, and for the
+playing track. `gateway/lrclib.ts` asks LRCLIB for a track's lyrics
 with plain GETs; `stores/lyrics.ts` offers the lookup for a track without
 lyrics and saves what it found beside the track through the upload route.
 `gateway/musicbrainz.ts` (paced to one request a second) and

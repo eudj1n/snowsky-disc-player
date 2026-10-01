@@ -1,5 +1,6 @@
 /** Shared browser-test helpers: target, token, language and connection steps. */
 import { expect, type Page } from '@playwright/test'
+import { requestId } from '../../src/gateway/ids'
 
 export const external = Boolean(process.env.E2E_BASE_URL)
 /** The player's serial number (combined-008 pairs by SN only); the mock and the emulator guest use all zeros. */
@@ -38,6 +39,28 @@ export async function english(page: Page): Promise<void> {
   await page.goto('/')
   // The app has mounted (its shortcuts and views are live) before the test goes on.
   await expect(page.locator('#main')).toBeAttached()
+}
+
+/** The outside sources of the page (2026-10-01). */
+const SOURCE_NAMES = ['lrclib', 'coverartarchive', 'wikimedia']
+
+/**
+ * Sets the outside sources the owner allowed in the player's store, as Settings would (the serial
+ * number, a fresh request ID); no argument turns every one off. The page reads the choice when it loads.
+ */
+export async function chooseSources(
+  page: Page,
+  choices: Partial<Record<string, { allowed?: boolean; auto?: boolean }>> = {},
+): Promise<void> {
+  if (!SERIAL) throw new Error('E2E_SERIAL is required to choose sources')
+  for (const source of SOURCE_NAMES) {
+    const allowed = choices[source]?.allowed === true
+    const reply = await page.request.put('/api/store/external_sources/record', {
+      headers: { 'X-Disc-Token': SERIAL, 'X-Disc-Request': requestId() },
+      data: { source, allowed, auto: allowed && choices[source]?.auto === true, at: Math.floor(Date.now() / 1000) },
+    })
+    expect(reply.status(), source).toBe(200)
+  }
 }
 
 /** Runs a command of the search palette (⌘K or Ctrl+K), such as Add music or Sound settings. */

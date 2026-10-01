@@ -1,6 +1,8 @@
 /**
- * Artists' photos (owner, 2026-09-29, enrichment step 3). On the listener's
- * request an artist's name goes to MusicBrainz; the photo is the Wikimedia
+ * Artists' photos (owner, 2026-09-29, enrichment step 3), once the owner
+ * allowed Wikimedia Commons among the outside sources (2026-10-01). On the
+ * listener's request, or when the artist's page opens and the source works
+ * automatically, an artist's name goes to MusicBrainz; the photo is the Wikimedia
  * Commons file MusicBrainz links as the artist's image, else the image of the
  * artist's Wikidata item, read as a thumbnail with its author and licence,
  * which the page shows beside it. Photos stay in this browser (IndexedDB);
@@ -15,6 +17,7 @@ import { findArtist } from '../gateway/musicbrainz'
 import { commonsImage, hostOf, imageBytes, wikidataImage } from '../gateway/wikimedia'
 import { cacheGet, cacheSet } from '../lib/idb'
 import { originAllowed } from './connection'
+import { sourceAllowed, sourceAutomatic } from './externalSources'
 import { albumCover, albumCoverState } from './enrichment'
 import { history } from './history'
 import { albums, tracks } from './library'
@@ -32,9 +35,11 @@ export type PictureSearch = 'idle' | 'searching' | 'missing' | 'failed'
 interface PicturesModel {
   pictures: Record<string, ArtistPicture>
   search: { name: string | null; status: PictureSearch }
+  /** The photos kept in this browser have been read. */
+  loaded: boolean
 }
 
-const state = reactive<PicturesModel>({ pictures: {}, search: { name: null, status: 'idle' } })
+const state = reactive<PicturesModel>({ pictures: {}, search: { name: null, status: 'idle' }, loaded: false })
 export const artistPictures = readonly(state)
 
 const INDEX = 'artist-pictures'
@@ -47,6 +52,7 @@ export async function loadArtistPictures(): Promise<void> {
     const blob = await cacheGet<Blob>(blobKey(name))
     if (blob) state.pictures[name] = { ...credit, blob }
   }
+  state.loaded = true
 }
 
 async function saveIndex(): Promise<void> {
@@ -70,10 +76,30 @@ const pictureHostAllowed = (url: string): boolean => {
 }
 
 /** The release's origins admit MusicBrainz, Commons and a picture host (Wikidata is used when also admitted). */
-export const artistPhotosAllowed = (): boolean =>
+export const artistPhotoOriginsAdmitted = (): boolean =>
   originAllowed('musicbrainz') &&
   originAllowed('commons') &&
   Object.values(PICTURE_ORIGINS).some((name) => originAllowed(name))
+
+/** A photo may be looked up: the origins admit it and the owner allowed the source. */
+export const artistPhotosAllowed = (): boolean => sourceAllowed('wikimedia') && artistPhotoOriginsAdmitted()
+
+/** Artists looked up automatically in this tab, so a page opened again does not ask again. */
+const tried = new Set<string>()
+
+/** The artist's page opened without a photo: looked up when the source works automatically. */
+export function lookUpArtistPictureAutomatically(name: string): void {
+  if (
+    !sourceAutomatic('wikimedia') ||
+    !state.loaded ||
+    tried.has(name) ||
+    state.pictures[name] ||
+    state.search.status === 'searching'
+  )
+    return
+  tried.add(name)
+  void lookUpArtistPicture(name)
+}
 
 /** Looks the artist's photo up (its name leaves the network) and keeps it in this browser. */
 export async function lookUpArtistPicture(name: string): Promise<void> {

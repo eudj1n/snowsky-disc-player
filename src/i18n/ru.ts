@@ -217,7 +217,32 @@ export const ru: Messages = {
   lrclib_find_synced: 'В тексте нет таймингов: найти синхронизированный на LRCLIB',
   lrclib_missing_synced: 'На LRCLIB нет синхронизированного текста для этого трека.',
   lrclib_note: 'Отправит на lrclib.net исполнителя, название, альбом и длительность трека.',
-  lrclib_auto: 'Автоматически искать синхронизированный текст, если его нет',
+  lrclib_off: 'LRCLIB выключен: разрешить можно в разделе',
+  external_sources: 'Внешние источники',
+  sources_note:
+    'Каждый источник выключен, пока вы его не разрешите; то, что ему отправляется, уходит за пределы вашей сети. Выбор хранится на плеере для всех браузеров.',
+  sources_unavailable: 'Плеер пока не может сохранить выбор: обновите Disc Player на его карте.',
+  sources_pair: 'Чтобы изменить выбор, свяжите браузер с плеером по серийному номеру.',
+  sources_pair_open: 'Связать…',
+  source_kind_lyrics: 'Тексты песен',
+  source_kind_album_covers: 'Обложки альбомов',
+  source_kind_artist_images: 'Изображения исполнителей',
+  source_allow: 'Разрешить',
+  source_auto: 'Автоматически',
+  source_not_admitted: 'Эта версия Disc Player к нему не обращается.',
+  source_lrclib_about:
+    'Синхронизированный текст для трека без него; на карту рядом с треком — только по вашему выбору.',
+  source_lrclib_sends: 'Отправляет исполнителя, название, альбом и длительность трека.',
+  source_lrclib_auto: 'когда играет трек без синхронизированного текста',
+  source_coverartarchive_about:
+    'Обложка для альбома без неё, найденная через MusicBrainz; в папку альбома — только по вашему выбору.',
+  source_coverartarchive_sends:
+    'Отправляет название альбома и исполнителя на musicbrainz.org; изображение загружается с archive.org.',
+  source_coverartarchive_auto: 'когда открывается альбом без обложки',
+  source_wikimedia_about:
+    'Фото, на которое MusicBrainz или Викиданные ссылаются для исполнителя, с автором и лицензией; хранится в этом браузере.',
+  source_wikimedia_sends: 'Отправляет имя исполнителя на musicbrainz.org.',
+  source_wikimedia_auto: 'когда открывается исполнитель без фото',
   lrclib_searching: 'Ищу на LRCLIB…',
   lrclib_missing: 'На LRCLIB нет текста для этого трека.',
   lrclib_instrumental: 'На LRCLIB трек отмечен как инструментальный.',

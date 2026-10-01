@@ -6,7 +6,7 @@
  * Above them, the artist's most played tracks from the service's play history
  * (owner, 2026-09-29), each played within its album.
  */
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import CoverCard from '../components/collection/CoverCard.vue'
 import CoverCardSkeleton from '../components/collection/CoverCardSkeleton.vue'
@@ -27,6 +27,7 @@ import {
   artistPictures,
   forgetArtistPicture,
   lookUpArtistPicture,
+  lookUpArtistPictureAutomatically,
 } from '../stores/artistPictures'
 import { history, loadHistory } from '../stores/history'
 import { albums, artists, tracks } from '../stores/library'
@@ -117,6 +118,14 @@ const hotSubtitle = (track: Track) =>
 
 /* A photo from Wikimedia Commons (2026-09-29): found on request, kept in this browser, credited. */
 const picture = computed(() => artistPictures.pictures[name.value] ?? null)
+// The source works automatically: an artist without a photo is looked up once its page opens.
+watch(
+  () => (artistPhotosAllowed() && artistPictures.loaded && name.value && !picture.value ? name.value : null),
+  (missing) => {
+    if (missing) lookUpArtistPictureAutomatically(missing)
+  },
+  { immediate: true },
+)
 const photoMessage = computed(() => {
   const search = artistPictures.search
   if (search.name !== name.value) return null

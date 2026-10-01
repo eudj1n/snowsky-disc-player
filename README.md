@@ -38,15 +38,17 @@ playing on the DISC; nothing streams to the browser.
 >   mode, the bar shows the remembered track and Play continues it;
 > - sing along in karaoke: synced lyrics full screen, word by word where the
 >   lyrics file has word timings;
-> - find lyrics for a track that has none on LRCLIB (only when you ask, or
->   automatically once you switch that on) and save them beside the track on
->   the card;
+> - find lyrics for a track that has none on LRCLIB and save them beside the
+>   track on the card;
 > - find a cover for an album that has none on Cover Art Archive and save it
 >   into the album's folder (Cover Art Archive's images are served by
 >   archive.org, which some networks cannot reach);
 > - find an artist's photo on Wikimedia Commons, shown with its author and
 >   licence and kept in your browser; artists without one show the cover of
 >   their most played album;
+> - choose which of these outside sources may be asked under Settings →
+>   External sources: each stays off until you allow it, and is asked without
+>   a click only when you also set it to work automatically;
 > - see what you played last, on the player and in this browser;
 > - listen to automatic playlists made from your listening (Most played,
 >   Daily mix, Recently added, Not played lately, and one artist's most

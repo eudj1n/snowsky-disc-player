@@ -1,6 +1,8 @@
 /**
  * A cover for an album without one (owner, 2026-09-29, enrichment step 2;
- * Cover Art Archive is the only source). On the listener's request the
+ * Cover Art Archive is the only source), once the owner allowed the source
+ * (2026-10-01). On the listener's request, or when the album's page opens
+ * and the source works automatically, the
  * album's title and artist go to MusicBrainz, the matching release's front
  * cover comes from Cover Art Archive, and it is shown as not yet on the card
  * until the listener saves it into the album's folder as cover.jpg (or .png)
@@ -15,6 +17,7 @@ import { CoverUnreachable, frontCover } from '../gateway/coverart'
 import { findReleases } from '../gateway/musicbrainz'
 import { uploadFile } from '../gateway/upload'
 import { originAllowed } from './connection'
+import { sourceAllowed, sourceAutomatic } from './externalSources'
 import { recheckAlbumCover } from './enrichment'
 import { tracks } from './library'
 import { run } from './operation'
@@ -38,8 +41,22 @@ export const coverSearch = readonly(state)
 export const coverSearchKey = (album: Album, scope: string | null): string => `${album.key}\u0000${scope ?? ''}`
 
 /** The release's origins admit MusicBrainz, Cover Art Archive and its image hosts. */
-export const coverLookupAllowed = (): boolean =>
+export const coverOriginsAdmitted = (): boolean =>
   ['musicbrainz', 'coverartarchive', 'archive_root', 'archive'].every((name) => originAllowed(name))
+
+/** A cover may be looked up: the origins admit it and the owner allowed the source. */
+export const coverLookupAllowed = (): boolean => sourceAllowed('coverartarchive') && coverOriginsAdmitted()
+
+/** Albums looked up automatically in this tab, so a page opened again does not ask again. */
+const tried = new Set<string>()
+
+/** The album's page opened without a cover: looked up when the source works automatically. */
+export function lookUpCoverAutomatically(album: Album, scope: string | null): void {
+  const key = coverSearchKey(album, scope)
+  if (!sourceAutomatic('coverartarchive') || tried.has(key) || state.status === 'searching') return
+  tried.add(key)
+  void lookUpCover(album, scope)
+}
 
 export function dismissCover(): void {
   state.key = null

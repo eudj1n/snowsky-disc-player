@@ -65,7 +65,11 @@ const routes: RouteRecordRaw[] = [
 export const router = createRouter({
   history: createWebHashHistory(),
   routes,
-  scrollBehavior: () => ({ top: 0 }),
+  // A Settings part named in the address (`?part=`) opens the page there; every other view at its top.
+  scrollBehavior: (to) =>
+    to.name === 'settings' && typeof to.query.part === 'string' && /^[a-z]+$/.test(to.query.part)
+      ? { el: `#settings-${to.query.part}`, top: 24 }
+      : { top: 0 },
 })
 
 /**

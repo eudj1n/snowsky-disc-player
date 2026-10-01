@@ -28,6 +28,7 @@ import {
   coverSearchKey,
   dismissCover,
   lookUpCover,
+  lookUpCoverAutomatically,
   saveCover,
 } from '../stores/coverSearch'
 import { isHiRes, qualityLabel } from '../domain/quality'
@@ -134,6 +135,14 @@ const coverMessage = computed(() => {
 watch([group, scope], () => {
   if (coverSearch.key && !searchHere.value) dismissCover()
 })
+// The source works automatically: an album known to have no cover is looked up once its page opens.
+watch(
+  coverOffered,
+  (offered) => {
+    if (offered && group.value) lookUpCoverAutomatically(group.value, scope.value)
+  },
+  { immediate: true },
+)
 /** "FLAC 24/96" and whether it is Hi-Res, from the first track's file. */
 const quality = computed(() => {
   const found = group.value ? albumQuality(group.value, scope.value) : null

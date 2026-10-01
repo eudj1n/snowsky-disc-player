@@ -1890,13 +1890,25 @@ dialog, the first window when starting.
       "language" and "appearance" too. Evidence: e2e "keeps the interface
       language in Settings…", "offers the tones of the theme…", "changes the
       text size and keeps it…", the sidebar and phone layout cases.
-- [ ] External sources: a store collection with each source's "Allow",
-      "Automatically" and the user's API key, kept on the player; LRCLIB,
-      MusicBrainz with Cover Art Archive and Wikimedia Commons are asked only
-      when allowed, automatically only when also set so; the lyrics panel's
-      automatic search moves there. No migration (the owner's automatic
-      search was off).
-- [ ] fanart.tv (artist images and the wide background, the user's key) and
+- [x] External sources: the store's `external_sources` collection (service
+      repository, a card catalog change) keeps each source's "Allow" and
+      "Automatically" on the player; Settings groups them (lyrics: LRCLIB;
+      album covers: Cover Art Archive through MusicBrainz; artist images:
+      Wikimedia Commons through MusicBrainz) and changes them with the
+      pairing serial number. LRCLIB, Cover Art Archive and Commons are asked
+      only when allowed (and admitted by the release's origins);
+      automatically for the playing track, and once per album or artist page
+      in a tab. The lyrics panel's automatic search (a browser preference)
+      is gone; where LRCLIB could help but is off, the panel links to the
+      part. Without the collection (an older card catalog) every source stays
+      off and Settings says why. No migration (the owner's automatic search
+      was off). Evidence: `tests/unit/externalSources.test.ts`; e2e "keeps
+      the outside sources on the player…", "finds lyrics on LRCLIB…" (off,
+      allowed from the panel's link), "finds an artist's photo…" (automatic),
+      and the cover and synced-lyrics cases; the emulator acceptance cases
+      allow their source first.
+- [ ] fanart.tv (artist images and the wide background, the user's key kept
+      in the same record) and
       TheAudioDB (the public key `123` unless the user enters theirs) for
       artist images; a search started by the listener shows every candidate
       of the allowed sources to choose from (editions of a release, several

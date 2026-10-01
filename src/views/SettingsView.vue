@@ -3,41 +3,33 @@
  * Settings (owner, 2026-10-01): a page of its own under Your player, reached
  * from the sidebar, the top bar's gear and the palette. One page with
  * anchors (owner: the sources will keep growing, and a long page suits
- * phones better than tabs): the appearance of this browser and, next, the
- * external sources the player may use. Pairing stays in the connection
- * dialog, the first step of using the page.
+ * phones better than tabs): the appearance of this browser and the outside
+ * sources the page may ask, kept on the player. Pairing stays in the
+ * connection dialog, the first step of using the page.
  */
-import { computed, nextTick, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed } from 'vue'
 import SectionHeading from '../components/common/SectionHeading.vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
 import { t, type MessageKey } from '../i18n'
 import AppearanceSettings from './AppearanceSettings.vue'
+import ExternalSourcesSettings from './ExternalSourcesSettings.vue'
 
 interface Part {
   id: string
   title: MessageKey
   note: MessageKey
 }
-const PARTS: readonly Part[] = [{ id: 'appearance', title: 'appearance', note: 'saved_in_this_browser' }]
+const PARTS: readonly Part[] = [
+  { id: 'appearance', title: 'appearance', note: 'saved_in_this_browser' },
+  { id: 'sources', title: 'external_sources', note: 'sources_note' },
+]
 
-const route = useRoute()
 const parts = computed(() => PARTS)
-/** Scrolls to a part; `?part=` opens the page there (the router keeps the hash for itself). */
-function show(id: string, smooth = true): void {
+/** Scrolls to a part; `?part=` opens the page there (the router's scrollBehavior; the hash is the router's). */
+function show(id: string): void {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
-  document
-    .getElementById(`settings-${id}`)
-    ?.scrollIntoView({ block: 'start', behavior: smooth && !reduced ? 'smooth' : 'auto' })
+  document.getElementById(`settings-${id}`)?.scrollIntoView({ block: 'start', behavior: reduced ? 'auto' : 'smooth' })
 }
-onMounted(() => {
-  const part = route.query.part
-  if (typeof part === 'string') void nextTick(() => show(part, false))
-})
-watch(
-  () => route.query.part,
-  (part) => typeof part === 'string' && show(part),
-)
 </script>
 
 <template>
@@ -58,10 +50,11 @@ watch(
     v-for="part in parts"
     :id="`settings-${part.id}`"
     :key="part.id"
-    class="scroll-mt-24 pb-12"
+    class="scroll-mt-24 pb-44"
     :aria-labelledby="`settings-${part.id}-title`"
   >
     <SectionHeading :id="`settings-${part.id}-title`" :title="t(part.title)" :subtitle="t(part.note)" class="mt-0!" />
     <AppearanceSettings v-if="part.id === 'appearance'" />
+    <ExternalSourcesSettings v-else-if="part.id === 'sources'" />
   </section>
 </template>

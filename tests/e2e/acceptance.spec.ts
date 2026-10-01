@@ -13,6 +13,7 @@
  */
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import {
+  chooseSources,
   command,
   connectAndPair,
   disconnect,
@@ -522,6 +523,7 @@ test('looks lyrics up on LRCLIB and saves them beside the track through the serv
     }),
   )
   const errors = watchErrors(page)
+  await chooseSources(page, { lrclib: { allowed: true } })
   await english(page)
   await connectAndPair(page)
   await page.goto('/#/album/Harbor/Kestrel')
@@ -540,6 +542,7 @@ test('looks lyrics up on LRCLIB and saves them beside the track through the serv
   await expect(page.getByTestId('lyrics')).toContainText('From the .lrc file beside the track')
   await page.keyboard.press('Escape')
   await disconnect(page)
+  await chooseSources(page)
   expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])
 })
 
@@ -555,6 +558,7 @@ test('replaces a plain .lrc with synced lyrics from LRCLIB, the old one going to
     }),
   )
   const errors = watchErrors(page)
+  await chooseSources(page, { lrclib: { allowed: true } })
   await english(page)
   await connectAndPair(page)
   await page.goto('/#/album/Harbor/Lumen')
@@ -574,6 +578,7 @@ test('replaces a plain .lrc with synced lyrics from LRCLIB, the old one going to
   await page.goto('/#/card/trash')
   await expect(page.getByTestId('trash-list')).toContainText('b Low Tide.lrc', { timeout: 30_000 })
   await disconnect(page)
+  await chooseSources(page)
   expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])
 })
 
@@ -603,6 +608,7 @@ test("finds a cover on Cover Art Archive and saves it into the album's folder th
     route.fulfill({ headers: cors, contentType: 'image/png', path: 'tests/e2e/fixtures/cover.png' }),
   )
   const errors = watchErrors(page)
+  await chooseSources(page, { coverartarchive: { allowed: true } })
   await english(page)
   await connectAndPair(page)
   await page.goto('/#/album/Night%20Lines/Lumen')
@@ -614,6 +620,7 @@ test("finds a cover on Cover Art Archive and saves it into the album's folder th
   await expect(page.locator('main canvas').first()).toBeVisible({ timeout: 30_000 })
   await expect(page.getByTestId('cover-find')).toHaveCount(0)
   await disconnect(page)
+  await chooseSources(page)
   expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])
 })
 
@@ -658,11 +665,13 @@ test("finds an artist's photo on Wikimedia Commons within the service's policy",
     route.fulfill({ headers: cors, contentType: 'image/png', path: 'tests/e2e/fixtures/cover.png' }),
   )
   const errors = watchErrors(page)
+  await chooseSources(page, { wikimedia: { allowed: true } })
   await english(page)
   await page.goto('/#/artist/Lumen')
   await page.getByTestId('photo-find').click({ timeout: 60_000 })
   await expect(page.getByTestId('photo-credit')).toContainText('A Photographer · CC BY 4.0', { timeout: 30_000 })
   await page.getByTestId('photo-remove').click()
+  await chooseSources(page)
   expect(errors.filter((error) => !error.includes('status of 503'))).toEqual([])
 })
 

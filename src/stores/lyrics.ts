@@ -7,9 +7,10 @@
  *
  * A track without synced lyrics (none at all, or plain text without timings
  * in its tags, its .lrc or stock's file) can be looked up on LRCLIB (owner,
- * 2026-09-29, enrichment step 1) when the release's origins admit it: on the
- * listener's request, or for every such track once they switch that on in
- * this browser (off by default, since the track's names leave the network).
+ * 2026-09-29, enrichment step 1) when the release's origins admit it and the
+ * owner allowed it among the outside sources (2026-10-01; off by default,
+ * since the track's names leave the network): on the listener's request, or
+ * for every such track when the source is also set to work automatically.
  * What LRCLIB gives is shown as not yet on the card until the listener saves
  * it beside the track as its .lrc, through the upload route, which never
  * overwrites; a plain .lrc already there goes to the service's trash
@@ -22,8 +23,8 @@ import { trackKey } from '../domain/track'
 import { findLyrics } from '../gateway/lrclib'
 import { currentLyrics, mediaLyrics, type LyricsSource } from '../gateway/media'
 import { uploadFile } from '../gateway/upload'
-import { readPreference, writePreference } from '../lib/storage'
 import { connection, http, originAllowed } from './connection'
+import { sourceAllowed, sourceAutomatic } from './externalSources'
 import { run } from './operation'
 import { pairingToken } from './pairing'
 import { nowPlaying, nowPositionMs } from './output'
@@ -39,21 +40,17 @@ interface LyricsModel {
   lyrics: Lyrics | null
   source: LyricsSource | 'lrclib' | null
   lookup: LyricsLookup
-  /** Look up every track left without lyrics (this browser's choice). */
-  autoLookup: boolean
   saving: boolean
   /** What LRCLIB's lyrics stand in for: none, or plain lyrics from this source. */
   replaced: LyricsSource | null
 }
 
-const AUTO_KEY = 'disc-player.lrclib-auto'
 const state = reactive<LyricsModel>({
   path: null,
   status: 'idle',
   lyrics: null,
   source: null,
   lookup: 'idle',
-  autoLookup: readPreference(AUTO_KEY) === '1',
   saving: false,
   replaced: null,
 })
@@ -115,24 +112,26 @@ async function load(path: string | null, media: boolean, cue: boolean): Promise<
   } catch {
     if (current === request) state.status = 'none'
   }
-  if (current === request && state.autoLookup && lyricsLookupAvailable()) void lookUpLyrics()
+  if (current === request && sourceAutomatic('lrclib') && lyricsLookupAvailable()) void lookUpLyrics()
 }
 
 /** The track's own lyrics are plain text without timings (owner, 2026-09-29: still offer synced ones). */
 export const plainLyricsOnly = (): boolean =>
   state.status === 'ready' && state.lyrics !== null && !state.lyrics.synced && state.source !== 'lrclib'
 
-/** LRCLIB can be asked for the current track: the origins admit it and it has no synced lyrics. */
-export function lyricsLookupAvailable(): boolean {
+/** The release's origins admit LRCLIB. */
+export const lrclibAdmitted = (): boolean => originAllowed('lrclib')
+
+/** The current track could take LRCLIB's lyrics: the origins admit it and it has no synced lyrics. */
+export function lyricsLookupFits(): boolean {
   const track = nowPlaying.value.track
   return (
-    originAllowed('lrclib') &&
-    !!track?.path &&
-    !track.cue &&
-    !!track.artist &&
-    (state.status === 'none' || plainLyricsOnly())
+    lrclibAdmitted() && !!track?.path && !track.cue && !!track.artist && (state.status === 'none' || plainLyricsOnly())
   )
 }
+
+/** LRCLIB can be asked for the current track: it fits and the owner allowed the source. */
+export const lyricsLookupAvailable = (): boolean => sourceAllowed('lrclib') && lyricsLookupFits()
 
 /** Looks the current track up on LRCLIB (its artist, title, album and length leave the network). */
 export async function lookUpLyrics(): Promise<void> {
@@ -164,11 +163,13 @@ export async function lookUpLyrics(): Promise<void> {
   }
 }
 
-export function setAutoLookup(on: boolean): void {
-  state.autoLookup = on
-  writePreference(AUTO_KEY, on ? '1' : null)
-  if (on && state.lookup === 'idle' && lyricsLookupAvailable()) void lookUpLyrics()
-}
+// Set to work automatically while a track waits without lyrics: it is looked up at once.
+watch(
+  () => sourceAutomatic('lrclib'),
+  (on) => {
+    if (on && state.lookup === 'idle' && lyricsLookupAvailable()) void lookUpLyrics()
+  },
+)
 
 /**
  * Saves what LRCLIB gave beside the track as its .lrc: one guarded upload

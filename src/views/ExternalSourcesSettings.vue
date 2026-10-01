@@ -1,0 +1,148 @@
+<script setup lang="ts">
+/**
+ * The Settings page's outside sources (owner, 2026-10-01): grouped by what
+ * they bring, each off until allowed, and automatic only when also chosen.
+ * The choice is kept on the player, so changing it needs pairing; a source
+ * the release's origins do not admit stays unavailable here.
+ */
+import { computed } from 'vue'
+import { t, type MessageKey } from '../i18n'
+import { artistPhotoOriginsAdmitted } from '../stores/artistPictures'
+import { coverOriginsAdmitted } from '../stores/coverSearch'
+import {
+  chooseSource,
+  externalSources,
+  SOURCE_KINDS,
+  SOURCES,
+  type SourceKind,
+  type SourceName,
+} from '../stores/externalSources'
+import { lrclibAdmitted } from '../stores/lyrics'
+import { pairing } from '../stores/pairing'
+import { openDialog } from '../stores/ui'
+import UiTextButton from '../ui/UiTextButton.vue'
+
+const KIND_TITLES: Record<SourceKind, MessageKey> = {
+  lyrics: 'source_kind_lyrics',
+  album_covers: 'source_kind_album_covers',
+  artist_images: 'source_kind_artist_images',
+}
+interface SourceText {
+  about: MessageKey
+  sends: MessageKey
+  auto: MessageKey
+  admitted: () => boolean
+}
+const TEXTS: Record<SourceName, SourceText> = {
+  lrclib: {
+    about: 'source_lrclib_about',
+    sends: 'source_lrclib_sends',
+    auto: 'source_lrclib_auto',
+    admitted: lrclibAdmitted,
+  },
+  coverartarchive: {
+    about: 'source_coverartarchive_about',
+    sends: 'source_coverartarchive_sends',
+    auto: 'source_coverartarchive_auto',
+    admitted: coverOriginsAdmitted,
+  },
+  wikimedia: {
+    about: 'source_wikimedia_about',
+    sends: 'source_wikimedia_sends',
+    auto: 'source_wikimedia_auto',
+    admitted: artistPhotoOriginsAdmitted,
+  },
+}
+
+const groups = computed(() =>
+  SOURCE_KINDS.map((kind) => ({ kind, sources: SOURCES.filter((source) => source.kind === kind) })).filter(
+    (group) => group.sources.length > 0,
+  ),
+)
+/** Why nothing can change now, if so. */
+const blocked = computed<MessageKey | null>(() =>
+  !externalSources.available ? 'sources_unavailable' : !pairing.stored ? 'sources_pair' : null,
+)
+const allowed = (name: SourceName) => externalSources.choices[name]?.allowed === true
+const automatic = (name: SourceName) => allowed(name) && externalSources.choices[name]?.auto === true
+const locked = (name: SourceName) => blocked.value !== null || externalSources.busy !== null || !TEXTS[name].admitted()
+/** Asks the player; the box then shows what the player keeps, whatever the click showed. */
+async function choose(event: Event, name: SourceName, field: 'allowed' | 'auto'): Promise<void> {
+  const input = event.target as HTMLInputElement
+  await chooseSource(name, { [field]: input.checked })
+  input.checked = field === 'allowed' ? allowed(name) : automatic(name)
+}
+const hostOf = (site: string) => new URL(site).host
+</script>
+
+<template>
+  <div class="grid max-w-720 gap-0" data-testid="settings-sources">
+    <p
+      v-if="blocked"
+      class="mt-0 mb-20 flex flex-wrap items-center gap-x-12 gap-y-6 rounded-12 border border-line bg-raised px-16 py-12 text-footnote text-secondary"
+      role="status"
+      data-testid="sources-blocked"
+    >
+      {{ t(blocked) }}
+      <UiTextButton v-if="blocked === 'sources_pair'" @click="openDialog('connection')">{{
+        t('sources_pair_open')
+      }}</UiTextButton>
+    </p>
+    <section v-for="group in groups" :key="group.kind" class="mb-24" :aria-labelledby="`sources-${group.kind}`">
+      <h3
+        :id="`sources-${group.kind}`"
+        class="mt-0 mb-10 text-caption2 font-semibold tracking-caps text-muted uppercase"
+      >
+        {{ t(KIND_TITLES[group.kind]) }}
+      </h3>
+      <article
+        v-for="source in group.sources"
+        :key="source.name"
+        class="rounded-12 border border-line px-16 py-14"
+        :data-testid="`source-${source.name}`"
+      >
+        <h4 class="m-0 flex flex-wrap items-baseline gap-x-8 text-callout font-semibold">
+          {{ source.title }}
+          <a
+            :href="source.site"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-footnote font-normal text-muted underline-offset-2 hover:text-ink hover:underline"
+            >{{ hostOf(source.site) }}</a
+          >
+        </h4>
+        <p class="mt-4 mb-0 text-footnote leading-[1.5] text-secondary">{{ t(TEXTS[source.name].about) }}</p>
+        <p class="mt-2 mb-0 text-caption leading-[1.5] text-muted">{{ t(TEXTS[source.name].sends) }}</p>
+        <p v-if="!TEXTS[source.name].admitted()" class="mt-6 mb-0 text-caption text-muted">
+          {{ t('source_not_admitted') }}
+        </p>
+        <div class="mt-10 flex flex-wrap gap-x-24 gap-y-8">
+          <label class="flex items-center gap-8 text-footnote text-ink has-disabled:text-muted">
+            <input
+              type="checkbox"
+              class="accent-progress-fill"
+              :checked="allowed(source.name)"
+              :disabled="locked(source.name)"
+              :data-testid="`source-${source.name}-allow`"
+              @change="choose($event, source.name, 'allowed')"
+            />
+            {{ t('source_allow') }}
+          </label>
+          <label class="flex items-center gap-8 text-footnote text-ink has-disabled:text-muted">
+            <input
+              type="checkbox"
+              class="accent-progress-fill"
+              :checked="automatic(source.name)"
+              :disabled="locked(source.name) || !allowed(source.name)"
+              :data-testid="`source-${source.name}-auto`"
+              @change="choose($event, source.name, 'auto')"
+            />
+            <span
+              >{{ t('source_auto') }} <span class="text-muted">· {{ t(TEXTS[source.name].auto) }}</span></span
+            >
+          </label>
+        </div>
+      </article>
+    </section>
+  </div>
+</template>
