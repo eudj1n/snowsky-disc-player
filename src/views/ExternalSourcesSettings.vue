@@ -10,7 +10,7 @@
 import { computed, reactive } from 'vue'
 import { t, type MessageKey } from '../i18n'
 import { artistPhotoOriginsAdmitted } from '../stores/artistPictures'
-import { originAllowed } from '../stores/connection'
+import { originAllowed, originHosts } from '../stores/connection'
 import { coverOriginsAdmitted } from '../stores/coverSearch'
 import {
   chooseSource,
@@ -76,6 +76,14 @@ const TEXTS: Record<SourceName, SourceText> = {
   },
 }
 
+/** The release's origins each source reaches (owner, 2026-10-01: Cover Art Archive's images come from archive.org). */
+const ORIGINS: Record<SourceName, readonly string[]> = {
+  musicbrainz: ['musicbrainz'],
+  lrclib: ['lrclib'],
+  coverartarchive: ['coverartarchive', 'archive_root', 'archive'],
+  fanarttv: ['fanart_api', 'fanart_assets'],
+  wikimedia: ['commons', 'wikidata', 'wikimedia_thumb', 'wikimedia_upload'],
+}
 const groups = computed(() =>
   SOURCE_KINDS.map((kind) => ({ kind, sources: SOURCES.filter((source) => source.kind === kind) })).filter(
     (group) => group.sources.length > 0,
@@ -150,6 +158,13 @@ const hostOf = (site: string) => new URL(site).host
           </h4>
           <p class="mt-4 mb-0 text-footnote leading-[1.5] text-secondary">{{ t(TEXTS[source.name].about) }}</p>
           <p class="mt-2 mb-0 text-caption leading-[1.5] text-muted">{{ t(TEXTS[source.name].sends) }}</p>
+          <p
+            v-if="originHosts(ORIGINS[source.name]).length"
+            class="mt-2 mb-0 text-caption leading-[1.5] text-muted"
+            :data-testid="`source-${source.name}-hosts`"
+          >
+            {{ t('source_hosts', { hosts: originHosts(ORIGINS[source.name]).join(', ') }) }}
+          </p>
           <p v-if="!TEXTS[source.name].admitted()" class="mt-6 mb-0 text-caption text-muted">
             {{ t('source_not_admitted') }}
           </p>

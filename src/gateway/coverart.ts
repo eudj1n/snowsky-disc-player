@@ -37,3 +37,10 @@ export async function frontCover(
   if (own || !release.group) return own
   return front(`${BASE}/release-group/${encodeURIComponent(release.group)}/front-500`, fetchImpl)
 }
+
+/** Where an edition's own front cover is, small for the choice (250 px) and for the card (500 px). */
+export const releaseFront = (release: string, size: 250 | 500): string =>
+  `${BASE}/release/${encodeURIComponent(release)}/front-${String(size)}`
+
+/** An edition's own front cover by its address; null when it has none. */
+export const coverBytes = (url: string, fetchImpl: typeof fetch = fetch): Promise<Blob | null> => front(url, fetchImpl)

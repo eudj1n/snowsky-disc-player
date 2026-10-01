@@ -20,17 +20,21 @@ import TrackListSkeleton from '../components/track/TrackListSkeleton.vue'
 import { albumScope, albumTracks, albumsBy, byTrackNumber, discOf, recentAlbums } from '../domain/album'
 import { creditArtists, creditLabel, creditSeparator, leadCredit, sameCredit } from '../domain/artist'
 import type { SelectionTarget, TrackKey } from '../gateway/selection'
-import { t } from '../i18n'
+import { locale, t } from '../i18n'
 import { albumCover, albumCoverState, albumQuality, albumYear } from '../stores/enrichment'
 import {
   coverLookupAllowed,
   coverSearch,
   coverSearchKey,
+  albumIdentityKey,
   dismissCover,
-  lookUpCover,
   lookUpCoverAutomatically,
+  openCoverPicker,
   saveCover,
 } from '../stores/coverSearch'
+import { albumIdentity } from '../stores/musicbrainzIds'
+import AlbumCoverDialog from '../layout/AlbumCoverDialog.vue'
+import { regionName } from '../domain/artistFacts'
 import { isHiRes, qualityLabel } from '../domain/quality'
 import { formatBadge } from '../domain/track'
 import { findGenre, playableGenre, sameGenre } from '../domain/genre'
@@ -103,6 +107,20 @@ const coverOffered = computed(
     albumCoverState(group.value, scope.value) === 'missing',
 )
 const searchHere = computed(() => group.value !== null && coverSearch.key === coverSearchKey(group.value, scope.value))
+/* The edition confirmed in the cover picker (2026-10-01): its label and catalogue number, country, format and year. */
+const edition = computed(() => (group.value ? albumIdentity(albumIdentityKey(group.value, scope.value)) : null))
+const editionLine = computed(() => {
+  const facts = edition.value?.facts
+  if (!facts) return ''
+  return [
+    [facts.label, facts.catalogNumber].filter(Boolean).join(' '),
+    facts.country ? regionName(facts.country, locale.value) : null,
+    facts.format,
+    facts.date?.slice(0, 4),
+  ]
+    .filter(Boolean)
+    .join(' · ')
+})
 const sleeve = computed(() =>
   searchHere.value && coverSearch.cover ? coverSearch.cover : group.value ? albumCover(group.value, scope.value) : null,
 )
@@ -114,7 +132,7 @@ const coverMessage = computed(() => {
       return t('cover_searching')
     case 'found':
       return release
-        ? t('cover_found', {
+        ? t(release.source === 'fanarttv' ? 'cover_found_fanart' : 'cover_found', {
             release: [release.title, release.artist, release.date?.slice(0, 4)]
               .filter((part): part is string => Boolean(part))
               .map(isolateName)
@@ -287,7 +305,7 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
           :label="t('cover_find')"
           data-testid="cover-find"
           :disabled="searchHere && coverSearch.status === 'searching'"
-          @click="group && lookUpCover(group, scope)"
+          @click="group && openCoverPicker(group, scope)"
         />
         <UiCircleButton
           v-if="pins.available && pinTarget"
@@ -299,6 +317,16 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
           @click="pinTarget && togglePinAlbum(pinTarget)"
         />
       </DetailHeading>
+      <p v-if="edition" class="-mt-8 mb-20 text-footnote text-muted" data-testid="album-edition">
+        <a
+          :href="`https://musicbrainz.org/release/${edition.mbid}`"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-secondary underline-offset-3 hover:text-ink hover:underline"
+          >MusicBrainz</a
+        ><template v-if="editionLine"> · {{ editionLine }}</template>
+      </p>
+      <AlbumCoverDialog :album="group" :scope="scope" />
       <section
         v-if="coverMessage"
         class="mb-24 flex flex-wrap items-center gap-12 rounded-12 border border-line bg-raised px-18 py-14"

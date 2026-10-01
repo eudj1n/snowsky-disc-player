@@ -1826,53 +1826,99 @@ test('offers synced lyrics from LRCLIB beside plain ones in the tags, and a save
   await chooseSources(page)
 })
 
-test('finds a cover on Cover Art Archive for an album without one and saves it into its folder', async ({
+test('chooses a cover among the editions and fanart.tv, keeps the edition and saves the cover into its folder', async ({
   page,
 }, info) => {
   test.skip(external, 'Needs the mock collection')
   test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
   test.skip(info.project.name === 'phone', 'Runs once: the saved cover stays in the shared mock')
+  const FIRST = '7a1d2c3b-0000-4000-8000-00000000b001'
+  const VINYL = '7a1d2c3b-0000-4000-8000-00000000b002'
+  const BARE = '7a1d2c3b-0000-4000-8000-00000000b003'
+  const GROUP = '7a1d2c3b-0000-4000-8000-00000000c001'
+  const ARTIST = '7a1d2c3b-0000-4000-8000-00000000a001'
   const asked: URL[] = []
   const cors = { 'Access-Control-Allow-Origin': '*' }
+  const edition = (id: string, score: number, date: string, country: string, format: string) => ({
+    id,
+    score,
+    title: 'Night Drive',
+    date,
+    country,
+    'track-count': 3,
+    media: [{ format }],
+    'label-info': [{ 'catalog-number': 'NL-001', label: { name: 'Lumen Records' } }],
+    'artist-credit': [{ name: 'Northline', artist: { id: ARTIST } }],
+    'release-group': { id: GROUP, 'primary-type': 'Album' },
+  })
   await page.route('https://musicbrainz.org/ws/2/**', async (route) => {
     asked.push(new URL(route.request().url()))
     await route.fulfill({
       headers: cors,
       json: {
         releases: [
-          {
-            id: 'release-night-drive',
-            score: 100,
-            title: 'Night Drive',
-            date: '2004-06-01',
-            'track-count': 3,
-            'artist-credit': [{ name: 'Northline' }],
-            'release-group': { id: 'group-night-drive' },
-          },
+          edition(FIRST, 100, '2004-06-01', 'GB', 'CD'),
+          edition(VINYL, 95, '2010-02-01', 'JP', 'Vinyl'),
+          edition(BARE, 92, '2012', 'US', 'Digital Media'),
         ],
       },
     })
   })
+  await page.route('https://webservice.fanart.tv/**', (route) =>
+    route.fulfill({
+      headers: cors,
+      json: {
+        albums: {
+          [GROUP]: { albumcover: [{ id: '9', url: 'https://assets.fanart.tv/fanart/night.jpg', likes: '1' }] },
+        },
+      },
+    }),
+  )
+  await page.route('https://assets.fanart.tv/**', (route) =>
+    route.fulfill({ headers: cors, contentType: 'image/png', path: 'tests/e2e/fixtures/cover.png' }),
+  )
   // First archive.org does not answer, as on some networks.
   await page.route('https://coverartarchive.org/**', (route) => route.abort('timedout'))
-  await chooseSources(page, { musicbrainz: { allowed: true }, coverartarchive: { allowed: true } })
+  await chooseSources(page, {
+    musicbrainz: { allowed: true },
+    coverartarchive: { allowed: true },
+    fanarttv: { allowed: true, key: 'personal-test-key' },
+  })
   await english(page)
   await connectAndPair(page)
   await page.goto('/#/album/Night%20Drive/Northline')
   const find = page.getByTestId('cover-find')
   await expect(find).toBeVisible({ timeout: 15_000 })
   await find.click()
-  const offer = page.getByTestId('cover-offer')
-  await expect(offer).toContainText('archive.org, which does not answer from this network', { timeout: 15_000 })
+  const dialog = page.getByRole('dialog')
+  await expect(dialog.getByTestId('covers-fanarttv').getByRole('button')).toHaveCount(1, { timeout: 15_000 })
+  await expect(dialog.getByTestId('covers-coverartarchive')).toHaveCount(0, { timeout: 15_000 })
+  expect(asked[0]?.searchParams.get('query')).toBe('release:"Night Drive" AND artist:"Northline"')
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
   await page.unroute('https://coverartarchive.org/**')
+  // An edition without a cover of its own is not offered.
   await page.route('https://coverartarchive.org/**', (route) =>
-    route.fulfill({ headers: cors, contentType: 'image/png', path: 'tests/e2e/fixtures/cover.png' }),
+    route.request().url().includes(BARE)
+      ? route.fulfill({ status: 404, headers: cors, body: '' })
+      : route.fulfill({ headers: cors, contentType: 'image/png', path: 'tests/e2e/fixtures/cover.png' }),
   )
   await find.click()
+  const editions = dialog.getByTestId('covers-coverartarchive').getByRole('button')
+  await expect(editions).toHaveCount(2, { timeout: 15_000 })
+  await expect(editions.first()).toHaveAccessibleName('Cover Art Archive, 2004 · United Kingdom, CD · Lumen Records')
+  await expect(editions.last()).toHaveAccessibleName('Cover Art Archive, 2010 · Japan, Vinyl · Lumen Records')
+  await editions.first().click()
+  await dialog.getByTestId('cover-use').click()
+  const offer = page.getByTestId('cover-offer')
   await expect(offer).toContainText('Cover Art Archive: Night Drive · Northline · 2004. Not on the card yet.', {
     timeout: 15_000,
   })
-  expect(asked[0]?.searchParams.get('query')).toBe('release:"Night Drive" AND artist:"Northline"')
+  // The chosen edition is the album's MusicBrainz identity, kept on the player.
+  await expect(page.getByTestId('album-edition')).toHaveText(
+    'MusicBrainz · Lumen Records NL-001 · United Kingdom · CD · 2004',
+  )
+  const albums = (await storeRecords(page, 'musicbrainz')).filter((record) => record.value.kind === 'album')
+  expect(albums.map((record) => [record.value.mbid, record.value.group])).toEqual([[FIRST, GROUP]])
   await page.getByTestId('cover-save').click()
   await expect(
     page.getByRole('status').filter({ hasText: "Saved into the album's folder as its cover." }).first(),
@@ -1883,6 +1929,8 @@ test('finds a cover on Cover Art Archive for an album without one and saves it i
   await page.reload()
   await expect(page.locator('main canvas').first()).toBeVisible({ timeout: 15_000 })
   await expect(page.getByTestId('cover-find')).toHaveCount(0)
+  for (const record of albums)
+    await forgetRecord(page, 'musicbrainz', { kind: 'album', name: String(record.value.name) })
   await disconnect(page)
   await chooseSources(page)
 })
@@ -2092,6 +2140,10 @@ test('keeps the outside sources on the player: off until allowed, changed only w
     await expect(sources.getByTestId(`source-${name}-allow`)).not.toBeChecked()
   }
   await expect(sources.getByRole('heading', { name: 'Artist images' })).toBeVisible()
+  // Each source names the hosts it reaches: Cover Art Archive's images come from archive.org.
+  await expect(sources.getByTestId('source-coverartarchive-hosts')).toHaveText(
+    'Reaches: coverartarchive.org, archive.org, *.archive.org.',
+  )
   await connectAndPair(page)
   await expect(sources.getByTestId('sources-blocked')).toHaveCount(0)
   const allow = sources.getByTestId('source-wikimedia-allow')

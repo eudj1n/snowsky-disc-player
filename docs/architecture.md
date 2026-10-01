@@ -103,7 +103,10 @@ lyrics and saves what it found beside the track through the upload route.
 `gateway/musicbrainz.ts` (paced to one request a second) and
 `gateway/coverart.ts` find an album's front cover; `domain/covers.ts` picks the
 release and the folder a cover may go to, and `stores/coverSearch.ts` offers,
-previews and saves it as the album folder's cover through the upload route.
+previews and saves it as the album folder's cover through the upload route;
+its picker (`layout/AlbumCoverDialog.vue`, `openCoverPicker`) offers the
+album's editions and fanart.tv's covers, and the chosen edition becomes the
+album's identity in `stores/musicbrainzIds.ts`.
 `gateway/wikimedia.ts` reads an artist's photo (a Wikidata image, Commons
 image information with author and licence, the thumbnail's bytes) and
 `gateway/fanart.ts` fanart.tv's photos, backgrounds and covers by

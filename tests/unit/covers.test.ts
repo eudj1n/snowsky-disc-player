@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { coverPlace, pickRelease } from '../../src/domain/covers'
+import { coverPlace, pickRelease, rankReleases } from '../../src/domain/covers'
 import { CoverUnreachable, frontCover } from '../../src/gateway/coverart'
 import { findReleases, phrase, resetPacing } from '../../src/gateway/musicbrainz'
 
@@ -22,8 +22,12 @@ describe('MusicBrainz releases', () => {
               title: 'Night Drive',
               date: '2004-06-01',
               'track-count': 3,
-              'artist-credit': [{ name: 'Northline', joinphrase: ' & ' }, { name: 'Kestrel' }],
-              'release-group': { id: 'g1' },
+              'artist-credit': [{ name: 'Northline', joinphrase: ' & ', artist: { id: 'a1' } }, { name: 'Kestrel' }],
+              'release-group': { id: 'g1', 'primary-type': 'Album' },
+              country: 'GB',
+              barcode: '5012345678900',
+              'label-info': [{ 'catalog-number': 'NL-001', label: { name: 'Lumen Records' } }],
+              media: [{ format: 'CD' }, { format: 'CD' }, { format: 'DVD' }],
             },
             { score: 90 },
           ],
@@ -39,6 +43,13 @@ describe('MusicBrainz releases', () => {
         date: '2004-06-01',
         trackCount: 3,
         score: 100,
+        country: 'GB',
+        format: '2×CD + DVD',
+        label: 'Lumen Records',
+        catalogNumber: 'NL-001',
+        barcode: '5012345678900',
+        type: 'Album',
+        artistId: 'a1',
       },
     ])
     expect(`${asked[0]?.origin ?? ''}${asked[0]?.pathname ?? ''}`).toBe('https://musicbrainz.org/ws/2/release/')
@@ -101,6 +112,19 @@ describe('choosing a release and the place of its cover', () => {
     expect(pickRelease(candidates, 3)?.id).toBe('b')
     expect(pickRelease(candidates, 7)?.id).toBe('a')
     expect(pickRelease([{ id: 'c', score: 60, trackCount: 3 }], 3)).toBeNull()
+  })
+
+  it('offers well-scored editions for the choice, those of the album length first, at most twelve', () => {
+    const candidates = [
+      { id: 'a', score: 100, trackCount: 12 },
+      { id: 'b', score: 90, trackCount: 3 },
+      { id: 'c', score: 60, trackCount: 3 },
+      { id: 'd', score: 95, trackCount: 3 },
+    ]
+    expect(rankReleases(candidates, 3).map((release) => release.id)).toEqual(['d', 'b', 'a'])
+    expect(rankReleases(candidates, null).map((release) => release.id)).toEqual(['a', 'd', 'b'])
+    const many = Array.from({ length: 20 }, (_, n) => ({ id: String(n), score: 99, trackCount: 3 }))
+    expect(rankReleases(many, 3)).toHaveLength(12)
   })
 
   it('puts a cover only into a folder that holds the album alone', () => {

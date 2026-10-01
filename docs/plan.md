@@ -1943,8 +1943,21 @@ dialog, the first window when starting.
       Discogs and Wikidata where MusicBrainz links them). Evidence: e2e
       "chooses an artist's photo and background…"; screenshots in light,
       dark and on a phone.
-- [ ] Album covers chosen among Cover Art Archive's editions and fanart.tv's
-      covers, with the release group and the album's facts.
+- [x] Album covers chosen among the editions (owner, 2026-10-01): "Choose a
+      cover" lists the album's editions on MusicBrainz (well scored, those of
+      the album's length first, at most twelve) with their own front covers
+      from Cover Art Archive, captioned with year, country, format and label,
+      and fanart.tv's covers of their release group (CC BY 3.0); an edition
+      without a cover of its own is not offered. The chosen cover becomes
+      the page's offer, saved into the album's folder only on request as
+      before; its edition (release, group, label and catalogue number,
+      country, format, barcode, type) is kept as the album's MusicBrainz
+      identity on the player and shown under the heading with a link to
+      MusicBrainz. Settings names the hosts each source reaches (Cover Art
+      Archive's images come from archive.org, which cannot be allowed apart:
+      the owner asked). Evidence: `tests/unit/covers.test.ts`; e2e "chooses a
+      cover among the editions and fanart.tv…", "keeps the outside sources
+      on the player…"; screenshots in light, dark and on a phone.
 - [ ] Later, stage D (owner's question, 2026-10-01): a batch that enriches
       the collection by the allowed sources: what is missing counted first
       and what will be sent named; MusicBrainz paced (about two requests an

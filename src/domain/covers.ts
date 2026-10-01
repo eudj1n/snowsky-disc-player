@@ -21,6 +21,22 @@ export function pickRelease<T extends { score: number; trackCount: number | null
   return best(sameLength) ?? best(good)
 }
 
+/**
+ * The editions worth offering for the listener's choice (owner, 2026-10-01):
+ * well scored, those with the album's number of tracks first, then by score;
+ * at most twelve.
+ */
+export function rankReleases<T extends { score: number; trackCount: number | null }>(
+  candidates: readonly T[],
+  trackCount: number | null,
+): T[] {
+  const same = (candidate: T) => Number(trackCount !== null && candidate.trackCount === trackCount)
+  return candidates
+    .filter((candidate) => candidate.score >= MIN_SCORE)
+    .sort((a, b) => same(b) - same(a) || b.score - a.score)
+    .slice(0, 12)
+}
+
 export type CoverPlace = { folder: string } | { refused: 'folders' | 'shared' | 'outside' }
 
 const folderOf = (path: string) => path.slice(0, path.lastIndexOf('/'))

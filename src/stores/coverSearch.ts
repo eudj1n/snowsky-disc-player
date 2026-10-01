@@ -9,15 +9,24 @@
  * through the guarded upload route, which never overwrites. One album at a
  * time; Cover Art Archive's images live on archive.org, which some networks
  * cannot reach, and the page says so.
+ *
+ * On request the listener chooses (owner, 2026-10-01): the album's editions
+ * on MusicBrainz, each with its own front cover from Cover Art Archive, and
+ * fanart.tv's covers of their release group when that source is allowed,
+ * as small previews. The chosen one becomes the offer above, and the
+ * edition (release, group and a few facts) is kept as the album's
+ * MusicBrainz identity.
  */
 import { reactive, readonly } from 'vue'
 import { albumTracks, type Album } from '../domain/album'
-import { coverPlace, pickRelease } from '../domain/covers'
-import { CoverUnreachable, frontCover } from '../gateway/coverart'
-import { findReleases } from '../gateway/musicbrainz'
+import { coverPlace, pickRelease, rankReleases } from '../domain/covers'
+import { coverBytes, CoverUnreachable, frontCover, releaseFront } from '../gateway/coverart'
+import { fanartArtist, fanartBytes, FanartKeyRefused } from '../gateway/fanart'
+import { findReleases, type ReleaseCandidate } from '../gateway/musicbrainz'
 import { uploadFile } from '../gateway/upload'
 import { originAllowed } from './connection'
-import { sourceAllowed, sourceAutomatic } from './externalSources'
+import { sourceAllowed, sourceAutomatic, sourceKey } from './externalSources'
+import { confirmAlbum } from './musicbrainzIds'
 import { recheckAlbumCover } from './enrichment'
 import { tracks } from './library'
 import { run } from './operation'
@@ -25,17 +34,43 @@ import { pairingToken } from './pairing'
 import { toast } from './ui'
 
 export type CoverSearchStatus = 'idle' | 'searching' | 'found' | 'missing' | 'unreachable' | 'failed'
+export type CoverSource = 'coverartarchive' | 'fanarttv'
+
+/** A cover the picker offers: an edition's own, or fanart.tv's for its release group. */
+export interface CoverOffer {
+  source: CoverSource
+  release: ReleaseCandidate
+  preview: string
+  url: string
+  previewBlob: Blob | null
+}
+interface CoverPicker {
+  key: string
+  title: string
+  status: 'searching' | 'ready' | 'missing' | 'unreachable' | 'failed'
+  offers: CoverOffer[]
+  /** fanart.tv refused the owner's key. */
+  keyRefused: boolean
+}
 
 interface CoverSearchModel {
   /** The album (title group and scope) the search is for. */
   key: string | null
   status: CoverSearchStatus
   cover: Blob | null
-  release: { title: string; artist: string; date: string | null } | null
+  release: { title: string; artist: string; date: string | null; source: CoverSource } | null
   saving: boolean
+  picker: CoverPicker | null
 }
 
-const state = reactive<CoverSearchModel>({ key: null, status: 'idle', cover: null, release: null, saving: false })
+const state = reactive<CoverSearchModel>({
+  key: null,
+  status: 'idle',
+  cover: null,
+  release: null,
+  saving: false,
+  picker: null,
+})
 export const coverSearch = readonly(state)
 
 export const coverSearchKey = (album: Album, scope: string | null): string => `${album.key}\u0000${scope ?? ''}`
@@ -46,6 +81,125 @@ export const coverOriginsAdmitted = (): boolean =>
 
 /** A cover may be looked up: the origins admit it and the owner allowed the source. */
 export const coverLookupAllowed = (): boolean => sourceAllowed('coverartarchive') && coverOriginsAdmitted()
+const fanartReachable = (): boolean =>
+  sourceAllowed('fanarttv') && originAllowed('fanart_api') && originAllowed('fanart_assets')
+
+/** The album's key for its MusicBrainz identity: the page's album key, with the artist when scoped. */
+export const albumIdentityKey = (album: Album, scope: string | null): string =>
+  scope ? JSON.stringify([album.key, scope]) : album.key
+
+/** Reads at most three previews at a time. */
+const waiting: (() => Promise<void>)[] = []
+let running = 0
+function enqueue(task: () => Promise<void>): void {
+  waiting.push(task)
+  drain()
+}
+function drain(): void {
+  while (running < 3 && waiting.length) {
+    const next = waiting.shift()
+    if (!next) break
+    running++
+    void next().finally(() => {
+      running--
+      drain()
+    })
+  }
+}
+
+/** Opens the choice of covers for the album: its editions' own and fanart.tv's for their release groups. */
+export async function openCoverPicker(album: Album, scope: string | null): Promise<void> {
+  const artist = scope ?? album.artists[0]
+  if (!artist || !coverLookupAllowed()) return
+  state.picker = {
+    key: coverSearchKey(album, scope),
+    title: album.title,
+    status: 'searching',
+    offers: [],
+    keyRefused: false,
+  }
+  // The reactive picker: changes to it show at once.
+  const picker = state.picker
+  try {
+    const members = albumTracks(tracks.value, album.title, scope)
+    const editions = rankReleases(await findReleases(album.title, artist), members.length || null)
+    const offers: CoverOffer[] = editions.map((release) => ({
+      source: 'coverartarchive',
+      release,
+      preview: releaseFront(release.id, 250),
+      url: releaseFront(release.id, 500),
+      previewBlob: null,
+    }))
+    const key = sourceKey('fanarttv')
+    const artistId = editions.find((release) => release.artistId)?.artistId
+    if (fanartReachable() && key && artistId) {
+      try {
+        const art = await fanartArtist(artistId, key)
+        // Each release group with its best-ranked edition, which the cover is kept against.
+        const groups = new Map<string, ReleaseCandidate>()
+        for (const release of editions)
+          if (release.group && !groups.has(release.group)) groups.set(release.group, release)
+        for (const [group, release] of groups)
+          for (const image of (art?.covers[group] ?? []).slice(0, 6))
+            offers.push({ source: 'fanarttv', release, preview: image.preview, url: image.url, previewBlob: null })
+      } catch (error) {
+        if (!(error instanceof FanartKeyRefused)) throw error
+        picker.keyRefused = true
+      }
+    }
+    if (state.picker !== picker) return
+    picker.offers = offers
+    picker.status = offers.length ? 'ready' : 'missing'
+    let unreachable = 0
+    let left = offers.length
+    for (const offer of picker.offers)
+      enqueue(async () => {
+        try {
+          offer.previewBlob =
+            offer.source === 'fanarttv' ? await fanartBytes(offer.preview) : await coverBytes(offer.preview)
+        } catch (error) {
+          if (error instanceof CoverUnreachable) unreachable++
+        }
+        // An edition without a cover of its own is not offered.
+        if (!offer.previewBlob) picker.offers = picker.offers.filter((item) => item !== offer)
+        if (--left === 0 && !picker.offers.length) picker.status = unreachable ? 'unreachable' : 'missing'
+      })
+  } catch (error) {
+    if (state.picker === picker) picker.status = error instanceof CoverUnreachable ? 'unreachable' : 'failed'
+  }
+}
+
+export function closeCoverPicker(): void {
+  state.picker = null
+}
+
+/**
+ * The chosen cover becomes the album's offer (not on the card until saved)
+ * and its edition the album's MusicBrainz identity.
+ */
+export async function useCoverOffer(album: Album, scope: string | null, offer: CoverOffer): Promise<void> {
+  const key = coverSearchKey(album, scope)
+  state.picker = null
+  state.key = key
+  state.status = 'searching'
+  state.cover = null
+  state.release = null
+  try {
+    const cover = offer.source === 'fanarttv' ? await fanartBytes(offer.url) : await coverBytes(offer.url)
+    if (state.key !== key) return
+    if (!cover) {
+      state.status = 'missing'
+      return
+    }
+    state.cover = cover
+    const { title, artist, date } = offer.release
+    state.release = { title, artist, date, source: offer.source }
+    state.status = 'found'
+    void confirmAlbum(albumIdentityKey(album, scope), offer.release)
+  } catch (error) {
+    if (state.key === key) state.status = error instanceof CoverUnreachable ? 'unreachable' : 'failed'
+  }
+}
 
 /** Albums looked up automatically in this tab, so a page opened again does not ask again. */
 const tried = new Set<string>()
@@ -84,7 +238,7 @@ export async function lookUpCover(album: Album, scope: string | null): Promise<v
       return
     }
     state.cover = cover
-    state.release = { title: release.title, artist: release.artist, date: release.date }
+    state.release = { title: release.title, artist: release.artist, date: release.date, source: 'coverartarchive' }
     state.status = 'found'
   } catch (error) {
     if (state.key === key) state.status = error instanceof CoverUnreachable ? 'unreachable' : 'failed'

@@ -105,6 +105,13 @@ const origins = shallowRef<Record<string, ReleaseOrigin> | null>(null)
 export function originAllowed(name: string): boolean {
   return origins.value?.[name]?.directives.includes('connect-src') === true
 }
+/** The hosts the release's reviewed origins name for these providers, as Settings lists them. */
+export function originHosts(names: readonly string[]): string[] {
+  return names.flatMap((name) => {
+    const origin = origins.value?.[name]?.origin
+    return origin ? [origin.replace(/^https:\/\//, '')] : []
+  })
+}
 
 /** Stores that need the session (pairing, playback) register here. */
 export function onSessionOpened(listener: (session: GatewaySession) => void): void {

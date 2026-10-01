@@ -17,6 +17,28 @@ export interface ReleaseCandidate {
   trackCount: number | null
   /** MusicBrainz's search score, 0 to 100. */
   score: number
+  /** What tells editions apart (owner, 2026-10-01: the listener chooses among them). */
+  country: string | null
+  /** Its media's formats, as "CD" or "2×Vinyl". */
+  format: string | null
+  label: string | null
+  catalogNumber: string | null
+  barcode: string | null
+  /** The release group's primary type: Album, EP, Single… */
+  type: string | null
+  /** The first credited artist's MusicBrainz id (fanart.tv's key for album covers). */
+  artistId: string | null
+}
+
+/** Its media's formats in order, counted: "CD", "2×CD", "CD + DVD". */
+function formats(media: unknown): string | null {
+  if (!Array.isArray(media)) return null
+  const counted = new Map<string, number>()
+  for (const medium of media as Record<string, unknown>[]) {
+    const format = text(medium.format)
+    if (format) counted.set(format, (counted.get(format) ?? 0) + 1)
+  }
+  return [...counted].map(([format, count]) => (count > 1 ? `${String(count)}×${format}` : format)).join(' + ') || null
 }
 
 const BASE = 'https://musicbrainz.org/ws/2'
@@ -45,6 +67,9 @@ function candidate(value: unknown): ReleaseCandidate | null {
   const credits = Array.isArray(release['artist-credit']) ? (release['artist-credit'] as Record<string, unknown>[]) : []
   const artist = credits.map((credit) => `${text(credit.name) ?? ''}${text(credit.joinphrase) ?? ''}`).join('')
   const group = release['release-group'] as Record<string, unknown> | undefined
+  const labels = Array.isArray(release['label-info']) ? (release['label-info'] as Record<string, unknown>[]) : []
+  const label = labels[0]
+  const firstArtist = credits[0]?.artist as Record<string, unknown> | undefined
   return {
     id,
     group: text(group?.id),
@@ -53,6 +78,13 @@ function candidate(value: unknown): ReleaseCandidate | null {
     date: text(release.date),
     trackCount: typeof release['track-count'] === 'number' ? release['track-count'] : null,
     score: typeof release.score === 'number' ? release.score : 0,
+    country: text(release.country),
+    format: formats(release.media),
+    label: text((label?.label as Record<string, unknown> | undefined)?.name),
+    catalogNumber: text(label?.['catalog-number']),
+    barcode: text(release.barcode),
+    type: text(group?.['primary-type']),
+    artistId: text(firstArtist?.id),
   }
 }
 
