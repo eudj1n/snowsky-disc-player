@@ -2286,6 +2286,22 @@ image; card-only items (catalog or query additions) are marked as such.
       "keeps the outside sources on the player…" (the boxes, kept after a
       reload); screenshots in light, dark and on a phone.
 
+Checks (2026-10-02) of the untagged build `2026.10.02-1f681be` (the image
+boxes, no cover action for a cover inside the files), by what it changed:
+`npm run check` with 308 unit tests; the full mock suite (181 passed, 71
+skipped); the service's store test on the host gateway for the new fields;
+`npm run release` checked `release/origins.json` against the service and had
+the service's tool install the zip into a scratch card. No emulator
+acceptance: the build changes no gateway contract, CSP, origins or command
+(owner, 2026-10-02: untagged builds for the owner's card follow the tiers; a
+tagged release gets the full set).
+
+On the owner's card (2026-10-02, their go-ahead): `Apps/Disc Player`
+replaced by `2026.10.02-1f681be` (100 files); the catalog installed, since its
+`store.json` lacked the image boxes' fields (`queries.json`, `store.json` and
+`hosted.json` now byte for byte as the install tool renders them for the
+V2.57 profile; no `commands.json`); the card ejected.
+
 ## Releases by tags (owner, 2026-10-02)
 
 - [x] A `v*` tag releases the page (`.github/workflows/release.yml`): the
