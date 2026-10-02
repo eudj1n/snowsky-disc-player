@@ -38,6 +38,23 @@ export function rankReleases<T extends { score: number; trackCount: number | nul
 }
 
 /**
+ * An album title without the edition its tags add in brackets at the end
+ * ("Born This Way (International Special Edition Version)", "Title (Deluxe)
+ * [Remastered]"), which MusicBrainz keeps out of the release's title; null when
+ * there is none to drop (owner, 2026-10-02).
+ */
+export function titleWithoutEdition(title: string): string | null {
+  const whole = title.trim()
+  let bare = whole
+  for (;;) {
+    const next = bare.replace(/\s*(\([^()]*\)|\[[^[\]]*\])$/, '').trim()
+    if (next === bare || !next) break
+    bare = next
+  }
+  return bare === whole ? null : bare
+}
+
+/**
  * The folder covers the service's media route reads, in its order (device
  * media.c; FAT ignores case, so the order is by name and type).
  */

@@ -67,6 +67,10 @@ for (const [index, track] of TRACKS.filter((item) => item.ALBUM === 'Two Rooms')
   if (track.TITLE === 'Hallway') track.ARTIST = 'Kite Lines; Mira Sol'
 }
 
+// A guest on one track of another's album, known from nowhere else: the Artists page shows it under All only.
+const wideOpen = TRACKS.find((track) => track.TITLE === 'Wide Open')
+if (wideOpen) wideOpen.ARTIST = 'Sundial; Lumi Vale'
+
 // DATE tags the files carry (stock keeps no year).
 const DATES = { 'Inner Space': '2019-03-01', 'Two Rooms': '2021' }
 

@@ -5,6 +5,7 @@
  * a second (MusicBrainz's rule for clients); only those names leave the
  * network. No key and no custom header (a simple CORS GET).
  */
+import { titleWithoutEdition } from '../domain/covers'
 
 export interface ReleaseCandidate {
   /** MusicBrainz release id (Cover Art Archive's key). */
@@ -26,6 +27,8 @@ export interface ReleaseCandidate {
   barcode: string | null
   /** The release group's primary type: Album, EP, Single… */
   type: string | null
+  /** What MusicBrainz says tells this release apart ("International Special Edition"). */
+  disambiguation: string | null
   /** The first credited artist's MusicBrainz id (fanart.tv's key for album covers). */
   artistId: string | null
 }
@@ -84,19 +87,26 @@ function candidate(value: unknown): ReleaseCandidate | null {
     catalogNumber: text(label?.['catalog-number']),
     barcode: text(release.barcode),
     type: text(group?.['primary-type']),
+    disambiguation: text(release.disambiguation),
     artistId: text(firstArtist?.id),
   }
 }
 
-/** Releases matching the album's title and artist, best first. Throws when MusicBrainz cannot answer. */
+/**
+ * Releases matching the album's title and artist, best first. A title with an edition in brackets at its end
+ * asks for the title without it too, in the same request (MusicBrainz answers once a second). Throws when
+ * MusicBrainz cannot answer.
+ */
 export async function findReleases(
   album: string,
   artist: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReleaseCandidate[]> {
   await paced()
+  const bare = titleWithoutEdition(album)
+  const titles = bare ? `(release:${phrase(album)} OR release:${phrase(bare)})` : `release:${phrase(album)}`
   const params = new URLSearchParams({
-    query: `release:${phrase(album)} AND artist:${phrase(artist)}`,
+    query: `${titles} AND artist:${phrase(artist)}`,
     fmt: 'json',
     limit: '10',
   })

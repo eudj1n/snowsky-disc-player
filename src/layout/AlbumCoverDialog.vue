@@ -13,6 +13,7 @@ import { regionName } from '../domain/artistFacts'
 import { locale, t, type MessageKey } from '../i18n'
 import { closeCoverPicker, coverSearch, useCoverOffer, type CoverOffer } from '../stores/coverSearch'
 import UiDialog from '../ui/UiDialog.vue'
+import UiIcon from '../ui/UiIcon.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiSkeleton from '../ui/UiSkeleton.vue'
 import CoverCanvas from '../components/artwork/CoverCanvas.vue'
@@ -54,6 +55,12 @@ function caption(offer: CoverOffer): [string, string] {
   const first = [date?.slice(0, 4), country ? regionName(country, locale.value) : null].filter(Boolean).join(' · ')
   return [first, [format, label].filter(Boolean).join(' · ')]
 }
+/** An edition's track count (fanart.tv's covers are the album's), and whether the card holds as many. */
+function tracksLine(offer: CoverOffer): { text: string; same: boolean } | null {
+  const count = offer.source === 'coverartarchive' ? offer.release.trackCount : null
+  if (count === null) return null
+  return { text: t('track_count', { count }), same: count === picker.value?.trackCount }
+}
 async function use(): Promise<void> {
   if (chosen.value && props.album) await useCoverOffer(props.album, props.scope, chosen.value)
 }
@@ -89,7 +96,16 @@ async function use(): Promise<void> {
               :key="offer.preview"
               type="button"
               :aria-pressed="chosen === offer"
-              :aria-label="[section.title, ...caption(offer)].filter(Boolean).join(', ')"
+              :aria-label="
+                [
+                  section.title,
+                  ...caption(offer),
+                  tracksLine(offer)?.text,
+                  tracksLine(offer)?.same ? t('edition_tracks_match') : null,
+                ]
+                  .filter(Boolean)
+                  .join(', ')
+              "
               class="rounded-10 border border-line p-6 text-left text-caption leading-[1.4] text-muted aria-pressed:border-accent aria-pressed:text-ink"
               @click="chosen = chosen === offer ? null : offer"
             >
@@ -101,6 +117,16 @@ async function use(): Promise<void> {
               <span v-if="caption(offer)[1]" class="block truncate" :title="caption(offer)[1]">{{
                 caption(offer)[1]
               }}</span>
+              <span
+                v-if="tracksLine(offer)"
+                class="flex items-center gap-3 truncate"
+                :class="{ 'text-ink': tracksLine(offer)?.same }"
+                :title="tracksLine(offer)?.same ? t('edition_tracks_match') : undefined"
+                data-testid="cover-tracks"
+                :data-match="tracksLine(offer)?.same ? 'true' : undefined"
+                >{{ tracksLine(offer)?.text
+                }}<UiIcon v-if="tracksLine(offer)?.same" name="check" class="size-11 shrink-0"
+              /></span>
             </button>
           </div>
         </section>

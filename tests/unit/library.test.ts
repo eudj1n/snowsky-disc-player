@@ -365,8 +365,14 @@ describe('joint artist credits', () => {
     expect(credits('Alphabet', 'Alpha')).toBe(false)
     const artists = groupArtists([track(1, 'X', 'Alpha'), track(2, 'Y', 'Alpha; Beta')])
     expect(artists).toEqual([
-      { name: 'Alpha', albumCount: 2, trackCount: 2, literal: true },
-      { name: 'Beta', albumCount: 1, trackCount: 1, literal: false },
+      { name: 'Alpha', albumCount: 2, trackCount: 2, literal: true, own: true },
+      { name: 'Beta', albumCount: 1, trackCount: 1, literal: false, own: false },
+    ])
+    // An album credited to an artist is a record of its own, although its tracks credit it jointly.
+    const joint = track(3, 'Z', 'Gamma; Delta', 3, 'Delta')
+    expect(groupArtists([joint]).map(({ name, own }) => ({ name, own }))).toEqual([
+      { name: 'Gamma', own: false },
+      { name: 'Delta', own: true },
     ])
   })
 })

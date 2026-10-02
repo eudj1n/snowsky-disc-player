@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { coverPlace, pickRelease, rankReleases } from '../../src/domain/covers'
+import { coverPlace, pickRelease, rankReleases, titleWithoutEdition } from '../../src/domain/covers'
 import { CoverUnreachable, frontCover } from '../../src/gateway/coverart'
 import { findReleases, phrase, resetPacing } from '../../src/gateway/musicbrainz'
 
@@ -24,6 +24,7 @@ describe('MusicBrainz releases', () => {
               'track-count': 3,
               'artist-credit': [{ name: 'Northline', joinphrase: ' & ', artist: { id: 'a1' } }, { name: 'Kestrel' }],
               'release-group': { id: 'g1', 'primary-type': 'Album' },
+              disambiguation: 'International Special Edition',
               country: 'GB',
               barcode: '5012345678900',
               'label-info': [{ 'catalog-number': 'NL-001', label: { name: 'Lumen Records' } }],
@@ -49,12 +50,35 @@ describe('MusicBrainz releases', () => {
         catalogNumber: 'NL-001',
         barcode: '5012345678900',
         type: 'Album',
+        disambiguation: 'International Special Edition',
         artistId: 'a1',
       },
     ])
     expect(`${asked[0]?.origin ?? ''}${asked[0]?.pathname ?? ''}`).toBe('https://musicbrainz.org/ws/2/release/')
     expect(asked[0]?.searchParams.get('query')).toBe('release:"Night Drive" AND artist:"Northline"')
     expect(asked[0]?.searchParams.get('fmt')).toBe('json')
+  })
+
+  it('asks for a title without its edition in brackets in the same request', async () => {
+    const asked: URL[] = []
+    const fetchImpl = ((input: RequestInfo | URL) => {
+      asked.push(urlOf(input))
+      return Promise.resolve(Response.json({ releases: [] }))
+    }) as typeof fetch
+    await findReleases('Born This Way (International Special Edition Version)', 'Lady Gaga', fetchImpl)
+    expect(asked).toHaveLength(1)
+    expect(asked[0]?.searchParams.get('query')).toBe(
+      '(release:"Born This Way (International Special Edition Version)" OR release:"Born This Way") AND artist:"Lady Gaga"',
+    )
+  })
+
+  it('drops only the editions in brackets at the end of a title', () => {
+    expect(titleWithoutEdition('Born This Way (International Special Edition Version)')).toBe('Born This Way')
+    expect(titleWithoutEdition('Title (Deluxe) [Remastered 2011]')).toBe('Title')
+    expect(titleWithoutEdition('(What’s the Story) Morning Glory?')).toBeNull()
+    expect(titleWithoutEdition('Night Drive')).toBeNull()
+    expect(titleWithoutEdition('(Untitled)')).toBeNull()
+    expect(titleWithoutEdition('Quiet Meridian (The Complete Anniversary Recordings)')).toBe('Quiet Meridian')
   })
 
   it('escapes quotes and backslashes inside a phrase', () => {

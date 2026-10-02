@@ -2118,6 +2118,34 @@ replaced by `2026.10.01-38f381f` (102 files); the catalog already current
 (`queries.json`, `store.json` and `hosted.json` byte for byte as the install
 tool renders them for the V2.57 profile); the card ejected.
 
+## Artists' filters and MusicBrainz editions (owner, 2026-10-02), card-only
+
+Proposals discussed with the owner: hide the artists with no records of their
+own, filter artists by genre, show each edition's track count, and find
+editions whose title carries the edition in brackets. Renaming the Card
+section was declined: it stays as it is.
+
+- [x] Artists shows the main artists by default: those with records of their
+      own (a track credited to them alone or an album credited to them; one
+      whose tracks have no album tag stays). An artist known only from
+      another's joint credits shows under All. The genre filter keeps whom
+      the genre's page lists (anyone credited on its tracks, joint credits
+      included). Both live in the address (`?all=1`, `?genre=`); pinned
+      artists stay in view. Evidence: unit `collection`, `library`; e2e
+      "lists the main artists by default…" (a guest added to the mock
+      collection).
+- [x] The editions window and the cover picker show each edition's track
+      count, marked when the album on the card has as many (such editions
+      already ranked first); the editions window also names what tells the
+      release apart in MusicBrainz ("International Special Edition").
+      Evidence: e2e "chooses a cover among the editions…".
+- [x] A title with an edition in brackets at its end ("Born This Way
+      (International Special Edition Version)", "Title (Deluxe)
+      [Remastered]") is searched in one request with and without it, so
+      MusicBrainz's title matches; covers found automatically benefit too.
+      Evidence: unit `covers` ("asks for a title without its edition…",
+      "drops only the editions in brackets…").
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service

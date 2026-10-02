@@ -1,5 +1,5 @@
 /**
- * The genre filter of Albums and Tracks lives in the hash query (`?genre=`),
+ * The genre filter of Albums, Artists and Tracks lives in the hash query (`?genre=`),
  * so it survives reloads, works with Back and can be linked from a genre page.
  * Changing it keeps the search (App.vue clears the search on path changes only).
  */

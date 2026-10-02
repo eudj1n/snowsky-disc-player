@@ -4,7 +4,8 @@
  * 2026-10-02: from the details sheet's table, in a window like the image
  * picker's). Opening it asks MusicBrainz (the name, or the title and artist,
  * leave the network); the listener picks one and confirms; the identity is
- * kept on the player when paired, else for the tab.
+ * kept on the player when paired, else for the tab. An edition shows its
+ * track count, marked when the album on the card has as many (2026-10-02).
  */
 import { computed, ref, watch } from 'vue'
 import { regionName } from '../domain/artistFacts'
@@ -21,6 +22,7 @@ import {
   identifying,
 } from '../stores/musicbrainzIds'
 import UiDialog from '../ui/UiDialog.vue'
+import UiIcon from '../ui/UiIcon.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import type { IdentifyTarget } from './identify'
 import { artistFactsLine } from '../views/captions'
@@ -52,8 +54,11 @@ const STATUS: Partial<Record<string, MessageKey>> = {
 }
 const status = computed(() => (props.target ? (STATUS[identifying.status] ?? null) : null))
 const year = (date: string | null) => (date && /^\d{4}/.test(date) ? date.slice(0, 4) : null)
-const editionLine = (release: Pick<ReleaseCandidate, 'label' | 'catalogNumber' | 'country' | 'format' | 'date'>) =>
+const editionLine = (
+  release: Pick<ReleaseCandidate, 'disambiguation' | 'label' | 'catalogNumber' | 'country' | 'format' | 'date'>,
+) =>
   [
+    release.disambiguation,
     [release.label, release.catalogNumber].filter(Boolean).join(' '),
     release.country ? regionName(release.country, locale.value) : null,
     release.format,
@@ -61,6 +66,9 @@ const editionLine = (release: Pick<ReleaseCandidate, 'label' | 'catalogNumber' |
   ]
     .filter(Boolean)
     .join(' · ')
+/** The edition has as many tracks as the album on the card. */
+const sameCount = (release: ReleaseCandidate) =>
+  props.target?.kind === 'album' && props.target.trackCount !== null && release.trackCount === props.target.trackCount
 
 async function confirm(): Promise<void> {
   const target = props.target
@@ -121,7 +129,23 @@ function close(): void {
             @click="chosen = release.id"
           >
             <strong class="font-semibold text-ink">{{ release.title }}</strong
-            ><template v-if="editionLine(release)"> · {{ editionLine(release) }}</template>
+            ><template v-if="editionLine(release)"> · {{ editionLine(release) }}</template
+            ><template v-if="release.trackCount !== null">
+              ·
+              <span
+                class="whitespace-nowrap"
+                :class="{ 'text-ink': sameCount(release) }"
+                :title="sameCount(release) ? t('edition_tracks_match') : undefined"
+                data-testid="edition-tracks"
+                :data-match="sameCount(release) ? 'true' : undefined"
+                >{{ t('track_count', { count: release.trackCount })
+                }}<UiIcon v-if="sameCount(release)" name="check" class="ml-3 inline size-12 align-[-1px]" /><span
+                  v-if="sameCount(release)"
+                  class="sr-only"
+                  >, {{ t('edition_tracks_match') }}</span
+                ></span
+              ></template
+            >
           </button>
         </template>
       </div>

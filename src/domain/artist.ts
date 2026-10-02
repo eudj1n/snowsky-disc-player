@@ -6,6 +6,11 @@ export interface Artist {
   trackCount: number
   /** Stock knows this name as an artist of its own (not only inside a joint credit), so it can play it. */
   literal: boolean
+  /**
+   * Records of its own: a track credited to it alone or an album credited to it, not only a part in another
+   * artist's joint credits (owner, 2026-10-02: the Artists page shows these by default).
+   */
+  own: boolean
 }
 
 /**
@@ -67,7 +72,9 @@ export const credits = (credit: string | null, name: string) => credit !== null 
 export function groupArtists(tracks: readonly LibraryTrack[]): Artist[] {
   const artists = new Map<string, { name: string; albums: Set<string>; trackCount: number }>()
   const literal = new Set<string>()
+  const albumArtists = new Set<string>()
   for (const track of tracks) {
+    if (track.albumArtist) albumArtists.add(track.albumArtist)
     if (!track.artist) continue
     literal.add(track.artist)
     for (const name of creditArtists(track.artist)) {
@@ -85,5 +92,6 @@ export function groupArtists(tracks: readonly LibraryTrack[]): Artist[] {
     albumCount: albums.size,
     trackCount,
     literal: literal.has(name),
+    own: literal.has(name) || albumArtists.has(name),
   }))
 }

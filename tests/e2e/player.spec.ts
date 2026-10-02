@@ -203,6 +203,34 @@ test('opens track actions and navigates from cards and menus', async ({ page }) 
   await expect(page.getByRole('heading', { level: 1, name: 'Mira Sol' })).toBeVisible()
 })
 
+test('lists the main artists by default, every artist on request, and filters them by genre', async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  await page.goto('/#/artists')
+  const names = page.getByRole('main').getByRole('article').getByRole('heading')
+  await expect(names.filter({ hasText: 'Sundial' })).toHaveCount(1)
+  // A guest on one track of another's album shows under All only (owner, 2026-10-02).
+  await expect(names.filter({ hasText: 'Lumi Vale' })).toHaveCount(0)
+  const shown = page.getByRole('group', { name: 'Which artists' })
+  await expect(shown.getByRole('button', { name: 'Main' })).toHaveAttribute('aria-pressed', 'true')
+  await shown.getByRole('button', { name: 'All', exact: true }).click()
+  await expect(page).toHaveURL(/[?&]all=1/)
+  await expect(names.filter({ hasText: 'Lumi Vale' })).toHaveCount(1)
+  // A genre keeps whom its page lists: anyone credited on its tracks, the guest too.
+  await page.getByRole('combobox', { name: 'Genre' }).selectOption('Alternative')
+  await expect(page).toHaveURL(/genre=Alternative/)
+  await expect(names.filter({ hasText: 'Lumi Vale' })).toHaveCount(1)
+  await expect(names.filter({ hasText: 'Kite Lines' })).toHaveCount(1)
+  await expect(names.filter({ hasText: 'Forma' })).toHaveCount(0)
+  await shown.getByRole('button', { name: 'Main' }).click()
+  await expect(names.filter({ hasText: 'Lumi Vale' })).toHaveCount(0)
+  await expect(names.filter({ hasText: 'Sundial' })).toHaveCount(1)
+  // Both survive a reload, as the address holds them.
+  await page.reload()
+  await expect(page.getByRole('combobox', { name: 'Genre' })).toHaveValue('Alternative')
+  await expect(names.filter({ hasText: 'Forma' })).toHaveCount(0)
+})
+
 test('keeps albums that share a title apart by artist and offers more by the artist', async ({ page }) => {
   test.skip(external, 'Needs the mock collection')
   await english(page)
@@ -1947,13 +1975,13 @@ test('chooses a cover among the editions and fanart.tv, keeps the edition and sa
   const ARTIST = '7a1d2c3b-0000-4000-8000-00000000a001'
   const asked: URL[] = []
   const cors = { 'Access-Control-Allow-Origin': '*' }
-  const edition = (id: string, score: number, date: string, country: string, format: string) => ({
+  const edition = (id: string, score: number, date: string, country: string, format: string, tracks = 3) => ({
     id,
     score,
     title: 'Night Drive',
     date,
     country,
-    'track-count': 3,
+    'track-count': tracks,
     media: [{ format }],
     'label-info': [{ 'catalog-number': 'NL-001', label: { name: 'Lumen Records' } }],
     'artist-credit': [{ name: 'Northline', artist: { id: ARTIST } }],
@@ -1969,7 +1997,7 @@ test('chooses a cover among the editions and fanart.tv, keeps the edition and sa
         : {
             releases: [
               edition(FIRST, 100, '2004-06-01', 'GB', 'CD'),
-              edition(VINYL, 95, '2010-02-01', 'JP', 'Vinyl'),
+              edition(VINYL, 95, '2010-02-01', 'JP', 'Vinyl', 4),
               edition(BARE, 92, '2012', 'US', 'Digital Media'),
             ],
           },
@@ -2020,8 +2048,12 @@ test('chooses a cover among the editions and fanart.tv, keeps the edition and sa
   await find.click()
   const editions = dialog.getByTestId('covers-coverartarchive').getByRole('button')
   await expect(editions).toHaveCount(2, { timeout: 15_000 })
-  await expect(editions.first()).toHaveAccessibleName('Cover Art Archive, 2004 · United Kingdom, CD · Lumen Records')
-  await expect(editions.last()).toHaveAccessibleName('Cover Art Archive, 2010 · Japan, Vinyl · Lumen Records')
+  // Each edition names its track count, marked where the album on the card has as many (owner, 2026-10-02).
+  await expect(editions.first()).toHaveAccessibleName(
+    'Cover Art Archive, 2004 · United Kingdom, CD · Lumen Records, 3 tracks, as many as the album on the card',
+  )
+  await expect(editions.first().getByTestId('cover-tracks')).toHaveAttribute('data-match', 'true')
+  await expect(editions.last()).toHaveAccessibleName('Cover Art Archive, 2010 · Japan, Vinyl · Lumen Records, 4 tracks')
   await editions.first().click()
   await dialog.getByTestId('cover-use').click()
   const offer = page.getByTestId('cover-offer')
@@ -2033,6 +2065,15 @@ test('chooses a cover among the editions and fanart.tv, keeps the edition and sa
   await expect(fact('issue')).toHaveText('2004 · United Kingdom · CD')
   await expect(fact('first')).toHaveText('2003 · Album')
   await expect(fact('musicbrainz')).toContainText('Confirmed and kept on the player')
+  // The editions window names each edition's track count too; the card's count ranks its editions first.
+  await fact('musicbrainz').getByTestId('fact-identify').click()
+  const choices = page.getByTestId('identify-choices').getByRole('button')
+  await expect(choices).toHaveCount(3, { timeout: 15_000 })
+  await expect(choices.first()).toContainText('3 tracks')
+  await expect(choices.first().getByTestId('edition-tracks')).toHaveAttribute('data-match', 'true')
+  await expect(choices.last()).toContainText('Vinyl · 2010 · 4 tracks')
+  await expect(choices.last().getByTestId('edition-tracks')).not.toHaveAttribute('data-match', 'true')
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
   const albums = (await storeRecords(page, 'musicbrainz')).filter((record) => record.value.kind === 'album')
   expect(albums.map((record) => [record.value.mbid, record.value.group])).toEqual([[FIRST, GROUP]])
   await page.getByTestId('cover-save').click()

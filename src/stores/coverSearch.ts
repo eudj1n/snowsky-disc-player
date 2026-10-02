@@ -54,6 +54,8 @@ interface CoverPicker {
   offers: CoverOffer[]
   /** fanart.tv refused the owner's key. */
   keyRefused: boolean
+  /** The album's tracks on the card, which an edition's count is compared with. */
+  trackCount: number | null
 }
 
 interface CoverSearchModel {
@@ -117,18 +119,19 @@ function drain(): void {
 export async function openCoverPicker(album: Album, scope: string | null): Promise<void> {
   const artist = scope ?? album.artists[0]
   if (!artist || !coverLookupAllowed()) return
+  const trackCount = albumTracks(tracks.value, album.title, scope).length || null
   state.picker = {
     key: coverSearchKey(album, scope),
     title: album.title,
     status: 'searching',
     offers: [],
     keyRefused: false,
+    trackCount,
   }
   // The reactive picker: changes to it show at once.
   const picker = state.picker
   try {
-    const members = albumTracks(tracks.value, album.title, scope)
-    const editions = rankReleases(await findReleases(album.title, artist), members.length || null)
+    const editions = rankReleases(await findReleases(album.title, artist), trackCount)
     const offers: CoverOffer[] = editions.map((release) => ({
       source: 'coverartarchive',
       release,

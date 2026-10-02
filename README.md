@@ -9,8 +9,9 @@ playing on the DISC; nothing streams to the browser.
 > Status: in active development (see the [plan](docs/plan.md)). Today you can:
 >
 > - browse Home, New, albums, artists, genres, tracks, favorites and
->   playlists, with sorting and genre filters; breadcrumbs above a page lead
->   back to its section;
+>   playlists, with sorting and genre filters; Artists lists those with
+>   records of their own, and every guest of a joint credit under All;
+>   breadcrumbs above a page lead back to its section;
 > - search the whole collection at once: press `/` or ⌘K (Ctrl+K), or the
 >   Search button, and type; tracks, albums, artists, playlists and genres
 >   appear as you type (case and accents do not matter), Enter opens one or
@@ -45,7 +46,8 @@ playing on the DISC; nothing streams to the browser.
 >   into the album's folder (Cover Art Archive's images are served by
 >   archive.org, which some networks cannot reach);
 > - open the details (i) of an artist or album: confirm which artist or
->   edition MusicBrainz means, choose an artist's photo and a wide background
+>   edition MusicBrainz means (each edition shows its track count, marked
+>   when it matches the album on the card), choose an artist's photo and a wide background
 >   from fanart.tv (with your own free key) and Wikimedia Commons, or another
 >   album cover (the old one goes to the card's trash), each shown with its
 >   author and licence and kept on the player for every browser; artists

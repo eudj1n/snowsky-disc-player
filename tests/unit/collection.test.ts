@@ -46,9 +46,10 @@ describe('artists and playlists', () => {
       track(4, 'B', null),
       track(5, null, 'Z'),
     ])
+    // B's track has no album tag, but it is B's own: B stays among the main artists.
     expect(artists).toEqual([
-      { name: 'A', albumCount: 2, trackCount: 3, literal: true },
-      { name: 'B', albumCount: 0, trackCount: 1, literal: true },
+      { name: 'A', albumCount: 2, trackCount: 3, literal: true, own: true },
+      { name: 'B', albumCount: 0, trackCount: 1, literal: true, own: true },
     ])
   })
 

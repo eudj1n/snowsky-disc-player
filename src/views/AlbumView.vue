@@ -207,6 +207,7 @@ const members = computed(() => {
         albumCount: 0,
         trackCount: 0,
         literal: false,
+        own: false,
       },
   )
 })
