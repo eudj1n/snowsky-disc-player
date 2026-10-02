@@ -150,6 +150,7 @@ function lines(album: Album) {
       <DetailHeading
         :title="creditLabel(name)"
         :kind="t('kind_artist')"
+        :verified="identity ? t('heading_verified') : null"
         artist
         :cover="artistImage(name)"
         :backdrop="artistBackground(name)"

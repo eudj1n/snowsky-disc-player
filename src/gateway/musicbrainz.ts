@@ -5,7 +5,7 @@
  * a second (MusicBrainz's rule for clients); only those names leave the
  * network. No key and no custom header (a simple CORS GET).
  */
-import { titleWithoutEdition } from '../domain/covers'
+import { titleVariants } from '../domain/covers'
 
 export interface ReleaseCandidate {
   /** MusicBrainz release id (Cover Art Archive's key). */
@@ -44,6 +44,17 @@ function formats(media: unknown): string | null {
   return [...counted].map(([format, count]) => (count > 1 ? `${String(count)}×${format}` : format)).join(' + ') || null
 }
 
+/** The tracks of a release's media, as a browse answers them (a search gives the release's own count). */
+function mediaTracks(media: unknown): number | null {
+  if (!Array.isArray(media) || !media.length) return null
+  let count = 0
+  for (const medium of media as Record<string, unknown>[]) {
+    if (typeof medium['track-count'] !== 'number') return null
+    count += medium['track-count']
+  }
+  return count
+}
+
 const BASE = 'https://musicbrainz.org/ws/2'
 const TIMEOUT_MS = 15_000
 const INTERVAL_MS = 1_100
@@ -79,8 +90,9 @@ function candidate(value: unknown): ReleaseCandidate | null {
     title,
     artist,
     date: text(release.date),
-    trackCount: typeof release['track-count'] === 'number' ? release['track-count'] : null,
-    score: typeof release.score === 'number' ? release.score : 0,
+    trackCount: typeof release['track-count'] === 'number' ? release['track-count'] : mediaTracks(release.media),
+    // A release read by its group rather than found by a search is MusicBrainz's own: no score to weigh.
+    score: typeof release.score === 'number' ? release.score : 100,
     country: text(release.country),
     format: formats(release.media),
     label: text((label?.label as Record<string, unknown> | undefined)?.name),
@@ -93,9 +105,10 @@ function candidate(value: unknown): ReleaseCandidate | null {
 }
 
 /**
- * Releases matching the album's title and artist, best first. A title with an edition in brackets at its end
- * asks for the title without it too, in the same request (MusicBrainz answers once a second). Throws when
- * MusicBrainz cannot answer.
+ * Releases matching the album's title and artist, best first. A title with an edition at its end (in brackets,
+ * or after a subtitle separator) asks for its shorter forms too, in the same request (MusicBrainz answers once a
+ * second), and fifty releases come back, as a well-known album has dozens of editions. Throws when MusicBrainz
+ * cannot answer.
  */
 export async function findReleases(
   album: string,
@@ -103,12 +116,12 @@ export async function findReleases(
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReleaseCandidate[]> {
   await paced()
-  const bare = titleWithoutEdition(album)
-  const titles = bare ? `(release:${phrase(album)} OR release:${phrase(bare)})` : `release:${phrase(album)}`
+  const variants = titleVariants(album).map((title) => `release:${phrase(title)}`)
+  const titles = variants.length > 1 ? `(${variants.join(' OR ')})` : variants.join('')
   const params = new URLSearchParams({
     query: `${titles} AND artist:${phrase(artist)}`,
     fmt: 'json',
-    limit: '10',
+    limit: '50',
   })
   const response = await fetchImpl(`${BASE}/release/?${params.toString()}`, {
     signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -269,6 +282,53 @@ export async function releaseGroup(id: string, fetchImpl: typeof fetch = fetch):
     type: text(group['primary-type']),
     secondaryTypes: secondary.map(text).filter((value) => value !== null),
   }
+}
+
+/** An album of an artist's discography, which the listener can choose when no search finds the edition. */
+export interface ReleaseGroupCandidate {
+  id: string
+  title: string
+  firstRelease: string | null
+  type: string | null
+  secondaryTypes: readonly string[]
+}
+
+/** The artist's albums, EPs and the like (one request, paced), oldest first. */
+export async function artistReleaseGroups(
+  artistId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReleaseGroupCandidate[]> {
+  const body = (await getJson('/release-group', { artist: artistId, fmt: 'json', limit: '100' }, fetchImpl)) as {
+    'release-groups'?: unknown
+  } | null
+  const groups = Array.isArray(body?.['release-groups']) ? (body['release-groups'] as Record<string, unknown>[]) : []
+  return groups
+    .map((group) => {
+      const id = text(group.id)
+      const title = text(group.title)
+      if (!id || !title) return null
+      const secondary = Array.isArray(group['secondary-types']) ? (group['secondary-types'] as unknown[]) : []
+      return {
+        id,
+        title,
+        firstRelease: text(group['first-release-date']),
+        type: text(group['primary-type']),
+        secondaryTypes: secondary.map(text).filter((value) => value !== null),
+      }
+    })
+    .filter((group) => group !== null)
+    .sort((a, b) => (a.firstRelease ?? '9999').localeCompare(b.firstRelease ?? '9999'))
+}
+
+/** The releases of one release group with what tells them apart (one request, paced). */
+export async function groupReleases(groupId: string, fetchImpl: typeof fetch = fetch): Promise<ReleaseCandidate[]> {
+  const body = (await getJson(
+    '/release',
+    { 'release-group': groupId, inc: 'media+labels+artist-credits+release-groups', fmt: 'json', limit: '100' },
+    fetchImpl,
+  )) as { releases?: unknown } | null
+  const releases = Array.isArray(body?.releases) ? body.releases : []
+  return releases.map(candidate).filter((found) => found !== null)
 }
 
 /** For tests: forget the last request time. */

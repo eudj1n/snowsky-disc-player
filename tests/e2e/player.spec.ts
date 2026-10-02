@@ -1999,6 +1999,26 @@ test('chooses a cover among the editions and fanart.tv, keeps the edition and sa
     'artist-credit': [{ name: 'Northline', artist: { id: ARTIST } }],
     'release-group': { id: GROUP, 'primary-type': 'Album' },
   })
+  // The artist's discography (browsed when no edition fits): two albums, the first with one more edition.
+  const REISSUE = '7a1d2c3b-0000-4000-8000-00000000b004'
+  const discography = {
+    'release-groups': [
+      {
+        id: '7a1d2c3b-0000-4000-8000-00000000c002',
+        title: 'City Lights',
+        'first-release-date': '2006',
+        'primary-type': 'EP',
+      },
+      { id: GROUP, title: 'Night Drive', 'first-release-date': '2003-11-02', 'primary-type': 'Album' },
+    ],
+  }
+  const reissue = {
+    ...edition(REISSUE, 0, '2020-05-01', 'DE', 'CD'),
+    score: undefined,
+    'track-count': undefined,
+    disambiguation: 'remaster',
+    media: [{ format: 'CD', 'track-count': 3 }],
+  }
   await page.route('https://musicbrainz.org/ws/2/**', async (route) => {
     const url = new URL(route.request().url())
     asked.push(url)
@@ -2006,13 +2026,19 @@ test('chooses a cover among the editions and fanart.tv, keeps the edition and sa
       headers: cors,
       json: url.pathname.startsWith('/ws/2/release-group/')
         ? { id: GROUP, 'first-release-date': '2003-11-02', 'primary-type': 'Album', 'secondary-types': [] }
-        : {
-            releases: [
-              edition(FIRST, 100, '2004-06-01', 'GB', 'CD'),
-              edition(VINYL, 95, '2010-02-01', 'JP', 'Vinyl', 4),
-              edition(BARE, 92, '2012', 'US', 'Digital Media'),
-            ],
-          },
+        : url.pathname === '/ws/2/release-group'
+          ? discography
+          : url.pathname === '/ws/2/artist/'
+            ? { artists: [{ id: ARTIST, name: 'Northline', score: 100 }] }
+            : url.searchParams.has('release-group')
+              ? { releases: [reissue, { ...edition(FIRST, 0, '2004-06-01', 'GB', 'CD'), score: undefined }] }
+              : {
+                  releases: [
+                    edition(FIRST, 100, '2004-06-01', 'GB', 'CD'),
+                    edition(VINYL, 95, '2010-02-01', 'JP', 'Vinyl', 4),
+                    edition(BARE, 92, '2012', 'US', 'Digital Media'),
+                  ],
+                },
     })
   })
   await page.route('https://webservice.fanart.tv/**', (route) =>
@@ -2038,6 +2064,9 @@ test('chooses a cover among the editions and fanart.tv, keeps the edition and sa
   await english(page)
   await connectAndPair(page)
   await page.goto('/#/album/Night%20Drive/Northline')
+  // Not identified yet: no mark after the album's name.
+  await expect(page.getByRole('heading', { level: 1, name: 'Night Drive' })).toBeVisible()
+  await expect(page.getByTestId('heading-verified')).toHaveCount(0)
   // The details (i), always in the heading (owner, 2026-10-01), lead to the cover.
   await page.getByTestId('info-open').click()
   const panel = page.getByTestId('info-panel')
@@ -2077,6 +2106,8 @@ test('chooses a cover among the editions and fanart.tv, keeps the edition and sa
   await expect(fact('issue')).toHaveText('2004 · United Kingdom · CD')
   await expect(fact('first')).toHaveText('2003 · Album')
   await expect(fact('musicbrainz')).toContainText('Confirmed and kept on the player')
+  // Identified, the album's name takes a quiet mark (owner, 2026-10-02).
+  await expect(page.getByTestId('heading-verified')).toHaveAttribute('aria-label', 'Identified in MusicBrainz')
   // The editions window names each edition's track count too; the card's count ranks its editions first.
   await fact('musicbrainz').getByTestId('fact-identify').click()
   const choices = page.getByTestId('identify-choices').getByRole('button')
@@ -2085,6 +2116,20 @@ test('chooses a cover among the editions and fanart.tv, keeps the edition and sa
   await expect(choices.first().getByTestId('edition-tracks')).toHaveAttribute('data-match', 'true')
   await expect(choices.last()).toContainText('Vinyl · 2010 · 4 tracks')
   await expect(choices.last().getByTestId('edition-tracks')).not.toHaveAttribute('data-match', 'true')
+  // When no edition fits, the artist's albums can be browsed, oldest first, and one chosen (owner, 2026-10-02).
+  await dialog.getByTestId('identify-discography').click()
+  await expect(dialog.getByTestId('identify-view')).toHaveText("Northline's albums in MusicBrainz")
+  const groups = dialog.getByTestId('identify-group')
+  await expect(groups).toHaveText(['Night Drive · 2003 · Album', 'City Lights · 2006 · EP'], { timeout: 15_000 })
+  await groups.first().click()
+  await expect(dialog.getByTestId('identify-view')).toHaveText('Editions of “Night Drive”')
+  await expect(choices).toHaveCount(2, { timeout: 15_000 })
+  await expect(choices.first()).toContainText('remaster')
+  await expect(choices.first().getByTestId('edition-tracks')).toHaveAttribute('data-match', 'true')
+  await dialog.getByTestId('identify-back').click()
+  await expect(groups).toHaveCount(2)
+  await dialog.getByTestId('identify-back').click()
+  await expect(choices).toHaveCount(3)
   await dialog.getByRole('button', { name: 'Cancel' }).click()
   const albums = (await storeRecords(page, 'musicbrainz')).filter((record) => record.value.kind === 'album')
   expect(albums.map((record) => [record.value.mbid, record.value.group])).toEqual([[FIRST, GROUP]])

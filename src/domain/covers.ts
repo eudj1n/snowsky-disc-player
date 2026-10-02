@@ -11,30 +11,74 @@ import { CARD_ROOT } from './imports'
 /** The fewest points a MusicBrainz match needs to be offered. */
 export const MIN_SCORE = 85
 
-export function pickRelease<T extends { score: number; trackCount: number | null }>(
+/** What a release offers for ranking: MusicBrainz's score, its tracks, and the words naming its edition. */
+interface Ranked {
+  score: number
+  trackCount: number | null
+  title?: string
+  disambiguation?: string | null
+}
+
+export function pickRelease<T extends Ranked>(
   candidates: readonly T[],
   trackCount: number | null,
+  title?: string,
 ): T | null {
-  const best = (list: readonly T[]) => [...list].sort((a, b) => b.score - a.score)[0] ?? null
-  const good = candidates.filter((candidate) => candidate.score >= MIN_SCORE)
-  const sameLength = trackCount === null ? [] : good.filter((candidate) => candidate.trackCount === trackCount)
-  return best(sameLength) ?? best(good)
+  return rankReleases(candidates, trackCount, title)[0] ?? null
 }
 
 /**
  * The editions worth offering for the listener's choice (owner, 2026-10-01):
- * well scored, those with the album's number of tracks first, then by score;
- * at most twelve.
+ * well scored; those with the album's number of tracks first, then those that
+ * share more of the words the album's title adds to its base (the edition it
+ * names: "20th", "anniversary"), then by score; at most twelve.
  */
-export function rankReleases<T extends { score: number; trackCount: number | null }>(
+export function rankReleases<T extends Ranked>(
   candidates: readonly T[],
   trackCount: number | null,
+  title?: string,
 ): T[] {
   const same = (candidate: T) => Number(trackCount !== null && candidate.trackCount === trackCount)
+  const named = title ? editionWords(title) : []
+  const shared = (candidate: T) => {
+    if (!named.length) return 0
+    const own = new Set(words(`${candidate.title ?? ''} ${candidate.disambiguation ?? ''}`))
+    return named.filter((word) => own.has(word)).length
+  }
   return candidates
     .filter((candidate) => candidate.score >= MIN_SCORE)
-    .sort((a, b) => same(b) - same(a) || b.score - a.score)
+    .sort((a, b) => same(b) - same(a) || shared(b) - shared(a) || b.score - a.score)
     .slice(0, 12)
+}
+
+const words = (text: string): string[] => text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []
+
+/** The words a title adds to its base: the edition it names ("Fallen: 20th Anniversary Edition" adds three). */
+export function editionWords(title: string): string[] {
+  const base = new Set(words(titleVariants(title).at(-1) ?? title))
+  return [...new Set(words(title))].filter((word) => !base.has(word))
+}
+
+/** Separators between an album's base title and the edition its tags add after it. */
+const SUBTITLES = [': ', ' - ', ' – ', ' — ']
+
+/**
+ * The titles a MusicBrainz search asks for, in one request: the tag's whole
+ * title, the title without its bracketed edition, and the base before a
+ * subtitle separator, as MusicBrainz often keeps the edition apart from the
+ * title ("Fallen: 20th Anniversary Edition" is "Fallen (20th anniversary)"
+ * there; owner, 2026-10-02). The shortest comes last.
+ */
+export function titleVariants(title: string): string[] {
+  const whole = title.trim()
+  const bare = titleWithoutEdition(whole) ?? whole
+  const variants = [whole, bare]
+  const at = Math.min(...SUBTITLES.map((separator) => bare.indexOf(separator)).filter((index) => index > 0))
+  if (Number.isFinite(at)) {
+    const base = bare.slice(0, at).trim()
+    if (base.length >= 2) variants.push(base)
+  }
+  return [...new Set(variants)]
 }
 
 /**

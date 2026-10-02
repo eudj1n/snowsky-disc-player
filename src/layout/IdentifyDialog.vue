@@ -6,24 +6,30 @@
  * leave the network); the listener picks one and confirms; the identity is
  * kept on the player when paired, else for the tab. An edition shows its
  * track count, marked when the album on the card has as many (2026-10-02).
+ * When no edition fits, the artist's albums can be browsed and one chosen,
+ * whose editions then show the same way (owner, 2026-10-02).
  */
 import { computed, ref, watch } from 'vue'
 import { regionName } from '../domain/artistFacts'
-import type { ReleaseCandidate } from '../gateway/musicbrainz'
+import type { ReleaseCandidate, ReleaseGroupCandidate } from '../gateway/musicbrainz'
 import { locale, t, type MessageKey } from '../i18n'
 import {
   albumIdentity,
   artistIdentity,
   chooseArtistCandidate,
   confirmEdition,
+  findArtistAlbums,
   findArtistCandidates,
   findEditions,
+  findGroupEditions,
   forgetCandidates,
+  identifyBack,
   identifying,
 } from '../stores/musicbrainzIds'
 import UiDialog from '../ui/UiDialog.vue'
 import UiIcon from '../ui/UiIcon.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
+import UiTextButton from '../ui/UiTextButton.vue'
 import type { IdentifyTarget } from './identify'
 import { artistFactsLine } from '../views/captions'
 
@@ -70,6 +76,26 @@ const editionLine = (
 const sameCount = (release: ReleaseCandidate) =>
   props.target?.kind === 'album' && props.target.trackCount !== null && release.trackCount === props.target.trackCount
 
+/** An album of the artist's discography: its year and types. */
+const groupLine = (group: ReleaseGroupCandidate) =>
+  [year(group.firstRelease), [group.type, ...group.secondaryTypes].filter(Boolean).join(' + ')]
+    .filter(Boolean)
+    .join(' · ')
+function browseAlbums(): void {
+  chosen.value = null
+  const target = props.target
+  if (target?.kind === 'album') void findArtistAlbums(target.key, target.artist)
+}
+function chooseGroup(group: ReleaseGroupCandidate): void {
+  chosen.value = null
+  const target = props.target
+  if (target?.kind === 'album') void findGroupEditions(target.key, group, target.title, target.trackCount)
+}
+function back(): void {
+  chosen.value = null
+  identifyBack()
+}
+
 async function confirm(): Promise<void> {
   const target = props.target
   if (!target || !chosen.value) return
@@ -97,6 +123,17 @@ function close(): void {
       <p class="m-0 mb-14 text-footnote leading-[1.55] text-muted">
         {{ t(target.kind === 'artist' ? 'info_identify_sends' : 'info_edition_sends') }}
       </p>
+      <p
+        v-if="target.kind === 'album' && identifying.view !== 'search'"
+        class="m-0 mb-10 text-callout font-semibold"
+        data-testid="identify-view"
+      >
+        {{
+          identifying.view === 'groups'
+            ? t('identify_groups_title', { name: target.artist })
+            : t('identify_group_title', { title: identifying.group?.title ?? '' })
+        }}
+      </p>
       <p v-if="status" role="status" class="m-0 mb-14 text-footnote text-secondary" data-testid="identify-status">
         {{ t(status) }}
       </p>
@@ -117,6 +154,19 @@ function close(): void {
           >
             <strong class="font-semibold text-ink">{{ candidate.name }}</strong
             ><template v-if="artistFactsLine(candidate)"> · {{ artistFactsLine(candidate) }}</template>
+          </button>
+        </template>
+        <template v-else-if="identifying.view === 'groups'">
+          <button
+            v-for="group in identifying.groups"
+            :key="group.id"
+            type="button"
+            class="rounded-10 border border-line px-14 py-10 text-left text-footnote text-secondary hover:bg-hover"
+            data-testid="identify-group"
+            @click="chooseGroup(group)"
+          >
+            <strong class="font-semibold text-ink">{{ group.title }}</strong
+            ><template v-if="groupLine(group)"> · {{ groupLine(group) }}</template>
           </button>
         </template>
         <template v-else>
@@ -149,10 +199,26 @@ function close(): void {
           </button>
         </template>
       </div>
+      <div v-if="target.kind === 'album'" class="mt-12 flex flex-wrap gap-x-18 gap-y-6">
+        <UiTextButton
+          v-if="identifying.view !== 'search'"
+          :disabled="identifying.status === 'searching'"
+          data-testid="identify-back"
+          @click="back"
+          >{{ t(identifying.view === 'group' ? 'identify_back_groups' : 'identify_back_search') }}</UiTextButton
+        >
+        <UiTextButton
+          v-else
+          :disabled="identifying.status === 'searching'"
+          data-testid="identify-discography"
+          @click="browseAlbums"
+          >{{ t('identify_discography') }}</UiTextButton
+        >
+      </div>
       <div class="mt-18 flex justify-end gap-8">
         <UiPillButton variant="secondary" @click="close">{{ t('cancel') }}</UiPillButton>
         <UiPillButton
-          :disabled="!chosen || identifying.saving || identifying.status !== 'ready'"
+          :disabled="!chosen || identifying.saving || identifying.status !== 'ready' || identifying.view === 'groups'"
           data-testid="identify-confirm"
           @click="confirm"
           >{{ t('info_confirm') }}</UiPillButton

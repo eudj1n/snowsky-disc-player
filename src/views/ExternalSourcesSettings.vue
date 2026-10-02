@@ -152,6 +152,34 @@ async function chooseRole(event: Event, role: ImageRole): Promise<void> {
       >
         {{ t(KIND_TITLES[group.kind]) }}
       </h3>
+      <!-- The whole group's choice, before its sources (owner, 2026-10-02): which images the lookups take. -->
+      <div
+        v-if="group.kind === 'artist_images'"
+        class="mb-14 grid gap-4 border-b border-line pb-14"
+        role="group"
+        :aria-label="t('source_roles')"
+        data-testid="source-roles"
+      >
+        <div class="flex flex-wrap items-center gap-x-20 gap-y-6">
+          <span class="text-footnote text-secondary">{{ t('source_roles') }}:</span>
+          <label
+            v-for="item in ROLES"
+            :key="item.role"
+            class="flex items-center gap-8 text-footnote text-ink has-disabled:text-muted"
+          >
+            <input
+              type="checkbox"
+              class="accent-progress-fill"
+              :checked="externalSources.roles[item.role]"
+              :disabled="blocked !== null || externalSources.busy !== null"
+              :data-testid="`source-role-${item.role}`"
+              @change="chooseRole($event, item.role)"
+            />
+            {{ t(item.text) }}
+          </label>
+        </div>
+        <p class="m-0 text-caption leading-[1.5] text-muted">{{ t('source_roles_about') }}</p>
+      </div>
       <div class="grid gap-10">
         <article
           v-for="source in group.sources"
@@ -272,31 +300,6 @@ async function chooseRole(event: Event, role: ImageRole): Promise<void> {
               >
             </template>
           </form>
-        </article>
-        <article
-          v-if="group.kind === 'artist_images'"
-          class="rounded-12 border border-line px-16 py-14"
-          data-testid="source-roles"
-        >
-          <h4 class="m-0 text-callout font-semibold">{{ t('source_roles') }}</h4>
-          <p class="mt-4 mb-0 text-footnote leading-[1.5] text-secondary">{{ t('source_roles_about') }}</p>
-          <div class="mt-10 flex flex-wrap gap-x-24 gap-y-8">
-            <label
-              v-for="item in ROLES"
-              :key="item.role"
-              class="flex items-center gap-8 text-footnote text-ink has-disabled:text-muted"
-            >
-              <input
-                type="checkbox"
-                class="accent-progress-fill"
-                :checked="externalSources.roles[item.role]"
-                :disabled="blocked !== null || externalSources.busy !== null"
-                :data-testid="`source-role-${item.role}`"
-                @change="chooseRole($event, item.role)"
-              />
-              {{ t(item.text) }}
-            </label>
-          </div>
         </article>
       </div>
     </section>

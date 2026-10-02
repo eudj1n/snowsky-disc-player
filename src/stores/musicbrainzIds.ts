@@ -9,12 +9,16 @@
 import { reactive, readonly, watch } from 'vue'
 import {
   artistLinks,
+  artistReleaseGroups,
+  bestArtist,
   findReleases,
+  groupReleases,
   releaseGroup,
   searchArtists,
   type ArtistCandidate,
   type ArtistLinks,
   type ReleaseCandidate,
+  type ReleaseGroupCandidate,
   type ReleaseGroupFacts,
 } from '../gateway/musicbrainz'
 import { rankReleases } from '../domain/covers'
@@ -231,27 +235,47 @@ export async function confirmArtist(name: string, mbid: string, facts: ArtistFac
 export const identifyAllowed = (): boolean => sourceAllowed('musicbrainz') && originAllowed('musicbrainz')
 
 export type IdentifyStatus = 'idle' | 'searching' | 'ready' | 'missing' | 'failed'
+/**
+ * What the album's window shows (owner, 2026-10-02): the search's editions, the artist's albums when the search
+ * found no fitting edition, or the editions of the album chosen there.
+ */
+export type IdentifyView = 'search' | 'groups' | 'group'
 interface Identify {
   /** The artist's name or the album's key the candidates are for. */
   key: string | null
   status: IdentifyStatus
+  view: IdentifyView
   artists: ArtistCandidate[]
   editions: ReleaseCandidate[]
+  /** The search's editions, kept while the artist's albums are browsed. */
+  found: ReleaseCandidate[]
+  groups: ReleaseGroupCandidate[]
+  /** The artist's album whose editions show. */
+  group: ReleaseGroupCandidate | null
   /** A confirmation waits for MusicBrainz or the player. */
   saving: boolean
 }
-const search = reactive<Identify>({ key: null, status: 'idle', artists: [], editions: [], saving: false })
+const IDLE = { status: 'idle', view: 'search', artists: [], editions: [], found: [], groups: [], group: null } as const
+const search = reactive<Identify>({
+  key: null,
+  ...IDLE,
+  artists: [],
+  editions: [],
+  found: [],
+  groups: [],
+  saving: false,
+})
 /** The details panel's search: candidates for an artist, or editions for an album (owner, 2026-10-01). */
 export const identifying = readonly(search)
 
 export function forgetCandidates(): void {
-  Object.assign(search, { key: null, status: 'idle', artists: [], editions: [], saving: false })
+  Object.assign(search, { key: null, ...IDLE, artists: [], editions: [], found: [], groups: [], saving: false })
 }
 
 /** The artists MusicBrainz offers for a name, on the listener's request (the name leaves the network). */
 export async function findArtistCandidates(name: string): Promise<void> {
   if (!identifyAllowed()) return
-  Object.assign(search, { key: name, status: 'searching', artists: [], editions: [] })
+  Object.assign(search, { key: name, ...IDLE, status: 'searching', artists: [], editions: [], found: [], groups: [] })
   try {
     const artists = await searchArtists(name)
     if (search.key !== name) return
@@ -283,15 +307,64 @@ export async function findEditions(
   trackCount: number | null,
 ): Promise<void> {
   if (!identifyAllowed()) return
-  Object.assign(search, { key, status: 'searching', artists: [], editions: [] })
+  Object.assign(search, { key, ...IDLE, status: 'searching', artists: [], editions: [], found: [], groups: [] })
   try {
-    const editions = rankReleases(await findReleases(title, artist), trackCount)
+    const editions = rankReleases(await findReleases(title, artist), trackCount, title)
     if (search.key !== key) return
+    search.editions = editions
+    search.found = editions
+    search.status = editions.length ? 'ready' : 'missing'
+  } catch {
+    if (search.key === key) search.status = 'failed'
+  }
+}
+
+/**
+ * The artist's albums, when the search found no fitting edition (owner, 2026-10-02): the artist's confirmed id,
+ * else the one its exact name finds (the name leaves the network), then the albums, one request each.
+ */
+export async function findArtistAlbums(key: string, artist: string): Promise<void> {
+  if (!identifyAllowed() || search.key !== key) return
+  Object.assign(search, { view: 'groups', status: 'searching', editions: [], group: null })
+  try {
+    const mbid = artistIdentity(artist)?.mbid ?? bestArtist(await searchArtists(artist), artist)?.id
+    const groups = mbid ? await artistReleaseGroups(mbid) : []
+    if (search.key !== key || search.view !== 'groups') return
+    search.groups = groups
+    search.status = groups.length ? 'ready' : 'missing'
+  } catch {
+    if (search.key === key) search.status = 'failed'
+  }
+}
+
+/** The editions of the artist's album the listener chose, ranked as a search's are. */
+export async function findGroupEditions(
+  key: string,
+  group: ReleaseGroupCandidate,
+  title: string,
+  trackCount: number | null,
+): Promise<void> {
+  if (!identifyAllowed() || search.key !== key) return
+  Object.assign(search, { view: 'group', status: 'searching', editions: [], group: { ...group } })
+  try {
+    const editions = rankReleases(await groupReleases(group.id), trackCount, title)
+    if (search.key !== key || search.view !== 'group') return
     search.editions = editions
     search.status = editions.length ? 'ready' : 'missing'
   } catch {
     if (search.key === key) search.status = 'failed'
   }
+}
+
+/** Back one step: from an album's editions to the artist's albums, from those to the search's editions. */
+export function identifyBack(): void {
+  if (search.view === 'group') Object.assign(search, { view: 'groups', group: null, editions: [], status: 'ready' })
+  else if (search.view === 'groups')
+    Object.assign(search, {
+      view: 'search',
+      editions: search.found,
+      status: search.found.length ? 'ready' : 'missing',
+    })
 }
 
 /** The listener says which edition the album is: its release group is read too, and the identity kept. */

@@ -32,6 +32,11 @@ const props = withDefaults(
     /** The page's own colours when its artwork is drawn, not a cover (an automatic playlist's). */
     tones?: CoverColours | null
     stickyAction?: HeadingAction | null
+    /**
+     * The page's artist or album is identified in MusicBrainz (owner, 2026-10-02): a quiet mark after the name,
+     * named by this text; the lists show none.
+     */
+    verified?: string | null
   }>(),
   {
     kind: null,
@@ -40,6 +45,7 @@ const props = withDefaults(
     backdrop: null,
     tones: null,
     stickyAction: null,
+    verified: null,
   },
 )
 /** Longer names step down so the column keeps the sleeve's height in the usual cases. */
@@ -171,7 +177,16 @@ function toTop(): void {
         {{ kind }}
       </p>
       <h1 class="mt-0 mb-12 leading-[1.08] font-bold [overflow-wrap:anywhere]" :class="titleSize">
-        {{ title }}
+        {{ title
+        }}<span
+          v-if="verified"
+          role="img"
+          :aria-label="verified"
+          :title="verified"
+          class="ml-10 inline-grid size-24 -translate-y-[0.14em] place-items-center rounded-full bg-soft align-middle text-secondary"
+          data-testid="heading-verified"
+          ><UiIcon name="check" class="size-16"
+        /></span>
       </h1>
       <p class="m-0 text-body text-muted"><slot name="meta" /></p>
       <!-- Actions wrap to a new line on narrow screens rather than widen the page. -->

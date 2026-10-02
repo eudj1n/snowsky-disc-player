@@ -2311,6 +2311,49 @@ replaced by `2026.10.02-1f681be` (100 files); the catalog installed, since its
 `hosted.json` now byte for byte as the install tool renders them for the
 V2.57 profile; no `commands.json`); the card ejected.
 
+## The library's state and its enrichment (owner, 2026-10-02), card-only
+
+The batch enrichment (stage D below) and the library health view (ideas of
+2026-09-29) become one task. Decided with the owner:
+
+- [ ] A "State" tab in the Card section (Space · Files · Trash · State): what
+      is not identified in MusicBrainz, albums without a cover (inside the
+      files, in the folder, none), artists without a photo or background (as
+      the image boxes ask), tracks without lyrics or synced lyrics, the tags
+      stock names unknown and albums without a year or genre (counts and lists
+      only: no tag editing), the duplicates the Space tab finds, unreadable
+      files; each count leads into the enrichment or to its list.
+- [ ] The enrichment as a step-by-step wizard over the page: first what it
+      will do (the tasks, all that is missing or one artist), the requests and
+      time it takes (MusicBrainz once a second) and what leaves the network;
+      artists first, then albums (searched by the artist's id), then images.
+      Automatic mode shows the current artist or album and the progress, with
+      pause and stop: sure matches are applied, doubtful ones gathered in a
+      "To review" list for the end. Manual mode asks to confirm each step. Its
+      progress and "searched, nothing found" are kept on the player (a store
+      collection, card-only); the end shows a report and can undo the run;
+      files on the card (covers, .lrc) only after their own review.
+      A specimen page of the tab and the wizard comes first.
+- [x] Editions are found where MusicBrainz spells the edition apart from the
+      title ("Fallen: 20th Anniversary Edition" is "Fallen (20th
+      anniversary)" there, the 37th of 43 editions): one request asks for the
+      whole title, the title without its brackets and the base before a
+      subtitle separator, and takes fifty releases; the ranking puts the
+      album's number of tracks first, then the editions that share the words
+      the title adds ("20th", "anniversary"), then the score. When none fits,
+      the editions window browses the artist's albums (its confirmed id, else
+      the one its exact name finds) and a chosen album's editions, with a way
+      back. Evidence: unit `covers` (the query, the variants, the edition
+      words, the ranking, a browse with media track counts); e2e "chooses a
+      cover among the editions…" (the discography, an album's editions, back).
+- [x] "Taken automatically" is the artist images' group setting: a line
+      under the group's heading, apart from the sources' cards.
+- [x] A quiet mark after the name of an artist or album identified in
+      MusicBrainz, on its page only (owner's choice A); the lists show none.
+      Evidence: e2e "chooses a cover among the editions…" (no mark before the
+      edition is confirmed, the mark after); screenshots in light, dark and on
+      a phone.
+
 ## Releases by tags (owner, 2026-10-02)
 
 - [x] A `v*` tag releases the page (`.github/workflows/release.yml`): the

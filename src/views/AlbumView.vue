@@ -23,6 +23,7 @@ import type { SelectionTarget, TrackKey } from '../gateway/selection'
 import { t } from '../i18n'
 import { albumCover, albumCoverState, albumQuality, albumYear } from '../stores/enrichment'
 import {
+  albumIdentityKey,
   coverLookupAllowed,
   coverSearch,
   coverSearchKey,
@@ -31,6 +32,7 @@ import {
   saveCover,
 } from '../stores/coverSearch'
 import AlbumCoverDialog from '../layout/AlbumCoverDialog.vue'
+import { albumIdentity } from '../stores/musicbrainzIds'
 import { isHiRes, qualityLabel } from '../domain/quality'
 import { formatBadge } from '../domain/track'
 import { findGenre, playableGenre, sameGenre } from '../domain/genre'
@@ -247,6 +249,7 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
       <DetailHeading
         :title="name"
         :kind="t('kind_album')"
+        :verified="group && albumIdentity(albumIdentityKey(group, scope)) ? t('heading_verified') : null"
         :cover="sleeve"
         :sticky-action="loading ? null : heading.action.value"
         @cover="sleeve && showCover(sleeve, name)"

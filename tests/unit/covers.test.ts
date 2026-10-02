@@ -1,7 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { coverPlace, pickRelease, rankReleases, titleWithoutEdition } from '../../src/domain/covers'
+import {
+  coverPlace,
+  editionWords,
+  pickRelease,
+  rankReleases,
+  titleVariants,
+  titleWithoutEdition,
+} from '../../src/domain/covers'
 import { CoverUnreachable, frontCover } from '../../src/gateway/coverart'
-import { findReleases, phrase, resetPacing } from '../../src/gateway/musicbrainz'
+import { artistReleaseGroups, findReleases, groupReleases, phrase, resetPacing } from '../../src/gateway/musicbrainz'
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0x10])
 const urlOf = (input: RequestInfo | URL) => new URL(input instanceof Request ? input.url : input.toString())
@@ -81,6 +88,78 @@ describe('MusicBrainz releases', () => {
     expect(titleWithoutEdition('Quiet Meridian (The Complete Anniversary Recordings)')).toBe('Quiet Meridian')
   })
 
+  it('asks for the base title before a subtitle too, and fifty releases, as an album has dozens of editions', async () => {
+    const asked: URL[] = []
+    const fetchImpl = ((input: RequestInfo | URL) => {
+      asked.push(urlOf(input))
+      return Promise.resolve(Response.json({ releases: [] }))
+    }) as typeof fetch
+    await findReleases('Fallen: 20th Anniversary Edition', 'Evanescence', fetchImpl)
+    expect(asked[0]?.searchParams.get('query')).toBe(
+      '(release:"Fallen: 20th Anniversary Edition" OR release:"Fallen") AND artist:"Evanescence"',
+    )
+    expect(asked[0]?.searchParams.get('limit')).toBe('50')
+  })
+
+  it('names the shorter forms of a title and the words its edition adds', () => {
+    expect(titleVariants('Fallen: 20th Anniversary Edition')).toEqual(['Fallen: 20th Anniversary Edition', 'Fallen'])
+    expect(titleVariants('Mezmerize - Remastered (Deluxe)')).toEqual([
+      'Mezmerize - Remastered (Deluxe)',
+      'Mezmerize - Remastered',
+      'Mezmerize',
+    ])
+    expect(titleVariants('Night Drive')).toEqual(['Night Drive'])
+    // A subtitle separator at the start leaves the title whole.
+    expect(titleVariants(': Untitled')).toEqual([': Untitled'])
+    expect(editionWords('Fallen: 20th Anniversary Edition')).toEqual(['20th', 'anniversary', 'edition'])
+    expect(editionWords('Night Drive')).toEqual([])
+  })
+
+  it("reads an artist's albums and an album's editions, counting a release's tracks from its media", async () => {
+    const fetchImpl = ((input: RequestInfo | URL) => {
+      const url = urlOf(input)
+      return Promise.resolve(
+        Response.json(
+          url.pathname.endsWith('/release-group')
+            ? {
+                'release-groups': [
+                  { id: 'g2', title: 'The Open Door', 'first-release-date': '2006-09-25', 'primary-type': 'Album' },
+                  {
+                    id: 'g1',
+                    title: 'Fallen',
+                    'first-release-date': '2003-03-04',
+                    'primary-type': 'Album',
+                    'secondary-types': [],
+                  },
+                ],
+              }
+            : {
+                releases: [
+                  {
+                    id: 'r1',
+                    title: 'Fallen (20th anniversary)',
+                    date: '2023-11-17',
+                    media: [
+                      { format: 'CD', 'track-count': 12 },
+                      { format: 'CD', 'track-count': 9 },
+                    ],
+                    'artist-credit': [{ name: 'Evanescence', artist: { id: 'a1' } }],
+                    'release-group': { id: 'g1', 'primary-type': 'Album' },
+                  },
+                ],
+              },
+        ),
+      )
+    }) as typeof fetch
+    expect((await artistReleaseGroups('a1', fetchImpl)).map((group) => group.title)).toEqual([
+      'Fallen',
+      'The Open Door',
+    ])
+    resetPacing()
+    const [release] = await groupReleases('g1', fetchImpl)
+    expect(release).toMatchObject({ id: 'r1', trackCount: 21, score: 100, format: '2×CD', group: 'g1' })
+  })
+
   it('escapes quotes and backslashes inside a phrase', () => {
     expect(phrase('The "Best" \\ Of')).toBe('"The \\"Best\\" \\\\ Of"')
   })
@@ -149,6 +228,25 @@ describe('choosing a release and the place of its cover', () => {
     expect(rankReleases(candidates, null).map((release) => release.id)).toEqual(['a', 'd', 'b'])
     const many = Array.from({ length: 20 }, (_, n) => ({ id: String(n), score: 99, trackCount: 3 }))
     expect(rankReleases(many, 3)).toHaveLength(12)
+  })
+
+  it('puts the editions that share the words of the album title before the plain ones', () => {
+    const editions = [
+      { id: 'plain', title: 'Fallen', score: 100, trackCount: 11 },
+      {
+        id: 'box',
+        title: 'Fallen',
+        disambiguation: '20th anniversary super deluxe box set',
+        score: 100,
+        trackCount: 32,
+      },
+      { id: 'anniversary', title: 'Fallen (20th anniversary)', score: 88, trackCount: 21 },
+    ]
+    const title = 'Fallen: 20th Anniversary Edition'
+    // The album's number of tracks first, then the shared edition words, then the score.
+    expect(rankReleases(editions, 21, title).map((edition) => edition.id)).toEqual(['anniversary', 'box', 'plain'])
+    expect(rankReleases(editions, null, title).map((edition) => edition.id)).toEqual(['box', 'anniversary', 'plain'])
+    expect(pickRelease(editions, null, title)?.id).toBe('box')
   })
 
   it('puts a cover only into a folder that holds the album alone', () => {

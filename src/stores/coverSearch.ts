@@ -131,7 +131,7 @@ export async function openCoverPicker(album: Album, scope: string | null): Promi
   // The reactive picker: changes to it show at once.
   const picker = state.picker
   try {
-    const editions = rankReleases(await findReleases(album.title, artist), trackCount)
+    const editions = rankReleases(await findReleases(album.title, artist), trackCount, album.title)
     const offers: CoverOffer[] = editions.map((release) => ({
       source: 'coverartarchive',
       release,
@@ -262,7 +262,7 @@ export async function lookUpCover(album: Album, scope: string | null): Promise<v
   state.release = null
   try {
     const members = albumTracks(tracks.value, album.title, scope)
-    const release = pickRelease(await findReleases(album.title, artist), members.length || null)
+    const release = pickRelease(await findReleases(album.title, artist), members.length || null, album.title)
     const cover = release ? await frontCover(release) : null
     if (state.key !== key) return
     if (!release || !cover) {
