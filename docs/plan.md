@@ -2161,6 +2161,11 @@ earlier releases is traced: "plays the featured album from Home" skips itself
 when Home's Play is still disabled at that moment, before the guest's
 collection has loaded.
 
+On the owner's card (2026-10-02, their go-ahead): `Apps/Disc Player`
+replaced by `2026.10.02-da9490c` (100 files); the catalog already current
+(`queries.json`, `store.json` and `hosted.json` byte for byte as the install
+tool renders them for the V2.57 profile); the card ejected.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
