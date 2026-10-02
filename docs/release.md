@@ -16,13 +16,27 @@ npm run check                 # format, lint, types, tests, build + the app rule
 npm run release               # uses ../snowsky-disc-service, or DISC_SERVICE_DIR
 ```
 
-`npm run release` packs `dist/` with the service's tool (`scripts/app_bundle.py
-zip`): the folder `Disc Player/` with gzip twins of its text files,
-`app.json` (the version: the date and commit, or `DISC_APP_VERSION`) and the
-reviewed `origins.json` from the service's `firmware/origins`. The reviewed
-catalogs are not in the app: the page reads them from the service at
-`/api/contract/` (the image's, or the card's `.disc/catalog` where admitted).
-The zip lands in `work/disc-player-<version>.zip`.
+`npm run release` packs `dist/` as the service's tool does
+(`scripts/pack-app.mjs`, a mirror of `scripts/app_bundle.py zip`): the folder
+`Disc Player/` with gzip twins of its text files, `app.json` (the version: the
+date and commit, or `DISC_APP_VERSION`) and the reviewed `origins.json` kept
+in `release/`. With the service checkout it refuses a `release/origins.json`
+the service no longer renders (`npm run release:origins` brings the current
+one; commit it) and has the service's tool install the zip into a scratch
+card, which applies every rule an installation does. The reviewed catalogs
+are not in the app: the page reads them from the service at `/api/contract/`
+(the image's, or the card's `.disc/catalog` where admitted). The zip lands in
+`work/disc-player-<version>.zip`.
+
+## Publish with a tag
+
+A `v<version>` tag on the released commit (owner, 2026-10-02) runs
+`.github/workflows/release.yml`: the checks, the zip packed without a service
+checkout (`DISC_RELEASE_WITHOUT_SERVICE=1`, from the same `release/origins.json`)
+as a GitHub release with its SHA-256, and the hosted site on GitHub Pages
+(`pages.yml`). The tag goes on a commit that passed CI and, for the owner's
+card, the checks below. The `github-pages` environment admits deployments
+from `main` (by hand) and from `v*` tags.
 
 ## Verify on the emulator first
 

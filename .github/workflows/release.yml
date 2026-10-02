@@ -1,0 +1,57 @@
+name: Release
+
+# A tag v<version> (owner, 2026-10-02: releases by tags, not by pushes) releases
+# the page: the checks, the card's zip as a GitHub release asset, and the hosted
+# site on Pages. The tag goes on a commit that passed CI and, before the owner's
+# card, the emulator acceptance (docs/release.md). The zip is packed without a
+# service checkout from the reviewed release/origins.json (scripts/pack-app.mjs).
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bundle:
+    name: Checks and the card's zip
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Pack the app
+        run: |
+          version="${TAG#v}"
+          zip="work/disc-player-${version}.zip"
+          DISC_RELEASE_WITHOUT_SERVICE=1 DISC_APP_VERSION="$version" node scripts/prepare-release.mjs "$zip"
+          python3 -m zipfile -t "$zip"
+          (cd work && sha256sum "disc-player-${version}.zip" > "disc-player-${version}.zip.sha256")
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${TAG#v}"
+          gh release create "$TAG" "work/disc-player-${version}.zip" "work/disc-player-${version}.zip.sha256" \
+            --verify-tag --title "Disc Player ${version}" --generate-notes
+
+  pages:
+    name: Hosted site
+    needs: bundle
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/pages.yml

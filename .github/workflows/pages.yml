@@ -3,10 +3,11 @@ name: Pages
 # The hosted prototype (2026-09-30): the same app built for a public HTTPS site.
 # It reaches DISC on the visitor's own network through the browser's Local
 # Network Access; the player admits this site's origin from its hosted.json.
+# Published with a release (release.yml, a v* tag; owner, 2026-10-02), or by
+# hand from a chosen tag; pushes to main no longer publish it.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
+  workflow_call:
 
 permissions:
   contents: read

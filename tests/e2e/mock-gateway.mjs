@@ -32,6 +32,8 @@ const AUDIO_NAME = /\.(flac|wav|mp3|m4a|aac|ogg|opus|ape|wv|wma|dsf|dff|aiff?)$/
 const PORT = Number(process.env.MOCK_GATEWAY_PORT ?? 4870)
 const DIST = process.env.MOCK_GATEWAY_DIST ?? 'dist'
 const FIXTURES = new URL('./fixtures/', import.meta.url)
+/** The reviewed origins.json a release packs, as the service renders it (npm run release:origins). */
+const ORIGINS = new URL('../../release/origins.json', import.meta.url)
 const LANGUAGE = Number(process.env.MOCK_GATEWAY_LANGUAGE ?? 9)
 // Optional latency for data reads, to see loading skeletons in development.
 const DELAY = Number(process.env.MOCK_GATEWAY_DELAY ?? 0)
@@ -39,11 +41,11 @@ const DELAY = Number(process.env.MOCK_GATEWAY_DELAY ?? 0)
 const SERIAL = process.env.MOCK_GATEWAY_SERIAL ?? '00000000000000'
 const credential = (value) => value === SERIAL
 /**
- * The page policy with the release's reviewed origins (fixtures/origins.json, a copy of the
- * service's firmware/origins catalog), as the service builds it since combined-008.
+ * The page policy with the release's reviewed origins (release/origins.json, which the service
+ * renders from its firmware/origins catalog), as the service builds it since combined-008.
  */
 const CSP = (() => {
-  const { origins } = JSON.parse(readFileSync(new URL('./fixtures/origins.json', import.meta.url), 'utf8'))
+  const { origins } = JSON.parse(readFileSync(ORIGINS, 'utf8'))
   const of = (directive) =>
     Object.values(origins)
       .filter((entry) => entry.directives.includes(directive))
@@ -308,7 +310,7 @@ function admitted(request) {
 }
 /** A file of the app: dist/ as copied into Apps/Disc Player, with its own origins.json. */
 function appFile(path) {
-  if (path === 'origins.json') return readFileSync(new URL(path, FIXTURES))
+  if (path === 'origins.json') return readFileSync(ORIGINS)
   const file = normalize(join(DIST, path))
   if (path === 'index.html' && !existsSync(file)) {
     // No build yet (dev:mock): the dev server serves the page itself.

@@ -5,3 +5,5 @@ work/
 test-results/
 playwright-report/
 package-lock.json
+# The reviewed origins.json exactly as the service renders it (npm run release:origins).
+release/origins.json

@@ -21,7 +21,8 @@
     "build:hosted": "vite build --mode hosted --outDir dist-hosted && node scripts/check-bundle.mjs dist-hosted",
     "e2e": "playwright test",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build",
-    "release": "node scripts/prepare-release.mjs"
+    "release": "node scripts/prepare-release.mjs",
+    "release:origins": "node scripts/service-origins.mjs"
   },
   "dependencies": {
     "vue": "^3.5.43",

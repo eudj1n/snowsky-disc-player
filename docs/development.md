@@ -17,7 +17,8 @@ Node.js 20.19+ (CI uses 24). Install once with `npm ci`.
 | `npm run build:hosted`            | The hosted build for a public HTTPS site (`dist-hosted/`, `VITE_HOSTED=1`; see below)                        |
 | `npm run check`                   | All of the above except e2e; this is what CI runs first                                                      |
 | `npm run e2e`                     | Playwright against the mock gateway (build first), desktop and phone                                         |
-| `npm run release`                 | Packs the Disc Player app as a zip with the service's tool ([release](release.md))                           |
+| `npm run release`                 | Packs the Disc Player app as a zip, checked by the service's tool ([release](release.md))                    |
+| `npm run release:origins`         | Brings the service's current reviewed `origins.json` into `release/` ([release](release.md))                 |
 
 ## Seeing the interface without touching the player
 
@@ -123,8 +124,13 @@ afterwards, and a guest set up since then has about 224 MB more room
 `build` (with the bundle check), then Playwright against the mock gateway. No
 player, emulator, sibling checkout or secret is needed in CI.
 
-`.github/workflows/pages.yml` publishes `npm run build:hosted` to GitHub Pages
-on pushes to `main` (the prototype of 2026-09-30).
+CI does not run for commits that change documentation only (`docs/`,
+Markdown files).
+
+`.github/workflows/release.yml` runs for a `v*` tag: the checks, the card's
+zip as a GitHub release asset and, through `.github/workflows/pages.yml`,
+`npm run build:hosted` on GitHub Pages (the prototype of 2026-09-30). Pushes to
+`main` no longer publish the site; `pages.yml` can also be run by hand.
 
 ## The hosted build
 

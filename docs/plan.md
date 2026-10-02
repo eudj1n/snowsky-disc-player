@@ -2262,6 +2262,25 @@ image; card-only items (catalog or query additions) are marked as such.
       the guest), so page releases no longer fill the card and stop the
       history.
 
+## Releases by tags (owner, 2026-10-02)
+
+- [x] A `v*` tag releases the page (`.github/workflows/release.yml`): the
+      checks, the card's zip as a GitHub release asset with its SHA-256, and
+      the hosted site on Pages, which pushes to `main` no longer publish. The
+      `github-pages` environment admits `v*` tags besides `main`. The zip is
+      packed by `scripts/pack-app.mjs`, a mirror of the service's
+      `app_bundle.py zip`, from the reviewed `origins.json` kept in
+      `release/` (`npm run release:origins`); locally the release also checks
+      that file against the service and has the service's tool install the
+      zip into a scratch card. CI skips commits that change documentation
+      only. Evidence: unit `pack-app`; the Node zip of the current `dist/`
+      matched the service's zip entry for entry (names, bytes, gzip twins,
+      times, modes); actionlint clean.
+- [ ] Rework the project documentation, then mark the current version as
+      1.0.0 and count from it, with a CHANGELOG of the capabilities in broad
+      terms (owner, 2026-10-02). The first tag comes then; until it, Pages
+      keeps the site published last.
+
 ## Later
 
 - AutoEQ (owner, 2026-10-02: the next large task): headphone correction from
