@@ -82,9 +82,15 @@ watch(
   },
   { immediate: true },
 )
-const coverChoosable = computed(() => coverLookupAllowed() && onCard.value !== null && onCard.value.kind !== 'embedded')
+/*
+ * A cover inside the files cannot be replaced (no tag editing): no cover action at all for it (owner, 2026-10-02:
+ * nothing that does not work shows), and the facts say where the cover is. Otherwise the action waits, disabled,
+ * while the cover's place is read or the outside sources are off.
+ */
+const coverEmbedded = computed(() => onCard.value?.kind === 'embedded')
+const coverChoosable = computed(() => coverLookupAllowed() && onCard.value !== null && !coverEmbedded.value)
 const coverNote = computed(() => {
-  if (onCard.value?.kind === 'embedded') return t('cover_embedded')
+  if (coverEmbedded.value) return null
   if (!coverLookupAllowed()) return t('info_cover_off')
   return onCard.value?.kind === 'folder' ? t('cover_replace_note') : null
 })
@@ -327,6 +333,7 @@ const settingsNeeded = computed(() =>
           <Artwork :title="album.title" :cover="cover" />
         </button>
         <button
+          v-if="!coverEmbedded"
           type="button"
           :class="[
             CHIP,

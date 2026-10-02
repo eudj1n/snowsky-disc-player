@@ -2148,6 +2148,12 @@ section was declined: it stays as it is.
 - [x] A joint album's "On this album" draws each artist's photo, or the
       stand-in album cover, instead of initials only. Evidence: e2e "shows a
       joint album as "A & B"…" (fails without the fix).
+- [x] An album whose cover is inside its files shows no cover action and no
+      note promising tag editing "later" (owner: nothing that does not work
+      shows); the facts still say the cover is inside the album's files. The
+      action stays, disabled, only while the cover's place is read or the
+      outside sources are off. Evidence: e2e "offers no cover action for a
+      cover inside the files…".
 
 Checks (2026-10-02) of release `2026.10.02-da9490c` (the artists' filters,
 the editions' track counts and titles without brackets, the pictures on "On

@@ -2115,6 +2115,28 @@ test('chooses a cover among the editions and fanart.tv, keeps the edition and sa
   await chooseSources(page)
 })
 
+test('offers no cover action for a cover inside the files, and says where it is', async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
+  await chooseSources(page, { musicbrainz: { allowed: true }, coverartarchive: { allowed: true } })
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/album/Blue%20Hours/Mira%20Sol')
+  await page.getByTestId('info-open').click()
+  const panel = page.getByTestId('info-panel')
+  await expect(panel.locator('[data-fact="cover"]')).toHaveText('Inside the album’s files', { timeout: 15_000 })
+  // Replacing it needs tag editing, which the page does not do: no action and no promise (owner, 2026-10-02).
+  await expect(panel.getByTestId('info-cover-choose')).toHaveCount(0)
+  await expect(panel.getByTestId('info-cover-note')).toHaveCount(0)
+  await expect(panel).not.toContainText(/later/i)
+  // An album whose files carry no cover keeps the action.
+  await page.goto('/#/album/Night%20Drive/Northline')
+  await page.getByTestId('info-open').click()
+  await expect(page.getByTestId('info-panel').getByTestId('info-cover-choose')).toBeEnabled({ timeout: 15_000 })
+  await disconnect(page)
+  await chooseSources(page)
+})
+
 test("chooses an artist's photo and background among the sources, keeps them on the player with their credit", async ({
   page,
 }) => {

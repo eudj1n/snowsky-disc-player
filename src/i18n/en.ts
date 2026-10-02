@@ -284,7 +284,7 @@ export const en = {
   cover_dismiss: 'Dismiss',
   cover_replace: 'Replace on the card',
   cover_replaced: "Replaced the album's cover; the old one is in the card's trash.",
-  cover_embedded: "This album's cover is inside its files: it changes with the tags, later.",
+  cover_embedded: "This album's cover is inside its files, which the player shows before a cover in its folder.",
   cover_replace_note: "The old cover goes to the card's trash, where it can be restored.",
   cover_saved: "Saved into the album's folder as its cover.",
   cover_save_exists: "The album's folder already has a cover; nothing was overwritten.",
