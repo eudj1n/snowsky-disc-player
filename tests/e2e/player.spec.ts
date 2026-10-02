@@ -118,7 +118,15 @@ test('plays the featured album from Home with a verified result', async ({ page 
   const errors = watchErrors(page)
   await english(page)
   const play = page.getByRole('button', { name: 'Play album' })
-  test.skip((await play.isDisabled()) && external, 'The collection has no album to feature')
+  // Play waits, disabled, until the collection has loaded and an album is featured: decide after that, not
+  // at the first look (the emulator's slower collection skipped this case now and then, 2026-10-02).
+  const featuring = await expect(play)
+    .toBeEnabled({ timeout: 15_000 })
+    .then(
+      () => true,
+      () => false,
+    )
+  test.skip(!featuring && external, 'The collection has no album to feature')
   await connectAndPair(page)
   const featured = await page.getByRole('region', { name: 'Album from your collection' }).locator('p').textContent()
   await play.click()

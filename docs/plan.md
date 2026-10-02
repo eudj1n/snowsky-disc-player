@@ -951,13 +951,19 @@ all with the same PATH (IS_CUE=1, TRACK, OFFSET), and a202 reports that path,
       twinkling; leaving the page closes karaoke.
 - [x] "Artists by size" shows the artists' pictures.
 - [x] Possible duplicates link their folders into the file manager.
-- [ ] Icon sizes (found on the way): UiIcon's default `size-20` comes after
+- [x] Icon sizes (found on the way): UiIcon's default `size-20` comes after
       every smaller `size-*` utility in the stylesheet, so an icon given a
       size below 20 px is drawn at 20 px on desktop (phone variants do
       apply). Moving the default into the base layer fixes it, but shrinks
       about thirty icons at once (search, the language chevron, volume,
       row play glyphs); a separate pass with before/after screenshots for the
-      owner. The heart uses an important size meanwhile.
+      owner. The heart uses an important size meanwhile. Done 2026-10-02: the
+      default is `.ui-icon` in the components layer, below the utilities, so
+      44 icons in 29 files take their class's size (measured on 16 screens
+      and dialogs, desktop and phone: none off its class afterwards). The
+      owner reviewed before and after and chose: the row play/pause glyphs
+      (tracks, the queue, the card's files, the search palette) at 16 px,
+      everything else at its class's size; the important sizes are gone.
 
 ## Owner requests (2026-09-27): folder play, a remembered track and layout
 
@@ -2171,7 +2177,10 @@ catalogs installed: 40 passed, 85 skipped (desktop; the new mock-only case
 among the skipped). The one case that came and went between 39 and 40 in
 earlier releases is traced: "plays the featured album from Home" skips itself
 when Home's Play is still disabled at that moment, before the guest's
-collection has loaded.
+collection has loaded. Fixed the same day: the case waits up to 15 s for Play
+to be enabled before deciding; on the guest, after the acceptance media's
+scan, it passed in two runs out of two (and skips, rightly, on the bare guest,
+whose one album has no cover to feature).
 
 On the owner's card (2026-10-02, their go-ahead): `Apps/Disc Player`
 replaced by `2026.10.02-da9490c` (100 files); the catalog already current

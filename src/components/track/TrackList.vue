@@ -296,11 +296,11 @@ function contextMenu(event: MouseEvent, index: number): void {
                   <UiIcon
                     filled
                     :name="pauses(track) ? 'pause' : 'play'"
-                    class="hidden size-14 group-focus-within/row:block group-hover/row:block"
+                    class="hidden size-16 group-focus-within/row:block group-hover/row:block"
                     :class="{ '!stroke-[2.6]': pauses(track) }"
                   />
                 </template>
-                <UiIcon v-else filled name="play" class="size-14" />
+                <UiIcon v-else filled name="play" class="size-16" />
               </span>
             </button>
             <span v-else class="size-40 overflow-hidden rounded-6 phone:size-34" :class="dim(track)"
@@ -326,7 +326,7 @@ function contextMenu(event: MouseEvent, index: number): void {
             <UiIcon
               filled
               :name="pauses(track) ? 'pause' : 'play'"
-              class="hidden size-13 text-secondary group-focus-within/row:block group-hover/row:block"
+              class="hidden size-16 text-secondary group-focus-within/row:block group-hover/row:block"
               :class="{ '!stroke-[2.6]': pauses(track) }"
             />
           </button>
@@ -401,7 +401,7 @@ function contextMenu(event: MouseEvent, index: number): void {
               :class="[HEART, favoriteOf(track) ? '' : `${REVEAL} focus-visible:opacity-100`]"
               @click="emit('favorite')"
             >
-              <UiIcon name="heart" class="size-16! phone:size-12!" :filled="favoriteOf(track) === true" />
+              <UiIcon name="heart" class="size-16 phone:size-12" :filled="favoriteOf(track) === true" />
             </button>
             <button
               v-else-if="favoriteOf(track) && favoriteRemovable"
@@ -413,10 +413,10 @@ function contextMenu(event: MouseEvent, index: number): void {
               :class="HEART"
               @click="emit('unfavorite', track)"
             >
-              <UiIcon name="heart" filled class="size-16! phone:size-12!" />
+              <UiIcon name="heart" filled class="size-16 phone:size-12" />
             </button>
             <span v-else-if="favoriteOf(track)" class="text-accent" :class="HEART" :title="favoriteLabels.favorite">
-              <UiIcon filled name="heart" class="size-16! phone:size-12!" /><span class="sr-only">{{
+              <UiIcon filled name="heart" class="size-16 phone:size-12" /><span class="sr-only">{{
                 favoriteLabels.favorite
               }}</span>
             </span>
@@ -430,7 +430,7 @@ function contextMenu(event: MouseEvent, index: number): void {
               :class="[HEART, `${REVEAL} focus-visible:opacity-100 [@media(hover:none)]:opacity-40`]"
               @click="emit('love', track)"
             >
-              <UiIcon name="heart" class="size-16! phone:size-12!" />
+              <UiIcon name="heart" class="size-16 phone:size-12" />
             </button>
             <span
               v-else
@@ -439,7 +439,7 @@ function contextMenu(event: MouseEvent, index: number): void {
               :class="[HEART, REVEAL]"
               :title="favoriteLabels.onlyCurrent"
             >
-              <UiIcon name="heart" class="size-16! phone:size-12!" />
+              <UiIcon name="heart" class="size-16 phone:size-12" />
             </span>
           </template>
         </span>

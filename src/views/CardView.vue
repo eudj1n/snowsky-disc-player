@@ -207,7 +207,7 @@ watch(
           {{ t('space_free') }} · <strong class="font-semibold text-ink">{{ bytes(usage.free) }}</strong>
         </li>
         <li v-if="connection.trash && trash.listing?.bytes" class="flex items-center gap-6">
-          <UiIcon name="trash" class="size-12! shrink-0" />
+          <UiIcon name="trash" class="size-12 shrink-0" />
           <RouterLink
             to="/card/trash"
             class="underline-offset-3 hover:text-ink hover:underline"

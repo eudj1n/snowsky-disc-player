@@ -57,11 +57,11 @@ const REVEAL = 'opacity-0 group-hover/row:opacity-100 group-focus-within/row:opa
             <UiIcon
               filled
               :name="playing ? 'pause' : 'play'"
-              class="hidden size-14 group-focus-within/row:block group-hover/row:block"
+              class="hidden size-16 group-focus-within/row:block group-hover/row:block"
               :class="{ '!stroke-[2.6]': playing }"
             />
           </template>
-          <UiIcon v-else filled name="play" class="size-14" />
+          <UiIcon v-else filled name="play" class="size-16" />
         </span>
       </button>
       <span class="min-w-0">

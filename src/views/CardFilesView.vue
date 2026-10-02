@@ -318,10 +318,10 @@ function addHere(): void {
             <UiIcon
               filled
               :name="isPlaying ? 'pause' : 'play'"
-              class="hidden size-14 group-focus-within/row:block group-hover/row:block"
+              class="hidden size-16 group-focus-within/row:block group-hover/row:block"
             />
           </template>
-          <UiIcon v-else filled name="play" class="size-14" />
+          <UiIcon v-else filled name="play" class="size-16" />
         </span>
       </component>
       <div class="min-w-0 flex-1">

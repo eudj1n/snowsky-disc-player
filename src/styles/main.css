@@ -547,6 +547,18 @@
   }
 }
 
+/*
+ * UiIcon's 20px default sits in the components layer, below the utilities, so
+ * a size class an icon is given wins whatever the stylesheet's order (in the
+ * utilities layer size-20 came after size-10…18 and drew those icons at 20px).
+ */
+@layer components {
+  .ui-icon {
+    width: calc(var(--spacing) * 20);
+    height: calc(var(--spacing) * 20);
+  }
+}
+
 @layer base {
   html {
     scrollbar-gutter: stable;

@@ -287,7 +287,7 @@ onBeforeUnmount(() => {
               v-if="option.hit.kind === 'tracks'"
               name="play"
               aria-hidden="true"
-              class="size-14 shrink-0 text-muted"
+              class="size-16 shrink-0 text-muted"
             />
           </template>
           <template v-else>
