@@ -2258,6 +2258,11 @@ image; card-only items (catalog or query additions) are marked as such.
 
 ## Later
 
+- AutoEQ (owner, 2026-10-02: the next large task): headphone correction from
+  AutoEq on the player's equalizer, as FiiO Control offers. The preliminary
+  analysis and the open decisions are in [autoeq.md](autoeq.md); the owner
+  confirmed that the equalizer audibly changes the sound and will answer the
+  rest later.
 - Several application roots on the card, cloud relay and voice clients follow
   the service's Stage C.
 - A user-facing demo mode (decide on the reference's fictional artwork).
