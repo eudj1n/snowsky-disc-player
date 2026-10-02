@@ -2145,6 +2145,21 @@ section was declined: it stays as it is.
       MusicBrainz's title matches; covers found automatically benefit too.
       Evidence: unit `covers` ("asks for a title without its edition…",
       "drops only the editions in brackets…").
+- [x] A joint album's "On this album" draws each artist's photo, or the
+      stand-in album cover, instead of initials only. Evidence: e2e "shows a
+      joint album as "A & B"…" (fails without the fix).
+
+Checks (2026-10-02) of release `2026.10.02-da9490c` (the artists' filters,
+the editions' track counts and titles without brackets, the pictures on "On
+this album"): `npm run check` with 304 unit tests; the full mock suite (179
+passed, 71 skipped); screenshots of the Artists heading, the editions window
+and the cover picker in light and dark on a desktop and on a phone; the
+emulator acceptance of this exact zip on the V2.57 guest with the card
+catalogs installed: 40 passed, 85 skipped (desktop; the new mock-only case
+among the skipped). The one case that came and went between 39 and 40 in
+earlier releases is traced: "plays the featured album from Home" skips itself
+when Home's Play is still disabled at that moment, before the guest's
+collection has loaded.
 
 ## Requests for the next service build
 
