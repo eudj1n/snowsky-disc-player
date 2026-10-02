@@ -90,6 +90,33 @@ export const musicbrainzIds = readonly(state)
 const MBID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const FACTS_BYTES = 3072
 
+const storedText = (value: unknown) => (typeof value === 'string' && value ? value : null)
+
+/** An artist's facts as the store keeps them, any field it lacks filled in: a partial record must not break the details. */
+export function storedArtistFacts(value: unknown, name: string): ArtistFacts | null {
+  if (!value || typeof value !== 'object') return null
+  const facts = value as Record<string, unknown>
+  const links: ArtistFacts['links'] = {}
+  if (facts.links && typeof facts.links === 'object')
+    for (const key of ['official', 'bandcamp', 'discogs', 'wikidata'] as const) {
+      const link = storedText((facts.links as Record<string, unknown>)[key])
+      if (link) links[key] = link
+    }
+  return {
+    name: storedText(facts.name) ?? name,
+    sortName: storedText(facts.sortName),
+    type: storedText(facts.type),
+    country: storedText(facts.country),
+    begin: storedText(facts.begin),
+    end: storedText(facts.end),
+    disambiguation: storedText(facts.disambiguation),
+    aliases: Array.isArray(facts.aliases)
+      ? facts.aliases.filter((alias): alias is string => typeof alias === 'string')
+      : [],
+    links,
+  }
+}
+
 export async function loadMusicbrainzIds(): Promise<void> {
   if (!connection.store) return
   try {
@@ -100,7 +127,7 @@ export async function loadMusicbrainzIds(): Promise<void> {
     for (const { value } of records ?? []) {
       if (!MBID.test(value.mbid)) continue
       if (value.kind === 'artist')
-        kept[value.name] = { mbid: value.mbid, facts: (value.facts as ArtistFacts | undefined) ?? null, kept: true }
+        kept[value.name] = { mbid: value.mbid, facts: storedArtistFacts(value.facts, value.name), kept: true }
       else if (value.kind === 'album')
         albums[value.name] = {
           mbid: value.mbid,

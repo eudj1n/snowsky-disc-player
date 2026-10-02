@@ -5,7 +5,7 @@ vi.mock('../../src/stores/pairing', () => ({ pairingToken: () => null }))
 
 const { factParts, regionName } = await import('../../src/domain/artistFacts')
 const { bestArtist, namedExactly, resetPacing, searchArtists } = await import('../../src/gateway/musicbrainz')
-const { artistFacts } = await import('../../src/stores/musicbrainzIds')
+const { artistFacts, storedArtistFacts } = await import('../../src/stores/musicbrainzIds')
 
 const answer =
   (body: unknown, asked: URL[]): typeof fetch =>
@@ -87,6 +87,26 @@ describe("an artist's MusicBrainz identity", () => {
     expect(facts.links).toEqual({
       official: 'https://northline.example/',
       wikidata: 'https://www.wikidata.org/wiki/Q42',
+    })
+  })
+
+  it('fills in what a stored record lacks instead of breaking the details', () => {
+    expect(storedArtistFacts(null, 'Northline')).toBeNull()
+    expect(
+      storedArtistFacts(
+        { type: 'Group', begin: '2001', aliases: ['North', 7], links: { official: 'x', other: 'y' } },
+        'Northline',
+      ),
+    ).toEqual({
+      name: 'Northline',
+      sortName: null,
+      type: 'Group',
+      country: null,
+      begin: '2001',
+      end: null,
+      disambiguation: null,
+      aliases: ['North'],
+      links: { official: 'x' },
     })
   })
 })

@@ -134,10 +134,7 @@ const LINK = 'hover:text-ink hover:underline hover:underline-offset-3'
     >
       <Artwork :title="track.title" :cover="cover" />
     </button>
-    <span class="mt-22 block text-caption2 font-semibold tracking-caps text-muted uppercase">{{
-      t('kind_track')
-    }}</span>
-    <h2 class="mt-6 mb-4 text-title2 font-bold tracking-heading" data-testid="track-panel-title">{{ track.title }}</h2>
+    <h2 class="mt-22 mb-4 text-title2 font-bold tracking-heading" data-testid="track-panel-title">{{ track.title }}</h2>
     <p class="m-0 text-footnote text-muted" @click="($event.target as HTMLElement).closest('a') && emit('navigate')">
       <ArtistCredit v-if="track.artist" :credit="track.artist" :to="artistRoute" :link-class="LINK" />
       <template v-if="track.album && trackAlbumRoute(track)">

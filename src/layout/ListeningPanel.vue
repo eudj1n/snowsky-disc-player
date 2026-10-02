@@ -65,6 +65,13 @@ const route = useRoute()
 /** A track's or an artist's or album's details: a sheet of its own, without the player's header and tabs (owner, 2026-10-02). */
 const details = computed(() => ui.panel === 'track' || ui.panel === 'info')
 const onCover = computed(() => Boolean(nowColourStyle.value) && !details.value)
+/** What the sheet shows, beside its close button (owner, 2026-10-02): Now Playing, a track, an artist or an album. */
+const sheetName = computed(() => {
+  if (ui.panel === 'now') return t('now_playing')
+  if (ui.panel === 'track') return t('kind_track')
+  if (ui.panel === 'info') return t(ui.panelInfo?.kind === 'artist' ? 'kind_artist' : 'kind_album')
+  return null
+})
 const close = ref<InstanceType<typeof UiIconButton> | null>(null)
 const nowScroll = ref<HTMLElement | null>(null)
 const headEnd = ref<HTMLElement | null>(null)
@@ -289,10 +296,13 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   >
     <div
       class="flex items-center justify-between px-24 pt-22 pb-12 phone:px-24 phone:pt-16 phone:pb-10"
-      :class="{ 'pt-16 pb-6': ui.panel !== 'now', 'justify-end!': ui.panel !== 'now' && !ui.panelReturn }"
+      :class="{ 'pt-16 pb-6': ui.panel !== 'now', 'justify-end!': !sheetName && !ui.panelReturn }"
     >
-      <span v-if="ui.panel === 'now'" class="text-caption2 font-semibold tracking-caps text-muted uppercase"
-        >SNOWSKY DISC</span
+      <span
+        v-if="sheetName"
+        class="text-caption2 font-semibold tracking-caps text-muted uppercase"
+        data-testid="panel-name"
+        >{{ sheetName }}</span
       >
       <UiIconButton
         ref="close"
@@ -412,7 +422,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
               </h3>
               <UiIconButton
                 :disabled="!nowPlaying.track"
-                icon="karaoke"
+                icon="fullscreen"
                 :label="t('karaoke_open')"
                 data-testid="karaoke-open"
                 @click="openKaraoke"

@@ -40,7 +40,7 @@ import { pairing } from '../stores/pairing'
 import UiCircleButton from '../ui/UiCircleButton.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import { artistIdentity } from '../stores/musicbrainzIds'
-import { albumCardRoute, albumRoute, artistAlbumLines, artistFactsLine, artistRoute, withYear } from './captions'
+import { albumCardRoute, albumRoute, artistAlbumLines, artistRoute, withYear } from './captions'
 import { useCrumbs } from './crumbs'
 import CollectionGate from './CollectionGate.vue'
 import { useHeadingAction } from './headingAction'
@@ -122,7 +122,6 @@ const hotSubtitle = (track: Track) =>
  * years beside the album count; the rest is in the details panel (i).
  */
 const identity = computed(() => artistIdentity(name.value))
-const facts = computed(() => (identity.value?.facts ? artistFactsLine(identity.value.facts, false) : ''))
 /*
  * The artist's photo and wide background (2026-09-29; chosen among the allowed sources, 2026-10-01),
  * credited in the details panel. A source that works automatically fills what the artist lacks of the images
@@ -161,9 +160,8 @@ function lines(album: Album) {
         <template #sticky>{{ t('album_count', { count: own.length }) }}</template>
         <template #meta>
           <span v-if="loading" class="inline-block h-10 w-90 animate-pulse rounded-4 bg-soft align-middle" />
-          <template v-else
-            >{{ t('album_count', { count: own.length }) }}<template v-if="facts"> · {{ facts }}</template></template
-          >
+          <!-- Type, country and years are in the details (i), not repeated here (owner, 2026-10-02). -->
+          <template v-else>{{ t('album_count', { count: own.length }) }}</template>
         </template>
         <UiPillButton
           v-if="playable"

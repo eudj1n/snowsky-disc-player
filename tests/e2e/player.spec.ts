@@ -627,7 +627,8 @@ test.describe('player controls on the mock', () => {
     await connectAndPair(page)
     const panel = await openPanel(page, 'Open Now Playing panel')
     const bar = page.getByRole('region', { name: 'Player' })
-    // One sheet, no tabs (owner, 2026-10-02): the head, the folded facts, then the lyrics.
+    // One sheet, no tabs (owner, 2026-10-02): the head, the folded facts, then the lyrics; named at its top.
+    await expect(panel.getByTestId('panel-name')).toHaveText('Now Playing')
     await expect(panel.getByRole('button', { name: 'Now Playing', exact: true })).toHaveCount(0)
     await expect(panel.getByTestId('track-facts')).toBeVisible()
     await expect(panel.getByRole('heading', { name: 'Lyrics', exact: true })).toBeAttached()
@@ -982,7 +983,9 @@ test.describe('player controls on the mock', () => {
     await expect(facts).toContainText(/Tracks\d+/)
     await page.keyboard.press('Escape')
     await page.goto('/#/album/Inner%20Space/Forma')
-    await expect(page.getByTestId('album-quality')).toHaveText('FLAC 16/44.1', { timeout: 15_000 })
+    // No format under the album's name (owner, 2026-10-02): its tracks may differ in quality.
+    await expect(page.getByRole('heading', { level: 1, name: 'Inner Space' })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByTestId('album-quality')).toHaveCount(0)
     // The mock is shared by both projects: the other may have left Weightless playing.
     const title = page.getByTestId('track-title')
     if ((await title.textContent())?.trim() !== 'Weightless')
@@ -1689,6 +1692,8 @@ test('opens a track from its title in the panel, plays it from there or with a d
   // A sheet of its own (owner, 2026-10-02): no player tabs, a close button.
   const sheet = page.getByRole('complementary', { name: 'Details' })
   await expect(sheet.getByRole('button', { name: 'Now Playing' })).toHaveCount(0)
+  // What the sheet shows sits beside its close button (owner, 2026-10-02).
+  await expect(sheet.getByTestId('panel-name')).toHaveText('Track')
   await sheet.getByRole('button', { name: 'Close' }).click()
   await expect(panel).toHaveCount(0)
   // A double click on a row plays it, as its number does.
@@ -2075,6 +2080,7 @@ test('chooses a cover among the editions and fanart.tv, keeps the edition and sa
   const panel = page.getByTestId('info-panel')
   const fact = (key: string) => panel.locator(`[data-fact="${key}"]`)
   await expect(fact('cover')).toHaveText('The album has no cover yet', { timeout: 15_000 })
+  await expect(page.getByTestId('panel-name')).toHaveText('Album')
   const find = panel.getByTestId('info-cover-choose')
   await find.click()
   const dialog = page.getByRole('dialog')
@@ -2306,6 +2312,7 @@ test("chooses an artist's photo and background among the sources, keeps them on 
   const panel = page.getByTestId('info-panel')
   const fact = (key: string) => panel.locator(`[data-fact="${key}"]`)
   await expect(fact('musicbrainz')).toContainText('Not identified yet')
+  await expect(page.getByTestId('panel-name')).toHaveText('Artist')
   expect(asked).toHaveLength(0)
   // Identified in its own window, among the candidates (owner, 2026-10-02).
   await fact('musicbrainz').getByTestId('fact-identify').click()
@@ -2319,7 +2326,8 @@ test("chooses an artist's photo and background among the sources, keeps them on 
   await expect(fact('musicbrainz')).toContainText('Confirmed and kept on the player', { timeout: 15_000 })
   await expect(fact('type')).toHaveText('Group')
   await expect(fact('country')).toHaveText('United Kingdom')
-  await expect(fact('years')).toHaveText('2001–')
+  // An open end reads "now" (owner, 2026-10-02).
+  await expect(fact('years')).toHaveText('2001 – now')
   await expect(fact('links').getByRole('link', { name: 'MusicBrainz' })).toHaveAttribute(
     'href',
     `https://musicbrainz.org/artist/${NORTHLINE}`,
@@ -2328,7 +2336,8 @@ test("chooses an artist's photo and background among the sources, keeps them on 
     'href',
     'https://northline.example/',
   )
-  await expect(page.getByText(/albums? · Group · United Kingdom · 2001–$/)).toBeVisible()
+  // The heading keeps the album count only: type, country and years are in the details (owner, 2026-10-02).
+  await expect(page.getByText(/albums? · Group/)).toHaveCount(0)
   // The photo, in a window of photos only: the confirmed artist, both sources, fanart.tv first.
   await panel.getByTestId('info-photo-choose').click()
   const dialog = page.getByRole('dialog')

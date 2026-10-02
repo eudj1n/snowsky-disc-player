@@ -160,7 +160,13 @@ const artistRows = computed<FactRow[]>(() => {
       rows.push({ key: 'country', label: t('fact_country'), parts: [regionName(facts.country, locale.value)] })
     const begin = year(facts.begin)
     const end = year(facts.end)
-    if (begin || end) rows.push({ key: 'years', label: t('fact_years'), parts: [`${begin ?? '?'}–${end ?? ''}`] })
+    // An open end reads "now" (owner, 2026-10-02).
+    if (begin || end)
+      rows.push({
+        key: 'years',
+        label: t('fact_years'),
+        parts: [end ? `${begin ?? '?'}–${end}` : `${begin ?? '?'} – ${t('fact_years_now')}`],
+      })
     if (facts.aliases.length)
       rows.push({ key: 'aliases', label: t('fact_aliases'), parts: [facts.aliases.slice(0, 4).join(', ')] })
   }
@@ -314,10 +320,7 @@ const settingsNeeded = computed(() =>
           </button>
         </div>
       </div>
-      <span class="mt-22 block text-caption2 font-semibold tracking-caps text-muted uppercase">{{
-        t('kind_artist')
-      }}</span>
-      <h2 class="mt-6 mb-4 text-title2 font-bold tracking-heading" data-testid="info-title">{{ artistName }}</h2>
+      <h2 class="mt-22 mb-4 text-title2 font-bold tracking-heading" data-testid="info-title">{{ artistName }}</h2>
       <FactTable class="mt-24" :heading="t('facts_artist')" :rows="artistRows" @action="onAction" />
     </template>
 
@@ -346,10 +349,7 @@ const settingsNeeded = computed(() =>
           <UiIcon name="image" />{{ t(onCard?.kind === 'folder' ? 'info_change_cover' : 'info_choose_cover') }}
         </button>
       </div>
-      <span class="mt-22 block text-caption2 font-semibold tracking-caps text-muted uppercase">{{
-        t('kind_album')
-      }}</span>
-      <h2 class="mt-6 mb-4 text-title2 font-bold tracking-heading" data-testid="info-title">{{ album.title }}</h2>
+      <h2 class="mt-22 mb-4 text-title2 font-bold tracking-heading" data-testid="info-title">{{ album.title }}</h2>
       <p class="m-0 text-footnote text-muted">{{ scope ?? album.artists[0] ?? '' }}</p>
       <p v-if="coverNote" class="mt-10 mb-0 text-footnote leading-[1.5] text-muted" data-testid="info-cover-note">
         {{ coverNote }}

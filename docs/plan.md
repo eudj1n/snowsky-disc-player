@@ -2393,6 +2393,30 @@ The batch enrichment (stage D below) and the library health view (ideas of
       duplicate of anything, on the Space and State tabs alike. Evidence:
       unit `space` (a trashed folder's pair is gone).
 
+## Sheet names and quieter headings (owner, 2026-10-02), card-only
+
+- [x] A sheet names itself beside its close button, as the player does:
+      "Now Playing" (no longer "SNOWSKY DISC"), "Track", "Artist" or "Album";
+      the details begin with the title and its line (an artist's name, a
+      track's artist and album, an album's artist) without the kind above
+      it. Evidence: e2e (`panel-name`) "the listening panel
+      repeats no controls…", "opens a track from its title in the panel…",
+      "chooses a cover among the editions…" and "chooses an artist's photo
+      and background…".
+- [x] The lyrics' button for the whole-screen view shows the fullscreen
+      icon instead of the karaoke one.
+- [x] An artist's page heading keeps the album count only: the kind,
+      country and years are in the details, where an open end reads "now"
+      ("2001 – now"). Evidence: e2e "chooses an artist's photo and
+      background…".
+- [x] An album's page heading no longer names one quality (the files of an
+      album may differ); the tracks do not show theirs either for now.
+      Evidence: e2e "shows the collection size, battery, card space and
+      audio quality" (`album-quality` gone).
+- [x] An artist's facts as the store keeps them are read field by field: a
+      record that lacks one (an alias list, a link) leaves it empty instead
+      of breaking the details. Evidence: unit `artistIdentity`.
+
 ## Releases by tags (owner, 2026-10-02)
 
 - [x] A `v*` tag releases the page (`.github/workflows/release.yml`): the

@@ -21,7 +21,7 @@ import { albumScope, albumTracks, albumsBy, byTrackNumber, discOf, recentAlbums 
 import { creditArtists, creditLabel, creditSeparator, leadCredit, sameCredit } from '../domain/artist'
 import type { SelectionTarget, TrackKey } from '../gateway/selection'
 import { t } from '../i18n'
-import { albumCover, albumCoverState, albumQuality, albumYear } from '../stores/enrichment'
+import { albumCover, albumCoverState, albumYear } from '../stores/enrichment'
 import {
   albumIdentityKey,
   coverLookupAllowed,
@@ -33,8 +33,6 @@ import {
 } from '../stores/coverSearch'
 import AlbumCoverDialog from '../layout/AlbumCoverDialog.vue'
 import { albumIdentity } from '../stores/musicbrainzIds'
-import { isHiRes, qualityLabel } from '../domain/quality'
-import { formatBadge } from '../domain/track'
 import { findGenre, playableGenre, sameGenre } from '../domain/genre'
 import { artistImage } from '../stores/artistPictures'
 import { albums, artists, genres, titleGroups, tracks as collection } from '../stores/library'
@@ -42,7 +40,6 @@ import { connection } from '../stores/connection'
 import { isPinnedAlbum, pins, togglePinAlbum } from '../stores/pins'
 import { openInfoPanel, openPlaylistDialog, openTrackMenu, openTrackPanel, showCover, ui } from '../stores/ui'
 import UiCircleButton from '../ui/UiCircleButton.vue'
-import UiHiResBadge from '../ui/UiHiResBadge.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
 import { albumCardRoute, albumRoute, artistRoute, genreRoute, withYear } from './captions'
@@ -146,20 +143,6 @@ watch(
   },
   { immediate: true },
 )
-/** "FLAC 24/96" and whether it is Hi-Res, from the first track's file. */
-const quality = computed(() => {
-  const found = group.value ? albumQuality(group.value, scope.value) : null
-  if (!found) return null
-  const value = {
-    format: formatBadge(found.path),
-    sampleRate: found.sampleRate,
-    bitDepth: found.bitDepth,
-    bitRate: found.bitRate ?? null,
-    dsd: false,
-  }
-  const label = qualityLabel(value)
-  return { text: [value.format, label].filter(Boolean).join(' '), hiRes: isHiRes(value) }
-})
 /** Several releases share this title: offer their artists as filters (and the whole group). */
 const releases = computed(() => albums.value.filter((album) => album.title === name.value).length)
 /** What a pin keeps: the one release shown (its scope), or the title group (combined-008). */
@@ -271,10 +254,7 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
               }}<RouterLink :to="artistRoute(artist)" :class="LINK">{{ artist }}</RouterLink></template
             >
             <template v-if="year"><span v-if="credits.length"> · </span>{{ year }}</template>
-            <template v-if="quality">
-              <span v-if="credits.length || year"> · </span><span data-testid="album-quality">{{ quality.text }}</span>
-              <UiHiResBadge v-if="quality.hiRes" class="ml-6" />
-            </template>
+            <!-- No format here (owner, 2026-10-02): an album's tracks may differ in quality. -->
           </template>
         </template>
         <UiPillButton icon="play" :disabled="loading || !tracks.length" @click="playFrom(target())">{{
