@@ -2113,6 +2113,11 @@ guest with the card catalogs installed: 39 passed, 85 skipped (desktop), the
 queue and lyrics cases through the new sheets. The test key for fanart.tv is
 not in the zip.
 
+On the owner's card (2026-10-02, their go-ahead): `Apps/Disc Player`
+replaced by `2026.10.01-38f381f` (102 files); the catalog already current
+(`queries.json`, `store.json` and `hosted.json` byte for byte as the install
+tool renders them for the V2.57 profile); the card ejected.
+
 ## Requests for the next service build
 
 Capabilities the current engineering image (snowsky-disc-service
