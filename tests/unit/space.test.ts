@@ -12,6 +12,7 @@ import {
   type FileFacts,
 } from '../../src/domain/space'
 import type { LibraryTrack } from '../../src/domain/track'
+import { inTrash, type TrashEntry } from '../../src/domain/trash'
 
 const file = (bytes: number, format = 'flac', rest: Partial<FileFacts> = {}): FileFacts => ({
   bytes,
@@ -144,6 +145,20 @@ describe('card space', () => {
     expect(folders.some((pair) => pair.includes('/tmp/sdcard/Other'))).toBe(false)
     expect(folders).toContain('/tmp/sdcard/Meteora | /tmp/sdcard/Singles')
     expect(duplicates([tracks[0] as LibraryTrack, tracks[1] as LibraryTrack], files)).toEqual([])
+    // What the trash holds is left out before comparing (owner, 2026-10-02): the library lists it until a scan.
+    const trashed: TrashEntry[] = [
+      { id: 1, path: '/tmp/sdcard/Meteora', kind: 'folder', bytes: 17, files: 2, trashed: 1, complete: true },
+      { id: 2, path: '/tmp/sdcard', kind: 'leftovers', bytes: 1, files: 1, trashed: 1, complete: true },
+    ]
+    expect(inTrash('/tmp/sdcard/Meteora/01 Numb.mp3', trashed)).toBe(true)
+    expect(inTrash('/tmp/sdcard/Meteora (Hi-Res)/01 Numb.flac', trashed)).toBe(false)
+    const kept = duplicates(
+      tracks.filter((item) => !item.path || !inTrash(item.path, trashed)),
+      files,
+    ).map((pair) => pair.copies.map((copy) => copy.folder).join(' | '))
+    expect(kept.some((pair) => pair.includes('/tmp/sdcard/Meteora |') || pair.endsWith('/tmp/sdcard/Meteora'))).toBe(
+      false,
+    )
   })
 
   it('splits the used space into music and other files', () => {

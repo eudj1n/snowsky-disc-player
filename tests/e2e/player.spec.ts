@@ -983,8 +983,11 @@ test.describe('player controls on the mock', () => {
     await page.keyboard.press('Escape')
     await page.goto('/#/album/Inner%20Space/Forma')
     await expect(page.getByTestId('album-quality')).toHaveText('FLAC 16/44.1', { timeout: 15_000 })
-    await page.getByRole('button', { name: 'Play Weightless' }).click()
-    await expect(page.getByTestId('track-title')).toHaveText('Weightless', { timeout: 15_000 })
+    // The mock is shared by both projects: the other may have left Weightless playing.
+    const title = page.getByTestId('track-title')
+    if ((await title.textContent())?.trim() !== 'Weightless')
+      await page.getByRole('button', { name: 'Play Weightless' }).click()
+    await expect(title).toHaveText('Weightless', { timeout: 15_000 })
     const panel = await openPanel(page, 'Open Now Playing panel')
     await expect(panel.getByTestId('quality')).toHaveText(/Hi-Res\s*FLAC · 24\/96/)
     // The DAC gets 48 kHz here: the 96 kHz file is resampled on its way out.
@@ -2422,8 +2425,10 @@ test('keeps the outside sources on the player: off until allowed, changed only w
   await chooseSources(page)
   await english(page)
   await page.goto('/#/settings?part=sources')
-  // The address opens the page at its part.
-  await expect(page.getByRole('heading', { name: /^External sources/ })).toBeInViewport()
+  // Settings' parts are tabs (owner, 2026-10-02): the address opens its tab.
+  const parts = page.getByRole('navigation', { name: 'Settings parts' })
+  await expect(parts.getByRole('link', { name: 'External sources' })).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByTestId('settings-appearance')).toHaveCount(0)
   const sources = page.getByTestId('settings-sources')
   await expect(sources.getByTestId('sources-blocked')).toContainText(
     "Pair this browser with the player's serial number",
@@ -2498,6 +2503,119 @@ test('keeps the outside sources on the player: off until allowed, changed only w
   expect((await page.request.post('/__mock/sources-missing?on=0')).status()).toBe(204)
   await chooseSources(page)
   await disconnect(page)
+})
+
+test('enriches the library from the Card state tab: a sure run, its files, its undo, and a review', async ({
+  page,
+}, info) => {
+  test.skip(external, 'Needs the mock collection')
+  test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
+  test.skip(info.project.name === 'phone', 'Runs once: the run writes to the shared mock')
+  const FORMA = '8b1d2c3b-0000-4000-8000-00000000a001'
+  const INNER = '8b1d2c3b-0000-4000-8000-00000000b001'
+  const GROUP = '8b1d2c3b-0000-4000-8000-00000000c001'
+  const OTHER = '8b1d2c3b-0000-4000-8000-00000000b002'
+  const cors = { 'Access-Control-Allow-Origin': '*' }
+  const release = (id: string, title: string, tracks: number) => ({
+    id,
+    score: 100,
+    title,
+    date: '2019-03-01',
+    country: 'GB',
+    'track-count': tracks,
+    media: [{ format: 'CD' }],
+    'artist-credit': [{ name: 'Forma', artist: { id: FORMA } }],
+    'release-group': { id: GROUP, 'primary-type': 'Album' },
+  })
+  await page.route('https://musicbrainz.org/ws/2/**', async (route) => {
+    const url = new URL(route.request().url())
+    const query = url.searchParams.get('query') ?? ''
+    await route.fulfill({
+      headers: cors,
+      json: url.pathname.startsWith('/ws/2/release-group/')
+        ? { id: GROUP, 'first-release-date': '2019-03-01', 'primary-type': 'Album', 'secondary-types': [] }
+        : url.pathname === '/ws/2/artist/'
+          ? { artists: query.includes('Forma') ? [{ id: FORMA, name: 'Forma', score: 100 }] : [] }
+          : // Inner Space by Forma is sure (its four tracks); anything else has a track count of its own.
+            {
+              releases: [
+                query.includes('Inner Space') ? release(INNER, 'Inner Space', 4) : release(OTHER, 'Other', 99),
+              ],
+            },
+    })
+  })
+  await page.route('https://lrclib.net/api/**', (route) =>
+    route.fulfill({
+      headers: cors,
+      json: new URL(route.request().url()).pathname.endsWith('/search')
+        ? [{ syncedLyrics: '[00:00.00]A line found for the run', duration: 200 }]
+        : { syncedLyrics: '[00:00.00]A line found for the run', duration: 200 },
+    }),
+  )
+  await chooseSources(page, { musicbrainz: { allowed: true }, lrclib: { allowed: true } })
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/card/state')
+  const state = page.getByTestId('card-state')
+  await expect(state.getByTestId('state-identified')).toContainText(/artists \d+ of \d+ · albums \d+ of \d+/)
+  await expect(state.getByTestId('state-lyrics')).toContainText(/an \.lrc beside \d+ of \d+ tracks/, {
+    timeout: 15_000,
+  })
+  // What the run will do: covers and images wait for their sources, so only the allowed tasks come ticked.
+  await state.getByTestId('state-enrich').click()
+  await expect(state.getByTestId('state-task-artists')).toBeChecked()
+  await expect(state.getByTestId('state-task-covers')).toBeDisabled()
+  await state.getByTestId('state-task-lyrics').check()
+  await state.getByTestId('state-scope').selectOption('Forma')
+  await expect(state.getByTestId('state-estimate')).toContainText('requests to MusicBrainz')
+  await state.getByTestId('state-start').click()
+  // Automatic: the sure artist and edition are taken, the lyrics gathered for the review of the files.
+  const report = state.getByTestId('state-report')
+  await expect(report).toBeVisible({ timeout: 30_000 })
+  await expect(report.getByTestId('state-done-identified')).toContainText('artists 1 · albums 1')
+  const identities = await storeRecords(page, 'musicbrainz')
+  expect(identities.map((record) => [record.value.kind, record.value.mbid])).toEqual(
+    expect.arrayContaining([
+      ['artist', FORMA],
+      ['album', INNER],
+    ]),
+  )
+  const decisions = await storeRecords(page, 'enrichment')
+  expect(decisions.some((record) => record.value.kind === 'run' && record.value.state === 'done')).toBe(true)
+  const files = report.getByTestId('state-file')
+  await expect(files.first()).toBeChecked()
+  expect(await files.count()).toBeGreaterThan(0)
+  await report.getByTestId('state-write').click()
+  await expect(report.getByTestId('state-files')).toContainText('written', { timeout: 15_000 })
+  // The run is undone: what it wrote on the player goes, the files written to the card stay.
+  await report.getByTestId('state-undo').click()
+  await expect(report.getByTestId('state-undone')).toContainText('The run is undone', { timeout: 15_000 })
+  expect((await storeRecords(page, 'musicbrainz')).filter((record) => record.value.mbid === FORMA)).toEqual([])
+  await report.getByTestId('state-close').click()
+  // A doubtful edition waits for the end of an automatic run, then for the owner's choice.
+  await state.getByTestId('state-enrich').click()
+  await state.getByTestId('state-task-artists').uncheck()
+  await state.getByTestId('state-scope').selectOption('Northline')
+  await state.getByTestId('state-start').click()
+  await expect(report).toBeVisible({ timeout: 30_000 })
+  await expect(report.getByTestId('state-done-review')).not.toContainText(': 0')
+  await report.getByTestId('state-review').click()
+  const ask = state.getByTestId('state-ask')
+  await expect(ask).toContainText('Which edition is it?', { timeout: 15_000 })
+  await expect(ask.getByTestId('identify-choices').getByRole('button').first()).toHaveAttribute('aria-pressed', 'true')
+  const first = (await state.getByTestId('state-current').textContent())?.trim() ?? ''
+  await state.getByTestId('state-confirm').click()
+  // The next doubtful album is skipped.
+  await expect(state.getByTestId('state-current')).not.toHaveText(first, { timeout: 15_000 })
+  await expect(ask).toBeVisible({ timeout: 15_000 })
+  await state.getByTestId('state-skip').click()
+  await expect(report).toBeVisible({ timeout: 30_000 })
+  await expect(report.getByTestId('state-done-identified')).toContainText('albums 1')
+  await report.getByTestId('state-undo').click()
+  await expect(report.getByTestId('state-undone')).toBeVisible({ timeout: 15_000 })
+  await report.getByTestId('state-close').click()
+  await disconnect(page)
+  await chooseSources(page)
 })
 
 test('shows a karaoke line without word timings white among grey ones, as the side panel', async ({ page }) => {
@@ -2620,6 +2738,18 @@ test('browses the card, creates a folder and adds music into it', async ({ page 
   await expect(page.getByTestId('import-destination')).toContainText(name)
   await page.keyboard.press('Escape')
   await disconnect(page)
+})
+
+test("keeps the card's apps folder out of the file manager", async ({ page }) => {
+  test.skip(external, 'Needs the mock card')
+  await english(page)
+  await page.goto('/#/card/files')
+  const list = page.getByTestId('files-list')
+  await expect(list.getByRole('listitem').first()).toBeVisible({ timeout: 15_000 })
+  // The page itself lives there (owner, 2026-10-02): not shown, and a link to it leads back to the root.
+  await expect(list).not.toContainText('Apps')
+  await page.goto('/#/card/files?folder=Apps%2FDisc%20Player')
+  await expect(page).toHaveURL(/#\/card\/files$/)
 })
 
 test('plays a folder and a file from the file manager, and pauses the playing one', async ({ page }) => {

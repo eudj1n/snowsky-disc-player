@@ -2194,6 +2194,10 @@ Capabilities the current engineering image (snowsky-disc-service
 while porting. Each needs a service change, emulator acceptance and a new
 image; card-only items (catalog or query additions) are marked as such.
 
+- [ ] The service's trash refuses the card's `Apps` folder and what is in
+      it, as it refuses `.disc`: the page keeps it out of the file manager
+      (2026-10-02), but any client of the trash route could move the apps
+      away.
 - [x] **Media metadata endpoint.** Read-only, bounded reads from the card:
       FLAC STREAMINFO (duration, sample rate, bit depth, channels), embedded
       PICTURE blocks, folder `cover.jpg`/`folder.jpg`, served per path or per
@@ -2316,14 +2320,19 @@ V2.57 profile; no `commands.json`); the card ejected.
 The batch enrichment (stage D below) and the library health view (ideas of
 2026-09-29) become one task. Decided with the owner:
 
-- [ ] A "State" tab in the Card section (Space · Files · Trash · State): what
+- [x] A "State" tab in the Card section (Space · Files · Trash · State): what
       is not identified in MusicBrainz, albums without a cover (inside the
       files, in the folder, none), artists without a photo or background (as
       the image boxes ask), tracks without lyrics or synced lyrics, the tags
       stock names unknown and albums without a year or genre (counts and lists
       only: no tag editing), the duplicates the Space tab finds, unreadable
-      files; each count leads into the enrichment or to its list.
-- [ ] The enrichment as a step-by-step wizard over the page: first what it
+      files; each count leads into the enrichment or to its list. Done
+      (`views/CardStateView.vue`, `domain/libraryState.ts`): covers split by
+      where they lie (a folder cover from the walk, else a cover found in the
+      files), .lrc files beside tracks from the walk (lyrics inside the files
+      are checked during the enrichment), years from the walk. Evidence: unit
+      `libraryState`; e2e "enriches the library from the Card state tab…".
+- [x] The enrichment as a step-by-step wizard over the page: first what it
       will do (the tasks, all that is missing or one artist), the requests and
       time it takes (MusicBrainz once a second) and what leaves the network;
       artists first, then albums (searched by the artist's id), then images.
@@ -2333,7 +2342,19 @@ The batch enrichment (stage D below) and the library health view (ideas of
       progress and "searched, nothing found" are kept on the player (a store
       collection, card-only); the end shows a report and can undo the run;
       files on the card (covers, .lrc) only after their own review.
-      A specimen page of the tab and the wizard comes first.
+      A specimen page of the tab and the wizard comes first. Done as the
+      specimen showed (owner: "do it the way you propose", lyrics the last
+      step of each album): the wizard runs inside the State tab; sure is an
+      artist named exactly so, scored 100 and alone, or an edition scored 95
+      or more with the album's number of tracks (`domain/runMatches.ts`); the
+      store's `enrichment` collection keeps each decision with its run and
+      what it wrote (snowsky-disc-service `934a8e2`); the Card item carries a
+      dot while a run goes. Evidence: unit `runMatches`; e2e "enriches the
+      library from the Card state tab…" (a sure run with lyrics, its files
+      written, its undo; a review with a confirmation and a skip);
+      screenshots in light, dark and on a phone.
+- [ ] Not yet: a way to forget "not found" and search again; files found
+      before a tab closed are found again only by a new run.
 - [x] Editions are found where MusicBrainz spells the edition apart from the
       title ("Fallen: 20th Anniversary Edition" is "Fallen (20th
       anniversary)" there, the 37th of 43 editions): one request asks for the
@@ -2353,6 +2374,24 @@ The batch enrichment (stage D below) and the library health view (ideas of
       Evidence: e2e "chooses a cover among the editions…" (no mark before the
       edition is confirmed, the mark after); screenshots in light, dark and on
       a phone.
+
+## Settings as tabs, the Apps folder, duplicates and the trash (owner, 2026-10-02), card-only
+
+- [x] Settings' parts are tabs, as the Card section's views (owner: more
+      settings will come): Appearance and External sources, `?part=` naming
+      the tab so links (the lyrics' and details' "External sources") lead to
+      it. The tabs of both pages are one component (`PageTabs.vue`).
+      Evidence: e2e "keeps the outside sources on the player…" (the address
+      opens its tab).
+- [x] The card's `Apps` folder (the apps the gateway serves, this page
+      among them) is kept out of the file manager: not listed at the root,
+      not browsed even from a link, and no folder is made in or as it.
+      Evidence: unit `files`; e2e "keeps the card's apps folder out of the
+      file manager".
+- [x] Possible duplicates leave out what the trash holds (owner): the
+      library lists a trashed file until the next scan, but it is no
+      duplicate of anything, on the Space and State tabs alike. Evidence:
+      unit `space` (a trashed folder's pair is gone).
 
 ## Releases by tags (owner, 2026-10-02)
 

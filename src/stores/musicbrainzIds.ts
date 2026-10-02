@@ -22,7 +22,7 @@ import {
   type ReleaseGroupFacts,
 } from '../gateway/musicbrainz'
 import { rankReleases } from '../domain/covers'
-import { putRecord, readCollection } from '../gateway/store'
+import { deleteRecord, putRecord, readCollection } from '../gateway/store'
 import { connection, http, originAllowed } from './connection'
 import { sourceAllowed } from './externalSources'
 import { pairingToken } from './pairing'
@@ -179,6 +179,18 @@ export async function confirmAlbum(
   } catch {
     return false
   }
+}
+
+/** Forgets a confirmed identity on the player and here (the library enrichment's undo); false when not confirmed. */
+export async function forgetIdentity(kind: 'artist' | 'album', name: string): Promise<boolean> {
+  const token = pairingToken()
+  if (!token) return false
+  const outcome = await deleteRecord(http, 'musicbrainz', { kind, name }, token).catch(() => 'uncertain' as const)
+  if (outcome !== 'confirmed') return false
+  if (kind === 'artist')
+    state.artists = Object.fromEntries(Object.entries(state.artists).filter(([key]) => key !== name))
+  else state.albums = Object.fromEntries(Object.entries(state.albums).filter(([key]) => key !== name))
+  return true
 }
 
 /** The facts of a candidate and its links, trimmed to what the store keeps. */

@@ -31,7 +31,7 @@ export function sectionOf(name: unknown): SectionName | null {
   if (name === 'artist') return 'artists'
   if (name === 'playlist' || name === 'list') return 'playlists'
   if (name === 'genre') return 'genres'
-  if (name === 'cardFiles' || name === 'cardTrash') return 'card'
+  if (name === 'cardFiles' || name === 'cardTrash' || name === 'cardState') return 'card'
   if (name === 'disliked') return 'favorites'
   return SECTIONS.find((section) => section.name === name)?.name ?? 'home'
 }
@@ -53,6 +53,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/card', name: 'card', component: () => import('./views/CardView.vue') },
   { path: '/card/files', name: 'cardFiles', component: () => import('./views/CardFilesView.vue') },
   { path: '/card/trash', name: 'cardTrash', component: () => import('./views/CardTrashView.vue') },
+  { path: '/card/state', name: 'cardState', component: () => import('./views/CardStateView.vue') },
   // The optional artist narrows a title group to one release (reference scope).
   { path: '/album/:name/:artist?', name: 'album', component: () => import('./views/AlbumView.vue') },
   { path: '/artist/:name', name: 'artist', component: () => import('./views/ArtistView.vue') },
@@ -65,11 +66,8 @@ const routes: RouteRecordRaw[] = [
 export const router = createRouter({
   history: createWebHashHistory(),
   routes,
-  // A Settings part named in the address (`?part=`) opens the page there; every other view at its top.
-  scrollBehavior: (to) =>
-    to.name === 'settings' && typeof to.query.part === 'string' && /^[a-z]+$/.test(to.query.part)
-      ? { el: `#settings-${to.query.part}`, top: 24 }
-      : { top: 0 },
+  // Every view opens at its top (Settings' parts are tabs since 2026-10-02, `?part=` naming one).
+  scrollBehavior: () => ({ top: 0 }),
 })
 
 /**

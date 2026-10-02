@@ -121,6 +121,8 @@ export const plainLyricsOnly = (): boolean =>
 
 /** The release's origins admit LRCLIB. */
 export const lrclibAdmitted = (): boolean => originAllowed('lrclib')
+/** LRCLIB may be asked at all: allowed by the owner and admitted by the release (the library enrichment, 2026-10-02). */
+export const lyricsLookupAllowed = (): boolean => sourceAllowed('lrclib') && lrclibAdmitted()
 
 /** The current track could take LRCLIB's lyrics: the origins admit it and it has no synced lyrics. */
 export function lyricsLookupFits(): boolean {

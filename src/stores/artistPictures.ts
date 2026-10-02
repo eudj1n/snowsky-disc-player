@@ -509,6 +509,38 @@ export async function saveArtistImages(choice: Partial<Record<ImageRole, ImageOf
   }
 }
 
+/**
+ * The library enrichment's images for an artist (owner, 2026-10-02): the first offer of each role asked for, from
+ * the allowed sources (a run is the owner's own request, so "automatically" is not needed), kept on the player.
+ * Roles the artist already has are left alone. Returns the roles kept, for the run's undo.
+ */
+export async function takeArtistImages(name: string, mbid: string, roles: readonly ImageRole[]): Promise<ImageRole[]> {
+  const token = pairingToken()
+  const wanted = roles.filter((role) => !chosenImage(name, role))
+  const use = { wikimedia: wanted.includes('photo') && reachable.wikimedia(), fanarttv: reachable.fanarttv() }
+  if (!token || !wanted.length || (!use.wikimedia && !use.fanarttv)) return []
+  const links = use.wikimedia ? await artistLinks(mbid).catch(() => null) : null
+  const found = await offersFor(mbid, links, use)
+  const picks = { photo: found.photos[0], background: found.backgrounds[0] }
+  const kept: ImageRole[] = []
+  for (const role of wanted) {
+    const offer = picks[role]
+    if (!offer) continue
+    const blob = await download(offer.source, offer.url).catch(() => null)
+    if (!blob) continue
+    state.bytes[offer.url] = blob
+    await cacheSet(bytesKey(offer.url), blob)
+    const image = imageOf(offer)
+    const outcome = await putRecord(http, 'artist_images', recordOf(name, role, image), token).catch(
+      () => 'uncertain' as const,
+    )
+    if (outcome !== 'confirmed') continue
+    state.player = { ...state.player, [name]: { ...state.player[name], [role]: image } }
+    kept.push(role)
+  }
+  return kept
+}
+
 /** Forgets an artist's chosen image (on the player when it is kept there, with the serial number). */
 export async function forgetArtistImage(name: string, role: ImageRole): Promise<void> {
   const chosen = chosenImage(name, role)

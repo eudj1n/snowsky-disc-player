@@ -125,6 +125,20 @@ images with their credit, the album cover's place on the card
 (`coverOnCard`) and the links; the heading's `backdrop` draws the
 background.
 
+The Card section's State tab (`views/CardStateView.vue`) counts what the
+library lacks with the pure `domain/libraryState.ts`, from the library, the
+identities and images kept on the player, the covers read in the background
+and the card's walk (`measureCard`, which also keeps the walk's `.lrc` and
+image files). Its enrichment runs in `stores/libraryRun.ts`: the artists,
+then the albums of the run's scope, each step through the existing gateways
+(MusicBrainz search, Cover Art Archive, LRCLIB, the image sources through
+`takeArtistImages`); the automatic mode takes what `domain/runMatches.ts`
+calls sure, the manual steps show `layout/IdentifyChoices.vue` (shared with
+the identify window). Every decision, with its run and what it wrote, goes
+to the store's `enrichment` collection: a closed tab resumes, "not found" is
+remembered, and a run's undo forgets its identities and image choices. Files
+for the card are gathered and uploaded only after the owner's review.
+
 The listening panel (`layout/ListeningPanel.vue`) shows one sheet at a time,
 without tabs (`PanelSection` in `stores/ui.ts`). Now shows the track's head
 (`components/player/NowPlayingDetails.vue`, whose controls render only on

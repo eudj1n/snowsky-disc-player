@@ -47,6 +47,8 @@ interface EnrichmentModel {
   pending: number
   /** Counts covers found missing, so views that ask whether one is missing follow. */
   coverMisses: number
+  /** The last card walk's .lrc and image files by card path (the library's state, 2026-10-02); null before it. */
+  walk: { lyrics: string[]; images: string[] } | null
 }
 
 const state = reactive<EnrichmentModel>({
@@ -60,6 +62,7 @@ const state = reactive<EnrichmentModel>({
   unmeasured: {},
   pending: 0,
   coverMisses: 0,
+  walk: null,
 })
 export const enrichment = readonly(state)
 
@@ -298,7 +301,10 @@ export function measureCard(libraryPaths: readonly string[], cueImages: Readonly
       if (!tree) return null
       const now = Date.now()
       const seen = new Set<string>()
+      const walk = { lyrics: [] as string[], images: [] as string[] }
       for (const file of tree.files) {
+        if (file.kind === 'lyrics') walk.lyrics.push(file.path)
+        else if (file.kind === 'image') walk.images.push(file.path)
         if (!file.audio) continue
         const { path } = file
         const { durationMs, year, ...facts } = file.audio
@@ -317,6 +323,7 @@ export function measureCard(libraryPaths: readonly string[], cueImages: Readonly
       // Found again: no longer unreadable.
       state.unmeasured = Object.fromEntries(Object.entries(state.unmeasured).filter(([path]) => !seen.has(path)))
       if (!tree.truncated) for (const path of libraryPaths) if (!seen.has(path)) missedFiles[path] = now
+      state.walk = walk
       saveInfo()
       return true
     } catch {

@@ -1,22 +1,23 @@
 <script setup lang="ts">
-/** The Card page's views: what takes space, the folders (round 16) and the trash (combined-008). */
+/**
+ * The Card page's views: what takes space, the folders (round 16), the trash (combined-008) and the library's
+ * state with its enrichment (2026-10-02).
+ */
+import { computed } from 'vue'
 import { t } from '../../i18n'
+import PageTabs from '../common/PageTabs.vue'
 
-withDefaults(defineProps<{ current: 'space' | 'files' | 'trash'; trash?: boolean }>(), { trash: false })
-const TAB =
-  'rounded-20 px-14 py-7 text-footnote font-medium text-muted hover:bg-hover hover:text-ink aria-[current=page]:bg-selected aria-[current=page]:text-ink'
+const props = withDefaults(defineProps<{ current: 'space' | 'files' | 'trash' | 'state'; trash?: boolean }>(), {
+  trash: false,
+})
+const tabs = computed(() => [
+  { to: '/card', text: t('space_tab'), current: props.current === 'space' },
+  { to: '/card/files', text: t('files_tab'), current: props.current === 'files' },
+  ...(props.trash ? [{ to: '/card/trash', text: t('trash_tab'), current: props.current === 'trash' }] : []),
+  { to: '/card/state', text: t('state_tab'), current: props.current === 'state' },
+])
 </script>
 
 <template>
-  <nav :aria-label="t('card_tabs')" class="flex gap-6 rounded-24 bg-soft p-4">
-    <RouterLink to="/card" :class="TAB" :aria-current="current === 'space' ? 'page' : undefined">{{
-      t('space_tab')
-    }}</RouterLink>
-    <RouterLink to="/card/files" :class="TAB" :aria-current="current === 'files' ? 'page' : undefined">{{
-      t('files_tab')
-    }}</RouterLink>
-    <RouterLink v-if="trash" to="/card/trash" :class="TAB" :aria-current="current === 'trash' ? 'page' : undefined">{{
-      t('trash_tab')
-    }}</RouterLink>
-  </nav>
+  <PageTabs :label="t('card_tabs')" :tabs="tabs" />
 </template>

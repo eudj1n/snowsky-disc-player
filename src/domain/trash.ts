@@ -24,6 +24,16 @@ export interface TrashListing {
   truncated: boolean
 }
 
+/**
+ * Whether a card path is in the trash: moved there itself, or inside a folder moved there (macOS leftovers aside).
+ * The library keeps such tracks until the next scan; they are no duplicates of anything (owner, 2026-10-02).
+ */
+export function inTrash(path: string, entries: readonly TrashEntry[]): boolean {
+  return entries.some(
+    (entry) => entry.kind !== 'leftovers' && (path === entry.path || path.startsWith(`${entry.path}/`)),
+  )
+}
+
 const whole = (value: unknown): number =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : 0
 

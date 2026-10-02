@@ -1,21 +1,22 @@
 <script setup lang="ts">
 /**
  * Settings (owner, 2026-10-01): a page of its own under Your player, reached
- * from the sidebar, the top bar's gear and the palette. One page with
- * anchors (owner: the sources will keep growing, and a long page suits
- * phones better than tabs): the appearance of this browser and the outside
- * sources the page may ask, kept on the player. Pairing stays in the
- * connection dialog, the first step of using the page.
+ * from the sidebar, the top bar's gear and the palette. Its parts are tabs,
+ * as the Card section's views (owner, 2026-10-02: more settings will come):
+ * the appearance of this browser, and the outside sources the page may ask,
+ * kept on the player. `?part=` names the tab, so links lead to it. Pairing
+ * stays in the connection dialog, the first step of using the page.
  */
 import { computed } from 'vue'
-import SectionHeading from '../components/common/SectionHeading.vue'
+import { useRoute } from 'vue-router'
+import PageTabs from '../components/common/PageTabs.vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
 import { t, type MessageKey } from '../i18n'
 import AppearanceSettings from './AppearanceSettings.vue'
 import ExternalSourcesSettings from './ExternalSourcesSettings.vue'
 
 interface Part {
-  id: string
+  id: 'appearance' | 'sources'
   title: MessageKey
   note: MessageKey
 }
@@ -24,37 +25,24 @@ const PARTS: readonly Part[] = [
   { id: 'sources', title: 'external_sources', note: 'sources_note' },
 ]
 
-const parts = computed(() => PARTS)
-/** Scrolls to a part; `?part=` opens the page there (the router's scrollBehavior; the hash is the router's). */
-function show(id: string): void {
-  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
-  document.getElementById(`settings-${id}`)?.scrollIntoView({ block: 'start', behavior: reduced ? 'auto' : 'smooth' })
-}
+const route = useRoute()
+const part = computed<Part>(() => PARTS.find((item) => item.id === route.query.part) ?? (PARTS[0] as Part))
+const tabs = computed(() =>
+  PARTS.map((item) => ({
+    to: { path: '/settings', query: item === PARTS[0] ? {} : { part: item.id } },
+    text: t(item.title),
+    current: item.id === part.value.id,
+  })),
+)
 </script>
 
 <template>
   <ViewHeading :eyebrow="t('your_player')" :title="t('settings')">
-    <nav v-if="parts.length > 1" :aria-label="t('settings')" class="flex flex-wrap gap-8 self-end">
-      <button
-        v-for="part in parts"
-        :key="part.id"
-        type="button"
-        class="rounded-20 border border-line px-14 py-7 text-footnote text-secondary hover:bg-hover hover:text-ink"
-        @click="show(part.id)"
-      >
-        {{ t(part.title) }}
-      </button>
-    </nav>
+    <div class="self-end"><PageTabs :label="t('settings_parts')" :tabs="tabs" /></div>
   </ViewHeading>
-  <section
-    v-for="part in parts"
-    :id="`settings-${part.id}`"
-    :key="part.id"
-    class="scroll-mt-24 pb-44"
-    :aria-labelledby="`settings-${part.id}-title`"
-  >
-    <SectionHeading :id="`settings-${part.id}-title`" :title="t(part.title)" :subtitle="t(part.note)" class="mt-0!" />
+  <section :aria-label="t(part.title)">
+    <p class="mt-0 mb-20 max-w-720 text-footnote leading-[1.55] text-muted">{{ t(part.note) }}</p>
     <AppearanceSettings v-if="part.id === 'appearance'" />
-    <ExternalSourcesSettings v-else-if="part.id === 'sources'" />
+    <ExternalSourcesSettings v-else />
   </section>
 </template>

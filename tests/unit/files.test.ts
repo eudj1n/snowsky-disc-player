@@ -69,6 +69,14 @@ describe('card folders', () => {
     expect(folderNameProblem('DISC_WEB_X', '')).toBeNull()
     expect(folderNameProblem('www', '')).toBeNull()
     expect(folderNameProblem('www', '.disc')).toBe('reserved')
+    // The apps' folder (this page lives there) is neither shown at the root nor made or filled.
+    expect(folderNameProblem('Apps', '')).toBe('reserved')
+    expect(folderNameProblem('New', 'apps/Disc Player')).toBe('reserved')
+    expect(folderNameProblem('Apps', 'Music')).toBeNull()
+    expect(
+      visibleEntries([entry('Apps', true), entry('Music', true), entry('Apps.flac')]).map((item) => item.name),
+    ).toEqual(['Music', 'Apps.flac'])
+    expect(visibleEntries([entry('Apps', true)], 'Music').map((item) => item.name)).toEqual(['Apps'])
     // Nothing is created inside the page release or the service's folders either.
     expect(folderNameProblem('assets', 'www')).toBeNull()
     expect(folderNameProblem('x', 'DISC_WEB_HISTORY')).toBeNull()

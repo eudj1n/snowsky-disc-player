@@ -19,6 +19,7 @@ import {
   breadcrumbs,
   folderNameProblem,
   folderParts,
+  inApps,
   folderStats,
   joinFolder,
   sortEntries,
@@ -73,7 +74,15 @@ async function load(): Promise<void> {
     if (current === request) status.value = 'failed'
   }
 }
-watch(folder, () => void load(), { immediate: true })
+watch(
+  folder,
+  (path) => {
+    // The apps' folder is not browsed, even from a link: the card's root instead.
+    if (inApps(path)) void router.replace(folderTo(''))
+    else void load()
+  },
+  { immediate: true },
+)
 
 /** Library tracks by card path (a CUE image's file holds several). */
 const byPath = computed(() => {
@@ -83,7 +92,7 @@ const byPath = computed(() => {
 })
 const bytes = (value: number) => formatBytes(value, locale.value)
 const rows = computed(() =>
-  sortEntries(visibleEntries(listing.value?.entries ?? []), locale.value).map((entry) => {
+  sortEntries(visibleEntries(listing.value?.entries ?? [], folder.value), locale.value).map((entry) => {
     const path = joinFolder(folder.value, entry.name)
     if (entry.folder) return { entry, path, stats: folderStats(tracks.value, enrichment.files, path), track: null }
     const card = CARD_ROOT + path

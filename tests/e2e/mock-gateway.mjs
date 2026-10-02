@@ -77,6 +77,7 @@ const STORE_KEYS = {
   external_sources: ['source'],
   musicbrainz: ['kind', 'name'],
   artist_images: ['name', 'role'],
+  enrichment: ['kind', 'name'],
 }
 const STORE_LIMITS = {
   disliked: 20000,
@@ -86,6 +87,7 @@ const STORE_LIMITS = {
   external_sources: 32,
   musicbrainz: 20000,
   artist_images: 10000,
+  enrichment: 20000,
 }
 /** Combined-009 M3U lists by scope: name → entries (absolute card paths). */
 const LISTS = { internal: new Map(), external: new Map() }
@@ -493,7 +495,8 @@ const server = createServer((request, response) => {
       .filter(Boolean)
       .map((part) => decodeURIComponent(part))
       .join('/')
-    const entries = folderEntries(folder)
+    // The card's root holds the apps' folder too (this page lives there, combined-009).
+    const entries = [...folderEntries(folder), ...(folder ? [] : [{ name: 'Apps', dir: true }])]
       .filter((entry) => !entry.name.startsWith('.'))
       .sort((a, b) => (a.name < b.name ? -1 : 1))
       .map((entry) => {

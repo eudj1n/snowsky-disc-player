@@ -114,12 +114,14 @@ export async function findReleases(
   album: string,
   artist: string,
   fetchImpl: typeof fetch = fetch,
+  /** The artist's MusicBrainz id when confirmed: the search then asks by it, not by the name. */
+  artistId: string | null = null,
 ): Promise<ReleaseCandidate[]> {
   await paced()
   const variants = titleVariants(album).map((title) => `release:${phrase(title)}`)
   const titles = variants.length > 1 ? `(${variants.join(' OR ')})` : variants.join('')
   const params = new URLSearchParams({
-    query: `${titles} AND artist:${phrase(artist)}`,
+    query: `${titles} AND ${artistId ? `arid:${artistId}` : `artist:${phrase(artist)}`}`,
     fmt: 'json',
     limit: '50',
   })

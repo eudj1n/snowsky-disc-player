@@ -34,6 +34,11 @@ playing on the DISC; nothing streams to the browser.
 >   the player scan (a dot on Card shows it working);
 > - see what takes space on the player's card: music by format, the largest
 >   albums and artists, and possible duplicates in two folders;
+> - see in Card → State what the library lacks (identities, covers, artist
+>   images, lyrics, unknown tags, duplicates, unreadable files) and enrich it
+>   in one run, automatically or step by step: artists and albums identified
+>   in MusicBrainz, covers, images and lyrics found, files for the card
+>   written only after you review them, and the whole run undoable;
 > - browse the card's folders, play a folder or a file, create a folder and
 >   add music straight into it;
 > - pick up where the player stopped: after its queue ended or USB storage

@@ -12,13 +12,17 @@ import { t } from '../i18n'
 import { SECTIONS, sectionOf } from '../router'
 import { connection } from '../stores/connection'
 import { imports } from '../stores/imports'
+import { runFlag } from '../stores/runFlag'
 import { railShown } from '../stores/sidebar'
 import { openDialog } from '../stores/ui'
 import UiIcon from '../ui/UiIcon.vue'
 
 const route = useRoute()
-/** Music on its way to the card or being scanned: a dot on Card (it left the top bar, 2026-09-30). */
-const importActive = computed(() => imports.transferring || imports.scan.phase === 'scanning')
+/**
+ * Music on its way to the card or being scanned (it left the top bar, 2026-09-30), or the library's enrichment
+ * going (2026-10-02): a dot on Card.
+ */
+const importActive = computed(() => imports.transferring || imports.scan.phase === 'scanning' || runFlag.active)
 const label = () =>
   connection.gateway === false
     ? t('server_unavailable')
@@ -64,7 +68,7 @@ const label = () =>
           />
           <span>{{ t(section.title) }}</span>
           <template v-if="section.name === 'card' && importActive">
-            <span class="sr-only">, {{ t('import_workflow') }}</span>
+            <span class="sr-only">, {{ t(runFlag.active ? 'state_run_going' : 'import_workflow') }}</span>
             <i
               aria-hidden="true"
               data-testid="card-import-dot"

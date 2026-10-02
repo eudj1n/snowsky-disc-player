@@ -15,6 +15,7 @@ import type { Album } from '../domain/album'
 import { cardSpace, formatBytes } from '../domain/device'
 import { relativeFolder } from '../domain/files'
 import { albumSpace, artistSpace, byFormat, cardUsage, duplicates, playsByPath, type FileFacts } from '../domain/space'
+import { inTrash } from '../domain/trash'
 import { locale, t } from '../i18n'
 import { connection } from '../stores/connection'
 import { device, refreshDevice } from '../stores/device'
@@ -88,7 +89,13 @@ const since = computed(() =>
 const files = computed<Readonly<Record<string, FileFacts>>>(() => enrichment.files)
 const albumRows = computed(() => albumSpace(albums.value, tracks.value, files.value, played.value.counts))
 const artistRows = computed(() => artistSpace(albumRows.value, leadArtist))
-const duplicateRows = computed(() => duplicates(tracks.value, files.value))
+/** What the trash holds is no duplicate of anything, though the library lists it until the next scan. */
+const duplicateRows = computed(() =>
+  duplicates(
+    tracks.value.filter((track) => !track.path || !inTrash(track.path, trash.listing?.entries ?? [])),
+    files.value,
+  ),
+)
 
 const allAlbums = ref(false)
 const allArtists = ref(false)
