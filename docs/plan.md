@@ -2429,6 +2429,12 @@ emulator acceptance of this exact zip on the V2.57 guest with the card
 catalogs installed: 40 passed, 88 skipped (desktop; the three new mock-only
 cases among the skipped).
 
+On the owner's card (2026-10-02, their go-ahead): `Apps/Disc Player`
+replaced by `2026.10.02-05a1422` (105 files); the catalog installed, since its
+`store.json` lacked the enrichment collection (`queries.json`, `store.json`
+and `hosted.json` now byte for byte as the install tool renders them for the
+V2.57 profile; no `commands.json`); the card ejected.
+
 ## Releases by tags (owner, 2026-10-02)
 
 - [x] A `v*` tag releases the page (`.github/workflows/release.yml`): the
