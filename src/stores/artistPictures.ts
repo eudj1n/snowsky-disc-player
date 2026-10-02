@@ -32,14 +32,14 @@ import { commonsImage, hostOf, imageBytes, wikidataImage } from '../gateway/wiki
 import { cacheGet, cacheSet } from '../lib/idb'
 import { connection, http, originAllowed } from './connection'
 import { albumCover, albumCoverState } from './enrichment'
-import { sourceAllowed, sourceAutomatic, sourceKey } from './externalSources'
+import { autoImageRole, sourceAllowed, sourceAutomatic, sourceKey, type ImageRole } from './externalSources'
 import { history } from './history'
 import { albums, tracks } from './library'
 import { artistFacts, artistIdentity, confirmArtist, type ArtistFacts } from './musicbrainzIds'
 import { pairingToken } from './pairing'
 import { toast } from './ui'
 
-export type ImageRole = 'photo' | 'background'
+export type { ImageRole }
 export type ImageSource = 'wikimedia' | 'fanarttv'
 
 /** An image of an artist with its credit, as the store keeps it. */
@@ -552,20 +552,33 @@ const tried = new Set<string>()
  * photo (fanart.tv's most liked, else Commons) and background are kept in
  * this browser.
  */
+/**
+ * The images an automatic lookup would take for the artist: those the owner lets the automatic lookups take
+ * (Settings; owner, 2026-10-02) that the artist has none of yet.
+ */
+export const missingAutoImages = (name: string): ImageRole[] =>
+  (['photo', 'background'] as const).filter(
+    (role) => autoImageRole(role) && (role === 'photo' ? !hasArtistPhoto(name) : !chosenImage(name, role)),
+  )
+
 export async function lookUpArtistImagesAutomatically(name: string): Promise<void> {
+  const roles = missingAutoImages(name)
   const use = {
-    wikimedia: sourceAutomatic('wikimedia') && artistPhotoOriginsAdmitted(),
+    // Commons has photos only.
+    wikimedia: roles.includes('photo') && sourceAutomatic('wikimedia') && artistPhotoOriginsAdmitted(),
     fanarttv: sourceAutomatic('fanarttv') && fanartOriginsAdmitted(),
   }
-  if (!state.loaded || tried.has(name) || hasArtistPhoto(name) || (!use.wikimedia && !use.fanarttv)) return
-  tried.add(name)
+  // Asked once a page life for what is missing; a role allowed later asks again.
+  const asked = `${name}\u0000${roles.join(',')}`
+  if (!state.loaded || tried.has(asked) || !roles.length || (!use.wikimedia && !use.fanarttv)) return
+  tried.add(asked)
   try {
     const mbid = artistIdentity(name)?.mbid ?? bestArtist(await searchArtists(name), name)?.id
     if (!mbid) return
     const links = use.wikimedia ? await artistLinks(mbid) : null
     const found = await offersFor(mbid, links, use)
     const picks = { photo: found.photos[0], background: found.backgrounds[0] }
-    for (const role of ['photo', 'background'] as const) {
+    for (const role of roles) {
       const offer = picks[role]
       if (!offer || chosenImage(name, role)) continue
       const blob = await download(offer.source, offer.url)

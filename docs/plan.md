@@ -1021,8 +1021,11 @@ plus macOS leftovers on the Card page. The page's part:
       and `pinned_albums`: a Pin button on the album and artist pages, pins
       first in Albums and Artists, a Pinned section on Home. Unit tests
       (`pinnedFirst`, the store client) and a mock browser test.
-- [ ] Smart playlist definitions (round 16, item 2) on a card-catalog
-      collection. First candidate (owner, 2026-09-29): an artist's most
+- [x] Smart playlist definitions (round 16, item 2) on a card-catalog
+      collection (confirmed done by the owner, 2026-10-02: the automatic
+      playlists on the player as M3U lists; evidence: the emulator acceptance
+      case "keeps an artist’s most played on the player as an M3U list…").
+      The original notes follow. First candidate (owner, 2026-09-29): an artist's most
       played tracks, the artist page's "Most played" as a playable list.
       Stock plays only its own lists, so an auto-playlist lives as a managed
       stock playlist (like the service playlists above, e.g. "Most played ·
@@ -1171,7 +1174,10 @@ plus macOS leftovers on the Card page. The page's part:
       track (its file, else its name, which stock may cut), else the one row
       that is; a track the shown queue does not hold reads the queue again.
       Unit tests; the mock browser test presses Next with the panel open.
-- [ ] Enrichment providers once the card catalog allows their origins
+- [x] Enrichment providers once the card catalog allows their origins
+      (confirmed done by the owner, 2026-10-02: LRCLIB, Cover Art Archive,
+      Wikimedia Commons, MusicBrainz and fanart.tv under Settings → External
+      sources)
       (step 1, LRCLIB, done 2026-09-29: the page reads its release's
       `origins.json` and offers "Find lyrics on LRCLIB" in the Lyrics tab of
       a track without lyrics of its own, not for CUE tracks; an automatic
@@ -2232,8 +2238,11 @@ image; card-only items (catalog or query additions) are marked as such.
       under the usual mutation guards, refused during scans, confirmed by
       reading the row back. It would be the service's first write to a
       stock database.
-- [ ] _(card-only)_ Revisit the upload bound: the catalog allows 1 GiB per
-      file, the reference 2 GiB − 1; the UI uses the catalog value.
+- [x] Revisit the upload bound: the catalog allows 1 GiB per file, the
+      reference 2 GiB − 1; the UI uses the catalog value. Decided by the owner
+      (2026-10-02): 1 GiB is enough and stays. (Not card-only as first noted:
+      the image's catalog parser caps `max_body_bytes` at 1 GiB, and a
+      production image reads its command catalog from the image.)
 - [x] (Combined-009: eight workers.) **Serve the page's files ahead of media
       reads.** Found on the guest
       (2026-09-29): during acceptance a lazily loaded view (a JavaScript
@@ -2261,6 +2270,21 @@ image; card-only items (catalog or query additions) are marked as such.
       publisher keeps 8 MiB free for the service's database (`--prune` on
       the guest), so page releases no longer fill the card and stop the
       history.
+
+## Artist photos and backgrounds chosen apart (owner, 2026-10-02), card-only
+
+- [x] Settings → External sources → Artist images says which images the
+      automatic lookups take: "Photo" (on) and "Background" (off by default:
+      a background is not always wanted), kept on the player in the kind's
+      record of `external_sources` (`artist_images`: `auto_photo`,
+      `auto_background`; snowsky-disc-service `40fc913`). A single automatic
+      lookup honours them now, and the coming batch will: it takes only the
+      allowed images an artist lacks, so a background asked for later comes
+      for an artist that already has its photo. By hand both stay available.
+      Evidence: unit `externalSources`; e2e "chooses an artist's photo and
+      background…" (a photo only, then the background once asked for) and
+      "keeps the outside sources on the player…" (the boxes, kept after a
+      reload); screenshots in light, dark and on a phone.
 
 ## Releases by tags (owner, 2026-10-02)
 

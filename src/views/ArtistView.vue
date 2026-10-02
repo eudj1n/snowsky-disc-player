@@ -27,8 +27,8 @@ import {
   artistImage,
   artistImagesAllowed,
   artistPictures,
-  hasArtistPhoto,
   lookUpArtistImagesAutomatically,
+  missingAutoImages,
 } from '../stores/artistPictures'
 import { history, loadHistory } from '../stores/history'
 import { albums, artists, tracks } from '../stores/library'
@@ -125,13 +125,16 @@ const identity = computed(() => artistIdentity(name.value))
 const facts = computed(() => (identity.value?.facts ? artistFactsLine(identity.value.facts, false) : ''))
 /*
  * The artist's photo and wide background (2026-09-29; chosen among the allowed sources, 2026-10-01),
- * credited in the details panel. A source that works automatically fills an artist without a photo.
+ * credited in the details panel. A source that works automatically fills what the artist lacks of the images
+ * the automatic lookups take (2026-10-02: a background only when the owner asks for it).
  */
 watch(
   () =>
-    artistImagesAllowed() && artistPictures.loaded && name.value && !hasArtistPhoto(name.value) ? name.value : null,
+    artistImagesAllowed() && artistPictures.loaded && name.value && missingAutoImages(name.value).length
+      ? `${name.value}\u0000${missingAutoImages(name.value).join(',')}`
+      : null,
   (missing) => {
-    if (missing) void lookUpArtistImagesAutomatically(missing)
+    if (missing) void lookUpArtistImagesAutomatically(name.value)
   },
   { immediate: true },
 )

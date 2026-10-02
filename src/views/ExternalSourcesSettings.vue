@@ -5,7 +5,9 @@
  * The choice is kept on the player, so changing it needs pairing; a source
  * the release's origins do not admit stays unavailable here, and so does one
  * whose needs (MusicBrainz for the sources found by its ids) are not allowed:
- * its saved choice stays in place, dimmed.
+ * its saved choice stays in place, dimmed. The artist images' group also says
+ * which images the automatic lookups take: photos, and backgrounds only when
+ * asked for (owner, 2026-10-02).
  */
 import { computed, reactive } from 'vue'
 import { t, type MessageKey } from '../i18n'
@@ -13,6 +15,7 @@ import { artistPhotoOriginsAdmitted } from '../stores/artistPictures'
 import { originAllowed, originHosts } from '../stores/connection'
 import { coverOriginsAdmitted } from '../stores/coverSearch'
 import {
+  chooseAutoImageRole,
   chooseSource,
   externalSources,
   missingKey,
@@ -21,6 +24,7 @@ import {
   SOURCE_KEY,
   SOURCE_KINDS,
   SOURCES,
+  type ImageRole,
   type SourceKind,
   type SourceName,
 } from '../stores/externalSources'
@@ -117,6 +121,15 @@ async function choose(event: Event, name: SourceName, field: 'allowed' | 'auto')
   input.checked = field === 'allowed' ? allowed(name) : automatic(name)
 }
 const hostOf = (site: string) => new URL(site).host
+const ROLES: readonly { role: ImageRole; text: MessageKey }[] = [
+  { role: 'photo', text: 'source_role_photo' },
+  { role: 'background', text: 'source_role_background' },
+]
+async function chooseRole(event: Event, role: ImageRole): Promise<void> {
+  const input = event.target as HTMLInputElement
+  await chooseAutoImageRole(role, input.checked)
+  input.checked = externalSources.roles[role]
+}
 </script>
 
 <template>
@@ -259,6 +272,31 @@ const hostOf = (site: string) => new URL(site).host
               >
             </template>
           </form>
+        </article>
+        <article
+          v-if="group.kind === 'artist_images'"
+          class="rounded-12 border border-line px-16 py-14"
+          data-testid="source-roles"
+        >
+          <h4 class="m-0 text-callout font-semibold">{{ t('source_roles') }}</h4>
+          <p class="mt-4 mb-0 text-footnote leading-[1.5] text-secondary">{{ t('source_roles_about') }}</p>
+          <div class="mt-10 flex flex-wrap gap-x-24 gap-y-8">
+            <label
+              v-for="item in ROLES"
+              :key="item.role"
+              class="flex items-center gap-8 text-footnote text-ink has-disabled:text-muted"
+            >
+              <input
+                type="checkbox"
+                class="accent-progress-fill"
+                :checked="externalSources.roles[item.role]"
+                :disabled="blocked !== null || externalSources.busy !== null"
+                :data-testid="`source-role-${item.role}`"
+                @change="chooseRole($event, item.role)"
+              />
+              {{ t(item.text) }}
+            </label>
+          </div>
         </article>
       </div>
     </section>

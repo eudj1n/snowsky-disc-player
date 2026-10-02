@@ -29,8 +29,16 @@ vi.mock('../../src/gateway/store', () => ({
   },
 }))
 
-const { chooseSource, externalSources, loadExternalSources, missingNeeds, sourceAllowed, sourceAutomatic } =
-  await import('../../src/stores/externalSources')
+const {
+  autoImageRole,
+  chooseAutoImageRole,
+  chooseSource,
+  externalSources,
+  loadExternalSources,
+  missingNeeds,
+  sourceAllowed,
+  sourceAutomatic,
+} = await import('../../src/stores/externalSources')
 
 const record = (value: Record<string, unknown>) => ({ key: [value.source], value: { at: 1, ...value }, updated: 1 })
 
@@ -87,6 +95,23 @@ describe('external sources', () => {
     expect(store.puts.at(-1)).toMatchObject({ source: 'musicbrainz', allowed: true, auto: false })
     expect([sourceAllowed('coverartarchive'), sourceAutomatic('coverartarchive')]).toEqual([true, true])
     expect(sourceAllowed('lrclib')).toBe(false)
+  })
+
+  it('takes artist photos automatically and backgrounds only when asked for, kept on the player', async () => {
+    // Nothing kept yet: photos, no backgrounds (owner, 2026-10-02: a background is not always wanted).
+    expect([autoImageRole('photo'), autoImageRole('background')]).toEqual([true, false])
+    expect(await chooseAutoImageRole('background', true)).toBe(true)
+    expect(store.puts.at(-1)).toMatchObject({ source: 'artist_images', auto_photo: true, auto_background: true })
+    expect(await chooseAutoImageRole('photo', false)).toBe(true)
+    expect(store.puts.at(-1)).toMatchObject({ source: 'artist_images', auto_photo: false, auto_background: true })
+    // Read back as every browser reads it; the kind's record is not a source.
+    await loadExternalSources()
+    expect([autoImageRole('photo'), autoImageRole('background')]).toEqual([false, true])
+    expect(Object.keys(externalSources.choices)).toEqual([])
+    // Unconfirmed, the choice stays as the player keeps it.
+    store.outcome = 'unconfirmed'
+    expect(await chooseAutoImageRole('photo', true)).toBe(false)
+    expect(autoImageRole('photo')).toBe(false)
   })
 
   it('changes nothing without pairing or when the player does not confirm', async () => {

@@ -55,7 +55,9 @@ playing on the DISC; nothing streams to the browser.
 > - choose which of these outside sources may be asked under Settings →
 >   External sources: each stays off until you allow it, and is asked without
 >   a click only when you also set it to work automatically; covers and
->   photos are found through MusicBrainz, which you allow there too;
+>   photos are found through MusicBrainz, which you allow there too; an
+>   artist's photo is taken automatically, a background only when you tick
+>   it;
 > - see what you played last, on the player and in this browser;
 > - listen to automatic playlists made from your listening (Most played,
 >   Daily mix, Recently added, Not played lately, and one artist's most

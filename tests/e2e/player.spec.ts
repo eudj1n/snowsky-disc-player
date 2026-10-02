@@ -2337,16 +2337,24 @@ test("chooses an artist's photo and background among the sources, keeps them on 
   await panel.getByTestId('fact-remove-background').click()
   await expect(photoCredit).toContainText('For now, the cover of the album you play most')
   await expect(backgroundCredit).toContainText('None yet')
-  // Set to work automatically, the best images are taken as the page opens and kept in this browser only.
-  await chooseSources(page, {
+  // Set to work automatically, the best images are taken as the page opens and kept in this browser only:
+  // a photo, and a background only when the owner asks for one too (owner, 2026-10-02).
+  const automatic = {
     musicbrainz: { allowed: true },
     wikimedia: { allowed: true, auto: true },
     fanarttv: { allowed: true, auto: true, key: 'personal-test-key' },
-  })
+  }
+  await chooseSources(page, automatic)
   await page.reload()
   await page.getByTestId('info-open').click()
   await expect(photoCredit).toContainText('fanart.tv · CC BY 3.0 · kept in this browser', { timeout: 15_000 })
-  await expect(backgroundCredit).toContainText('kept in this browser')
+  await expect(backgroundCredit).toContainText('None yet')
+  // Asked for later, the background comes for an artist that already has its photo.
+  await chooseSources(page, automatic, { photo: true, background: true })
+  await page.reload()
+  await page.getByTestId('info-open').click()
+  await expect(backgroundCredit).toContainText('kept in this browser', { timeout: 15_000 })
+  await expect(photoCredit).toContainText('fanart.tv · CC BY 3.0 · kept in this browser')
   expect(await storeRecords(page, 'artist_images')).toEqual([])
   await panel.getByTestId('fact-remove-photo').click()
   await panel.getByTestId('fact-remove-background').click()
@@ -2417,6 +2425,17 @@ test('keeps the outside sources on the player: off until allowed, changed only w
   await allow.uncheck()
   await expect(auto).not.toBeChecked()
   await expect(auto).toBeDisabled()
+  // Which artist images the automatic lookups take: photos, a background only when asked (owner, 2026-10-02).
+  const roles = sources.getByTestId('source-roles')
+  await expect(roles.getByTestId('source-role-photo')).toBeChecked()
+  await expect(roles.getByTestId('source-role-background')).not.toBeChecked()
+  await roles.getByTestId('source-role-background').check()
+  await roles.getByTestId('source-role-photo').uncheck()
+  await page.reload()
+  await expect(roles.getByTestId('source-role-background')).toBeChecked({ timeout: 15_000 })
+  await expect(roles.getByTestId('source-role-photo')).not.toBeChecked()
+  const kept = (await storeRecords(page, 'external_sources')).find((item) => item.value.source === 'artist_images')
+  expect(kept?.value).toMatchObject({ auto_photo: false, auto_background: true })
   // A card release without the collection keeps every source off and says why.
   expect((await page.request.post('/__mock/sources-missing?on=1')).status()).toBe(204)
   await page.reload()

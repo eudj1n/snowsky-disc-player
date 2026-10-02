@@ -89,20 +89,33 @@ interface SourceRecord {
   allowed?: boolean
   auto?: boolean
   api_key?: string
+  auto_photo?: boolean
+  auto_background?: boolean
   at: number
 }
+/** An artist's image by its use: the round photo, or the wide background. */
+export type ImageRole = 'photo' | 'background'
+/** The record of the artist images' kind, which says which images the automatic lookups take. */
+const ROLES_RECORD = 'artist_images'
+/**
+ * Which artist images the automatic lookups take, one lookup or a whole batch (owner, 2026-10-02): photos by
+ * default, a background only when asked for, since one is not always wanted. By hand both can be chosen.
+ */
+const DEFAULT_ROLES: Readonly<Record<ImageRole, boolean>> = { photo: true, background: false }
 /** A key the store accepts. */
 export const SOURCE_KEY = /^[A-Za-z0-9._-]{1,128}$/
 
 interface SourcesModel {
   choices: Partial<Record<SourceName, SourceChoice>>
+  /** Which artist images the automatic lookups take. */
+  roles: Record<ImageRole, boolean>
   /** The card release declares the collection. */
   available: boolean
-  /** The source whose change waits for the player's reply. */
-  busy: SourceName | null
+  /** The source (or the artist images' kind) whose change waits for the player's reply. */
+  busy: SourceName | typeof ROLES_RECORD | null
 }
 
-const state = reactive<SourcesModel>({ choices: {}, available: false, busy: null })
+const state = reactive<SourcesModel>({ choices: {}, roles: { ...DEFAULT_ROLES }, available: false, busy: null })
 export const externalSources = readonly(state)
 
 const known = (name: string): name is SourceName => SOURCES.some((source) => source.name === name)
@@ -120,6 +133,8 @@ export const sourceAllowed = (name: SourceName): boolean =>
 /** The source may be asked without a click. */
 export const sourceAutomatic = (name: SourceName): boolean =>
   info(name).automatic && sourceAllowed(name) && state.choices[name]?.auto === true
+/** The automatic lookups take this kind of artist image. */
+export const autoImageRole = (role: ImageRole): boolean => state.roles[role]
 
 export async function loadExternalSources(): Promise<void> {
   if (!connection.store) return
@@ -127,14 +142,19 @@ export async function loadExternalSources(): Promise<void> {
     const records = await readCollection<SourceRecord>(http, 'external_sources')
     state.available = records !== null
     const choices: SourcesModel['choices'] = {}
+    const roles = { ...DEFAULT_ROLES }
     for (const { value } of records ?? [])
-      if (known(value.source))
+      if (value.source === ROLES_RECORD) {
+        if (typeof value.auto_photo === 'boolean') roles.photo = value.auto_photo
+        if (typeof value.auto_background === 'boolean') roles.background = value.auto_background
+      } else if (known(value.source))
         choices[value.source] = {
           allowed: value.allowed === true,
           auto: value.auto === true,
           ...(typeof value.api_key === 'string' && SOURCE_KEY.test(value.api_key) ? { key: value.api_key } : {}),
         }
     state.choices = choices
+    state.roles = roles
   } catch {
     // Unreachable for now: the last choice stays.
   }
@@ -147,8 +167,8 @@ watch(
   { immediate: true },
 )
 
-/** Writes a source's record: the player's reply confirms it; a lost reply is not retried. */
-async function write(name: SourceName, next: SourceChoice): Promise<boolean> {
+/** Writes a record: the player's reply confirms it; a lost reply is not retried. */
+async function put(name: NonNullable<SourcesModel['busy']>, record: Record<string, unknown>): Promise<boolean> {
   const token = pairingToken()
   if (!token) {
     toast('pair_to_control', true)
@@ -160,15 +180,8 @@ async function write(name: SourceName, next: SourceChoice): Promise<boolean> {
   }
   state.busy = name
   try {
-    const record = { source: name, allowed: next.allowed, auto: next.auto, at: Math.floor(Date.now() / 1000) }
-    const outcome = await putRecord(
-      http,
-      'external_sources',
-      next.key ? { ...record, api_key: next.key } : record,
-      token,
-    )
-    if (outcome === 'confirmed') state.choices = { ...state.choices, [name]: next }
-    else toast('result_unconfirmed_the_command_was_not_retried', true)
+    const outcome = await putRecord(http, 'external_sources', record, token)
+    if (outcome !== 'confirmed') toast('result_unconfirmed_the_command_was_not_retried', true)
     return outcome === 'confirmed'
   } catch {
     toast('result_unconfirmed_the_command_was_not_retried', true)
@@ -177,6 +190,27 @@ async function write(name: SourceName, next: SourceChoice): Promise<boolean> {
     state.busy = null
     await loadExternalSources()
   }
+}
+
+/** Writes a source's record. */
+async function write(name: SourceName, next: SourceChoice): Promise<boolean> {
+  const record = { source: name, allowed: next.allowed, auto: next.auto, at: Math.floor(Date.now() / 1000) }
+  const kept = await put(name, next.key ? { ...record, api_key: next.key } : record)
+  if (kept) state.choices = { ...state.choices, [name]: next }
+  return kept
+}
+
+/** Lets the automatic lookups take this kind of artist image, or not. */
+export async function chooseAutoImageRole(role: ImageRole, take: boolean): Promise<boolean> {
+  const roles = { ...state.roles, [role]: take }
+  const kept = await put(ROLES_RECORD, {
+    source: ROLES_RECORD,
+    auto_photo: roles.photo,
+    auto_background: roles.background,
+    at: Math.floor(Date.now() / 1000),
+  })
+  if (kept) state.roles = roles
+  return kept
 }
 
 /** Allows or stops a source, or lets it work automatically; stopping it stops the automatic use too. */

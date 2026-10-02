@@ -56,6 +56,8 @@ const changeHeaders = () => {
 export async function chooseSources(
   page: Page,
   choices: Partial<Record<string, { allowed?: boolean; auto?: boolean; key?: string }>> = {},
+  /** Which artist images the automatic lookups take; by default photos only, as with nothing kept. */
+  images: { photo: boolean; background: boolean } = { photo: true, background: false },
 ): Promise<void> {
   for (const source of SOURCE_NAMES) {
     const choice = choices[source]
@@ -72,6 +74,16 @@ export async function chooseSources(
     })
     expect(reply.status(), source).toBe(200)
   }
+  const reply = await page.request.put('/api/store/external_sources/record', {
+    headers: changeHeaders(),
+    data: {
+      source: 'artist_images',
+      auto_photo: images.photo,
+      auto_background: images.background,
+      at: Math.floor(Date.now() / 1000),
+    },
+  })
+  expect(reply.status(), 'artist_images').toBe(200)
 }
 
 /** A collection of the player's store as the page reads it. */

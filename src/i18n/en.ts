@@ -250,6 +250,11 @@ export const en = {
     'Artist photos, wide backgrounds and album covers made by fans, found by MusicBrainz ids; under CC BY 3.0, credited to fanart.tv.',
   source_fanarttv_sends: "Sends the artist's MusicBrainz id and your personal key to fanart.tv.",
   source_fanarttv_auto: 'when the page of an artist without an image opens',
+  source_roles: 'Taken automatically',
+  source_roles_about:
+    'Which artist images the sources set to work automatically take when an artist has none. By hand you can always choose both.',
+  source_role_photo: 'Photo',
+  source_role_background: 'Background',
   source_needs_key: 'Needs your personal key: enter it below.',
   source_key: 'Personal API key',
   source_key_note: 'Kept on the player, where any page on your network can read it.',
