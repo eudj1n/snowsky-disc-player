@@ -1452,6 +1452,10 @@ test('shows a joint album as "A & B", with its first artist\'s albums and its ar
   await expect(page.getByRole('region', { name: 'More by Kite Lines & Mira Sol' })).toHaveCount(0)
   const members = page.getByRole('region', { name: 'On this album' })
   await expect(members.getByRole('list').getByRole('heading')).toHaveText(['Kite Lines', 'Mira Sol'])
+  // Each artist's picture as on the Artists page: without a photo, the cover of an album of theirs stands in.
+  await expect(members.getByRole('listitem').filter({ hasText: 'Mira Sol' }).locator('canvas')).toBeVisible({
+    timeout: 15_000,
+  })
   await members.getByRole('link', { name: 'Mira Sol' }).first().click()
   await expect(page).toHaveURL(/#\/artist\/Mira%20Sol$/)
   await page.goBack()

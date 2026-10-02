@@ -34,6 +34,7 @@ import AlbumCoverDialog from '../layout/AlbumCoverDialog.vue'
 import { isHiRes, qualityLabel } from '../domain/quality'
 import { formatBadge } from '../domain/track'
 import { findGenre, playableGenre, sameGenre } from '../domain/genre'
+import { artistImage } from '../stores/artistPictures'
 import { albums, artists, genres, titleGroups, tracks as collection } from '../stores/library'
 import { connection } from '../stores/connection'
 import { isPinnedAlbum, pins, togglePinAlbum } from '../stores/pins'
@@ -412,6 +413,7 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
           :title="artist.name"
           :to="artistRoute(artist.name)"
           artist
+          :cover="artistImage(artist.name)"
           :lines="artist.albumCount ? [{ text: t('album_count', { count: artist.albumCount }) }] : []"
           :open-label="t('open_item', { name: artist.name })"
           :play-label="artist.literal ? t('play_item', { name: artist.name }) : null"
