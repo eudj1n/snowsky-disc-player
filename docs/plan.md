@@ -2417,6 +2417,18 @@ The batch enrichment (stage D below) and the library health view (ideas of
       record that lacks one (an alias list, a link) leaves it empty instead
       of breaking the details. Evidence: unit `artistIdentity`.
 
+Checks (2026-10-02) of release `2026.10.02-05a1422` (the library's state and
+its enrichment, editions found under other names and the artist's albums
+browsed, icon sizes, sheet names and quieter headings; the card's store
+catalog gains the enrichment collection and the image boxes): `npm run check`
+with 317 unit tests; the full mock suite (184 passed, 72 skipped);
+screenshots of the sheets and page headings in light on a desktop and dark
+on a phone; `npm run release` checked `release/origins.json` against the
+service and had the service's tool install the zip into a scratch card; the
+emulator acceptance of this exact zip on the V2.57 guest with the card
+catalogs installed: 40 passed, 88 skipped (desktop; the three new mock-only
+cases among the skipped).
+
 ## Releases by tags (owner, 2026-10-02)
 
 - [x] A `v*` tag releases the page (`.github/workflows/release.yml`): the
