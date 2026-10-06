@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Packs the checked dist/ as the Disc Player app (combined-009): a zip holding
-// "Disc Player/" with gzip twins, app.json (the version) and the reviewed
+// "Disc Player/" with gzip twins, app.json (the version and package.json's
+// homepage, which the service's manager links to) and the reviewed
 // origins.json kept in release/ (scripts/pack-app.mjs, a mirror of the DISC
 // service's scripts/app_bundle.py zip). A user copies the folder into Apps/ on
 // the card; nothing is written to a card here (see docs/release.md).
@@ -47,7 +48,8 @@ if (existsSync(output)) {
   console.error(`${output} exists; choose a fresh name`)
   process.exit(1)
 }
-const files = buildApp(resolve('dist'), { name: NAME, version, origins })
+const { homepage } = JSON.parse(readFileSync('package.json', 'utf8'))
+const files = buildApp(resolve('dist'), { name: NAME, version, homepage, origins })
 const zip = zipApp(files, NAME)
 mkdirSync(dirname(output), { recursive: true })
 writeFileSync(output, zip)

@@ -1,6 +1,6 @@
 // Packs a checked build as an app for the DISC service's card, as the service's
 // tool does (snowsky-disc-service scripts/app_bundle.py zip): the build's files,
-// app.json (the version), the reviewed origins.json, gzip twins of the text
+// app.json (the version and the project's homepage), the reviewed origins.json, gzip twins of the text
 // files, all in a deterministic zip holding "<App>/". Mirrored here, as
 // check-bundle.mjs mirrors the app rules, so a release builds without a service
 // checkout (GitHub Actions); with one, prepare-release.mjs has the service's tool
@@ -45,10 +45,23 @@ function buildFiles(source) {
   return files
 }
 
+/** An app's homepage, as the service accepts it in app.json: an https address of at most 200 bytes. */
+const HOMEPAGE = /^https:\/\/[A-Za-z0-9.-]+(\/[A-Za-z0-9._~%+@:/-]*)?$/
+
+export function checkHomepage(homepage) {
+  if (typeof homepage !== 'string' || Buffer.byteLength(homepage) > 200 || !HOMEPAGE.test(homepage))
+    throw new Error(`${JSON.stringify(homepage)} is not an app homepage: an https address, at most 200 bytes`)
+  return homepage
+}
+
 /** The files of the app as it goes onto a card: its own, app.json, origins.json and gzip twins. */
-export function buildApp(source, { name, version, origins }) {
+export function buildApp(source, { name, version, homepage, origins }) {
   const files = buildFiles(source)
-  if (version !== undefined) files.set('app.json', Buffer.from(`${JSON.stringify({ schema: 1, name, version })}\n`))
+  if (version !== undefined) {
+    const app = { schema: 1, name, version }
+    if (homepage !== undefined) app.homepage = checkHomepage(homepage)
+    files.set('app.json', Buffer.from(`${JSON.stringify(app)}\n`))
+  }
   if (origins !== undefined) files.set('origins.json', Buffer.from(origins))
   for (const [item, data] of [...files])
     if (COMPRESSIBLE.some((type) => item.endsWith(type))) {

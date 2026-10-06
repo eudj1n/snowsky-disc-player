@@ -19,8 +19,10 @@ npm run release               # uses ../snowsky-disc-service, or DISC_SERVICE_DI
 `npm run release` packs `dist/` as the service's tool does
 (`scripts/pack-app.mjs`, a mirror of `scripts/app_bundle.py zip`): the folder
 `Disc Player/` with gzip twins of its text files, `app.json` (the version: the
-date and commit, or `DISC_APP_VERSION`) and the reviewed `origins.json` kept
-in `release/`. With the service checkout it refuses a `release/origins.json`
+date and commit, or `DISC_APP_VERSION`; and `homepage`, package.json's project
+address, which the service's application manager links to: an `https://`
+address of at most 200 bytes) and the reviewed `origins.json` kept in
+`release/`. With the service checkout it refuses a `release/origins.json`
 the service no longer renders (`npm run release:origins` brings the current
 one; commit it) and has the service's tool install the zip into a scratch
 card, which applies every rule an installation does. The reviewed catalogs

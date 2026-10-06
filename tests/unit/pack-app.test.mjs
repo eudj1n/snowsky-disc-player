@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { gunzipSync, inflateRawSync } from 'node:zlib'
 import { afterEach, describe, expect, it } from 'vitest'
-import { buildApp, gzipTwin, zipApp } from '../../scripts/pack-app.mjs'
+import { buildApp, checkHomepage, gzipTwin, zipApp } from '../../scripts/pack-app.mjs'
 
 const dirs = []
 function build(files) {
@@ -70,6 +70,29 @@ describe('packing the app as the service does (app_bundle.py zip)', () => {
     ])
     expect(files.get('app.json')?.toString()).toBe('{"schema":1,"name":"Disc Player","version":"1.0.0"}\n')
     expect(gunzipSync(files.get('assets/app.js.gz') ?? Buffer.alloc(0)).toString()).toBe('x'.repeat(4000))
+  })
+
+  it("records the project's homepage in app.json after the version, and only a plain https address", () => {
+    const source = build({ 'index.html': page })
+    const homepage = 'https://github.com/eudj1n/snowsky-disc-player'
+    const files = buildApp(source, { name: 'Disc Player', version: '1.0.0', homepage })
+    expect(files.get('app.json')?.toString()).toBe(
+      `{"schema":1,"name":"Disc Player","version":"1.0.0","homepage":"${homepage}"}\n`,
+    )
+    for (const bad of [
+      'http://github.com/eudj1n/snowsky-disc-player',
+      'javascript:alert(1)',
+      'https://github.com/a b',
+      'https://github.com/x?y=1',
+      'https://github.com/"x"',
+      `https://github.com/${'a'.repeat(200)}`,
+      '',
+      42,
+    ])
+      expect(() => buildApp(source, { name: 'Disc Player', version: '1.0.0', homepage: bad })).toThrow(
+        /not an app homepage/,
+      )
+    expect(checkHomepage('https://example.org')).toBe('https://example.org')
   })
 
   it('makes a twin only of a file of at least 1 KiB that it shrinks by a tenth', () => {
