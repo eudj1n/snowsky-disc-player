@@ -4,8 +4,14 @@
  */
 
 export interface About {
+  /** The gateway's own version (0.9.0 since the combined images): not the release; see servicePackage. */
   version: string
   build: string
+  /**
+   * The package the boot layer runs this service as (its name and release, as
+   * disc-server 2.57.2), from the boot layer's status; null outside the boot layer.
+   */
+  servicePackage: { name: string; version: string | null } | null
   uptime: number
   supervised: boolean
   image: { variant: string | null; firmware: string | null } | null
@@ -41,9 +47,15 @@ export function parseAbout(value: unknown): About | null {
   const page = (v.page ?? {}) as Record<string, unknown>
   const database = v.database as Record<string, unknown> | null
   const writes = (database?.writes ?? null) as Record<string, unknown> | null
+  const role = ((v.boot as Record<string, unknown> | null | undefined)?.service ?? null) as Record<
+    string,
+    unknown
+  > | null
+  const roleName = text(role?.name)
   return {
     version: service.version,
     build: text(service.build) ?? 'unknown',
+    servicePackage: roleName ? { name: roleName, version: text(role?.version) } : null,
     uptime: number(service.uptime) ?? 0,
     supervised: service.supervised === true,
     image: image ? { variant: text(image.variant), firmware: text(image.firmwareVersion) } : null,

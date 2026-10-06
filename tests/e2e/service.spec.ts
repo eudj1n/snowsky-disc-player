@@ -273,6 +273,22 @@ test("shows the service's diagnostics in the connection dialog", async ({ page }
   await page.keyboard.press('Escape')
 })
 
+test("names the boot layer's package rather than the gateway's own version", async ({ page, request }) => {
+  test.skip(external, 'Needs the mock gateway')
+  await request.post('/__mock/boot?on=1')
+  try {
+    await english(page)
+    await openConnection(page)
+    const diagnostics = page.getByRole('dialog').getByTestId('diagnostics')
+    await diagnostics.getByText('Diagnostics', { exact: true }).click()
+    await expect(diagnostics).toContainText('disc-server 2.57.2 · build mock')
+    await expect(diagnostics).not.toContainText('0.9.0')
+    await page.keyboard.press('Escape')
+  } finally {
+    await request.post('/__mock/boot?on=0')
+  }
+})
+
 test('says when the service cannot write plays, and why', async ({ page, request }) => {
   test.skip(external, 'Needs the mock gateway')
   await request.post('/__mock/history-failing?on=1')

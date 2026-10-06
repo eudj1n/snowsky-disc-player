@@ -6,12 +6,13 @@
  * diagnostics (combined-008) behind a disclosure, and reading the collection
  * again (from the top bar, 2026-09-30). Opening never connects.
  */
-import { computed, watch } from 'vue'
+import { computed, watch, type DeepReadonly } from 'vue'
 import ConnectionStatus from '../components/connection/ConnectionStatus.vue'
 import PairingForm from '../components/connection/PairingForm.vue'
 import { cardSpace, formatBytes } from '../domain/device'
 import { locale, t, type MessageKey } from '../i18n'
 import { about, loadAbout } from '../stores/about'
+import type { About } from '../domain/about'
 import { connect, connection, disconnect } from '../stores/connection'
 import { device, refreshDevice } from '../stores/device'
 import { albums, library, loadCollection, refreshPlayerFacts, refreshSummary, tracks } from '../stores/library'
@@ -96,6 +97,11 @@ const writes = computed(() => {
   const reason = t((value.reason && WRITE_REASONS[value.reason]) || 'about_writes_other')
   return { text: t('about_writes_failed', { count: value.failed, reason }), failing: true }
 })
+// The release the boot layer runs (disc-server 2.57.2); the gateway's own version only outside it.
+const serviceName = (value: DeepReadonly<About>) =>
+  value.servicePackage
+    ? [value.servicePackage.name, value.servicePackage.version].filter(Boolean).join(' ')
+    : value.version
 const PAGE_SOURCE = { card: 'about_page_card', image: 'about_page_image', embedded: 'about_page_embedded' } as const
 
 const status = computed(() => {
@@ -194,7 +200,7 @@ const status = computed(() => {
       <p v-if="!about.about" class="mt-10 text-muted">{{ about.loading ? '…' : t('about_unavailable') }}</p>
       <dl v-else class="mt-10 grid grid-cols-[auto_1fr] gap-x-14 gap-y-6">
         <dt class="text-muted">{{ t('about_service') }}</dt>
-        <dd class="m-0">{{ about.about.version }} · {{ t('about_build', { build: about.about.build }) }}</dd>
+        <dd class="m-0">{{ serviceName(about.about) }} · {{ t('about_build', { build: about.about.build }) }}</dd>
         <template v-if="about.about.image">
           <dt class="text-muted">{{ t('about_image') }}</dt>
           <dd class="m-0">{{ [about.about.image.variant, about.about.image.firmware].filter(Boolean).join(' · ') }}</dd>

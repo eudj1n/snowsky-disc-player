@@ -178,6 +178,18 @@ describe('diagnostics and the audio route', () => {
     expect(about?.restarts).toEqual(['1 restarted after signal 11'])
     expect(about?.log).toEqual([{ at: 1, message: 'Skip rule: skipped to the next track' }])
     expect(parseAbout({ nothing: true })).toBeNull()
+    // Outside the boot layer only the gateway's own version is known.
+    expect(about?.servicePackage).toBeNull()
+  })
+
+  it("names the boot layer's package rather than the gateway's own version", () => {
+    const about = parseAbout({
+      service: { name: 'disc-native-probe', version: '0.9.0', build: '9e41a327da72' },
+      boot: { decision: { mode: 'platform' }, service: { name: 'disc-server', version: '2.57.2', confirmed: true } },
+    })
+    expect(about?.servicePackage).toEqual({ name: 'disc-server', version: '2.57.2' })
+    expect(about?.version).toBe('0.9.0')
+    expect(parseAbout({ service: { version: '0.9.0' }, boot: { service: null } })?.servicePackage).toBeNull()
   })
 
   it('addresses a card file for the browser, each component encoded', () => {

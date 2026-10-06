@@ -168,6 +168,8 @@ const player = {
   image: '009',
   /** The service's last play write failed (/__mock/history-failing), as with a full card. */
   historyFailing: false,
+  /** The service runs as the boot layer's package (/__mock/boot), as on the player since 2026-10-05. */
+  boot: false,
   /** Walks of the whole card (/api/card/tree), for tests that count them (/__mock/tree-reads). */
   treeReads: 0,
   /** Plays this page reported from a browser (/__mock/browser-plays). */
@@ -622,6 +624,22 @@ const server = createServer((request, response) => {
       },
       restarts: ['1790000000 restarted after signal 11'],
       log: [{ t: 1790000100, m: 'Skip rule: skipped to the next track' }],
+      ...(player.boot
+        ? {
+            image: null,
+            boot: {
+              decision: { schema: 1, mode: 'platform', reason: 'default' },
+              service: {
+                schema: 1,
+                role: 'service',
+                state: 'confirmed',
+                name: 'disc-server',
+                version: '2.57.2',
+                confirmed: true,
+              },
+            },
+          }
+        : {}),
     }
     return send(response, 200, JSON.stringify(about), 'application/json')
   }
@@ -821,6 +839,11 @@ const server = createServer((request, response) => {
   // The image the mock stands for: 008 has no card listing, browser plays or write diagnostics.
   if (url.pathname === '/__mock/image' && request.method === 'POST') {
     player.image = url.searchParams.get('version') === '008' ? '008' : '009'
+    return send(response, 204, '')
+  }
+  // The service runs as the boot layer's package.
+  if (url.pathname === '/__mock/boot' && request.method === 'POST') {
+    player.boot = url.searchParams.get('on') === '1'
     return send(response, 204, '')
   }
   // The service's last play write failed, as with a full card.
