@@ -622,7 +622,8 @@ const server = createServer((request, response) => {
             }
           : {}),
       },
-      restarts: ['1790000000 restarted after signal 11'],
+      // Kept for clients since the boot layer (its status tells), always empty.
+      restarts: [],
       log: [{ t: 1790000100, m: 'Skip rule: skipped to the next track' }],
       ...(player.boot
         ? {

@@ -877,7 +877,6 @@ export const en = {
   about_writes_other: 'the database refused it',
   history_writes_failing:
     'The player is not recording plays right now: the card may be full. The connection’s Diagnostics say why.',
-  about_restarts: 'Restarts',
   about_messages: 'Service messages',
   about_none: 'None',
   about_unavailable: 'This image has no diagnostics.',

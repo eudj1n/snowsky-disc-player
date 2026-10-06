@@ -217,11 +217,6 @@ const status = computed(() => {
           <dt class="text-muted">{{ t('about_writes') }}</dt>
           <dd class="m-0" :class="{ 'text-notice': writes.failing }" data-testid="about-writes">{{ writes.text }}</dd>
         </template>
-        <dt class="text-muted">{{ t('about_restarts') }}</dt>
-        <dd class="m-0">
-          <template v-if="!about.about.restarts.length">{{ t('about_none') }}</template>
-          <span v-for="line in about.about.restarts" :key="line" class="block font-mono text-caption">{{ line }}</span>
-        </dd>
         <dt class="text-muted">{{ t('about_messages') }}</dt>
         <dd class="m-0 max-h-160 overflow-auto">
           <template v-if="!about.about.log.length">{{ t('about_none') }}</template>

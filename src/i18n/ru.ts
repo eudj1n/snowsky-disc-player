@@ -911,7 +911,6 @@ export const ru: Messages = {
   about_page_embedded: 'встроенная',
   about_database: 'База данных',
   about_database_facts: '{state}, схема {schema}, прослушиваний {plays}, записей {records}, в корзине {trash}',
-  about_restarts: 'Перезапуски',
   about_writes: 'История прослушиваний',
   about_writes_ok: 'все прослушивания записаны',
   about_writes_failed: {

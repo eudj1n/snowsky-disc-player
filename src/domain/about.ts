@@ -32,7 +32,6 @@ export interface About {
      */
     writes: { failed: number; lastFailure: number | null; lastSuccess: number | null; reason: string | null } | null
   } | null
-  restarts: string[]
   log: { at: number; message: string }[]
 }
 
@@ -82,7 +81,6 @@ export function parseAbout(value: unknown): About | null {
             : null,
         }
       : null,
-    restarts: Array.isArray(v.restarts) ? v.restarts.flatMap((line) => (typeof line === 'string' ? [line] : [])) : [],
     log: Array.isArray(v.log)
       ? (v.log as Record<string, unknown>[]).flatMap((entry) =>
           typeof entry.m === 'string' ? [{ at: number(entry.t) ?? 0, message: entry.m }] : [],

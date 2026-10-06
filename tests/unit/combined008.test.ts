@@ -175,7 +175,8 @@ describe('diagnostics and the audio route', () => {
     })
     // combined-009: the default app and its version (app.json).
     expect(about?.page).toEqual({ source: 'image', version: '2026.09.29' })
-    expect(about?.restarts).toEqual(['1 restarted after signal 11'])
+    // The combined images' restart log is not shown: the boot layer's status tells (2026-10-06).
+    expect(about).not.toHaveProperty('restarts')
     expect(about?.log).toEqual([{ at: 1, message: 'Skip rule: skipped to the next track' }])
     expect(parseAbout({ nothing: true })).toBeNull()
     // Outside the boot layer only the gateway's own version is known.
