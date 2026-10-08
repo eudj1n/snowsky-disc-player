@@ -2462,7 +2462,13 @@ V2.57 profile; no `commands.json`); the card ejected.
       the mock suite 186 passed, 72 skipped; the emulator acceptance of the
       1.0.0 zip, 40 cases (the diagnostics case now takes a release's version
       as well as a local build's date and commit), the guest cleaned up
-      after.
+      after. Published (2026-10-08): tag `v1.0.0` on `63f638a` after its CI;
+      the release "Disc Player 1.0.0" with `disc-player-1.0.0.zip` (600,979
+      bytes, SHA-256 `4c5731789cd65c665c0e777932462beb727f2399239d074893d61153bb2159ee`,
+      as its `.sha256` says), the notes from the CHANGELOG, and the hosted
+      site on Pages. The zip holds the same 105 entries as the accepted local
+      one, the same bytes except the 44 gzip twins (Node 24's zlib), and the
+      server's tool installs it into a scratch card.
 
 ## The boot layer's server in the diagnostics (owner, 2026-10-06), card-only
 
