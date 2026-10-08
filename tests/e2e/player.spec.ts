@@ -590,10 +590,11 @@ test.describe('player controls on the mock', () => {
     await page.goto('/#/albums')
     const grid = page.getByRole('article').first().locator('..')
     const columns = () => grid.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').length)
-    expect(await columns()).toBe(4)
+    // The grid settles once its width is known: asked until it does, as below.
+    await expect.poll(columns).toBe(4)
     await openPanel(page, 'Open queue')
     await expect(page.locator('.listening-open')).toHaveCount(1)
-    expect(await columns()).toBe(4)
+    await expect.poll(columns).toBe(4)
     // A narrower window with the panel fits fewer, never tiny, cards.
     await page.setViewportSize({ width: 1280, height: 900 })
     await expect.poll(columns).toBeLessThanOrEqual(4)
