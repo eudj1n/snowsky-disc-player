@@ -33,7 +33,7 @@ the page as if it came from the card. Nothing is written to the card.
   (`MOCK_GATEWAY_DELAY`) so loading skeletons are visible. Its serial number
   is `00000000000000`, like the emulator's.
 - **Emulator** — `npm run dev:emulator` while the emulator from
-  snowsky-disc-service is running (`python3 scripts/emulator.py up` there).
+  snowsky-disc-server is running (`python3 scripts/emulator.py up` there).
   Real stock behavior, disposable media. Its serial number is
   `00000000000000`. Stock powers the guest off after 300 seconds
   of idle unless external power is present; connect emulated USB power for a
@@ -90,12 +90,12 @@ stock paused when playback starts in the browser,
 an artist photo from stubbed Wikimedia within the service's policy) and an upload with a
 scan. It changes device state, so it runs only with
 `E2E_ACCEPTANCE=emulator` and never against a player. Steps, with the
-emulator from snowsky-disc-service booted and USB power emulated:
+emulator from snowsky-disc-server booted and USB power emulated:
 
 ```sh
-C=$(python3 -c "import json;print(json.load(open('../snowsky-disc-service/work/emulator.json'))['id'])")-emu
+C=$(python3 -c "import json;print(json.load(open('../snowsky-disc-server/work/emulator.json'))['id'])")-emu
 tests/e2e/emulator/media.sh $C                      # tagged tones on the guest card
-npm run build && DISC_SERVICE_DIR=../snowsky-disc-service npm run release
+npm run build && DISC_SERVER_DIR=../snowsky-disc-server npm run release
 docker cp work/disc-player-<version>.zip $C:/work/disc-player.zip
 docker exec $C python3 /platform/scripts/app_bundle.py install \
   --app /work/disc-player.zip --card /tmp/sdcard --confirm-card-write
@@ -116,7 +116,7 @@ nothing accumulates on the guest card (a card once filled up with releases and
 the service stopped recording plays, 2026-09-29). The tool refuses, writing
 nothing, when the card could not keep 8 MiB free for the service's database
 afterwards, and a guest set up since then has about 224 MB more room
-(snowsky-disc-service `docs/development.md`).
+(snowsky-disc-server `docs/development.md`).
 
 ## CI
 

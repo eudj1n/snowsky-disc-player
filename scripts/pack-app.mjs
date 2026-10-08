@@ -1,5 +1,5 @@
 // Packs a checked build as an app for the DISC service's card, as the service's
-// tool does (snowsky-disc-service scripts/app_bundle.py zip): the build's files,
+// tool does (snowsky-disc-server scripts/app_bundle.py zip): the build's files,
 // app.json (the version and the project's homepage), the reviewed origins.json, gzip twins of the text
 // files, all in a deterministic zip holding "<App>/". Mirrored here, as
 // check-bundle.mjs mirrors the app rules, so a release builds without a service

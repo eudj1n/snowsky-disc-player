@@ -6,7 +6,7 @@
 // service's scripts/app_bundle.py zip). A user copies the folder into Apps/ on
 // the card; nothing is written to a card here (see docs/release.md).
 //
-// With the service checkout (../snowsky-disc-service or DISC_SERVICE_DIR), the
+// With the service checkout (../snowsky-disc-server or DISC_SERVER_DIR), the
 // release refuses a release/origins.json the service no longer renders and has
 // the service's tool install the zip into a scratch card, which applies every
 // rule an installation does. A tag's release on GitHub Actions has no service
@@ -22,11 +22,11 @@ import { buildApp, zipApp } from './pack-app.mjs'
 import { ORIGINS, renderOrigins } from './service-origins.mjs'
 
 const NAME = 'Disc Player'
-const service = resolve(process.env.DISC_SERVICE_DIR ?? '../snowsky-disc-service')
+const service = resolve(process.env.DISC_SERVER_DIR ?? '../snowsky-disc-server')
 const tool = resolve(service, 'scripts/app_bundle.py')
 const withService = process.env.DISC_RELEASE_WITHOUT_SERVICE !== '1'
 if (withService && !existsSync(tool)) {
-  console.error(`Service tool not found at ${tool}; set DISC_SERVICE_DIR to the snowsky-disc-service checkout`)
+  console.error(`Server tool not found at ${tool}; set DISC_SERVER_DIR to the snowsky-disc-server checkout`)
   process.exit(2)
 }
 const bundle = checkBundle('dist')

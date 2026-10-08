@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Checks a built dist/ against the rules for apps on the card of the DISC
-// service (combined-009: snowsky-disc-service docs/sd-webroot.md and
+// service (combined-009: snowsky-disc-server docs/sd-webroot.md and
 // scripts/app_bundle.py check). The service's zip step enforces the same rules;
 // this check fails the build earlier and runs without a service checkout.
 import { readdirSync, readFileSync, lstatSync } from 'node:fs'

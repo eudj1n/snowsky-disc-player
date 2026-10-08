@@ -2460,8 +2460,9 @@ The page is released and updated on its own, after the player's next
 changes, not with server 2.57.2 (owner, 2026-10-06).
 
 - [x] app.json names the project's page (`homepage`, from package.json,
-      written by `pack-app.mjs` as the service's `app_bundle.py zip
-    --homepage` writes it); the server's manager links it. Unit `pack-app`.
+      written by `pack-app.mjs` as the server's
+      `app_bundle.py zip --homepage` writes it); the server's manager links
+      it. Unit `pack-app`.
 - [x] The connection dialog's "Service" names the package the boot layer
       runs (`disc-server 2.57.2 · build …`) instead of the gateway's own
       0.9.0, which it shows only outside the boot layer. Unit `combined008`;

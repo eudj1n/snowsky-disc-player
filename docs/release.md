@@ -2,7 +2,7 @@
 
 Since combined-009 the page is an app: a folder `Apps/Disc Player/` on the
 PLAY card, served at `/` (and at `/apps/Disc%20Player/`), as any app is
-(`snowsky-disc-service/docs/sd-webroot.md`). A release is a zip holding that
+(`snowsky-disc-server/docs/sd-webroot.md`). A release is a zip holding that
 folder; installing it is copying the folder onto the card. No release IDs, no
 `active.json`: the page picks up the new files on reload. Installing never
 flashes the player and never restarts the service. On images before
@@ -13,7 +13,7 @@ service's `webroot_bundle.py`.
 
 ```sh
 npm run check                 # format, lint, types, tests, build + the app rules
-npm run release               # uses ../snowsky-disc-service, or DISC_SERVICE_DIR
+npm run release               # uses ../snowsky-disc-server, or DISC_SERVER_DIR
 ```
 
 `npm run release` packs `dist/` as the service's tool does
@@ -64,7 +64,7 @@ ejects the card. For our own cards (operator step, with the player in storage
 mode and `/Volumes/PLAY` mounted):
 
 ```sh
-python3 ../snowsky-disc-service/scripts/app_bundle.py install \
+python3 ../snowsky-disc-server/scripts/app_bundle.py install \
   --app work/disc-player-<version>.zip --card /Volumes/PLAY --confirm-card-write
 diskutil eject /Volumes/PLAY
 ```
@@ -95,4 +95,4 @@ Logs, screenshots and the zips in `work/` stay out of commits.
 The service names the image's firmware identity (`/api/contract/compatibility.json`).
 On connect the app compares it with the player's handshake and main OS number
 and disables controls on a mismatch. A new firmware version needs a reviewed
-profile and catalogs in snowsky-disc-service, which come with its image.
+profile and catalogs in snowsky-disc-server, which come with its package.

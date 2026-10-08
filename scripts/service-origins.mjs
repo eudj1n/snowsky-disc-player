@@ -2,7 +2,7 @@
 // The reviewed origins.json the release packs, kept in release/origins.json so a
 // release builds without a service checkout (GitHub Actions). The DISC service
 // renders it from its firmware/origins catalog, bound to the firmware profile
-// (snowsky-disc-service scripts/origins_catalog.py). `npm run release:origins`
+// (snowsky-disc-server scripts/origins_catalog.py). `npm run release:origins`
 // brings the service's current file here; `npm run release` refuses a stale one.
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -23,7 +23,7 @@ export function renderOrigins(service) {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const service = resolve(process.env.DISC_SERVICE_DIR ?? '../snowsky-disc-service')
+  const service = resolve(process.env.DISC_SERVER_DIR ?? '../snowsky-disc-server')
   const rendered = renderOrigins(service)
   const kept = (() => {
     try {
