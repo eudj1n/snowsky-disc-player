@@ -2469,6 +2469,14 @@ V2.57 profile; no `commands.json`); the card ejected.
       site on Pages. The zip holds the same 105 entries as the accepted local
       one, the same bytes except the 44 gzip twins (Node 24's zlib), and the
       server's tool installs it into a scratch card.
+- [x] 1.0.0 on the owner's player (2026-10-08, the owner's report):
+      installed through the server's manager (disc-server 2.57.4, build
+      `9780db847434`) from the published zip; the connection dialog's
+      diagnostics say "from the card · 1.0.0", the database ok (schema 5),
+      every play written, and the service's message that an app was
+      installed through the manager.
+- [ ] The diagnostics name the app the player serves, "Disc Player", where
+      they now say "Page" (owner, 2026-10-08).
 
 ## The boot layer's server in the diagnostics (owner, 2026-10-06), card-only
 
