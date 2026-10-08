@@ -1,6 +1,6 @@
 {
   "name": "snowsky-disc-player",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "homepage": "https://github.com/eudj1n/snowsky-disc-player",
   "private": true,
   "description": "Music player web application for the SNOWSKY DISC, served from the player's SD card by the DISC service gateway",

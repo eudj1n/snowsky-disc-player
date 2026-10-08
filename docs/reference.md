@@ -78,4 +78,4 @@ Read the reference source and documentation for behavior and wording. Port
 behavior with tests. Do not copy firmware-derived data, captures or personal
 catalog content. The demo artwork in DISC Web is original fictional content of
 the reference project; reuse needs an explicit decision recorded in the plan
-(so far: the README's pictures, 2026-10-08).
+(so far: the README's pictures, owner, 2026-10-08).

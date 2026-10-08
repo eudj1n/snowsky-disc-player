@@ -2449,11 +2449,20 @@ V2.57 profile; no `commands.json`); the card ejected.
       only. Evidence: unit `pack-app`; the Node zip of the current `dist/`
       matched the service's zip entry for entry (names, bytes, gzip twins,
       times, modes); actionlint clean.
-- [ ] Rework the project documentation, then mark the current version as
+- [x] Rework the project documentation, then mark the current version as
       1.0.0 and count from it, with a CHANGELOG of the capabilities in broad
       terms (owner, 2026-10-02). The first tag comes then; until it, Pages
-      keeps the site published last. The README and the CHANGELOG are done
-      (2026-10-08, below); the version and the tag remain.
+      keeps the site published last. The README and the CHANGELOG were
+      rewritten first (2026-10-08, below); then 1.0.0 (owner, 2026-10-08:
+      "release and tag once CI passes"): package.json's version, the
+      CHANGELOG's section dated, and the release's notes taken from it, the
+      workflow refusing a tag that is not package.json's version or has no
+      dated section (`scripts/release-notes.mjs`). Evidence: unit
+      `release-notes`; actionlint clean; `npm run check` (328 unit tests);
+      the mock suite 186 passed, 72 skipped; the emulator acceptance of the
+      1.0.0 zip, 40 cases (the diagnostics case now takes a release's version
+      as well as a local build's date and commit), the guest cleaned up
+      after.
 
 ## The boot layer's server in the diagnostics (owner, 2026-10-06), card-only
 
@@ -2513,8 +2522,8 @@ the boot layer's and the server's documentation.
 - [x] `CHANGELOG.md` for users, its first entry 1.0.0 (unreleased): what the
       page can do, in broad terms.
 - [x] The README's pictures come from the mock with the DISC Web demo's
-      original covers (decided for this request, for the owner to confirm:
-      the reference's fictional artwork serves the pictures, kept in
+      original covers (owner, 2026-10-08: the reference's fictional
+      artwork may serve the pictures; kept in
       `tests/e2e/fixtures/demo-covers`, MIT, credited in the README and in
       [docs/images](images/README.md)). The mock serves them only when
       `MOCK_GATEWAY_DEMO_COVERS` names their drawn files, so the browser

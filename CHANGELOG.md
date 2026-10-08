@@ -3,10 +3,11 @@
 What changes for you in Disc Player, release by release. Each release is a
 `v*` tag; its zip on the
 [releases page](https://github.com/eudj1n/snowsky-disc-player/releases) is
-what goes on the card. Entries stay short and group related work; how and why
-it was done is in the [plan](docs/plan.md).
+what goes on the card, and its notes are the release's section below. Entries
+stay short and group related work; how and why it was done is in the
+[plan](docs/plan.md).
 
-## [1.0.0] — unreleased
+## [1.0.0] — 2026-10-08
 
 The first public release: what Disc Player can do, counted from here.
 

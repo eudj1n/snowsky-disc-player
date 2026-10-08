@@ -5,6 +5,8 @@ name: Release
 # site on Pages. The tag goes on a commit that passed CI and, before the owner's
 # card, the emulator acceptance (docs/release.md). The zip is packed without a
 # service checkout from the reviewed release/origins.json (scripts/pack-app.mjs).
+# The tag must be package.json's version, and the release's notes are its dated
+# section of CHANGELOG.md (scripts/release-notes.mjs).
 on:
   push:
     tags: ['v*']
@@ -30,6 +32,8 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - name: The version and its notes
+        run: mkdir -p work && node scripts/release-notes.mjs "$TAG" > work/release-notes.md
       - run: npm ci
       - run: npm run check
       - name: Pack the app
@@ -45,7 +49,7 @@ jobs:
         run: |
           version="${TAG#v}"
           gh release create "$TAG" "work/disc-player-${version}.zip" "work/disc-player-${version}.zip.sha256" \
-            --verify-tag --title "Disc Player ${version}" --generate-notes
+            --verify-tag --title "Disc Player ${version}" --notes-file work/release-notes.md
 
   pages:
     name: Hosted site

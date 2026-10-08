@@ -32,6 +32,14 @@ are not in the app: the page reads them from the service at `/api/contract/`
 
 ## Publish with a tag
 
+Versions count from 1.0.0 (owner, 2026-10-02), in package.json. A release
+commit sets the version there (`npm version <version> --no-git-tag-version`)
+and dates its section of [CHANGELOG.md](../CHANGELOG.md)
+(`## [<version>] — <yyyy-mm-dd>`), whose entries say what changes for a
+listener; the section is the GitHub release's notes. The workflow refuses a
+tag that is not package.json's version or has no dated section
+(`scripts/release-notes.mjs`).
+
 A `v<version>` tag on the released commit (owner, 2026-10-02) runs
 `.github/workflows/release.yml`: the checks, the zip packed without a service
 checkout (`DISC_RELEASE_WITHOUT_SERVICE=1`, from the same `release/origins.json`)
