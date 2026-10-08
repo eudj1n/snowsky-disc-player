@@ -14,9 +14,11 @@ import {
   findReleases,
   groupReleases,
   releaseGroup,
+  releaseTracks,
   searchArtists,
   type ArtistCandidate,
   type ArtistLinks,
+  type EditionTrack,
   type ReleaseCandidate,
   type ReleaseGroupCandidate,
   type ReleaseGroupFacts,
@@ -404,6 +406,41 @@ export function identifyBack(): void {
       editions: search.found,
       status: search.found.length ? 'ready' : 'missing',
     })
+}
+
+/** An edition's tracks, read when it is chosen, to set beside the album on the card (owner, 2026-10-08). */
+export interface EditionTracks {
+  status: 'searching' | 'ready' | 'missing' | 'failed'
+  tracks: EditionTrack[]
+}
+const tracklists = reactive(new Map<string, EditionTracks>())
+export const editionTracks = readonly(tracklists)
+let wantedTracks: string | null = null
+let readingTracks = false
+
+/**
+ * Reads the tracks of the chosen edition, one edition at a time: while one is read, only the last edition chosen
+ * waits its turn, so going down the list asks MusicBrainz for the one the listener stops at. Kept for the tab; a
+ * failed read is tried again when the edition is chosen again.
+ */
+export async function showEditionTracks(id: string): Promise<void> {
+  wantedTracks = id
+  if (tracklists.get(id)?.status === 'failed') tracklists.delete(id)
+  if (readingTracks || !identifyAllowed()) return
+  readingTracks = true
+  try {
+    for (let next = wantedTracks; next && !tracklists.has(next); next = wantedTracks) {
+      tracklists.set(next, { status: 'searching', tracks: [] })
+      try {
+        const tracks = await releaseTracks(next)
+        tracklists.set(next, tracks?.length ? { status: 'ready', tracks } : { status: 'missing', tracks: [] })
+      } catch {
+        tracklists.set(next, { status: 'failed', tracks: [] })
+      }
+    }
+  } finally {
+    readingTracks = false
+  }
 }
 
 /** The listener says which edition the album is: its release group is read too, and the identity kept. */

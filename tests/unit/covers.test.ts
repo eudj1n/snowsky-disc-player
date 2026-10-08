@@ -8,7 +8,14 @@ import {
   titleWithoutEdition,
 } from '../../src/domain/covers'
 import { CoverUnreachable, frontCover } from '../../src/gateway/coverart'
-import { artistReleaseGroups, findReleases, groupReleases, phrase, resetPacing } from '../../src/gateway/musicbrainz'
+import {
+  artistReleaseGroups,
+  findReleases,
+  groupReleases,
+  phrase,
+  releaseTracks,
+  resetPacing,
+} from '../../src/gateway/musicbrainz'
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0x10])
 const urlOf = (input: RequestInfo | URL) => new URL(input instanceof Request ? input.url : input.toString())
@@ -160,6 +167,37 @@ describe('MusicBrainz releases', () => {
     expect(release).toMatchObject({ id: 'r1', trackCount: 21, score: 100, format: '2×CD', group: 'g1' })
   })
 
+  it("reads an edition's tracks medium by medium, by its id only", async () => {
+    const asked: string[] = []
+    const fetchImpl = ((url: string) => {
+      asked.push(url)
+      return Promise.resolve(
+        url.includes('/release/gone')
+          ? new Response(null, { status: 404 })
+          : Response.json({
+              media: [
+                {
+                  position: 1,
+                  tracks: [
+                    { position: 1, number: '1', title: 'Going Under', length: 214_000 },
+                    { position: 2, title: 'Bring Me to Life', length: null },
+                  ],
+                },
+                { position: 2, tracks: [{ position: 1, number: 'A1', title: 'Whisper', length: 0 }, { title: '' }] },
+              ],
+            }),
+      )
+    }) as typeof fetch
+    expect(await releaseTracks('r1', fetchImpl)).toEqual([
+      { disc: 1, number: '1', title: 'Going Under', lengthMs: 214_000 },
+      { disc: 1, number: '2', title: 'Bring Me to Life', lengthMs: null },
+      { disc: 2, number: 'A1', title: 'Whisper', lengthMs: null },
+    ])
+    expect(asked[0]).toBe('https://musicbrainz.org/ws/2/release/r1?inc=recordings&fmt=json')
+    resetPacing()
+    expect(await releaseTracks('gone', fetchImpl)).toBeNull()
+  })
+
   it('escapes quotes and backslashes inside a phrase', () => {
     expect(phrase('The "Best" \\ Of')).toBe('"The \\"Best\\" \\\\ Of"')
   })
@@ -176,6 +214,24 @@ describe('MusicBrainz releases', () => {
       await vi.advanceTimersByTimeAsync(200)
       await next
       expect(second).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('keeps a second between requests asked at once, in the order asked', async () => {
+    vi.useFakeTimers()
+    try {
+      const times: number[] = []
+      const fetchImpl = (() => {
+        times.push(Date.now())
+        return Promise.resolve(Response.json({ releases: [] }))
+      }) as typeof fetch
+      const all = Promise.all([findReleases('A', 'B', fetchImpl), findReleases('C', 'D', fetchImpl)])
+      await vi.advanceTimersByTimeAsync(1200)
+      await all
+      expect(times).toHaveLength(2)
+      expect((times[1] ?? 0) - (times[0] ?? 0)).toBeGreaterThanOrEqual(1100)
     } finally {
       vi.useRealTimers()
     }

@@ -2515,7 +2515,7 @@ test('keeps the outside sources on the player: off until allowed, changed only w
   await disconnect(page)
 })
 
-test('enriches the library from the Card state tab: a sure run, its files, its undo, and a review', async ({
+test('enriches the library from the Card state tab in its window: a sure run, its files, its undo, and a review', async ({
   page,
 }, info) => {
   test.skip(external, 'Needs the mock collection')
@@ -2544,14 +2544,29 @@ test('enriches the library from the Card state tab: a sure run, its files, its u
       headers: cors,
       json: url.pathname.startsWith('/ws/2/release-group/')
         ? { id: GROUP, 'first-release-date': '2019-03-01', 'primary-type': 'Album', 'secondary-types': [] }
-        : url.pathname === '/ws/2/artist/'
-          ? { artists: query.includes('Forma') ? [{ id: FORMA, name: 'Forma', score: 100 }] : [] }
-          : // Inner Space by Forma is sure (its four tracks); anything else has a track count of its own.
+        : /^\/ws\/2\/release\/[0-9a-f-]+$/.test(url.pathname)
+          ? // An edition's tracks: the third differs from any album on the card.
             {
-              releases: [
-                query.includes('Inner Space') ? release(INNER, 'Inner Space', 4) : release(OTHER, 'Other', 99),
+              media: [
+                {
+                  position: 1,
+                  tracks: ['Night Drive', 'City Glow', 'Another Exit'].map((title, index) => ({
+                    position: index + 1,
+                    number: String(index + 1),
+                    title,
+                    length: 200_000,
+                  })),
+                },
               ],
-            },
+            }
+          : url.pathname === '/ws/2/artist/'
+            ? { artists: query.includes('Forma') ? [{ id: FORMA, name: 'Forma', score: 100 }] : [] }
+            : // Inner Space by Forma is sure (its four tracks); anything else has a track count of its own.
+              {
+                releases: [
+                  query.includes('Inner Space') ? release(INNER, 'Inner Space', 4) : release(OTHER, 'Other', 99),
+                ],
+              },
     })
   })
   await page.route('https://lrclib.net/api/**', (route) =>
@@ -2571,16 +2586,23 @@ test('enriches the library from the Card state tab: a sure run, its files, its u
   await expect(state.getByTestId('state-lyrics')).toContainText(/an \.lrc beside \d+ of \d+ tracks/, {
     timeout: 15_000,
   })
-  // What the run will do: covers and images wait for their sources, so only the allowed tasks come ticked.
+  // What the run will do, in its window: covers and images wait for their sources, so only the allowed tasks come
+  // ticked; the run goes by hand unless chosen otherwise.
   await state.getByTestId('state-enrich').click()
-  await expect(state.getByTestId('state-task-artists')).toBeChecked()
-  await expect(state.getByTestId('state-task-covers')).toBeDisabled()
-  await state.getByTestId('state-task-lyrics').check()
-  await state.getByTestId('state-scope').selectOption('Forma')
-  await expect(state.getByTestId('state-estimate')).toContainText('requests to MusicBrainz')
-  await state.getByTestId('state-start').click()
+  const dialog = page.getByRole('dialog')
+  const config = dialog.getByTestId('state-config')
+  await expect(config.getByTestId('state-task-artists')).toBeChecked()
+  await expect(config.getByTestId('state-task-covers')).toBeDisabled()
+  const modes = config.getByRole('group', { name: 'Mode' }).getByRole('button')
+  await expect(modes).toHaveText(['By hand', 'Automatically'])
+  await expect(modes.first()).toHaveAttribute('aria-pressed', 'true')
+  await modes.filter({ hasText: 'Automatically' }).click()
+  await config.getByTestId('state-task-lyrics').check()
+  await config.getByTestId('state-scope').selectOption('Forma')
+  await expect(config.getByTestId('state-estimate')).toContainText('requests to MusicBrainz')
+  await config.getByTestId('state-start').click()
   // Automatic: the sure artist and edition are taken, the lyrics gathered for the review of the files.
-  const report = state.getByTestId('state-report')
+  const report = dialog.getByTestId('state-report')
   await expect(report).toBeVisible({ timeout: 30_000 })
   await expect(report.getByTestId('state-done-identified')).toContainText('artists 1 · albums 1')
   const identities = await storeRecords(page, 'musicbrainz')
@@ -2592,6 +2614,12 @@ test('enriches the library from the Card state tab: a sure run, its files, its u
   )
   const decisions = await storeRecords(page, 'enrichment')
   expect(decisions.some((record) => record.value.kind === 'run' && record.value.state === 'done')).toBe(true)
+  // Closing the window keeps the report behind a line above the state.
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeHidden()
+  await expect(state.getByTestId('state-run-line')).toContainText('its report waits for you')
+  await expect(state.getByTestId('state-enrich')).toBeDisabled()
+  await state.getByTestId('state-open-run').click()
   const files = report.getByTestId('state-file')
   await expect(files.first()).toBeChecked()
   expect(await files.count()).toBeGreaterThan(0)
@@ -2602,23 +2630,35 @@ test('enriches the library from the Card state tab: a sure run, its files, its u
   await expect(report.getByTestId('state-undone')).toContainText('The run is undone', { timeout: 15_000 })
   expect((await storeRecords(page, 'musicbrainz')).filter((record) => record.value.mbid === FORMA)).toEqual([])
   await report.getByTestId('state-close').click()
+  await expect(dialog).toBeHidden()
+  await expect(state.getByTestId('state-run-line')).toHaveCount(0)
   // A doubtful edition waits for the end of an automatic run, then for the owner's choice.
   await state.getByTestId('state-enrich').click()
-  await state.getByTestId('state-task-artists').uncheck()
-  await state.getByTestId('state-scope').selectOption('Northline')
-  await state.getByTestId('state-start').click()
+  await config.getByTestId('state-task-artists').uncheck()
+  await modes.filter({ hasText: 'Automatically' }).click()
+  await config.getByTestId('state-scope').selectOption('Northline')
+  await config.getByTestId('state-start').click()
   await expect(report).toBeVisible({ timeout: 30_000 })
   await expect(report.getByTestId('state-done-review')).not.toContainText(': 0')
   await report.getByTestId('state-review').click()
-  const ask = state.getByTestId('state-ask')
+  const ask = dialog.getByTestId('state-ask')
   await expect(ask).toContainText('Which edition is it?', { timeout: 15_000 })
   await expect(ask.getByTestId('identify-choices').getByRole('button').first()).toHaveAttribute('aria-pressed', 'true')
-  const first = (await state.getByTestId('state-current').textContent())?.trim() ?? ''
-  await state.getByTestId('state-confirm').click()
+  // The chosen edition's tracks beside the album's on the card, the one that differs marked.
+  const proposed = ask.getByTestId('compare-proposed-tracks').getByRole('listitem')
+  await expect(proposed).toHaveCount(3, { timeout: 15_000 })
+  await expect(proposed.nth(2)).toHaveAttribute('data-differs', 'true')
+  await expect(ask.getByTestId('compare-current-tracks').getByRole('listitem').first()).toBeVisible()
+  // A closed window leaves the question waiting behind the line.
+  await page.keyboard.press('Escape')
+  await expect(state.getByTestId('state-run-line')).toContainText('waits for your choice')
+  await state.getByTestId('state-open-run').click()
+  const first = (await dialog.getByTestId('state-current').textContent())?.trim() ?? ''
+  await dialog.getByTestId('state-confirm').click()
   // The next doubtful album is skipped.
-  await expect(state.getByTestId('state-current')).not.toHaveText(first, { timeout: 15_000 })
+  await expect(dialog.getByTestId('state-current')).not.toHaveText(first, { timeout: 15_000 })
   await expect(ask).toBeVisible({ timeout: 15_000 })
-  await state.getByTestId('state-skip').click()
+  await dialog.getByTestId('state-skip').click()
   await expect(report).toBeVisible({ timeout: 30_000 })
   await expect(report.getByTestId('state-done-identified')).toContainText('albums 1')
   await report.getByTestId('state-undo').click()

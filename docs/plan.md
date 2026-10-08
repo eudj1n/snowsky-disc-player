@@ -2472,6 +2472,32 @@ changes, not with server 2.57.2 (owner, 2026-10-06).
       log is always empty since the boot layer, whose status tells. Unit
       `combined008`, e2e `service.spec.ts`.
 
+## The State tab's window and the editions beside the card (owner, 2026-10-08), card-only
+
+- [x] The State tab spans the content's width, as Space, Files and Trash do
+      (it was a narrow column).
+- [x] The enrichment runs in a window: what the run will do, the run and its
+      report. Closing the window cancels a run not yet started; a run under
+      way, its question or its report wait behind a line above the state
+      ("The run waits for your choice: 0 of 1. Open the run"), and the tab's
+      own buttons wait while it lasts.
+- [x] By hand is the default mode and comes first; Automatically is chosen
+      on purpose.
+- [x] An album's editions show beside the album on the card, in the run and
+      in the details' identify window alike: on the left the editions and the
+      chosen one's tracks (one more MusicBrainz request, by the edition's id,
+      when it is chosen; going down the list asks only for the one chosen
+      last), on the right the card's tracks with their folder. The two lists
+      start on one line and pair by row: a title that differs or a track the
+      other side lacks is marked, and a length more than three seconds apart;
+      the edition's line counts what differs. On narrow screens the two
+      stack. MusicBrainz requests now queue, so two asked at once still leave
+      a second apart. Evidence: unit `tracklists`, `covers` (an edition's
+      tracks, the queue); e2e "enriches the library from the Card state tab
+      in its window…" (By hand first, the closed window's line for a report
+      and for a question, the edition's tracks with a differing row);
+      screenshots in light, dark and on a phone.
+
 ## Later
 
 - AutoEQ (owner, 2026-10-02: the next large task): headphone correction from

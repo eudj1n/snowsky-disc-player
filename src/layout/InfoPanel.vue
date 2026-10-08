@@ -109,6 +109,7 @@ function identify(): void {
       key: albumKey.value,
       title: album.value.title,
       artist,
+      scope: scope.value,
       trackCount: count || null,
     }
   }

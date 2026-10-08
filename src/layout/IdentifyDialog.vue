@@ -7,7 +7,8 @@
  * kept on the player when paired, else for the tab. An edition shows its
  * track count, marked when the album on the card has as many (2026-10-02).
  * When no edition fits, the artist's albums can be browsed and one chosen,
- * whose editions then show the same way (owner, 2026-10-02).
+ * whose editions then show the same way (owner, 2026-10-02). An album's
+ * editions show beside its tracks on the card (owner, 2026-10-08).
  */
 import { ref, watch } from 'vue'
 import { t } from '../i18n'
@@ -23,6 +24,7 @@ import {
 } from '../stores/musicbrainzIds'
 import UiDialog from '../ui/UiDialog.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
+import AlbumCompare from './AlbumCompare.vue'
 import IdentifyChoices from './IdentifyChoices.vue'
 import type { IdentifyTarget } from './identify'
 
@@ -65,7 +67,13 @@ function close(): void {
 </script>
 
 <template>
-  <UiDialog :open="target !== null" eyebrow="MusicBrainz" :close-label="t('close')" size="xl" @close="close">
+  <UiDialog
+    :open="target !== null"
+    eyebrow="MusicBrainz"
+    :close-label="t('close')"
+    :size="target?.kind === 'album' ? '2xl' : 'xl'"
+    @close="close"
+  >
     <template v-if="target">
       <h2 class="mt-18 mb-8 text-title2 font-bold tracking-heading">
         {{ target.kind === 'artist' ? target.name : target.title }}
@@ -73,7 +81,8 @@ function close(): void {
       <p class="m-0 mb-14 text-footnote leading-[1.55] text-muted">
         {{ t(target.kind === 'artist' ? 'info_identify_sends' : 'info_edition_sends') }}
       </p>
-      <IdentifyChoices v-model="chosen" :target="target" />
+      <AlbumCompare v-if="target.kind === 'album'" v-model="chosen" :target="target" />
+      <IdentifyChoices v-else v-model="chosen" :target="target" />
       <div class="mt-18 flex justify-end gap-8">
         <UiPillButton variant="secondary" @click="close">{{ t('cancel') }}</UiPillButton>
         <UiPillButton

@@ -133,8 +133,13 @@ image files). Its enrichment runs in `stores/libraryRun.ts`: the artists,
 then the albums of the run's scope, each step through the existing gateways
 (MusicBrainz search, Cover Art Archive, LRCLIB, the image sources through
 `takeArtistImages`); the automatic mode takes what `domain/runMatches.ts`
-calls sure, the manual steps show `layout/IdentifyChoices.vue` (shared with
-the identify window). Every decision, with its run and what it wrote, goes
+calls sure, the manual steps show `layout/IdentifyChoices.vue` for an artist
+and `layout/AlbumCompare.vue` for an album, both shared with the identify
+window. The comparison sets the chosen edition's tracks (`releaseTracks`,
+read one edition at a time by `showEditionTracks`) beside the album's tracks
+on the card, paired by row in `domain/tracklists.ts`. The tab shows the state
+and opens the run in a window (`UiDialog`); closing it leaves the run going,
+with a line above the state that opens it again. Every decision, with its run and what it wrote, goes
 to the store's `enrichment` collection: a closed tab resumes, "not found" is
 remembered, and a run's undo forgets its identities and image choices. Files
 for the card are gathered and uploaded only after the owner's review.

@@ -15,7 +15,11 @@ import UiTextButton from '../ui/UiTextButton.vue'
 import type { IdentifyTarget } from './identify'
 import { artistFactsLine } from '../views/captions'
 
-const props = defineProps<{ target: IdentifyTarget }>()
+const props = defineProps<{
+  target: IdentifyTarget
+  /** Beside the album's tracks: the list scrolls in a few rows' height. */
+  compact?: boolean
+}>()
 const chosen = defineModel<string | null>({ required: true })
 
 const STATUS: Partial<Record<string, MessageKey>> = {
@@ -82,6 +86,7 @@ function back(): void {
       role="group"
       :aria-label="target.kind === 'artist' ? target.name : target.title"
       class="grid gap-6"
+      :class="{ 'max-h-268 overflow-y-auto overscroll-contain pr-4': compact }"
       data-testid="identify-choices"
     >
       <template v-if="target.kind === 'artist'">

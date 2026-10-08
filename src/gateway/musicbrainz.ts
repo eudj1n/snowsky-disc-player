@@ -59,12 +59,17 @@ const BASE = 'https://musicbrainz.org/ws/2'
 const TIMEOUT_MS = 15_000
 const INTERVAL_MS = 1_100
 let last = 0
+let turns: Promise<void> = Promise.resolve()
 
-/** Waits so that requests leave at most once a second. */
-async function paced(now: () => number = Date.now): Promise<void> {
-  const wait = last + INTERVAL_MS - now()
-  if (wait > 0) await new Promise((done) => setTimeout(done, wait))
-  last = now()
+/** Waits so that requests leave at most once a second, in the order they were asked, even when asked at once. */
+function paced(): Promise<void> {
+  const turn = turns.then(async () => {
+    const wait = last + INTERVAL_MS - Date.now()
+    if (wait > 0) await new Promise((done) => setTimeout(done, wait))
+    last = Date.now()
+  })
+  turns = turn
+  return turn
 }
 
 /** A Lucene phrase: quotes and backslashes escaped. */
@@ -333,7 +338,47 @@ export async function groupReleases(groupId: string, fetchImpl: typeof fetch = f
   return releases.map(candidate).filter((found) => found !== null)
 }
 
+/** One track of an edition, as its media list it. */
+export interface EditionTrack {
+  /** The medium's position: 1 for a single disc. */
+  disc: number
+  /** The track's number on its medium, as printed ("3", "A1"). */
+  number: string
+  title: string
+  lengthMs: number | null
+}
+
+/** The tracks of an edition, medium by medium (one request, paced: only its id leaves); null when MusicBrainz does not know it. */
+export async function releaseTracks(id: string, fetchImpl: typeof fetch = fetch): Promise<EditionTrack[] | null> {
+  const release = (await getJson(
+    `/release/${encodeURIComponent(id)}`,
+    { inc: 'recordings', fmt: 'json' },
+    fetchImpl,
+  )) as {
+    media?: unknown
+  } | null
+  if (!release) return null
+  const media = Array.isArray(release.media) ? (release.media as Record<string, unknown>[]) : []
+  return media.flatMap((medium, index) => {
+    const disc = typeof medium.position === 'number' ? medium.position : index + 1
+    const tracks = Array.isArray(medium.tracks) ? (medium.tracks as Record<string, unknown>[]) : []
+    return tracks.flatMap((track, place) => {
+      const title = text(track.title)
+      if (!title) return []
+      return [
+        {
+          disc,
+          number: text(track.number) ?? String(typeof track.position === 'number' ? track.position : place + 1),
+          title,
+          lengthMs: typeof track.length === 'number' && track.length > 0 ? track.length : null,
+        },
+      ]
+    })
+  })
+}
+
 /** For tests: forget the last request time. */
 export function resetPacing(): void {
   last = 0
+  turns = Promise.resolve()
 }

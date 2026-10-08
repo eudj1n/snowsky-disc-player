@@ -3,11 +3,13 @@
  * The Card section's State tab (owner, 2026-10-02): what the library lacks
  * and its enrichment. The state is counted from what the page knows and one
  * walk of the card; each count leads into the enrichment with its task ticked,
- * or to its list. The enrichment runs inside the tab, not in a window (a long
- * run should not hold one): first what it will do, then the run (automatic
- * or manual), then the report with the files for the card, written only
- * after their own review, and the run's undo. A run keeps going while the
- * page shows another section, and the Card item carries a dot meanwhile.
+ * or to its list. The enrichment runs in a window (owner, 2026-10-08, after
+ * a first version inside the tab): first what it will do, by hand unless
+ * chosen otherwise, then the run, then the report with the files for the
+ * card, written only after their own review, and the run's undo. Closing the
+ * window does not stop a run: a line above the state tells where it is and
+ * opens the window again. A run keeps going while the page shows another
+ * section, and the Card item carries a dot meanwhile.
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import CardTabs from '../components/card/CardTabs.vue'
@@ -17,6 +19,7 @@ import { libraryState } from '../domain/libraryState'
 import { duplicates } from '../domain/space'
 import { inTrash } from '../domain/trash'
 import { locale, t, type MessageKey } from '../i18n'
+import AlbumCompare from '../layout/AlbumCompare.vue'
 import IdentifyChoices from '../layout/IdentifyChoices.vue'
 import type { IdentifyTarget } from '../layout/identify'
 import { chosenImage, hasArtistPhoto } from '../stores/artistPictures'
@@ -50,6 +53,7 @@ import { albumIdentity, artistIdentity, identifyAllowed, identifying } from '../
 import { pairing } from '../stores/pairing'
 import { loadTrash, trash } from '../stores/trash'
 import UiChips from '../ui/UiChips.vue'
+import UiDialog from '../ui/UiDialog.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiSelect from '../ui/UiSelect.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
@@ -116,10 +120,22 @@ const blocked = computed<MessageKey | null>(() =>
         : null,
 )
 
-/* The first step: what the run will do. */
+/* The window: what the run will do, then the run, then its report. */
 const configuring = ref(false)
+const shown = ref(false)
+const windowOpen = computed(() => shown.value && (configuring.value || libraryRun.phase !== 'idle'))
+/** Closing the window cancels a run not yet started; a run under way or its report waits behind the line. */
+function hide(): void {
+  shown.value = false
+  if (libraryRun.phase === 'idle') configuring.value = false
+}
+/** A run is under way or its report waits: the tab's own buttons wait too. */
+const busy = computed(() => libraryRun.phase !== 'idle')
+
+/* The first step: what the run will do. */
 const tasks = ref<RunTask[]>([])
-const mode = ref<RunMode>('auto')
+// By hand unless chosen otherwise (owner, 2026-10-08).
+const mode = ref<RunMode>('manual')
 const scope = ref<string>('')
 const roles = computed(() => (['photo', 'background'] as const).filter((role) => autoImageRole(role)))
 const TASKS: readonly RunTask[] = ['artists', 'albums', 'covers', 'images', 'lyrics']
@@ -138,6 +154,7 @@ const taskCount = (task: RunTask): number => {
 function configure(preset: readonly RunTask[]): void {
   tasks.value = preset.filter((task) => taskAllowed(task) && (task !== 'images' || roles.value.length > 0))
   configuring.value = true
+  shown.value = true
 }
 function toggleTask(task: RunTask, on: boolean): void {
   tasks.value = on ? [...new Set([...tasks.value, task])] : tasks.value.filter((item) => item !== task)
@@ -150,8 +167,8 @@ const requests = computed(
 )
 const minutes = computed(() => Math.max(1, Math.ceil((requests.value * 1.1) / 60)))
 const modes = computed(() => [
-  { value: 'auto' as const, text: t('state_mode_auto') },
   { value: 'manual' as const, text: t('state_mode_manual') },
+  { value: 'auto' as const, text: t('state_mode_auto') },
 ])
 async function start(): Promise<void> {
   configuring.value = false
@@ -159,8 +176,23 @@ async function start(): Promise<void> {
 }
 async function resume(): Promise<void> {
   const open = libraryRun.interrupted
-  if (open) await startRun({ ...open.settings, tasks: [...open.settings.tasks] }, open.run)
+  if (!open) return
+  shown.value = true
+  await startRun({ ...open.settings, tasks: [...open.settings.tasks] }, open.run)
 }
+
+/** Where the run is, for the line above the state while the window is closed. */
+const runLine = computed<MessageKey>(() =>
+  libraryRun.phase === 'waiting'
+    ? 'state_line_waiting'
+    : libraryRun.phase === 'paused'
+      ? 'state_line_paused'
+      : libraryRun.phase === 'writing'
+        ? 'state_line_writing'
+        : libraryRun.phase === 'done'
+          ? 'state_line_done'
+          : 'state_line_running',
+)
 
 /* The run under way. */
 const current = computed(() => libraryRun.current)
@@ -196,7 +228,14 @@ const target = computed<IdentifyTarget | null>(() => {
   if (libraryRun.phase !== 'waiting' || !item) return null
   return item.kind === 'artist'
     ? { kind: 'artist', name: item.name }
-    : { kind: 'album', key: item.name, title: item.title, artist: item.artist, trackCount: item.trackCount }
+    : {
+        kind: 'album',
+        key: item.name,
+        title: item.title,
+        artist: item.artist,
+        scope: item.scope,
+        trackCount: item.trackCount,
+      }
 })
 const chosen = ref<string | null>(null)
 // The best candidate comes chosen: the owner confirms or picks another.
@@ -229,6 +268,7 @@ async function undo(): Promise<void> {
 }
 function close(): void {
   undone.value = null
+  shown.value = false
   closeRun()
 }
 
@@ -249,180 +289,199 @@ const ROW =
       </ViewHeading>
     </template>
 
-    <div class="max-w-860" data-testid="card-state">
-      <!-- The state, while no run is going and none is being set up. -->
-      <template v-if="libraryRun.phase === 'idle' && !configuring">
-        <p
-          v-if="libraryRun.interrupted"
-          class="mt-0 mb-20 flex flex-wrap items-center gap-x-14 gap-y-8 rounded-12 border border-line bg-raised px-16 py-12 text-footnote text-secondary"
-          role="status"
-          data-testid="state-interrupted"
-        >
-          {{ t('state_interrupted') }}
-          <UiTextButton :disabled="blocked !== null" data-testid="state-resume" @click="resume">{{
-            t('state_resume')
-          }}</UiTextButton>
-          <UiTextButton data-testid="state-dismiss" @click="dismissInterrupted">{{ t('state_dismiss') }}</UiTextButton>
-        </p>
-        <div class="border-t border-line">
-          <div :class="ROW" data-testid="state-identified">
-            <div>
-              <h2 class="m-0 text-callout font-semibold">{{ t('state_identified') }}</h2>
-              <p class="m-0 text-footnote text-muted [font-variant-numeric:tabular-nums]">
-                {{
-                  t('state_identified_facts', {
-                    artists: number(state.artists.identified),
-                    artistsTotal: number(state.artists.total),
-                    albums: number(state.albums.identified),
-                    albumsTotal: number(state.albums.total),
-                  })
-                }}
-              </p>
-            </div>
-            <UiPillButton variant="secondary" :disabled="blocked !== null" @click="configure(['artists', 'albums'])">{{
-              t('state_identify')
-            }}</UiPillButton>
+    <div data-testid="card-state">
+      <!-- The state; while a run goes or its report waits, a line leads back to its window. -->
+      <p
+        v-if="busy && !windowOpen"
+        class="mt-0 mb-20 flex flex-wrap items-center gap-x-14 gap-y-8 rounded-12 border border-line bg-raised px-16 py-12 text-footnote text-secondary"
+        role="status"
+        data-testid="state-run-line"
+      >
+        <span class="[font-variant-numeric:tabular-nums]">{{
+          t(runLine, { done: number(libraryRun.index), total: number(libraryRun.total) })
+        }}</span>
+        <UiTextButton data-testid="state-open-run" @click="shown = true">{{
+          t(libraryRun.phase === 'done' || libraryRun.phase === 'writing' ? 'state_open_report' : 'state_open_run')
+        }}</UiTextButton>
+      </p>
+      <p
+        v-if="libraryRun.interrupted && !busy"
+        class="mt-0 mb-20 flex flex-wrap items-center gap-x-14 gap-y-8 rounded-12 border border-line bg-raised px-16 py-12 text-footnote text-secondary"
+        role="status"
+        data-testid="state-interrupted"
+      >
+        {{ t('state_interrupted') }}
+        <UiTextButton :disabled="blocked !== null || busy" data-testid="state-resume" @click="resume">{{
+          t('state_resume')
+        }}</UiTextButton>
+        <UiTextButton data-testid="state-dismiss" @click="dismissInterrupted">{{ t('state_dismiss') }}</UiTextButton>
+      </p>
+      <div class="border-t border-line">
+        <div :class="ROW" data-testid="state-identified">
+          <div>
+            <h2 class="m-0 text-callout font-semibold">{{ t('state_identified') }}</h2>
+            <p class="m-0 text-footnote text-muted [font-variant-numeric:tabular-nums]">
+              {{
+                t('state_identified_facts', {
+                  artists: number(state.artists.identified),
+                  artistsTotal: number(state.artists.total),
+                  albums: number(state.albums.identified),
+                  albumsTotal: number(state.albums.total),
+                })
+              }}
+            </p>
           </div>
-          <div :class="ROW" data-testid="state-covers">
-            <div>
-              <h2 class="m-0 text-callout font-semibold">{{ t('state_covers') }}</h2>
-              <p class="m-0 text-footnote text-muted [font-variant-numeric:tabular-nums]">
-                {{
-                  t('state_covers_facts', {
-                    embedded: number(state.albums.covers.embedded),
-                    folder: number(state.albums.covers.folder),
-                    none: number(state.albums.covers.none),
-                  })
-                }}<template v-if="state.albums.covers.unknown">
-                  · {{ t('state_not_read', { count: number(state.albums.covers.unknown) }) }}</template
-                >
-              </p>
-            </div>
-            <UiPillButton
-              variant="secondary"
-              :disabled="blocked !== null || !taskAllowed('covers')"
-              @click="configure(['albums', 'covers'])"
-              >{{ t('state_find_covers') }}</UiPillButton
-            >
-          </div>
-          <div :class="ROW" data-testid="state-images">
-            <div>
-              <h2 class="m-0 text-callout font-semibold">{{ t('state_images') }}</h2>
-              <p class="m-0 text-footnote text-muted [font-variant-numeric:tabular-nums]">
-                {{
-                  t('state_images_facts', {
-                    photo: number(state.artists.photo),
-                    background: number(state.artists.background),
-                    total: number(state.artists.total),
-                  })
-                }}
-              </p>
-            </div>
-            <UiPillButton
-              variant="secondary"
-              :disabled="blocked !== null || !taskAllowed('images') || !roles.length"
-              @click="configure(['artists', 'images'])"
-              >{{ t('state_find_images') }}</UiPillButton
-            >
-          </div>
-          <div :class="ROW" data-testid="state-lyrics">
-            <div>
-              <h2 class="m-0 text-callout font-semibold">{{ t('state_lyrics') }}</h2>
-              <p class="m-0 text-footnote text-muted [font-variant-numeric:tabular-nums]">
-                {{
-                  state.lyrics.sidecar === null
-                    ? t('state_lyrics_unwalked', { tracks: number(state.lyrics.tracks) })
-                    : t('state_lyrics_facts', {
-                        sidecar: number(state.lyrics.sidecar),
-                        tracks: number(state.lyrics.tracks),
-                      })
-                }}
-              </p>
-            </div>
-            <UiPillButton
-              variant="secondary"
-              :disabled="blocked !== null || !taskAllowed('lyrics')"
-              @click="configure(['albums', 'lyrics'])"
-              >{{ t('state_find_lyrics') }}</UiPillButton
-            >
-          </div>
-          <div :class="ROW" data-testid="state-tags">
-            <div>
-              <h2 class="m-0 text-callout font-semibold">{{ t('state_tags') }}</h2>
-              <p class="m-0 text-footnote text-muted [font-variant-numeric:tabular-nums]">
-                {{
-                  t('state_tags_facts', {
-                    artist: number(state.tags.unknownArtist),
-                    album: number(state.tags.unknownAlbum),
-                    genre: number(state.tags.unknownGenre),
-                  })
-                }}<template v-if="state.albums.noYear !== null">
-                  · {{ t('state_no_year', { count: number(state.albums.noYear) }) }}</template
-                >
-              </p>
-            </div>
-            <UiTextButton
-              v-if="unknownTagged.length"
-              :aria-expanded="lists.tags"
-              data-testid="state-tags-list"
-              @click="lists.tags = !lists.tags"
-              >{{ t(lists.tags ? 'state_hide_list' : 'state_show_list') }}</UiTextButton
-            >
-            <ul
-              v-if="lists.tags"
-              class="col-span-full m-0 grid min-w-0 list-none gap-4 p-0 text-footnote text-secondary"
-            >
-              <li v-for="track in unknownTagged.slice(0, 50)" :key="track.id" class="truncate">
-                {{ track.title }}<template v-if="track.path"> · {{ cardFolder(track.path) }}</template>
-              </li>
-            </ul>
-          </div>
-          <div :class="ROW" data-testid="state-duplicates">
-            <div>
-              <h2 class="m-0 text-callout font-semibold">{{ t('state_duplicates') }}</h2>
-              <p class="m-0 text-footnote text-muted">
-                {{ t('state_duplicates_facts', { count: number(duplicateRows.length) }) }}
-              </p>
-            </div>
-            <UiTextButton v-if="duplicateRows.length" @click="$router.push('/card')">{{
-              t('state_open_space')
-            }}</UiTextButton>
-          </div>
-          <div :class="ROW" data-testid="state-unreadable">
-            <div>
-              <h2 class="m-0 text-callout font-semibold">{{ t('state_unreadable') }}</h2>
-              <p class="m-0 text-footnote text-muted">
-                {{ t('state_unreadable_facts', { count: number(unreadable.length) }) }}
-              </p>
-            </div>
-            <UiTextButton
-              v-if="unreadable.length"
-              :aria-expanded="lists.unreadable"
-              @click="lists.unreadable = !lists.unreadable"
-              >{{ t(lists.unreadable ? 'state_hide_list' : 'state_show_list') }}</UiTextButton
-            >
-            <ul
-              v-if="lists.unreadable"
-              class="col-span-full m-0 grid min-w-0 list-none gap-4 p-0 text-footnote text-secondary"
-            >
-              <li v-for="path in unreadable.slice(0, 50)" :key="path" class="truncate">{{ cardFolder(path) }}</li>
-            </ul>
-          </div>
-        </div>
-        <div class="mt-20 flex flex-wrap items-center justify-end gap-x-16 gap-y-8">
-          <p v-if="blocked" class="m-0 text-footnote text-muted" data-testid="state-blocked">{{ t(blocked) }}</p>
           <UiPillButton
-            :disabled="blocked !== null"
-            data-testid="state-enrich"
-            @click="configure(['artists', 'albums', 'covers', 'images'])"
-            >{{ t('state_enrich') }}</UiPillButton
+            variant="secondary"
+            :disabled="blocked !== null || busy"
+            @click="configure(['artists', 'albums'])"
+            >{{ t('state_identify') }}</UiPillButton
           >
         </div>
-      </template>
+        <div :class="ROW" data-testid="state-covers">
+          <div>
+            <h2 class="m-0 text-callout font-semibold">{{ t('state_covers') }}</h2>
+            <p class="m-0 text-footnote text-muted [font-variant-numeric:tabular-nums]">
+              {{
+                t('state_covers_facts', {
+                  embedded: number(state.albums.covers.embedded),
+                  folder: number(state.albums.covers.folder),
+                  none: number(state.albums.covers.none),
+                })
+              }}<template v-if="state.albums.covers.unknown">
+                · {{ t('state_not_read', { count: number(state.albums.covers.unknown) }) }}</template
+              >
+            </p>
+          </div>
+          <UiPillButton
+            variant="secondary"
+            :disabled="blocked !== null || busy || !taskAllowed('covers')"
+            @click="configure(['albums', 'covers'])"
+            >{{ t('state_find_covers') }}</UiPillButton
+          >
+        </div>
+        <div :class="ROW" data-testid="state-images">
+          <div>
+            <h2 class="m-0 text-callout font-semibold">{{ t('state_images') }}</h2>
+            <p class="m-0 text-footnote text-muted [font-variant-numeric:tabular-nums]">
+              {{
+                t('state_images_facts', {
+                  photo: number(state.artists.photo),
+                  background: number(state.artists.background),
+                  total: number(state.artists.total),
+                })
+              }}
+            </p>
+          </div>
+          <UiPillButton
+            variant="secondary"
+            :disabled="blocked !== null || busy || !taskAllowed('images') || !roles.length"
+            @click="configure(['artists', 'images'])"
+            >{{ t('state_find_images') }}</UiPillButton
+          >
+        </div>
+        <div :class="ROW" data-testid="state-lyrics">
+          <div>
+            <h2 class="m-0 text-callout font-semibold">{{ t('state_lyrics') }}</h2>
+            <p class="m-0 text-footnote text-muted [font-variant-numeric:tabular-nums]">
+              {{
+                state.lyrics.sidecar === null
+                  ? t('state_lyrics_unwalked', { tracks: number(state.lyrics.tracks) })
+                  : t('state_lyrics_facts', {
+                      sidecar: number(state.lyrics.sidecar),
+                      tracks: number(state.lyrics.tracks),
+                    })
+              }}
+            </p>
+          </div>
+          <UiPillButton
+            variant="secondary"
+            :disabled="blocked !== null || busy || !taskAllowed('lyrics')"
+            @click="configure(['albums', 'lyrics'])"
+            >{{ t('state_find_lyrics') }}</UiPillButton
+          >
+        </div>
+        <div :class="ROW" data-testid="state-tags">
+          <div>
+            <h2 class="m-0 text-callout font-semibold">{{ t('state_tags') }}</h2>
+            <p class="m-0 text-footnote text-muted [font-variant-numeric:tabular-nums]">
+              {{
+                t('state_tags_facts', {
+                  artist: number(state.tags.unknownArtist),
+                  album: number(state.tags.unknownAlbum),
+                  genre: number(state.tags.unknownGenre),
+                })
+              }}<template v-if="state.albums.noYear !== null">
+                · {{ t('state_no_year', { count: number(state.albums.noYear) }) }}</template
+              >
+            </p>
+          </div>
+          <UiTextButton
+            v-if="unknownTagged.length"
+            :aria-expanded="lists.tags"
+            data-testid="state-tags-list"
+            @click="lists.tags = !lists.tags"
+            >{{ t(lists.tags ? 'state_hide_list' : 'state_show_list') }}</UiTextButton
+          >
+          <ul v-if="lists.tags" class="col-span-full m-0 grid min-w-0 list-none gap-4 p-0 text-footnote text-secondary">
+            <li v-for="track in unknownTagged.slice(0, 50)" :key="track.id" class="truncate">
+              {{ track.title }}<template v-if="track.path"> · {{ cardFolder(track.path) }}</template>
+            </li>
+          </ul>
+        </div>
+        <div :class="ROW" data-testid="state-duplicates">
+          <div>
+            <h2 class="m-0 text-callout font-semibold">{{ t('state_duplicates') }}</h2>
+            <p class="m-0 text-footnote text-muted">
+              {{ t('state_duplicates_facts', { count: number(duplicateRows.length) }) }}
+            </p>
+          </div>
+          <UiTextButton v-if="duplicateRows.length" @click="$router.push('/card')">{{
+            t('state_open_space')
+          }}</UiTextButton>
+        </div>
+        <div :class="ROW" data-testid="state-unreadable">
+          <div>
+            <h2 class="m-0 text-callout font-semibold">{{ t('state_unreadable') }}</h2>
+            <p class="m-0 text-footnote text-muted">
+              {{ t('state_unreadable_facts', { count: number(unreadable.length) }) }}
+            </p>
+          </div>
+          <UiTextButton
+            v-if="unreadable.length"
+            :aria-expanded="lists.unreadable"
+            @click="lists.unreadable = !lists.unreadable"
+            >{{ t(lists.unreadable ? 'state_hide_list' : 'state_show_list') }}</UiTextButton
+          >
+          <ul
+            v-if="lists.unreadable"
+            class="col-span-full m-0 grid min-w-0 list-none gap-4 p-0 text-footnote text-secondary"
+          >
+            <li v-for="path in unreadable.slice(0, 50)" :key="path" class="truncate">{{ cardFolder(path) }}</li>
+          </ul>
+        </div>
+      </div>
+      <div class="mt-20 flex flex-wrap items-center justify-end gap-x-16 gap-y-8">
+        <p v-if="blocked" class="m-0 text-footnote text-muted" data-testid="state-blocked">{{ t(blocked) }}</p>
+        <UiPillButton
+          :disabled="blocked !== null || busy"
+          data-testid="state-enrich"
+          @click="configure(['artists', 'albums', 'covers', 'images'])"
+          >{{ t('state_enrich') }}</UiPillButton
+        >
+      </div>
+    </div>
 
+    <UiDialog
+      :open="windowOpen"
+      :eyebrow="t('state_window')"
+      :close-label="t('close')"
+      :size="target?.kind === 'album' ? '2xl' : 'xl'"
+      @close="hide"
+    >
       <!-- The first step: what the run will do. -->
-      <section v-else-if="libraryRun.phase === 'idle'" aria-labelledby="state-config" data-testid="state-config">
-        <h2 id="state-config" class="mt-0 mb-14 text-title3 font-bold tracking-heading">
+      <section v-if="libraryRun.phase === 'idle'" aria-labelledby="state-config" data-testid="state-config">
+        <h2 id="state-config" class="mt-18 mb-14 text-title2 font-bold tracking-heading">
           {{ t('state_config_title') }}
         </h2>
         <div class="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-14">
@@ -476,7 +535,7 @@ const ROW =
           </div>
         </div>
         <div class="mt-18 flex justify-end gap-8">
-          <UiPillButton variant="secondary" @click="configuring = false">{{ t('cancel') }}</UiPillButton>
+          <UiPillButton variant="secondary" @click="hide">{{ t('cancel') }}</UiPillButton>
           <UiPillButton :disabled="!tasks.length || !runReady()" data-testid="state-start" @click="start">{{
             t('state_start')
           }}</UiPillButton>
@@ -489,7 +548,7 @@ const ROW =
         aria-labelledby="state-run"
         data-testid="state-run"
       >
-        <span class="text-caption2 font-semibold tracking-caps text-muted uppercase">{{
+        <span class="mt-18 block text-caption font-semibold text-muted">{{
           t(libraryRun.reviewing ? 'state_reviewing' : current?.kind === 'album' ? 'state_albums' : 'state_artists')
         }}</span>
         <h2 id="state-run" class="mt-6 mb-4 text-title2 font-bold tracking-heading" data-testid="state-current">
@@ -516,11 +575,12 @@ const ROW =
           {{ t('state_progress', { done: number(libraryRun.index), total: number(libraryRun.total) }) }}
         </p>
 
-        <div v-if="target" class="mt-18 rounded-12 border border-line bg-raised px-16 py-14" data-testid="state-ask">
-          <h3 class="mt-0 mb-10 text-callout font-semibold">
+        <div v-if="target" class="mt-18 border-t border-line pt-16" data-testid="state-ask">
+          <h3 class="mt-0 mb-12 text-callout font-semibold">
             {{ t(target.kind === 'artist' ? 'state_ask_artist' : 'state_ask_album') }}
           </h3>
-          <IdentifyChoices v-model="chosen" :target="target" />
+          <AlbumCompare v-if="target.kind === 'album'" v-model="chosen" :target="target" />
+          <IdentifyChoices v-else v-model="chosen" :target="target" />
           <div class="mt-14 flex justify-end gap-8">
             <UiPillButton variant="secondary" data-testid="state-skip" @click="skipChoice">{{
               t('state_skip')
@@ -536,7 +596,10 @@ const ROW =
           </div>
         </div>
 
-        <ul class="mt-18 mb-0 grid list-none gap-6 p-0 text-footnote" data-testid="state-log">
+        <ul
+          class="mt-18 mb-0 grid max-h-150 list-none gap-6 overflow-y-auto overscroll-contain p-0 text-footnote"
+          data-testid="state-log"
+        >
           <li
             v-for="(entry, index) in libraryRun.log"
             :key="index"
@@ -581,7 +644,9 @@ const ROW =
 
       <!-- The report. -->
       <section v-else aria-labelledby="state-report" data-testid="state-report">
-        <h2 id="state-report" class="mt-0 mb-14 text-title3 font-bold tracking-heading">{{ t('state_done_title') }}</h2>
+        <h2 id="state-report" class="mt-18 mb-14 text-title2 font-bold tracking-heading">
+          {{ t('state_done_title') }}
+        </h2>
         <p
           v-if="undone !== null"
           role="status"
@@ -691,6 +756,6 @@ const ROW =
           }}</UiPillButton>
         </div>
       </section>
-    </div>
+    </UiDialog>
   </CollectionGate>
 </template>
