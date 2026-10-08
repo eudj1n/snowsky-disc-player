@@ -310,6 +310,25 @@ export function editPlaylists(path, headers, body) {
 
 /** Albums whose files carry a cover, and tracks with lyrics (card media). */
 const COVERED = new Set(['Blue Hours', 'Inner Space', 'Afterglow'])
+
+/**
+ * For the README's screenshots (scripts/screenshots): MOCK_GATEWAY_DEMO_COVERS names a folder of
+ * cover-<n>.png, drawn from fixtures/demo-covers (the reference DISC Web demo's original covers), and
+ * the first eight albums carry them instead; the others carry none.
+ */
+const DEMO_COVERS = process.env.MOCK_GATEWAY_DEMO_COVERS ?? null
+
+/** The stock's cover of the playing track: any track has one, except an album without a demo cover. */
+export const playingCover = (track) => (DEMO_COVERS ? coverOf(track) : true)
+
+/** The file of a track's cover: a demo cover, the shared fixture (true), or null when its files carry none. */
+export function coverOf(track) {
+  if (!DEMO_COVERS) return COVERED.has(track.ALBUM) ? true : null
+  const index = ALBUMS.slice(0, 8).findIndex(
+    ([album, artist]) => album === track.ALBUM && artist === track.ALBUM_ARTIST,
+  )
+  return index < 0 ? null : `${DEMO_COVERS}/cover-${String(index)}.png`
+}
 const LYRICS = {
   Weightless: {
     source: 'sidecar',
@@ -341,7 +360,7 @@ export function mediaRoute(kind, path) {
   const track = TRACKS.find((item) => item.PATH === path)
   if (!track) return { status: 404, body: 'No such music file\n' }
   const lyrics = LYRICS[track.TITLE]
-  const cover = COVERED.has(track.ALBUM)
+  const cover = coverOf(track)
   if (kind === 'info') {
     // Sizes follow the length (about 880 kbit/s); Blue Hours is a 24/96 release.
     const hiRes = track.ALBUM === 'Blue Hours'
@@ -366,7 +385,7 @@ export function mediaRoute(kind, path) {
     }
     return { status: 200, body: JSON.stringify(info), type: 'application/json; charset=utf-8' }
   }
-  if (kind === 'cover') return cover ? { status: 200, cover: true } : { status: 204, body: '' }
+  if (kind === 'cover') return cover ? { status: 200, cover } : { status: 204, body: '' }
   if (kind === 'lyrics' && lyrics) {
     return {
       status: 200,

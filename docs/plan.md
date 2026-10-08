@@ -2452,7 +2452,8 @@ V2.57 profile; no `commands.json`); the card ejected.
 - [ ] Rework the project documentation, then mark the current version as
       1.0.0 and count from it, with a CHANGELOG of the capabilities in broad
       terms (owner, 2026-10-02). The first tag comes then; until it, Pages
-      keeps the site published last.
+      keeps the site published last. The README and the CHANGELOG are done
+      (2026-10-08, below); the version and the tag remain.
 
 ## The boot layer's server in the diagnostics (owner, 2026-10-06), card-only
 
@@ -2497,6 +2498,29 @@ changes, not with server 2.57.2 (owner, 2026-10-06).
       in its window…" (By hand first, the closed window's line for a report
       and for a question, the edition's tracks with a differing row);
       screenshots in light, dark and on a phone.
+
+## The README for users, a changelog and the README's pictures (owner, 2026-10-08)
+
+The owner: the README should be inviting, with pictures, as snowsky-disc-qemu's
+is, and a CHANGELOG for users starts now; the installation guide waits for
+the boot layer's and the server's documentation.
+
+- [x] The README leads with what Disc Player gives a listener: a large picture
+      of Home, three phone screens, a table of what one can do, a closer look
+      at lyrics and karaoke, search and the card, then privacy, what one
+      needs (the boot layer and its server, no install steps yet), use, the
+      developer links and the project's scope (unofficial, MIT).
+- [x] `CHANGELOG.md` for users, its first entry 1.0.0 (unreleased): what the
+      page can do, in broad terms.
+- [x] The README's pictures come from the mock with the DISC Web demo's
+      original covers (decided for this request, for the owner to confirm:
+      the reference's fictional artwork serves the pictures, kept in
+      `tests/e2e/fixtures/demo-covers`, MIT, credited in the README and in
+      [docs/images](images/README.md)). The mock serves them only when
+      `MOCK_GATEWAY_DEMO_COVERS` names their drawn files, so the browser
+      tests are unchanged; `npm run screenshots` draws the covers and takes
+      every picture again. Evidence: the full mock suite with the changed
+      mock; the pictures themselves.
 
 ## Later
 

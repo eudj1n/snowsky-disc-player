@@ -1,125 +1,145 @@
-# SNOWSKY DISC player
+# Disc Player
 
-A music player web application for the FiiO SNOWSKY DISC. It lives on the
-player's own memory card and is served by the DISC service running inside the
-player, so any browser on your home network becomes a remote for your music:
-browse the library, see what is playing and control playback. Music keeps
-playing on the DISC; nothing streams to the browser.
+**Your SNOWSKY DISC's music in every browser at home: on the computer, the
+tablet and the phone.**
 
-> Status: in active development (see the [plan](docs/plan.md)). Today you can:
->
-> - browse Home, New, albums, artists, genres, tracks, favorites and
->   playlists, with sorting and genre filters; Artists lists those with
->   records of their own, and every guest of a joint credit under All;
->   breadcrumbs above a page lead back to its section;
-> - search the whole collection at once: press `/` or ⌘K (Ctrl+K), or the
->   Search button, and type; tracks, albums, artists, playlists and genres
->   appear as you type (case and accents do not matter), Enter opens one or
->   plays a track, and All results shows every match. The same box runs
->   commands: go to a section, switch the theme, add music, sound settings,
->   move the music to this browser, refresh the collection;
-> - play albums, tracks, playlists, artists and genres, and pick a row in the
->   queue;
-> - follow what is playing, seek, change volume or mute, shuffle, repeat and
->   mark the current track as a favorite;
-> - see what is known about the playing track (quality, bit rate, year, genre,
->   disc and track, file size and folder, how often it was played) with its
->   lyrics below, which follow the song when they are synced; the queue opens
->   on its own; on a phone the panel is a full-screen player;
-> - click any track's title to see the same about it, with its lyrics, and
->   play it, add it to a playlist or mark it; double-click a row to play it;
-> - adjust gain, balance, the DAC filter and DRE (the sliders button beside
->   the volume);
-> - add music from the Card section: upload files or album folders, then let
->   the player scan (a dot on Card shows it working);
-> - see what takes space on the player's card: music by format, the largest
->   albums and artists, and possible duplicates in two folders;
-> - see in Card → State what the library lacks (identities, covers, artist
->   images, lyrics, unknown tags, duplicates, unreadable files) and enrich it
->   in one run, automatically or step by step: artists and albums identified
->   in MusicBrainz, covers, images and lyrics found, files for the card
->   written only after you review them, and the whole run undoable;
-> - browse the card's folders, play a folder or a file, create a folder and
->   add music straight into it;
-> - pick up where the player stopped: after its queue ended or USB storage
->   mode, the bar shows the remembered track and Play continues it;
-> - sing along in karaoke: synced lyrics full screen, word by word where the
->   lyrics file has word timings;
-> - find lyrics for a track that has none on LRCLIB and save them beside the
->   track on the card;
-> - find a cover for an album that has none on Cover Art Archive and save it
->   into the album's folder (Cover Art Archive's images are served by
->   archive.org, which some networks cannot reach);
-> - open the details (i) of an artist or album: confirm which artist or
->   edition MusicBrainz means (each edition shows its track count, marked
->   when it matches the album on the card), choose an artist's photo and a wide background
->   from fanart.tv (with your own free key) and Wikimedia Commons, or another
->   album cover (the old one goes to the card's trash), each shown with its
->   author and licence and kept on the player for every browser; artists
->   without a photo show the cover of their most played album;
-> - choose which of these outside sources may be asked under Settings →
->   External sources: each stays off until you allow it, and is asked without
->   a click only when you also set it to work automatically; covers and
->   photos are found through MusicBrainz, which you allow there too; an
->   artist's photo is taken automatically, a background only when you tick
->   it;
-> - see what you played last, on the player and in this browser;
-> - listen to automatic playlists made from your listening (Most played,
->   Daily mix, Recently added, Not played lately, and one artist's most
->   played), redrawn each day, week or month and kept on the player;
-> - move the music between the player and this browser with one switch in
->   the bar: the track, its position and the queue come along, and every
->   Play then plays where the switch says; watch what plays in the browser as
->   a disc: the cover turns, its ring pulses with the bass and the spectrum
->   spreads around it, full screen;
-> - choose a light or dark theme in four tones each, and the text size.
->
-> Covers and durations appear as tracks play: the player's library keeps
-> neither for most files.
+Disc Player is an unofficial music app that lives on the player's own memory
+card. Open the player's address on your Wi-Fi and the whole collection is
+there: browse it, start an album, follow the lyrics, find the covers it lacks
+and keep the card in order. The music plays on the DISC, or moves to the
+browser with one switch.
 
-## Requirements
+[What you can do](#what-you-can-do) · [A closer look](#a-closer-look) ·
+[What you need](#what-you-need) · [Changelog](CHANGELOG.md) ·
+[Releases](https://github.com/eudj1n/snowsky-disc-player/releases)
 
-- A SNOWSKY DISC with firmware V2.57 and the DISC service image installed
-  ([snowsky-disc-service](https://github.com/eudj1n/snowsky-disc-service));
-  combined-009 or later for every feature.
+<p align="center">
+  <img src="docs/images/readme-home.jpg" width="960" alt="Disc Player's home page in a desktop browser: the featured album, recently played and the player bar">
+</p>
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/readme-phone-home.jpg" width="240" alt="Home on a phone"></td>
+    <td align="center"><img src="docs/images/readme-phone-player.jpg" width="240" alt="The full-screen player on a phone"></td>
+    <td align="center"><img src="docs/images/readme-phone-album.jpg" width="240" alt="An album page on a phone, dark theme"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Your collection at a glance</b></td>
+    <td align="center"><b>A full player in your hand</b></td>
+    <td align="center"><b>Each album in its colours</b></td>
+  </tr>
+</table>
+
+_Screenshots of the fictional demo collection, not of anyone's library
+([about the pictures](docs/images/README.md))._
+
+## What you can do
+
+| Capability              | What you get                                                                                                                                                                                                                 |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Browse and search**   | Home, New, albums, artists, genres, tracks, favorites and playlists, sorted and filtered your way. Press `/` or ⌘K and type: tracks, albums, artists and playlists appear as you type.                                       |
+| **Play on the DISC**    | Albums, artists, genres, playlists and folders; the queue, seek, volume, shuffle, repeat and favorites. Every change is checked against the player's own answer.                                                             |
+| **Play in the browser** | One switch moves the track, its position and the queue to the browser and back. Full screen, the cover turns as a disc and the spectrum spreads around it.                                                                   |
+| **Lyrics and karaoke**  | Lyrics beside the track, following the song when they are synced; karaoke full screen, word by word. Missing lyrics can be found on LRCLIB and saved beside the track.                                                       |
+| **Covers and artists**  | Covers from Cover Art Archive, artist photos and backgrounds from fanart.tv (with your own free key) and Wikimedia Commons, with their authors and licences. MusicBrainz tells which artist and which edition each album is. |
+| **Your listening**      | What you played, on the player and in the browser; automatic playlists (Most played, Daily mix, Recently added, Not played lately) kept on the player; pins and dislikes.                                                    |
+| **The card**            | Upload music and album folders, then let the player scan; see what takes space, browse and play folders, move files to the trash and back.                                                                                   |
+| **The library's state** | What the collection lacks (identities, covers, images, lyrics, unknown tags, duplicates, unreadable files) and one run that fills it in, step by step or automatically, undoable as a whole.                                 |
+| **Sound**               | Gain, balance, the DAC filter and DRE, applied on the player.                                                                                                                                                                |
+| **Make it yours**       | Light and dark themes in four tones each, four text sizes, English and Russian; more contrast and reduced transparency follow your system.                                                                                   |
+
+## A closer look
+
+### Lyrics that follow the song
+
+Synced lyrics keep the current line in view; tap a line to jump there. In
+karaoke the line fills word by word where the lyrics file has word timings,
+and a pause shows three dots that fill until the next line.
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/readme-lyrics.jpg" width="470" alt="An album page in the dark theme with synced lyrics in the Now Playing panel"></td>
+    <td align="center"><img src="docs/images/readme-karaoke.jpg" width="470" alt="Karaoke full screen: the current line fills word by word"></td>
+  </tr>
+</table>
+
+### Find anything as you type
+
+One box for the whole collection: case and accents do not matter, Enter
+opens a result or plays a track, and the same box runs commands (go to a
+section, switch the theme, add music, sound settings).
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/readme-search.jpg" width="470" alt="The search palette with an artist, albums and tracks found as you type"></td>
+    <td align="center"><img src="docs/images/readme-albums.jpg" width="470" alt="The albums grid, sorted by recently added"></td>
+  </tr>
+</table>
+
+### Your card, in order
+
+See what takes space on the card, find the possible duplicates and move what
+you do not need to the trash. The State tab counts what the library lacks and
+enriches it in one run: when you choose an album's edition, its tracks stand
+beside the album's own on the card, and what differs is marked.
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/readme-card.jpg" width="470" alt="The card's space: music by format and the largest albums"></td>
+    <td align="center"><img src="docs/images/readme-editions.jpg" width="470" alt="Choosing an album's edition: MusicBrainz's editions and tracks beside the album on the card"></td>
+  </tr>
+</table>
+
+## Privacy and safety
+
+There is no account, no cloud and no analytics. The page talks to the player
+that served it; outside sources (MusicBrainz, Cover Art Archive, LRCLIB,
+fanart.tv, Wikimedia Commons) stay off until you allow each one under
+Settings → External sources, and then receive only what the page needs to ask
+them, such as an album's title and artist. Pins, play history, automatic
+playlists, identities and chosen pictures are kept on the player; theme,
+language and text size stay in the browser.
+
+Changing anything on the player takes its serial number, entered once in
+this browser. The player accepts only the commands its reviewed list allows,
+and a command whose result is unknown is never repeated by itself.
+
+## What you need
+
+- A SNOWSKY DISC with firmware V2.57, running the DISC boot layer
+  ([snowsky-disc-boot](https://github.com/eudj1n/snowsky-disc-boot)) and its
+  server ([snowsky-disc-server](https://github.com/eudj1n/snowsky-disc-server)),
+  which serves Disc Player from the card. Both are in development; their
+  documentation will describe the installation.
 - The player on your Wi-Fi network (set up on the player itself).
-- A current desktop or mobile browser on the same network as the player.
-
-## Install on the memory card
-
-Disc Player is a folder you copy onto the card; nothing is flashed. Put the
-player in USB storage mode (or use a card reader), copy the `Disc Player`
-folder from the release zip into `Apps/` on the card, replacing the old one,
-and eject. The [release guide](docs/release.md) has the details.
+- A current browser on a computer, tablet or phone on the same network.
 
 ## Use
 
-1. Open `http://<player-ip>:7870/` in a browser on the same network.
-2. Press **Connect**. Only one client can control the player at a time; if the
-   FiiO app or another page is connected, disconnect it first.
+1. Open the player's address, `http://<player-ip>:7870/`, in a browser on the
+   same network.
+2. Press **Connect**. One client controls the player at a time: disconnect
+   the FiiO app or another page first.
 3. To control playback, open **Pairing** and enter the player's serial number
    (SN, under About device on the player). It is kept in this browser only.
    After five wrong attempts the player refuses pairing from that device for
    ten minutes.
 
-The interface starts in the player's own language when it is Russian or
-English and remembers your choice of language, theme and text size
-(Compact, Standard, Large or Extra large), all on the Settings page (in the
-sidebar, or the gear in the top bar). More contrast and reduced transparency follow your system's
-settings. **Refresh collection** is in the connection dialog.
-
-## Privacy and safety
-
-The page talks only to the player that served it. There is no account, no
-cloud and no analytics. The player never receives a command that its reviewed
-command list does not allow, and a command whose result is unknown is never
-repeated automatically.
+The page starts in the player's own language when it is Russian or English.
+Language, theme and text size are on the Settings page (the gear in the top
+bar).
 
 ## For developers
 
-Start with [AGENTS.md](AGENTS.md), the [architecture](docs/architecture.md)
-and the [development guide](docs/development.md).
+Start with [AGENTS.md](AGENTS.md), the [architecture](docs/architecture.md),
+the [development guide](docs/development.md) and the
+[release guide](docs/release.md); the [plan](docs/plan.md) records what was
+done and why.
 
-## License
+## License & scope
 
-[MIT](LICENSE)
+Independent project, not affiliated with or endorsed by FiiO or SNOWSKY.
+[MIT licensed](LICENSE). The demo collection and its covers come from the
+DISC Web demo of
+[snowsky-disc-qemu](https://github.com/eudj1n/snowsky-disc-qemu) (MIT):
+original, fictional names and artwork.

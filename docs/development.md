@@ -17,6 +17,7 @@ Node.js 20.19+ (CI uses 24). Install once with `npm ci`.
 | `npm run build:hosted`            | The hosted build for a public HTTPS site (`dist-hosted/`, `VITE_HOSTED=1`; see below)                        |
 | `npm run check`                   | All of the above except e2e; this is what CI runs first                                                      |
 | `npm run e2e`                     | Playwright against the mock gateway (build first), desktop and phone                                         |
+| `npm run screenshots`             | The README's pictures from the mock with the demo covers (build first; [the pictures](images/README.md))     |
 | `npm run release`                 | Packs the Disc Player app as a zip, checked by the service's tool ([release](release.md))                    |
 | `npm run release:origins`         | Brings the service's current reviewed `origins.json` into `release/` ([release](release.md))                 |
 

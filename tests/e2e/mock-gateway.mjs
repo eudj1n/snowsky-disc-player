@@ -18,6 +18,7 @@ import {
   TRACKS,
   artistAlbum,
   catalogPage,
+  playingCover,
   dataQuery,
   editPlaylists,
   genre,
@@ -26,6 +27,8 @@ import {
 } from './mock-collection.mjs'
 
 const busyOnce = new Set()
+/** A cover's bytes: the shared fixture, or a demo cover's file (mock-collection.mjs). */
+const coverFile = (cover) => readFileSync(cover === true ? new URL('cover.png', FIXTURES) : cover)
 // The card catalog's upload names (firmware/commands/v2.57.json in the service).
 const MEDIA_NAME = /\/[^/]+\.(flac|wav|mp3|m4a|aac|ogg|opus|ape|wv|wma|dsf|dff|aiff?|lrc|jpe?g|png)$/i
 const AUDIO_NAME = /\.(flac|wav|mp3|m4a|aac|ogg|opus|ape|wv|wma|dsf|dff|aiff?)$/i
@@ -1057,12 +1060,14 @@ const server = createServer((request, response) => {
       )
         result.body = JSON.stringify({ ...info, cover: 'folder' })
     }
-    if (result.cover) return send(response, 200, readFileSync(new URL('cover.png', FIXTURES)), 'image/png')
+    if (result.cover) return send(response, 200, coverFile(result.cover), 'image/png')
     return send(response, result.status, result.body, result.type ?? 'text/plain; charset=utf-8', result.headers ?? {})
   }
   if (url.pathname === '/api/stock/image/cover/') {
     // Like the real gateway, the proxied body is labelled as JSON.
-    const body = player.list[player.index] ? readFileSync(new URL('cover.png', FIXTURES)) : Buffer.alloc(0)
+    const current = player.list[player.index]
+    const cover = current ? playingCover(current) : null
+    const body = cover ? coverFile(cover) : Buffer.alloc(0)
     return send(response, 200, body, 'application/json; charset=utf-8')
   }
   // Playlist mutations: token, fresh request ID, then the stock change and an empty 200.
