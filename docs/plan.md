@@ -2601,6 +2601,23 @@ only `.lrc` is written, `POST /sync` is never called.
 - [ ] Later: the enrichment run upgrading tracks whose files have line
       timings (one more read per track); the search's next page.
 
+## The identify window's height (owner, 2026-10-20), card-only
+
+The owner: the album's identify window grew far past the screen (an album
+of thirty tracks); the editions should take another form, and the track
+lists need a scroll, above all for albums on several discs.
+
+- [x] Editions beside the card's tracks are one-line rows: the label and
+      catalog number, country, format, year and the track count; the
+      edition's title shows only when it is spelled apart from the album's
+      ("Fallen (20th anniversary)"), since all editions share it otherwise.
+- [x] The two track lists scroll together in one frame of a few rows'
+      height, keeping their rows paired; where a list spans several discs,
+      the disc's heading stays in view while its tracks pass. Evidence: the
+      browser tests of the identify window and the enrichment review
+      (unchanged); screenshots of a two-disc album with eight editions on
+      the mock, light and dark, desktop and phone.
+
 ## Later
 
 - AutoEq, stage B (owner, 2026-10-02; the analysis in [autoeq.md](autoeq.md)):

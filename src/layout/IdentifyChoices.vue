@@ -7,6 +7,7 @@
  */
 import { computed } from 'vue'
 import { regionName } from '../domain/artistFacts'
+import { foldName } from '../domain/fold'
 import type { ReleaseCandidate, ReleaseGroupCandidate } from '../gateway/musicbrainz'
 import { locale, t, type MessageKey } from '../i18n'
 import { findArtistAlbums, findGroupEditions, identifyBack, identifying } from '../stores/musicbrainzIds'
@@ -41,6 +42,12 @@ const editionLine = (
   ]
     .filter(Boolean)
     .join(' · ')
+/** Beside the album's tracks an edition's title is left out when it is the album's (owner, 2026-10-20: the
+ * window grew too tall); a title spelled apart ("Fallen (20th anniversary)") still shows. */
+const editionTitle = (release: Pick<ReleaseCandidate, 'title'>): string | null =>
+  props.compact && props.target.kind === 'album' && foldName(release.title) === foldName(props.target.title)
+    ? null
+    : release.title
 /** The edition has as many tracks as the album on the card. */
 const sameCount = (release: ReleaseCandidate) =>
   props.target.kind === 'album' && props.target.trackCount !== null && release.trackCount === props.target.trackCount
@@ -85,8 +92,8 @@ function back(): void {
     <div
       role="group"
       :aria-label="target.kind === 'artist' ? target.name : target.title"
-      class="grid gap-6"
-      :class="{ 'max-h-268 overflow-y-auto overscroll-contain pr-4': compact }"
+      class="grid"
+      :class="compact ? 'max-h-268 gap-4 overflow-y-auto overscroll-contain pr-4' : 'gap-6'"
       data-testid="identify-choices"
     >
       <template v-if="target.kind === 'artist'">
@@ -121,11 +128,15 @@ function back(): void {
           :key="release.id"
           type="button"
           :aria-pressed="release.id === chosen"
-          class="rounded-10 border border-line px-14 py-10 text-left text-footnote text-secondary hover:bg-hover aria-pressed:border-accent aria-pressed:text-ink"
+          class="rounded-10 border border-line text-left text-footnote text-secondary hover:bg-hover aria-pressed:border-accent aria-pressed:text-ink"
+          :class="compact ? 'px-12 py-6' : 'px-14 py-10'"
+          :title="compact ? release.title : undefined"
           @click="chosen = release.id"
         >
-          <strong class="font-semibold text-ink">{{ release.title }}</strong
-          ><template v-if="editionLine(release)"> · {{ editionLine(release) }}</template
+          <template v-if="editionTitle(release)"
+            ><strong class="font-semibold text-ink">{{ editionTitle(release) }}</strong
+            ><template v-if="editionLine(release)"> · </template></template
+          ><template v-if="editionLine(release)">{{ editionLine(release) }}</template
           ><template v-if="release.trackCount !== null">
             ·
             <span

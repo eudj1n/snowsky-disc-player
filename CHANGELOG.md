@@ -27,6 +27,12 @@ stay short and group related work; how and why it was done is in the
   and saved beside the track in place of its old `.lrc`, which goes to the
   trash. The lookup names the sources it asks and what it looks for.
 
+### Your collection
+
+- The album's identify window fits the screen: its editions are one-line
+  rows (the album's title left out where every edition shares it), and the
+  two track lists scroll together, a disc's heading staying in view.
+
 ## [1.0.0] — 2026-10-08
 
 The first public release: what Disc Player can do, counted from here.
