@@ -2568,6 +2568,12 @@ the player.
       steps. Evidence: unit `autoeq`; e2e "writes an AutoEq headphone
       correction to a custom preset and names the preset by it" (desktop and
       phone, a stubbed jsDelivr); screenshots in light, dark and on a phone.
+- [x] On the service's V2.57 guest (server 2.57.9 with `eq_slots`, boot
+      2.57.11's image, Disc Player 1.1.0 from the card; 2026-10-20): the
+      correction written to Custom 3 and read back from stock as sent (ten
+      gains to 0.1 dB, Q 1.41, 31 Hz, master −7.4 dB), the preset named by
+      its headphones from the player's store; the 40 acceptance cases and the
+      mock suite (189) green.
 - [ ] On the physical player, with the owner: Q 1.41 and 0.1 dB gains after a
       reload; the bands FiiO Control's Auto EQ writes for the same headphones,
       read with this page, to compare.
@@ -2598,6 +2604,10 @@ only `.lrc` is written, `POST /sync` is never called.
       `lrcred`; e2e "finds word timings on lrc.red for a track with line
       timings and replaces its .lrc" (desktop, a stubbed lrc.red; LRCLIB
       alone offers nothing for such a track).
+- [x] On the service's V2.57 guest (2026-10-20): the acceptance media's
+      line-timed `a Signal.lrc` offered word timings from a stubbed lrc.red,
+      saved over it through the upload route, the old file in the service's
+      trash, the saved file read back with its word timings.
 - [ ] Later: the enrichment run upgrading tracks whose files have line
       timings (one more read per track); the search's next page.
 
