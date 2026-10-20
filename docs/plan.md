@@ -2618,6 +2618,22 @@ lists need a scroll, above all for albums on several discs.
       (unchanged); screenshots of a two-disc album with eight editions on
       the mock, light and dark, desktop and phone.
 
+## An album's edition identifies its artist (owner, 2026-10-20), card-only
+
+The owner: identifying an album on MusicBrainz should identify its artist
+too; it did not.
+
+- [x] Confirming an edition (the identify window, the enrichment run's sure
+      match or its review) identifies the album's artist with the edition's
+      credit when the artist has no identity yet, the edition credits one
+      artist only and that artist carries the card's name exactly, as its
+      own or an alias (one request for the artist by id, its aliases and
+      links); anything less waits for the listener, as an artist of its own
+      would. The run counts and logs the artist and keeps its record, so its
+      undo takes it back. Evidence: unit `creditedArtist`; e2e "chooses a
+      cover among the editions…" (the artist's record and its mark after the
+      window's confirmation).
+
 ## Later
 
 - AutoEq, stage B (owner, 2026-10-02; the analysis in [autoeq.md](autoeq.md)):

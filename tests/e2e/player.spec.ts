@@ -2223,15 +2223,26 @@ test('chooses a cover among the editions and fanart.tv, keeps the edition and sa
           ? discography
           : url.pathname === '/ws/2/artist/'
             ? { artists: [{ id: ARTIST, name: 'Northline', score: 100 }] }
-            : url.searchParams.has('release-group')
-              ? { releases: [reissue, { ...edition(FIRST, 0, '2004-06-01', 'GB', 'CD'), score: undefined }] }
-              : {
-                  releases: [
-                    edition(FIRST, 100, '2004-06-01', 'GB', 'CD'),
-                    edition(VINYL, 95, '2010-02-01', 'JP', 'Vinyl', 4),
-                    edition(BARE, 92, '2012', 'US', 'Digital Media'),
-                  ],
-                },
+            : url.pathname === `/ws/2/artist/${ARTIST}`
+              ? // The edition's one credit, read when the edition is confirmed (owner, 2026-10-20).
+                {
+                  id: ARTIST,
+                  name: 'Northline',
+                  'sort-name': 'Northline',
+                  type: 'Group',
+                  country: 'GB',
+                  aliases: [],
+                  relations: [],
+                }
+              : url.searchParams.has('release-group')
+                ? { releases: [reissue, { ...edition(FIRST, 0, '2004-06-01', 'GB', 'CD'), score: undefined }] }
+                : {
+                    releases: [
+                      edition(FIRST, 100, '2004-06-01', 'GB', 'CD'),
+                      edition(VINYL, 95, '2010-02-01', 'JP', 'Vinyl', 4),
+                      edition(BARE, 92, '2012', 'US', 'Digital Media'),
+                    ],
+                  },
     })
   })
   await page.route('https://webservice.fanart.tv/**', (route) =>
@@ -2324,7 +2335,23 @@ test('chooses a cover among the editions and fanart.tv, keeps the edition and sa
   await expect(groups).toHaveCount(2)
   await dialog.getByTestId('identify-back').click()
   await expect(choices).toHaveCount(3)
-  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  // Confirming an edition identifies the album's artist with its one credit too (owner, 2026-10-20), kept on
+  // the player like an identity of its own.
+  expect(
+    (await storeRecords(page, 'musicbrainz')).find(
+      (record) => record.value.kind === 'artist' && record.value.name === 'Northline',
+    ),
+  ).toBeUndefined()
+  await choices.first().click()
+  await dialog.getByTestId('identify-confirm').click()
+  await expect
+    .poll(
+      async () =>
+        (await storeRecords(page, 'musicbrainz')).find(
+          (record) => record.value.kind === 'artist' && record.value.name === 'Northline',
+        )?.value.mbid,
+    )
+    .toBe(ARTIST)
   const albums = (await storeRecords(page, 'musicbrainz')).filter((record) => record.value.kind === 'album')
   expect(albums.map((record) => [record.value.mbid, record.value.group])).toEqual([[FIRST, GROUP]])
   await page.getByTestId('cover-save').click()
@@ -2358,6 +2385,7 @@ test('chooses a cover among the editions and fanart.tv, keeps the edition and sa
   await expect(page.locator('[data-fact="cover"]')).toHaveText(/cover\.png/, { timeout: 15_000 })
   for (const record of albums)
     await forgetRecord(page, 'musicbrainz', { kind: 'album', name: String(record.value.name) })
+  await forgetRecord(page, 'musicbrainz', { kind: 'artist', name: 'Northline' })
   await disconnect(page)
   await chooseSources(page)
 })

@@ -56,7 +56,7 @@ async function confirm(): Promise<void> {
     if (candidate) await chooseArtistCandidate(target.name, { ...candidate, aliases: [...candidate.aliases] })
   } else {
     const release = identifying.editions.find((item) => item.id === chosen.value)
-    if (release) await confirmEdition(target.key, release)
+    if (release) await confirmEdition(target.key, release, target.artist)
   }
   emit('close')
 }

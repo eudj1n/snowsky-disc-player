@@ -32,6 +32,9 @@ stay short and group related work; how and why it was done is in the
 - The album's identify window fits the screen: its editions are one-line
   rows (the album's title left out where every edition shares it), and the
   two track lists scroll together, a disc's heading staying in view.
+- Confirming an album's edition identifies its artist too, when the edition
+  credits one artist carrying the name; the enrichment run counts it and its
+  undo takes it back.
 
 ## [1.0.0] — 2026-10-08
 

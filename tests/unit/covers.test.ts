@@ -66,6 +66,7 @@ describe('MusicBrainz releases', () => {
         type: 'Album',
         disambiguation: 'International Special Edition',
         artistId: 'a1',
+        credits: 1,
       },
     ])
     expect(`${asked[0]?.origin ?? ''}${asked[0]?.pathname ?? ''}`).toBe('https://musicbrainz.org/ws/2/release/')

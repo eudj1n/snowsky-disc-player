@@ -13,6 +13,8 @@ import {
   bestArtist,
   findReleases,
   groupReleases,
+  lookupArtist,
+  namedExactly,
   releaseGroup,
   releaseTracks,
   searchArtists,
@@ -443,15 +445,43 @@ export async function showEditionTracks(id: string): Promise<void> {
   }
 }
 
-/** The listener says which edition the album is: its release group is read too, and the identity kept. */
-export async function confirmEdition(key: string, release: ReleaseCandidate): Promise<boolean> {
+/**
+ * The listener says which edition the album is: its release group is read
+ * too, and the identity kept. The album's artist (its name on the card, when
+ * given) is identified along with it (owner, 2026-10-20) when it has no
+ * identity yet, the edition credits one artist only and that artist carries
+ * the name exactly, as its own or an alias; anything less waits for the
+ * listener, as an artist of its own would.
+ */
+export async function confirmEdition(
+  key: string,
+  release: ReleaseCandidate,
+  artist: string | null = null,
+): Promise<boolean> {
   search.saving = true
   try {
     const group = release.group && identifyAllowed() ? await releaseGroup(release.group).catch(() => null) : null
     const kept = await confirmAlbum(key, release, group)
+    if (artist) await identifyCreditedArtist(artist, release)
     if (search.key === key) forgetCandidates()
     return kept
   } finally {
     search.saving = false
   }
+}
+
+/** Identifies the album's artist with the edition's one credit; true when it was. */
+export async function identifyCreditedArtist(artist: string, release: ReleaseCandidate): Promise<boolean> {
+  if (
+    artistIdentity(artist) ||
+    release.credits !== 1 ||
+    !release.artistId ||
+    !MBID.test(release.artistId) ||
+    !identifyAllowed()
+  )
+    return false
+  const found = await lookupArtist(release.artistId).catch(() => null)
+  if (!found || !namedExactly(found.candidate, artist)) return false
+  await confirmArtist(artist, found.candidate.id, artistFacts(found.candidate, found.links))
+  return true
 }

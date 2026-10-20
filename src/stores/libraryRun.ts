@@ -291,7 +291,7 @@ export async function confirmChoice(id: string): Promise<void> {
     } else {
       const release = identifying.editions.find((found) => found.id === id)
       if (!release) return
-      await confirmEdition(item.name, release)
+      await confirmEdition(item.name, release, item.artist)
     }
     answer('identified')
   } finally {
@@ -344,6 +344,7 @@ async function doAlbum(item: AlbumItem, mode: RunMode, tasks: Set<RunTask>): Pro
   const wrote: string[] = []
   let outcome: Outcome | undefined
   let identity = albumIdentity(item.name)
+  const artistKnown = artistIdentity(item.artist) !== null
   if (!identity && (tasks.has('albums') || tasks.has('covers')) && !settled('album', item.name)) {
     state.step = 'identify'
     if (mode === 'manual' || state.reviewing) outcome = await askOwner(item)
@@ -356,7 +357,7 @@ async function doAlbum(item: AlbumItem, mode: RunMode, tasks: Set<RunTask>): Pro
       )
       const sure = sureEdition(ranked, item.trackCount)
       if (sure) {
-        await confirmEdition(item.name, sure)
+        await confirmEdition(item.name, sure, item.artist)
         outcome = 'identified'
       } else if (ranked.length) {
         outcome = 'review'
@@ -366,6 +367,20 @@ async function doAlbum(item: AlbumItem, mode: RunMode, tasks: Set<RunTask>): Pro
     if (outcome === 'identified') {
       wrote.push('musicbrainz')
       identity = albumIdentity(item.name)
+      // The edition's one credit identified the album's artist too (owner, 2026-10-20): its own line and
+      // record, so the report counts it and the undo takes it back.
+      if (!artistKnown && artistIdentity(item.artist)) {
+        state.counts.artists++
+        log({ label: item.artist, detail: null, outcome: 'identified' })
+        await keep({
+          kind: 'artist',
+          name: item.artist,
+          outcome: 'identified',
+          run: state.run ?? undefined,
+          wrote: ['musicbrainz'],
+          at: now(),
+        })
+      }
     }
   }
   const notes: string[] = []

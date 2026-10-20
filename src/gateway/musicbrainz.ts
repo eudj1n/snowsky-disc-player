@@ -31,6 +31,8 @@ export interface ReleaseCandidate {
   disambiguation: string | null
   /** The first credited artist's MusicBrainz id (fanart.tv's key for album covers). */
   artistId: string | null
+  /** How many artists the release credits: one, and the album's artist can be identified with it. */
+  credits: number
 }
 
 /** Its media's formats in order, counted: "CD", "2×CD", "CD + DVD". */
@@ -106,6 +108,7 @@ function candidate(value: unknown): ReleaseCandidate | null {
     type: text(group?.['primary-type']),
     disambiguation: text(release.disambiguation),
     artistId: text(firstArtist?.id),
+    credits: credits.filter((credit) => text((credit.artist as Record<string, unknown> | undefined)?.id)).length,
   }
 }
 
@@ -236,12 +239,38 @@ async function getJson(path: string, params: Record<string, string>, fetchImpl: 
   return response.json()
 }
 
+interface ArtistDetail {
+  relations?: { type?: unknown; url?: { resource?: unknown } }[]
+}
+
 /** The artist's links (one request, paced); null when MusicBrainz no longer knows the id. */
 export async function artistLinks(id: string, fetchImpl: typeof fetch = fetch): Promise<ArtistLinks | null> {
-  const detail = (await getJson(`/artist/${encodeURIComponent(id)}`, { inc: 'url-rels', fmt: 'json' }, fetchImpl)) as {
-    relations?: { type?: unknown; url?: { resource?: unknown } }[]
-  } | null
-  if (!detail) return null
+  const detail = (await getJson(
+    `/artist/${encodeURIComponent(id)}`,
+    { inc: 'url-rels', fmt: 'json' },
+    fetchImpl,
+  )) as ArtistDetail | null
+  return detail ? linksOf(detail) : null
+}
+
+/**
+ * An artist by its id, as a release credits it (owner, 2026-10-20: an album's edition identifies its artist
+ * too), with its aliases and links in one request; null when MusicBrainz does not know the id.
+ */
+export async function lookupArtist(
+  id: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<{ candidate: ArtistCandidate; links: ArtistLinks } | null> {
+  const detail = (await getJson(
+    `/artist/${encodeURIComponent(id)}`,
+    { inc: 'aliases+url-rels', fmt: 'json' },
+    fetchImpl,
+  )) as (ArtistDetail & Record<string, unknown>) | null
+  const candidate = detail ? artistCandidate(detail) : null
+  return detail && candidate ? { candidate: { ...candidate, score: 100 }, links: linksOf(detail) } : null
+}
+
+function linksOf(detail: ArtistDetail): ArtistLinks {
   const link = (type: string, pattern: RegExp, whole = false) => {
     for (const relation of detail.relations ?? []) {
       const resource = relation.url?.resource

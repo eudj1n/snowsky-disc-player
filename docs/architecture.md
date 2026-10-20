@@ -111,7 +111,9 @@ release and the folder a cover may go to, and `stores/coverSearch.ts` offers,
 previews and saves it as the album folder's cover through the upload route;
 its picker (`layout/AlbumCoverDialog.vue`, `openCoverPicker`) offers the
 album's editions and fanart.tv's covers, and the chosen edition becomes the
-album's identity in `stores/musicbrainzIds.ts`.
+album's identity in `stores/musicbrainzIds.ts`, which also identifies the
+album's artist with the edition's one credit when it carries the name
+(`identifyCreditedArtist`, 2026-10-20).
 `gateway/autoeq.ts` reads AutoEq's recommended index and a model's fixed
 band correction from jsDelivr at the pinned revision `domain/autoeq.ts`
 names (the matching and the player's bounds live there too);
