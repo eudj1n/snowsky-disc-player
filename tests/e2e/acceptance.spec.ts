@@ -957,7 +957,9 @@ test("shows the running service's diagnostics on stock", async ({ page }) => {
   await openConnection(page)
   const diagnostics = page.getByRole('dialog').getByTestId('diagnostics')
   await diagnostics.getByText('Diagnostics', { exact: true }).click()
-  await expect(diagnostics).toContainText(/0\.9\.0 · build [0-9a-f]{12}/, { timeout: 15_000 })
+  // The service names itself by its release: the boot layer's package (disc-server 2.57.x) since 2.57.4, the
+  // combined images' 0.9.0 before.
+  await expect(diagnostics).toContainText(/(disc-server )?\d+\.\d+\.\d+ · build [0-9a-f]{12}/, { timeout: 15_000 })
   // The app installed into Apps/Disc Player names its version (combined-009): a release's (1.0.0) or a
   // local build's date and commit.
   await expect(diagnostics).toContainText(/from the card · (\d+\.\d+\.\d+|\d{4}\.\d{2}\.\d{2}-[0-9a-f]{7})/)
