@@ -7,6 +7,7 @@
  * punctuation aside, and the closest names come first.
  */
 import { tenth, validBand, type PeqBand } from './eq'
+import { foldName } from './fold'
 
 /** The AutoEq commit the page reads (the pin moves by hand with a release), and when its results were pushed. */
 export const AUTOEQ_REVISION = '7ae0f56d53074872b028649617a22bbb4232feb7'
@@ -46,16 +47,6 @@ export function fitsPlayer(correction: Correction): boolean {
     correction.preamp <= 12 &&
     tenth(correction.preamp)
   )
-}
-
-/** Lowercase letters and digits with single spaces: "Beyerdynamic DT-990 (250 Ω)" → "beyerdynamic dt 990 250 ω". */
-export function foldName(text: string): string {
-  return text
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, ' ')
-    .trim()
 }
 
 export interface HeadphoneMatches {

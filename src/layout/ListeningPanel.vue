@@ -28,7 +28,7 @@ import { device } from '../stores/device'
 import LyricsView from '../components/player/LyricsView.vue'
 import QueueRows from '../components/player/QueueRows.vue'
 import { t } from '../i18n'
-import { connection } from '../stores/connection'
+import { connection, originHosts } from '../stores/connection'
 import { selectInQueue } from '../stores/controls'
 import { coverFor, enrichment, wantFileFacts } from '../stores/enrichment'
 import { history, loadHistory } from '../stores/history'
@@ -37,14 +37,18 @@ import { browserPlayback, selectInBrowser } from '../stores/browser'
 import { switchSide } from '../stores/handoff'
 import { inBrowser, nowIsPlaying, nowPlaying, nowPositionAt, nowPositionMs, output } from '../stores/output'
 import { loadQueue, queue, queueCurrent } from '../stores/queue'
-import { sourceAllowed } from '../stores/externalSources'
+import { SOURCES, type SourceName } from '../stores/externalSources'
 import {
+  fittingLyricsSources,
+  isOnline,
   lookUpLyrics,
+  lookupLyricsSources,
   lyrics,
   lyricsLookupAvailable,
   lyricsLookupFits,
   plainLyricsOnly,
   saveFoundLyrics,
+  wantedLevel,
 } from '../stores/lyrics'
 import UiPillButton from '../ui/UiPillButton.vue'
 import { playerOptions } from '../stores/playerOptions'
@@ -202,33 +206,55 @@ const lyricsMessage = computed(() => {
   if (lyrics.status === 'unavailable') return t('lyrics_unavailable')
   return t('lyrics_none')
 })
-/** LRCLIB: offered for a track without lyrics, and what it found waits to be saved (2026-09-29). */
+/** Online lyrics (2026-09-29; lrc.red 2026-10-20): offered for a track whose lyrics could be better, and what
+ * was found waits to be saved. */
 const lookupOffered = computed(() => lyricsLookupAvailable())
-/** LRCLIB could help but is not allowed: where to allow it (2026-10-01, Settings' outside sources). */
-const lookupOff = computed(() => lyricsLookupFits() && !sourceAllowed('lrclib'))
+/** A source could help but none is allowed: where to allow them (2026-10-01, Settings' outside sources). Not said
+ * for a track that has line timings already: word timings are an extra, asked for once the source is allowed. */
+const lookupOff = computed(() => lyricsLookupFits() && !lyricsLookupAvailable() && wantedLevel() !== 'word')
+const titleOf = (name: SourceName) => SOURCES.find((source) => source.name === name)?.title ?? name
+/** The sources a lookup asks (or would ask, when off), by their names. */
+const lookupNames = computed(() => (lookupOff.value ? fittingLyricsSources() : lookupLyricsSources()).map(titleOf))
+const lookupParams = computed(() => ({ sources: lookupNames.value.join(', ') }))
+/** What leaves the network: the names to every source, the album and length to LRCLIB alone. */
+const lookupNote = computed(() => {
+  const sources = lookupLyricsSources()
+  const note = t('lyrics_lookup_note', { hosts: originHosts(sources).join(', ') })
+  return sources.includes('lrclib') ? `${note} ${t('lyrics_lookup_note_lrclib')}` : note
+})
 const lookupMessage = computed(() =>
   lyrics.lookup === 'searching'
-    ? t('lrclib_searching')
+    ? t('lyrics_lookup_searching', lookupParams.value)
     : lyrics.lookup === 'missing'
-      ? t('lrclib_missing')
+      ? t('lyrics_lookup_missing', lookupParams.value)
       : lyrics.lookup === 'missing-synced'
-        ? t('lrclib_missing_synced')
-        : lyrics.lookup === 'instrumental'
-          ? t('lrclib_instrumental')
-          : lyrics.lookup === 'failed'
-            ? t('lrclib_failed')
-            : null,
+        ? t('lyrics_lookup_missing_synced', lookupParams.value)
+        : lyrics.lookup === 'missing-words'
+          ? t('lyrics_lookup_missing_words', lookupParams.value)
+          : lyrics.lookup === 'instrumental'
+            ? t('lrclib_instrumental')
+            : lyrics.lookup === 'failed'
+              ? t('lyrics_lookup_failed', { sources: lyrics.failed.map(titleOf).join(', ') })
+              : null,
+)
+const findLabel = computed(() =>
+  t(
+    wantedLevel() === 'word' ? 'lyrics_find_words' : plainLyricsOnly() ? 'lyrics_find_synced' : 'lyrics_find',
+    lookupParams.value,
+  ),
 )
 const lyricsSource = computed(() =>
   lyrics.source === 'lrclib'
     ? t('lyrics_source_lrclib')
-    : lyrics.source === 'sidecar'
-      ? t('lyrics_source_sidecar')
-      : lyrics.source === 'embedded'
-        ? t('lyrics_source_embedded')
-        : lyrics.source === 'player'
-          ? t(playerOptions.onlineLyrics ? 'lyrics_source_player_online' : 'lyrics_source_player')
-          : null,
+    : lyrics.source === 'lrcred'
+      ? t('lyrics_source_lrcred')
+      : lyrics.source === 'sidecar'
+        ? t('lyrics_source_sidecar')
+        : lyrics.source === 'embedded'
+          ? t('lyrics_source_embedded')
+          : lyrics.source === 'player'
+            ? t(playerOptions.onlineLyrics ? 'lyrics_source_player_online' : 'lyrics_source_player')
+            : null,
 )
 const queueHint = computed(() => {
   if (inBrowser.value) return t('track_count', { count: browserPlayback.queue.length })
@@ -428,9 +454,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
                 @click="openKaraoke"
               />
             </div>
-            <div v-if="lookupOffered || lyrics.source === 'lrclib'" class="mb-14" data-testid="lyrics-lookup">
+            <div v-if="lookupOffered || isOnline(lyrics.source)" class="mb-14" data-testid="lyrics-lookup">
               <UiPillButton
-                v-if="lyrics.source === 'lrclib'"
+                v-if="isOnline(lyrics.source)"
                 variant="secondary"
                 :disabled="lyrics.saving"
                 data-testid="lyrics-save"
@@ -446,9 +472,11 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
                   variant="secondary"
                   data-testid="lyrics-find"
                   @click="lookUpLyrics"
-                  >{{ t(plainLyricsOnly() ? 'lrclib_find_synced' : 'lrclib_find') }}</UiPillButton
+                  >{{ findLabel }}</UiPillButton
                 >
-                <p class="mt-8 mb-0 text-caption leading-[1.5] text-muted">{{ t('lrclib_note') }}</p>
+                <p class="mt-8 mb-0 text-caption leading-[1.5] text-muted">
+                  {{ lookupNote }}
+                </p>
               </template>
             </div>
             <p
@@ -456,7 +484,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
               class="mt-0 mb-14 text-footnote leading-[1.5] text-secondary"
               data-testid="lyrics-source-off"
             >
-              {{ t('lrclib_off') }}
+              {{ t('lyrics_lookup_off', lookupParams) }}
               <RouterLink
                 class="text-ink underline underline-offset-2"
                 :to="{ path: '/settings', query: { part: 'sources' } }"

@@ -18,7 +18,7 @@ import { coverPlace, rankReleases } from '../domain/covers'
 import { sidecarPath } from '../domain/lyrics'
 import { sureArtist, sureEdition } from '../domain/runMatches'
 import { frontCover } from '../gateway/coverart'
-import { findLyrics } from '../gateway/lrclib'
+import { findLyricsOnline } from '../gateway/lyricsOnline'
 import { mediaInfo } from '../gateway/media'
 import { findReleases, namedExactly, searchArtists } from '../gateway/musicbrainz'
 import { deleteRecord, putRecord, readCollection } from '../gateway/store'
@@ -29,7 +29,7 @@ import { albumIdentityKey, coverLookupAllowed, coverOnCard } from './coverSearch
 import { connection, http } from './connection'
 import { albumCoverState, recheckAlbumCover } from './enrichment'
 import { autoImageRole, type ImageRole } from './externalSources'
-import { lyricsLookupAllowed } from './lyrics'
+import { allowedLyricsSources, lyricsLookupAllowed } from './lyrics'
 import {
   albumIdentity,
   artistFacts,
@@ -389,13 +389,12 @@ async function doAlbum(item: AlbumItem, mode: RunMode, tasks: Set<RunTask>): Pro
       const target = sidecarPath(track.path)
       const info = target ? await mediaInfo(http, track.path).catch(() => null) : null
       if (!target || !info || info.lyrics) continue
-      const lyrics = await findLyrics({
-        artist: track.artist,
-        title: track.title,
-        album: track.album,
-        durationMs: track.durationMs,
-      }).catch(() => null)
-      const text = lyrics?.synced ?? lyrics?.plain
+      const lyrics = await findLyricsOnline(
+        { artist: track.artist, title: track.title, album: track.album, durationMs: track.durationMs },
+        allowedLyricsSources(),
+        'none',
+      ).catch(() => null)
+      const text = lyrics?.found?.text
       if (text) {
         offer('lyrics', target, new Blob([text], { type: 'text/plain' }), item, track.title)
         found++

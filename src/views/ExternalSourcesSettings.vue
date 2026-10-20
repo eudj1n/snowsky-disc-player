@@ -29,7 +29,7 @@ import {
   type SourceKind,
   type SourceName,
 } from '../stores/externalSources'
-import { lrclibAdmitted } from '../stores/lyrics'
+import { lyricsSourceAdmitted } from '../stores/lyrics'
 import { pairing } from '../stores/pairing'
 import { openDialog } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
@@ -56,11 +56,17 @@ const TEXTS: Record<SourceName, SourceText> = {
     auto: null,
     admitted: () => originAllowed('musicbrainz'),
   },
+  lrcred: {
+    about: 'source_lrcred_about',
+    sends: 'source_lrcred_sends',
+    auto: 'source_lrcred_auto',
+    admitted: () => lyricsSourceAdmitted('lrcred'),
+  },
   lrclib: {
     about: 'source_lrclib_about',
     sends: 'source_lrclib_sends',
     auto: 'source_lrclib_auto',
-    admitted: lrclibAdmitted,
+    admitted: () => lyricsSourceAdmitted('lrclib'),
   },
   coverartarchive: {
     about: 'source_coverartarchive_about',
@@ -91,6 +97,7 @@ const TEXTS: Record<SourceName, SourceText> = {
 /** The release's origins each source reaches (owner, 2026-10-01: Cover Art Archive's images come from archive.org). */
 const ORIGINS: Record<SourceName, readonly string[]> = {
   musicbrainz: ['musicbrainz'],
+  lrcred: ['lrcred'],
   lrclib: ['lrclib'],
   coverartarchive: ['coverartarchive', 'archive_root', 'archive'],
   fanarttv: ['fanart_api', 'fanart_assets'],

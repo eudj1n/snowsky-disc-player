@@ -2084,6 +2084,89 @@ test('offers synced lyrics from LRCLIB beside plain ones in the tags, and a save
   await chooseSources(page)
 })
 
+test('finds word timings on lrc.red for a track with line timings and replaces its .lrc', async ({ page }, info) => {
+  test.skip(external, 'Needs the mock collection')
+  test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
+  test.skip(info.project.name === 'phone', 'Runs once: the saved lyrics stay in the shared mock')
+  // lrc.red (owner, 2026-10-20), stubbed: a full-text search and a hit's enhanced LRC. The track's own
+  // .lrc has line timings only (the Inner Space track; Weightless keeps its lines for the karaoke tests).
+  const asked: string[] = []
+  await page.route('https://lrc.red/**', async (route) => {
+    const url = new URL(route.request().url())
+    asked.push(url.pathname + url.search)
+    const headers = { 'Access-Control-Allow-Origin': '*' }
+    if (url.pathname === '/search.json')
+      return route.fulfill({
+        headers,
+        json: {
+          hits: [
+            { isrc: 'QZTST2600001', title: 'Inner Space (Live)', artist: 'Forma', album: 'Live', year: 2021 },
+            { isrc: 'QZTST2600002', title: 'Inner Space', artist: 'Forma', album: 'Inner Space', year: 2020 },
+          ],
+          next: null,
+        },
+      })
+    if (url.pathname === '/s/QZTST2600002.lrc')
+      return route.fulfill({
+        headers,
+        contentType: 'text/plain; charset=utf-8',
+        body: [
+          '[ti:Inner Space]',
+          '[ar:Forma]',
+          '',
+          '[00:00.00]<00:00.00>Inner <00:00.50>space, <00:00.80>first <00:01.40>line<00:02.00>',
+          '[00:05.00]<00:05.00>Inner <00:05.50>space, <00:05.80>second <00:06.40>line<00:07.00>',
+          '[00:10.00]<00:10.00>Inner <00:10.50>space, <00:10.80>third <00:11.40>line<00:12.00>',
+          '',
+        ].join('\n'),
+      })
+    await route.fulfill({ status: 404, headers, body: '' })
+  })
+  // LRCLIB alone cannot improve a track with line timings: nothing is offered, and nothing says it is off.
+  await chooseSources(page, { lrclib: { allowed: true } })
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/album/Inner%20Space/Forma')
+  const title = page.getByTestId('track-title')
+  if ((await title.count()) && (await title.textContent())?.trim() === 'Inner Space') {
+    await page.getByRole('button', { name: 'Play Orbit' }).click()
+    await expect(title).toHaveText('Orbit', { timeout: 15_000 })
+  }
+  await page.getByRole('button', { name: 'Play Inner Space' }).click()
+  await expect(title).toHaveText('Inner Space', { timeout: 15_000 })
+  await page.getByRole('button', { name: 'Lyrics' }).filter({ visible: true }).first().click()
+  const lyrics = page.getByTestId('lyrics')
+  await expect(lyrics).toContainText('Inner space, first line', { timeout: 15_000 })
+  await expect(lyrics).toContainText('From the .lrc file beside the track')
+  await expect(page.getByTestId('lyrics-find')).toHaveCount(0)
+  await expect(page.getByTestId('lyrics-source-off')).toHaveCount(0)
+  // Allowed, lrc.red is offered for its word timings; asked on request only.
+  await chooseSources(page, { lrcred: { allowed: true } })
+  await page.reload()
+  await page.getByRole('button', { name: 'Lyrics' }).filter({ visible: true }).first().click()
+  const find = page.getByTestId('lyrics-find')
+  await expect(find).toHaveText('These lyrics have no word timings: find them on lrc.red', { timeout: 15_000 })
+  await expect(page.getByTestId('lyrics-lookup')).toContainText('Sends the artist and title of this track to lrc.red.')
+  expect(asked).toHaveLength(0)
+  await find.click()
+  await expect(lyrics).toContainText('From lrc.red, not on the card yet')
+  // The search by artist and title; the hit that is the track (not the live one) and its LRC.
+  expect(asked).toEqual(['/search.json?q=Forma+Inner+Space', '/s/QZTST2600002.lrc'])
+  await page.getByTestId('lyrics-save').click()
+  await expect(page.getByRole('status').filter({ hasText: 'Saved beside the track as its .lrc file.' })).toBeAttached({
+    timeout: 15_000,
+  })
+  await expect(lyrics).toContainText('From the .lrc file beside the track')
+  // The saved file has the word timings: after a reload nothing more is offered, and karaoke sings by words.
+  await page.reload()
+  await page.getByRole('button', { name: 'Lyrics' }).filter({ visible: true }).first().click()
+  await expect(page.getByTestId('lyrics')).toContainText('Inner space, second line', { timeout: 15_000 })
+  await expect(page.getByTestId('lyrics-find')).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await disconnect(page)
+  await chooseSources(page)
+})
+
 test('chooses a cover among the editions and fanart.tv, keeps the edition and saves the cover into its folder', async ({
   page,
 }, info) => {

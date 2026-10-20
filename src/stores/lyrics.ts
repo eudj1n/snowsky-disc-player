@@ -5,22 +5,25 @@
  * written after this track started: stock rewrites that file a few seconds
  * into a track with lyrics and leaves it unchanged for a track without.
  *
- * A track without synced lyrics (none at all, or plain text without timings
- * in its tags, its .lrc or stock's file) can be looked up on LRCLIB (owner,
- * 2026-09-29, enrichment step 1) when the release's origins admit it and the
- * owner allowed it among the outside sources (2026-10-01; off by default,
- * since the track's names leave the network): on the listener's request, or
- * for every such track when the source is also set to work automatically.
- * What LRCLIB gives is shown as not yet on the card until the listener saves
- * it beside the track as its .lrc, through the upload route, which never
- * overwrites; a plain .lrc already there goes to the service's trash
- * instead (reversible). The media route reads a .lrc before the tags, so a
- * saved file wins over lyrics embedded in the file.
+ * A track whose lyrics could be better (none at all; plain text without
+ * timings in its tags, its .lrc or stock's file; or, for lrc.red, lines
+ * without word timings) can be looked up online (owner, 2026-09-29,
+ * enrichment step 1; lrc.red with its word timings 2026-10-20) when the
+ * release's origins admit a source and the owner allowed it among the
+ * outside sources (2026-10-01; off by default, since the track's names leave
+ * the network): on the listener's request, or for every such track when the
+ * source is also set to work automatically. Each source is asked only when
+ * it could improve the track: LRCLIB has no word timings, so it is not asked
+ * for a track with line timings. What was found is shown as not yet on the
+ * card until the listener saves it beside the track as its .lrc, through
+ * the upload route, which never overwrites; a .lrc already there goes to
+ * the service's trash instead (reversible). The media route reads a .lrc
+ * before the tags, so a saved file wins over lyrics embedded in the file.
  */
 import { reactive, readonly, watch } from 'vue'
-import { parseLyrics, sidecarPath, type Lyrics } from '../domain/lyrics'
+import { lyricsLevel, parseLyrics, sidecarPath, type Lyrics, type LyricsLevel } from '../domain/lyrics'
 import { trackKey } from '../domain/track'
-import { findLyrics } from '../gateway/lrclib'
+import { findLyricsOnline, ONLINE_LYRICS_SOURCES, type OnlineLyricsSource } from '../gateway/lyricsOnline'
 import { currentLyrics, mediaLyrics, type LyricsSource } from '../gateway/media'
 import { uploadFile } from '../gateway/upload'
 import { connection, http, originAllowed } from './connection'
@@ -31,18 +34,21 @@ import { nowPlaying, nowPositionMs } from './output'
 import { toast } from './ui'
 
 export type LyricsStatus = 'idle' | 'loading' | 'ready' | 'none' | 'unavailable'
-/** An LRCLIB lookup for the current track. */
-export type LyricsLookup = 'idle' | 'searching' | 'missing' | 'missing-synced' | 'instrumental' | 'failed'
+/** An online lookup for the current track: `missing-synced` and `missing-words` say what the sources lacked. */
+export type LyricsLookup =
+  'idle' | 'searching' | 'missing' | 'missing-synced' | 'missing-words' | 'instrumental' | 'failed'
 
 interface LyricsModel {
   path: string | null
   status: LyricsStatus
   lyrics: Lyrics | null
-  source: LyricsSource | 'lrclib' | null
+  source: LyricsSource | OnlineLyricsSource | null
   lookup: LyricsLookup
   saving: boolean
-  /** What LRCLIB's lyrics stand in for: none, or plain lyrics from this source. */
+  /** What the found lyrics stand in for: none, or the track's own lyrics from this source. */
   replaced: LyricsSource | null
+  /** The sources that could not be reached by the last lookup. */
+  failed: OnlineLyricsSource[]
 }
 
 const state = reactive<LyricsModel>({
@@ -53,9 +59,13 @@ const state = reactive<LyricsModel>({
   lookup: 'idle',
   saving: false,
   replaced: null,
+  failed: [],
 })
-/** The LRC text found on LRCLIB for the current track, kept for saving it. */
+/** The LRC text found online for the current track, kept for saving it. */
 let found: string | null = null
+/** Lyrics from an outside source, not on the card. */
+export const isOnline = (source: LyricsModel['source']): source is OnlineLyricsSource =>
+  source === 'lrclib' || source === 'lrcred'
 export const lyrics = readonly(state)
 
 /** Pauses before asking for stock's file again after a track change. */
@@ -63,7 +73,7 @@ const PLAYER_POLLS_MS = [1500, 3000, 5000]
 let request = 0
 const sleep = (ms: number) => new Promise<void>((done) => setTimeout(done, ms))
 
-function settle(text: string, source: LyricsSource | 'lrclib'): void {
+function settle(text: string, source: LyricsSource | OnlineLyricsSource): void {
   const parsed = parseLyrics(text)
   state.lyrics = parsed.lines.length ? parsed : null
   state.source = parsed.lines.length ? source : null
@@ -77,6 +87,7 @@ async function load(path: string | null, media: boolean, cue: boolean): Promise<
   state.source = null
   state.lookup = 'idle'
   state.replaced = null
+  state.failed = []
   found = null
   if (!path) {
     state.status = 'idle'
@@ -112,70 +123,100 @@ async function load(path: string | null, media: boolean, cue: boolean): Promise<
   } catch {
     if (current === request) state.status = 'none'
   }
-  if (current === request && sourceAutomatic('lrclib') && lyricsLookupAvailable()) void lookUpLyrics()
+  if (current === request && lyricsLookupAutomatic()) void lookUpLyrics()
 }
 
+/** The level of the track's own lyrics: null when it has none (or nothing is known yet). */
+export function ownLyricsLevel(): LyricsLevel | null {
+  if (state.status === 'none') return null
+  if (state.status !== 'ready' || !state.lyrics || isOnline(state.source)) return 'none'
+  return lyricsLevel(state.lyrics)
+}
 /** The track's own lyrics are plain text without timings (owner, 2026-09-29: still offer synced ones). */
-export const plainLyricsOnly = (): boolean =>
-  state.status === 'ready' && state.lyrics !== null && !state.lyrics.synced && state.source !== 'lrclib'
-
-/** The release's origins admit LRCLIB. */
-export const lrclibAdmitted = (): boolean => originAllowed('lrclib')
-/** LRCLIB may be asked at all: allowed by the owner and admitted by the release (the library enrichment, 2026-10-02). */
-export const lyricsLookupAllowed = (): boolean => sourceAllowed('lrclib') && lrclibAdmitted()
-
-/** The current track could take LRCLIB's lyrics: the origins admit it and it has no synced lyrics. */
-export function lyricsLookupFits(): boolean {
-  const track = nowPlaying.value.track
-  return (
-    lrclibAdmitted() && !!track?.path && !track.cue && !!track.artist && (state.status === 'none' || plainLyricsOnly())
-  )
+export const plainLyricsOnly = (): boolean => ownLyricsLevel() === 'none' && state.status === 'ready'
+/** The least a lookup must bring to be worth offering, or null when nothing could improve the track. */
+export function wantedLevel(): LyricsLevel | null {
+  const own = ownLyricsLevel()
+  if (own === null) return 'none'
+  if (state.status !== 'ready') return null
+  return own === 'none' ? 'line' : own === 'line' ? 'word' : null
 }
+/** What each source can bring at most: LRCLIB has no word timings. */
+const BRINGS: Record<OnlineLyricsSource, LyricsLevel> = { lrcred: 'word', lrclib: 'line' }
+const RANK: Record<LyricsLevel, number> = { none: 0, line: 1, word: 2 }
 
-/** LRCLIB can be asked for the current track: it fits and the owner allowed the source. */
-export const lyricsLookupAvailable = (): boolean => sourceAllowed('lrclib') && lyricsLookupFits()
+/** The release's origins admit the source. */
+export const lyricsSourceAdmitted = (name: OnlineLyricsSource): boolean => originAllowed(name)
+/** The sources the owner allowed and the release admits (the library enrichment, 2026-10-02). */
+export const allowedLyricsSources = (): OnlineLyricsSource[] =>
+  ONLINE_LYRICS_SOURCES.filter((name) => sourceAllowed(name) && lyricsSourceAdmitted(name))
+/** Some lyrics source may be asked at all. */
+export const lyricsLookupAllowed = (): boolean => allowedLyricsSources().length > 0
 
-/** Looks the current track up on LRCLIB (its artist, title, album and length leave the network). */
+/** The admitted sources that could improve the current track. */
+export function fittingLyricsSources(): OnlineLyricsSource[] {
+  const track = nowPlaying.value.track
+  const want = wantedLevel()
+  if (!track?.path || track.cue || !track.artist || want === null) return []
+  return ONLINE_LYRICS_SOURCES.filter((name) => lyricsSourceAdmitted(name) && RANK[BRINGS[name]] >= RANK[want])
+}
+/** The current track could take online lyrics: some admitted source could improve it. */
+export const lyricsLookupFits = (): boolean => fittingLyricsSources().length > 0
+/** The fitting sources the owner allowed: what a lookup asks. */
+export const lookupLyricsSources = (): OnlineLyricsSource[] =>
+  fittingLyricsSources().filter((name) => sourceAllowed(name))
+/** A lookup can be made for the current track: it fits and the owner allowed a source for it. */
+export const lyricsLookupAvailable = (): boolean => lookupLyricsSources().length > 0
+/** A lookup runs without a click: some source that would be asked is set to work automatically. */
+const lyricsLookupAutomatic = (): boolean => lookupLyricsSources().some((name) => sourceAutomatic(name))
+
+/** Looks the current track up at the allowed sources (its artist, title, album and length leave the network). */
 export async function lookUpLyrics(): Promise<void> {
   const track = nowPlaying.value.track
-  if (!lyricsLookupAvailable() || !track?.artist || state.lookup === 'searching') return
+  const sources = lookupLyricsSources()
+  const want = wantedLevel()
+  if (!sources.length || want === null || !track?.artist || state.lookup === 'searching') return
   const current = request
   state.lookup = 'searching'
-  try {
-    const result = await findLyrics({
-      artist: track.artist,
-      title: track.title,
-      album: track.album,
-      durationMs: track.durationMs,
-    })
-    if (current !== request) return
-    // Beside plain lyrics of its own, only synced ones are worth offering.
-    const plain = plainLyricsOnly()
-    const text = result?.synced ?? (plain ? null : result?.plain) ?? null
-    if (!text) {
-      state.lookup = result?.instrumental ? 'instrumental' : plain ? 'missing-synced' : 'missing'
-      return
-    }
-    state.replaced = plain ? (state.source as LyricsSource | null) : null
-    found = text
-    settle(text, 'lrclib')
-    state.lookup = 'idle'
-  } catch {
-    if (current === request) state.lookup = 'failed'
+  state.failed = []
+  const result = await findLyricsOnline(
+    { artist: track.artist, title: track.title, album: track.album, durationMs: track.durationMs },
+    sources,
+    want,
+  )
+  if (current !== request) return
+  state.failed = result.failed
+  if (!result.found) {
+    state.lookup =
+      result.failed.length === sources.length
+        ? 'failed'
+        : result.instrumental
+          ? 'instrumental'
+          : want === 'word'
+            ? 'missing-words'
+            : want === 'line'
+              ? 'missing-synced'
+              : 'missing'
+    return
   }
+  // The found lyrics stand in for the track's own, which the save replaces when they are a card file.
+  state.replaced = state.status === 'ready' && !isOnline(state.source) ? state.source : null
+  found = result.found.text
+  settle(result.found.text, result.found.source)
+  state.lookup = 'idle'
 }
 
-// Set to work automatically while a track waits without lyrics: it is looked up at once.
+// Set to work automatically while a track waits for better lyrics: it is looked up at once.
 watch(
-  () => sourceAutomatic('lrclib'),
-  (on) => {
-    if (on && state.lookup === 'idle' && lyricsLookupAvailable()) void lookUpLyrics()
+  () => ONLINE_LYRICS_SOURCES.map((name) => sourceAutomatic(name)).join(),
+  () => {
+    if (state.lookup === 'idle' && lyricsLookupAutomatic()) void lookUpLyrics()
   },
 )
 
 /**
- * Saves what LRCLIB gave beside the track as its .lrc: one guarded upload
- * (the player's serial number, a fresh request ID, pacing); a plain .lrc
+ * Saves what was found online beside the track as its .lrc: one guarded
+ * upload (the player's serial number, a fresh request ID, pacing); a .lrc
  * already there goes to the service's trash, anything else is never
  * overwritten; a lost reply is not retried.
  */
@@ -183,7 +224,7 @@ export async function saveFoundLyrics(): Promise<void> {
   const track = nowPlaying.value.track
   const target = track?.path ? sidecarPath(track.path) : null
   const token = pairingToken()
-  if (!found || !target || state.source !== 'lrclib' || state.saving) return
+  if (!found || !target || !isOnline(state.source) || state.saving) return
   if (!token) {
     toast('pair_to_control', true)
     return

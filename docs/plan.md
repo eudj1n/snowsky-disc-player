@@ -2574,6 +2574,33 @@ the player.
 - [ ] Later, if A proves itself: a fit of our own to ten free peaking filters
       (B), and the full index with every measurement (8850 results).
 
+## lrc.red: lyrics with word timings (owner, 2026-10-20)
+
+The owner's analysis and decisions are in [lrcred.md](lrcred.md): the source
+is taken (off by default, like every outside source), the match is LRCLIB's,
+only `.lrc` is written, `POST /sync` is never called.
+
+- [x] Service, card-only: `https://lrc.red` among the reviewed origins;
+      `release/origins.json` renders it here.
+- [x] Lyrics have three levels (none, line, word); each online source is
+      asked only when it could improve the track (LRCLIB brings line
+      timings, lrc.red word timings), which closes the dead end the owner
+      found: a track whose files carry line timings never got word timings.
+      The sources are asked in order, lrc.red first, until one gives word
+      timings; the best level wins; a source that could not be reached is
+      named. The enrichment run's lyrics step asks the same way for tracks
+      without lyrics.
+- [x] The listening panel names the sources it asks and the hosts the names
+      go to; the find button says what it looks for; what was found is "From
+      lrc.red, not on the card yet" until saved, and saving over a `.lrc`
+      with line timings moves it to the trash. Settings list lrc.red before
+      LRCLIB, with "when a track without word timings plays". Evidence: unit
+      `lrcred`; e2e "finds word timings on lrc.red for a track with line
+      timings and replaces its .lrc" (desktop, a stubbed lrc.red; LRCLIB
+      alone offers nothing for such a track).
+- [ ] Later: the enrichment run upgrading tracks whose files have line
+      timings (one more read per track); the search's next page.
+
 ## Later
 
 - AutoEq, stage B (owner, 2026-10-02; the analysis in [autoeq.md](autoeq.md)):

@@ -13,7 +13,8 @@
  * gateway admits can read, so only keys of free services belong there. The
  * release's reviewed origins still decide whether a source can be reached
  * at all. AutoEq (owner, 2026-10-20) is a source of its own kind: headphone
- * corrections for the equalizer, read on a click only.
+ * corrections for the equalizer, read on a click only. lrc.red (the same
+ * day) comes before LRCLIB among the lyrics sources: it has word timings.
  */
 import { reactive, readonly, watch } from 'vue'
 import { putRecord, readCollection } from '../gateway/store'
@@ -24,7 +25,7 @@ import { toast } from './ui'
 /** What a source brings; Settings groups the sources by it, in their order of priority (fanart.tv before
  * Commons for artist images: the owner, 2026-10-01). */
 export type SourceKind = 'metadata' | 'lyrics' | 'album_covers' | 'artist_images' | 'equalizer'
-export type SourceName = 'musicbrainz' | 'lrclib' | 'coverartarchive' | 'wikimedia' | 'fanarttv' | 'autoeq'
+export type SourceName = 'musicbrainz' | 'lrcred' | 'lrclib' | 'coverartarchive' | 'wikimedia' | 'fanarttv' | 'autoeq'
 
 export interface SourceInfo {
   name: SourceName
@@ -49,6 +50,7 @@ export const SOURCES: readonly SourceInfo[] = [
     needs: [],
     automatic: false,
   },
+  { name: 'lrcred', kind: 'lyrics', title: 'lrc.red', site: 'https://lrc.red', needs: [], automatic: true },
   { name: 'lrclib', kind: 'lyrics', title: 'LRCLIB', site: 'https://lrclib.net', needs: [], automatic: true },
   {
     name: 'coverartarchive',

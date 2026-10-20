@@ -25,6 +25,13 @@ export interface Lyrics {
   lines: LyricLine[]
 }
 
+/** What the lyrics are timed to: nothing, lines, or words on at least one line. */
+export type LyricsLevel = 'none' | 'line' | 'word'
+export function lyricsLevel(lyrics: Lyrics): LyricsLevel {
+  if (!lyrics.synced) return 'none'
+  return lyrics.lines.some((line) => line.words?.length) ? 'word' : 'line'
+}
+
 const STAMP = /\[(\d{1,3}):(\d{1,2})(?:[.:](\d{1,3}))?\]/g
 const WORD_STAMP = /<(\d{1,3}):(\d{1,2})(?:[.:](\d{1,3}))?>/g
 

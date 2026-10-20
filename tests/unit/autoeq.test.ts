@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { AUTOEQ_REVISION, fitsPlayer, foldName, matchHeadphones, type HeadphoneResult } from '../../src/domain/autoeq'
+import { AUTOEQ_REVISION, fitsPlayer, matchHeadphones, type HeadphoneResult } from '../../src/domain/autoeq'
+import { foldName } from '../../src/domain/fold'
 import {
   fetchCorrection,
   fetchRecommended,

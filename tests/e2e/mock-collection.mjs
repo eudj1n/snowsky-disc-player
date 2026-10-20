@@ -335,6 +335,11 @@ const LYRICS = {
     text: '[00:00.00]Weightless, first line\n[00:05.00]Weightless, second line\n[00:10.00]Weightless, third line\n',
   },
   'Blue Hours': { source: 'embedded', text: 'Blue hours, plain line one\nBlue hours, plain line two\n' },
+  // Line timings only: what lrc.red's word timings replace (the browser test saves over it).
+  'Inner Space': {
+    source: 'sidecar',
+    text: '[00:00.00]Inner space, first line\n[00:05.00]Inner space, second line\n[00:10.00]Inner space, third line\n',
+  },
   // Enhanced LRC for karaoke: word and syllable stamps on some lines, ten lines in all.
   'Still Here': {
     source: 'sidecar',

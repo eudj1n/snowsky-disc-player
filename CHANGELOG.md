@@ -19,6 +19,14 @@ stay short and group related work; how and why it was done is in the
   player.
 - The equalizer's sliders move in 0.1 dB steps.
 
+### Lyrics
+
+- Word timings for karaoke from [lrc.red](https://lrc.red), a new source
+  among the external ones (off until you allow it): offered for a track
+  whose lyrics have line timings only, as well as for one without lyrics,
+  and saved beside the track in place of its old `.lrc`, which goes to the
+  trash. The lookup names the sources it asks and what it looks for.
+
 ## [1.0.0] — 2026-10-08
 
 The first public release: what Disc Player can do, counted from here.

@@ -40,7 +40,7 @@ _Screenshots of the fictional demo collection, not of anyone's library
 | **Browse and search**   | Home, New, albums, artists, genres, tracks, favorites and playlists, sorted and filtered your way. Press `/` or ⌘K and type: tracks, albums, artists and playlists appear as you type.                                       |
 | **Play on the DISC**    | Albums, artists, genres, playlists and folders; the queue, seek, volume, shuffle, repeat and favorites. Every change is checked against the player's own answer.                                                             |
 | **Play in the browser** | One switch moves the track, its position and the queue to the browser and back. Full screen, the cover turns as a disc and the spectrum spreads around it.                                                                   |
-| **Lyrics and karaoke**  | Lyrics beside the track, following the song when they are synced; karaoke full screen, word by word. Missing lyrics can be found on LRCLIB and saved beside the track.                                                       |
+| **Lyrics and karaoke**  | Lyrics beside the track, following the song when they are synced; karaoke full screen, word by word. Missing lyrics can be found on LRCLIB, word timings on lrc.red, and saved beside the track.                             |
 | **Covers and artists**  | Covers from Cover Art Archive, artist photos and backgrounds from fanart.tv (with your own free key) and Wikimedia Commons, with their authors and licences. MusicBrainz tells which artist and which edition each album is. |
 | **Your listening**      | What you played, on the player and in the browser; automatic playlists (Most played, Daily mix, Recently added, Not played lately) kept on the player; pins and dislikes.                                                    |
 | **The card**            | Upload music and album folders, then let the player scan; see what takes space, browse and play folders, move files to the trash and back.                                                                                   |
@@ -93,7 +93,7 @@ beside the album's own on the card, and what differs is marked.
 ## Privacy and safety
 
 There is no account, no cloud and no analytics. The page talks to the player
-that served it; outside sources (MusicBrainz, Cover Art Archive, LRCLIB,
+that served it; outside sources (MusicBrainz, Cover Art Archive, LRCLIB, lrc.red,
 fanart.tv, Wikimedia Commons) stay off until you allow each one under
 Settings → External sources, and then receive only what the page needs to ask
 them, such as an album's title and artist. Pins, play history, automatic

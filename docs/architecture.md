@@ -98,8 +98,13 @@ sources by what they bring. Each provider's store checks both
 (`lyricsLookupAvailable`, `coverLookupAllowed`, `artistPhotosAllowed`); an
 automatic lookup runs once per album or artist page in a tab, and for the
 playing track. `gateway/lrclib.ts` asks LRCLIB for a track's lyrics
-with plain GETs; `stores/lyrics.ts` offers the lookup for a track without
-lyrics and saves what it found beside the track through the upload route.
+with plain GETs and `gateway/lrcred.ts` lrc.red (a full-text search matched
+here by artist, title and length, then a hit's LRC with word timings);
+`gateway/lyricsOnline.ts` asks the allowed sources in that order for at
+least the level wanted (none, line or word: `lyricsLevel` in
+`domain/lyrics.ts`); `stores/lyrics.ts` offers the lookup for a track whose
+lyrics a source could improve and saves what it found beside the track
+through the upload route, a `.lrc` already there going to the trash.
 `gateway/musicbrainz.ts` (paced to one request a second) and
 `gateway/coverart.ts` find an album's front cover; `domain/covers.ts` picks the
 release and the folder a cover may go to, and `stores/coverSearch.ts` offers,
