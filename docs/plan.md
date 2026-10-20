@@ -2545,13 +2545,40 @@ the boot layer's and the server's documentation.
       every picture again. Evidence: the full mock suite with the changed
       mock; the pictures themselves.
 
+## AutoEq on the equalizer (owner, 2026-10-20), stage A
+
+The owner decided the five questions of [autoeq.md](autoeq.md): AutoEq's
+`FixedBandEQ` results as they are, from jsDelivr at a pinned commit, the
+recommended result per model, and which headphones a preset holds kept on
+the player.
+
+- [x] Service, card-only: `cdn.jsdelivr.net` among the reviewed origins and
+      the `eq_slots` collection (snowsky-disc-server, with its conformance
+      tests and contract); `release/origins.json` renders it here.
+- [x] AutoEq as an outside source of its own kind, "Equalizer", off by
+      default and asked on a click only (no automatic choice).
+- [x] The Sound dialog's "Headphone correction": a search over the
+      recommended index as one types (the index read at the first
+      keystroke), the model's measurement beside it, the correction's ten
+      bands and master level previewed, and one button that writes them to
+      the user preset of one's choice (selected first when another is shown,
+      the bands in one message, then the master, each confirmed by reading
+      back). The preset is then named by its headphones in the preset list
+      and in the slot choice, from the player's store. Gains move in 0.1 dB
+      steps. Evidence: unit `autoeq`; e2e "writes an AutoEq headphone
+      correction to a custom preset and names the preset by it" (desktop and
+      phone, a stubbed jsDelivr); screenshots in light, dark and on a phone.
+- [ ] On the physical player, with the owner: Q 1.41 and 0.1 dB gains after a
+      reload; the bands FiiO Control's Auto EQ writes for the same headphones,
+      read with this page, to compare.
+- [ ] Later, if A proves itself: a fit of our own to ten free peaking filters
+      (B), and the full index with every measurement (8850 results).
+
 ## Later
 
-- AutoEQ (owner, 2026-10-02: the next large task): headphone correction from
-  AutoEq on the player's equalizer, as FiiO Control offers. The preliminary
-  analysis and the open decisions are in [autoeq.md](autoeq.md); the owner
-  confirmed that the equalizer audibly changes the sound and will answer the
-  rest later.
+- AutoEq, stage B (owner, 2026-10-02; the analysis in [autoeq.md](autoeq.md)):
+  a parametric fit of our own, closer than the fixed bands, once stage A
+  proves itself on the physical player.
 - Several application roots on the card, cloud relay and voice clients follow
   the service's Stage C.
 - A user-facing demo mode (decide on the reference's fictional artwork).

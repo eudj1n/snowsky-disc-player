@@ -81,6 +81,7 @@ const STORE_KEYS = {
   musicbrainz: ['kind', 'name'],
   artist_images: ['name', 'role'],
   enrichment: ['kind', 'name'],
+  eq_slots: ['slot'],
 }
 const STORE_LIMITS = {
   disliked: 20000,
@@ -91,6 +92,7 @@ const STORE_LIMITS = {
   musicbrainz: 20000,
   artist_images: 10000,
   enrichment: 20000,
+  eq_slots: 10,
 }
 /** Combined-009 M3U lists by scope: name → entries (absolute card paths). */
 const LISTS = { internal: new Map(), external: new Map() }

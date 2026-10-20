@@ -12,6 +12,7 @@
 import { computed, reactive } from 'vue'
 import { t, type MessageKey } from '../i18n'
 import { artistPhotoOriginsAdmitted } from '../stores/artistPictures'
+import { autoeqAdmitted } from '../stores/autoeq'
 import { originAllowed, originHosts } from '../stores/connection'
 import { coverOriginsAdmitted } from '../stores/coverSearch'
 import {
@@ -39,6 +40,7 @@ const KIND_TITLES: Record<SourceKind, MessageKey> = {
   lyrics: 'source_kind_lyrics',
   album_covers: 'source_kind_album_covers',
   artist_images: 'source_kind_artist_images',
+  equalizer: 'source_kind_equalizer',
 }
 interface SourceText {
   about: MessageKey
@@ -78,6 +80,12 @@ const TEXTS: Record<SourceName, SourceText> = {
     auto: 'source_fanarttv_auto',
     admitted: () => originAllowed('fanart_api') && originAllowed('fanart_assets'),
   },
+  autoeq: {
+    about: 'source_autoeq_about',
+    sends: 'source_autoeq_sends',
+    auto: null,
+    admitted: autoeqAdmitted,
+  },
 }
 
 /** The release's origins each source reaches (owner, 2026-10-01: Cover Art Archive's images come from archive.org). */
@@ -87,6 +95,7 @@ const ORIGINS: Record<SourceName, readonly string[]> = {
   coverartarchive: ['coverartarchive', 'archive_root', 'archive'],
   fanarttv: ['fanart_api', 'fanart_assets'],
   wikimedia: ['commons', 'wikidata', 'wikimedia_thumb', 'wikimedia_upload'],
+  autoeq: ['jsdelivr'],
 }
 const groups = computed(() =>
   SOURCE_KINDS.map((kind) => ({ kind, sources: SOURCES.filter((source) => source.kind === kind) })).filter(

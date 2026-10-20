@@ -7,6 +7,18 @@ what goes on the card, and its notes are the release's section below. Entries
 stay short and group related work; how and why it was done is in the
 [plan](docs/plan.md).
 
+## [Unreleased]
+
+### Sound
+
+- Headphone correction from [AutoEq](https://github.com/jaakkopasanen/AutoEq)
+  in the Sound settings: find your headphones, see the ten bands and the
+  master level, and write them to one of your presets, which is then named by
+  them. Off until you allow AutoEq among the external sources; needs the
+  next card release of the DISC server for the names to be kept on the
+  player.
+- The equalizer's sliders move in 0.1 dB steps.
+
 ## [1.0.0] — 2026-10-08
 
 The first public release: what Disc Player can do, counted from here.

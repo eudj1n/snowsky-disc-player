@@ -107,6 +107,14 @@ previews and saves it as the album folder's cover through the upload route;
 its picker (`layout/AlbumCoverDialog.vue`, `openCoverPicker`) offers the
 album's editions and fanart.tv's covers, and the chosen edition becomes the
 album's identity in `stores/musicbrainzIds.ts`.
+`gateway/autoeq.ts` reads AutoEq's recommended index and a model's fixed
+band correction from jsDelivr at the pinned revision `domain/autoeq.ts`
+names (the matching and the player's bounds live there too);
+`stores/autoeq.ts` reads them on a click, writes the correction to a user
+preset through `applyPresetBands` in `stores/eq.ts` (the preset selected,
+ten bands in one message, the master after them, each read back) and keeps
+which headphones the preset holds in the store's `eq_slots` collection;
+`components/sound/AutoEqPanel.vue` is its section of the Sound dialog.
 `gateway/wikimedia.ts` reads an artist's photo (a Wikidata image, Commons
 image information with author and licence, the thumbnail's bytes) and
 `gateway/fanart.ts` fanart.tv's photos, backgrounds and covers by

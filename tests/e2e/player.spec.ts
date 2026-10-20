@@ -845,6 +845,107 @@ test.describe('player controls on the mock', () => {
     await disconnect(page)
   })
 
+  test('writes an AutoEq headphone correction to a custom preset and names the preset by it', async ({
+    page,
+  }, info) => {
+    test.skip(external, 'Needs the mock: the eq_slots collection comes with the next card release')
+    // AutoEq's results on jsDelivr (owner, 2026-10-20), stubbed: the recommended index and one model's fixed bands.
+    const index = [
+      '# Recommended Results',
+      '',
+      '- [Sennheiser HD 600](./oratory1990/over-ear/Sennheiser%20HD%20600)',
+      '- [Sennheiser HD 650](./oratory1990/over-ear/Sennheiser%20HD%20650)',
+      '- [Sennheiser HD 650 (2020)](./crinacle/GRAS%2043AG-7%20over-ear/Sennheiser%20HD%20650%20(2020))',
+      '- [Sony MDR-E9LP](./Super%20Review/earbud/Sony%20MDR-E9LP)',
+      '',
+    ].join('\n')
+    const frequencies = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
+    const fixed = [
+      'Preamp: -7.4 dB',
+      ...[7.0, 2.6, -1.2, -2.2, 0.5, -1.0, 0.7, -1.2, 5.1, -3.6].map(
+        (gain, i) => `Filter ${String(i + 1)}: ON PK Fc ${String(frequencies[i])} Hz Gain ${gain.toFixed(1)} dB Q 1.41`,
+      ),
+      '',
+    ].join('\n')
+    const asked: string[] = []
+    await page.route('https://cdn.jsdelivr.net/**', async (route) => {
+      const url = new URL(route.request().url())
+      asked.push(url.pathname)
+      const headers = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/plain; charset=utf-8' }
+      if (url.pathname.endsWith('/results/README.md')) return route.fulfill({ headers, body: index })
+      if (url.pathname.endsWith('/Sennheiser%20HD%20650/Sennheiser%20HD%20650%20FixedBandEQ.txt'))
+        return route.fulfill({ headers, body: fixed })
+      await route.fulfill({ status: 404, headers, body: '' })
+    })
+    await chooseSources(page)
+    await english(page)
+    await connectAndPair(page)
+    const dialog = page.getByRole('dialog')
+    const open = async () => {
+      await command(page, 'Sound settings')
+      await expect(dialog.getByTestId('sound-feedback')).toHaveText('Current values received from DISC.')
+    }
+    await open()
+    const panel = dialog.getByRole('region', { name: 'Headphone correction' })
+    // Off until the owner allows the source: the panel says so, links to Settings, and nothing was fetched.
+    await expect(panel.getByTestId('autoeq-off')).toContainText('AutoEq is off until you allow it in Settings')
+    await panel.getByRole('link', { name: 'External sources' }).click()
+    await expect(page).toHaveURL(/#\/settings\?part=sources/)
+    await page.keyboard.press('Escape')
+    const sources = page.getByTestId('settings-sources')
+    await expect(sources.getByRole('heading', { name: 'Equalizer' })).toBeVisible()
+    await expect(sources.getByTestId('source-autoeq-hosts')).toHaveText('Reaches: cdn.jsdelivr.net.')
+    // Asked on a click only: no automatic choice.
+    await expect(sources.getByTestId('source-autoeq-auto')).toHaveCount(0)
+    await sources.getByTestId('source-autoeq-allow').check()
+    await expect(sources.getByTestId('source-autoeq-allow')).toBeChecked()
+    expect(asked).toHaveLength(0)
+    await page.goBack()
+    await open()
+    // The index is read at the first keystroke; every word must match, the closest first.
+    const search = panel.getByLabel('Headphone model')
+    await search.fill('hd 650')
+    const results = panel.getByTestId('autoeq-results')
+    await expect(results.getByRole('button')).toHaveCount(2)
+    await expect(results.getByRole('button').first()).toHaveText(/^Sennheiser HD 650\s*oratory1990 · over-ear$/)
+    expect(asked).toEqual([expect.stringMatching(/\/AutoEq@[0-9a-f]{40}\/results\/README\.md$/)])
+    await results.getByRole('button').first().click()
+    const chosen = panel.getByTestId('autoeq-chosen')
+    await expect(chosen).toContainText('Measured by oratory1990 · over-ear')
+    await expect(panel.getByTestId('autoeq-preview')).toBeVisible()
+    await expect(chosen).toContainText('Master level: -7.4 dB')
+    expect(asked).toHaveLength(2)
+    // The preset of the listener's choice: selected, its ten bands in one message, then the master level.
+    const slot = info.project.name === 'phone' ? 4 : 3
+    await panel.getByTestId('autoeq-slot').selectOption(String(slot))
+    await panel.getByTestId('autoeq-write').click()
+    await expect(dialog.getByTestId('eq-feedback')).toHaveText('The player confirmed the new value.', {
+      timeout: 20_000,
+    })
+    const equalizer = dialog.getByRole('region', { name: 'Equalizer' })
+    const preset = equalizer.getByRole('combobox', { name: 'Preset' })
+    await expect(preset).toHaveValue(String(159 + slot))
+    await expect(equalizer.getByRole('slider', { name: '31 Hz gain' })).toHaveValue('7')
+    await expect(equalizer.getByRole('slider', { name: '16k Hz gain' })).toHaveValue('-3.6')
+    await expect(equalizer.getByRole('slider', { name: 'Master level' })).toHaveValue('-7.4')
+    // The preset is named by its headphones, from the player's store, in both lists.
+    await expect(preset).toContainText(`Custom ${String(slot)} · Sennheiser HD 650`)
+    await expect(panel.getByTestId('autoeq-slot')).toContainText(`Custom ${String(slot)} · Sennheiser HD 650`)
+    const record = (await storeRecords(page, 'eq_slots')).find((item) => item.value.slot === slot)
+    expect(record?.value).toMatchObject({
+      headphone: 'Sennheiser HD 650',
+      source: 'oratory1990',
+      form: 'over-ear',
+      origin: 'autoeq',
+      result: 'oratory1990/over-ear/Sennheiser HD 650',
+    })
+    expect(asked).toHaveLength(2)
+    await page.keyboard.press('Escape')
+    await disconnect(page)
+    await chooseSources(page)
+    await forgetRecord(page, 'eq_slots', { slot: String(slot) })
+  })
+
   test('shows the lyrics of the current track, synced with its position', async ({ page }, info) => {
     await english(page)
     await connectAndPair(page)

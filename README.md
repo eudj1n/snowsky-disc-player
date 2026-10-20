@@ -45,7 +45,7 @@ _Screenshots of the fictional demo collection, not of anyone's library
 | **Your listening**      | What you played, on the player and in the browser; automatic playlists (Most played, Daily mix, Recently added, Not played lately) kept on the player; pins and dislikes.                                                    |
 | **The card**            | Upload music and album folders, then let the player scan; see what takes space, browse and play folders, move files to the trash and back.                                                                                   |
 | **The library's state** | What the collection lacks (identities, covers, images, lyrics, unknown tags, duplicates, unreadable files) and one run that fills it in, step by step or automatically, undoable as a whole.                                 |
-| **Sound**               | Gain, balance, the DAC filter and DRE, applied on the player.                                                                                                                                                                |
+| **Sound**               | Gain, balance, the DAC filter and DRE, applied on the player; the equalizer's presets and bands, and a correction for your headphones from AutoEq written to a preset of yours.                                              |
 | **Make it yours**       | Light and dark themes in four tones each, four text sizes, English and Russian; more contrast and reduced transparency follow your system.                                                                                   |
 
 ## A closer look

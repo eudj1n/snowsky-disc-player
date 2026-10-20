@@ -2,8 +2,8 @@
 
 Headphone correction presets from the [AutoEq](https://github.com/jaakkopasanen/AutoEq)
 project on the player's equalizer, as FiiO Control offers. This is the owner's
-next large task; the analysis waits for the owner's decisions at the end
-before any work starts. Facts were checked on 2026-10-02 in this repository,
+next large task; the owner's decisions are recorded at the end, and stage A
+is built. Facts were checked on 2026-10-02 in this repository,
 the service's catalogs, the emulator's research notes and the sources linked.
 
 ## Summary
@@ -112,15 +112,54 @@ Advised: A first, B later as a finer fit if A proves itself.
   reload; reading with this page the bands FiiO Control's Auto EQ writes for
   the same headphones, to compare.
 
-## Decisions for the owner
+## The owner's decisions (2026-10-20)
 
-1. Computation: A (`FixedBandEQ`) first, B later?
-2. Data: jsDelivr at a pinned AutoEq commit, the pin moved by hand?
-3. Catalogue: the recommended result per model (6033), or every result
-   (8850) with its source and rig?
-4. Keep on the player which headphones each slot holds?
-5. Check the equalizer on the physical player with the owner before the
-   work starts? (That it changes the sound is confirmed.)
+1. Computation: A, `FixedBandEQ` as it is; B (a fit of our own) later if A
+   proves itself.
+2. Data: jsDelivr at a pinned AutoEq commit, the pin moved by hand with a
+   release. Pinned: `7ae0f56d53074872b028649617a22bbb4232feb7` ("New
+   measurements and results", 2025-07-20), `src/domain/autoeq.ts`.
+3. Catalogue: the recommended result per model (`results/README.md`, 6033
+   models, 486 KB), with its source, rig and form shown beside the model.
+4. Yes: which headphones each user preset holds is kept on the player, the
+   store's `eq_slots` collection (a card release of the service).
+5. The physical check (Q and 0.1 dB gains after a reload, the comparison
+   with FiiO Control's bands) waits for the owner's next session with the
+   player; the mock and the emulator cover the protocol.
+
+## Stage A as built (2026-10-20)
+
+- Service (card-only, snowsky-disc-server): `cdn.jsdelivr.net` in the
+  reviewed origins (`connect-src`), the `eq_slots` collection (key `slot`
+  1..10; `headphone`, `source`, `rig`, `form`, `origin`, `revision`,
+  `result`, `at`; 10 records of 1 KiB); conformance tests and the contract
+  document; its changelog's unreleased entry. The page's `release/origins.json`
+  holds the rendered file.
+- Page: AutoEq is an outside source of the kind "Equalizer" in Settings, off
+  by default and never automatic (`stores/externalSources.ts`). The Sound
+  dialog's "Headphone correction" section (`components/sound/AutoEqPanel.vue`,
+  `stores/autoeq.ts`): the index is read at the first keystroke of the search,
+  the chosen model's `FixedBandEQ.txt` on its click (`gateway/autoeq.ts`,
+  two plain GETs without a preflight), the ten bands and the master level
+  previewed, then one button writes them to the user preset of the listener's
+  choice: the preset is selected when another is shown, its own bands read,
+  the ten bands go in one `0678`, the master in one `0630`, each confirmed by
+  reading back (`applyPresetBands` in `stores/eq.ts`). Once the player
+  confirmed, the preset's headphones are written to `eq_slots`; the preset
+  list and the slot choice name the preset by them in every browser. The
+  equalizer's sliders move in 0.1 dB steps. The credit names AutoEq, its
+  results' date and the measurement's source and rig.
+- Verified against jsDelivr on 2026-10-20: the pinned index and files answer
+  with `Access-Control-Allow-Origin: *`; a path with every segment
+  percent-encoded (`%26`, `%2B`, UTF-8) resolves, and so does the README's
+  own form (spaces only).
+- Tests: unit `autoeq` (the index, the file, the URL, the matching, the
+  bounds, the fetches), `eq` (unchanged); e2e "writes an AutoEq headphone
+  correction to a custom preset and names the preset by it" on the mock with
+  a stubbed jsDelivr, desktop and phone.
+- Not in stage A: the full index with every result (8850); a fit of our own
+  (B); forgetting a preset's headphones from the page (a preset flattened by
+  hand keeps its name until another correction is written).
 
 ## Sources
 

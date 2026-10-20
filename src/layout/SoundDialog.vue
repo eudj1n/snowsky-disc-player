@@ -12,6 +12,16 @@ import { connection } from '../stores/connection'
 import { operation } from '../stores/operation'
 import { applySound, markSoundDraft, readSoundSettings, sound } from '../stores/sound'
 import { applyBands, applyPreset, eq, readEqSettings } from '../stores/eq'
+import {
+  autoeq,
+  autoeqAdmitted,
+  autoeqAllowed,
+  chooseHeadphone,
+  clearHeadphone,
+  loadHeadphones,
+  writeCorrection,
+} from '../stores/autoeq'
+import AutoEqPanel from '../components/sound/AutoEqPanel.vue'
 import EqualizerPanel from '../components/sound/EqualizerPanel.vue'
 import { closeDialog, ui } from '../stores/ui'
 import UiChips from '../ui/UiChips.vue'
@@ -64,6 +74,12 @@ watch(open, async (value) => {
   await readEqSettings()
 })
 const eqLocked = computed(() => !ready.value || operation.busy || eq.pending)
+/** Headphone corrections (AutoEq, 2026-10-20): off until the owner allows the source. */
+const autoeqAccess = computed(() => (!autoeqAdmitted() ? 'not-admitted' : autoeqAllowed() ? 'ready' : 'off'))
+/** What each user preset holds, by its number, for the preset list and the slot choice. */
+const slotNames = computed(() =>
+  Object.fromEntries(Object.entries(autoeq.slots).map(([slot, record]) => [slot, record?.headphone ?? ''])),
+)
 
 const notice = computed(() => (!ready.value ? t('sound_connect') : sound.feedback ? t(sound.feedback) : ''))
 const applyDisabled = (name: SoundName, draft: number) => locked.value || sound.values?.[name] === draft
@@ -200,12 +216,29 @@ const applyDisabled = (name: SoundName, draft: number) => locked.value || sound.
       <EqualizerPanel
         :state="eq.current"
         :locked="eqLocked"
+        :slots="slotNames"
         @preset="applyPreset"
         @apply="(bands, master) => applyBands(bands, master)"
       />
       <p v-if="eq.feedback" role="status" class="m-0 pb-12 text-footnote text-secondary" data-testid="eq-feedback">
         {{ t(eq.feedback) }}
       </p>
+      <AutoEqPanel
+        :access="autoeqAccess"
+        :headphones="autoeq.headphones"
+        :index="autoeq.index"
+        :chosen="autoeq.chosen"
+        :correction="autoeq.correction"
+        :lookup="autoeq.lookup"
+        :slots="slotNames"
+        :preset="eq.current?.preset ?? null"
+        :locked="eqLocked || !eq.current"
+        :writing="autoeq.writing"
+        @load="loadHeadphones"
+        @choose="chooseHeadphone"
+        @clear="clearHeadphone"
+        @write="writeCorrection"
+      />
     </div>
   </UiDialog>
 </template>

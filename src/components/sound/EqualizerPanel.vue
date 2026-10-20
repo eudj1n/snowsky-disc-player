@@ -3,6 +3,8 @@
  * Equalizer: the preset (applied on change and checked on the player), and
  * for the user presets 1–10 the ten PEQ bands and the master level, edited
  * as a draft and sent with Apply. Stock presets show their bands read-only.
+ * Gains move in 0.1 dB steps, AutoEq's precision (owner, 2026-10-20), and a
+ * user preset holding headphones is named by them.
  */
 import { computed, ref, watch, type DeepReadonly } from 'vue'
 import {
@@ -19,7 +21,15 @@ import UiPillButton from '../../ui/UiPillButton.vue'
 import UiSelect from '../../ui/UiSelect.vue'
 import UiTextButton from '../../ui/UiTextButton.vue'
 
-const props = defineProps<{ state: DeepReadonly<EqState> | null; locked: boolean }>()
+const props = withDefaults(
+  defineProps<{
+    state: DeepReadonly<EqState> | null
+    locked: boolean
+    /** What each user preset 1..10 holds (AutoEq), by number. */
+    slots?: Readonly<Partial<Record<number, string>>>
+  }>(),
+  { slots: () => ({}) },
+)
 const emit = defineEmits<{ preset: [value: number]; apply: [bands: PeqBand[], master: number] }>()
 
 const bands = ref<PeqBand[]>([])
@@ -88,7 +98,11 @@ function choose(event: Event): void {
             </optgroup>
             <optgroup :label="t('eq_user_presets')">
               <option v-for="(wire, index) in USER_PRESETS" :key="wire" :value="wire">
-                {{ t('eq_user', { n: index + 1 }) }}
+                {{
+                  props.slots[index + 1]
+                    ? t('eq_user_named', { n: index + 1, name: props.slots[index + 1] ?? '' })
+                    : t('eq_user', { n: index + 1 })
+                }}
               </option>
             </optgroup>
           </select>
@@ -111,7 +125,7 @@ function choose(event: Event): void {
             type="range"
             min="-12"
             max="12"
-            step="0.5"
+            step="0.1"
             :disabled="!editable"
             :aria-label="t('eq_band_gain', { freq: `${label(band.frequency)} Hz` })"
             class="seek-slider h-110 w-18 [--seek-direction:to_top] [direction:rtl] [writing-mode:vertical-lr]"
@@ -128,7 +142,7 @@ function choose(event: Event): void {
           type="range"
           min="-24"
           max="12"
-          step="0.5"
+          step="0.1"
           :disabled="!editable"
           :aria-label="t('eq_master')"
           class="seek-slider flex-1"

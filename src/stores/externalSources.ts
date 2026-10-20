@@ -12,7 +12,8 @@
  * with it; the key is kept in the source's record, which every page the
  * gateway admits can read, so only keys of free services belong there. The
  * release's reviewed origins still decide whether a source can be reached
- * at all.
+ * at all. AutoEq (owner, 2026-10-20) is a source of its own kind: headphone
+ * corrections for the equalizer, read on a click only.
  */
 import { reactive, readonly, watch } from 'vue'
 import { putRecord, readCollection } from '../gateway/store'
@@ -22,8 +23,8 @@ import { toast } from './ui'
 
 /** What a source brings; Settings groups the sources by it, in their order of priority (fanart.tv before
  * Commons for artist images: the owner, 2026-10-01). */
-export type SourceKind = 'metadata' | 'lyrics' | 'album_covers' | 'artist_images'
-export type SourceName = 'musicbrainz' | 'lrclib' | 'coverartarchive' | 'wikimedia' | 'fanarttv'
+export type SourceKind = 'metadata' | 'lyrics' | 'album_covers' | 'artist_images' | 'equalizer'
+export type SourceName = 'musicbrainz' | 'lrclib' | 'coverartarchive' | 'wikimedia' | 'fanarttv' | 'autoeq'
 
 export interface SourceInfo {
   name: SourceName
@@ -74,8 +75,16 @@ export const SOURCES: readonly SourceInfo[] = [
     needs: ['musicbrainz'],
     automatic: true,
   },
+  {
+    name: 'autoeq',
+    kind: 'equalizer',
+    title: 'AutoEq',
+    site: 'https://github.com/jaakkopasanen/AutoEq',
+    needs: [],
+    automatic: false,
+  },
 ]
-export const SOURCE_KINDS: readonly SourceKind[] = ['metadata', 'lyrics', 'album_covers', 'artist_images']
+export const SOURCE_KINDS: readonly SourceKind[] = ['metadata', 'lyrics', 'album_covers', 'artist_images', 'equalizer']
 const info = (name: SourceName): SourceInfo => SOURCES.find((source) => source.name === name) as SourceInfo
 
 export interface SourceChoice {
