@@ -6,6 +6,7 @@
  */
 import { expect, test, type Page } from '@playwright/test'
 import {
+  changeHeaders,
   connectAndPair,
   disconnect,
   english,
@@ -458,6 +459,19 @@ test('keeps automatic playlists on the player: an artist’s most played and the
     await expect(status(page, '“Recently added” is removed from the player')).toBeVisible()
     await expect(row('recently_added').getByRole('button', { name: 'Add to the player' })).toBeVisible()
     expect(await lists()).toEqual(['Daily mix', 'Most played', 'Most played · Forma'])
+
+    // The owner's own list of that name, put there since the page read the folder, is never taken over;
+    // once it is gone from the card (removed elsewhere, the page not told), the list is made (owner, 2026-10-21).
+    const own = `/api/lists/external/${encodeURIComponent('Recently added')}`
+    await request.put(own, { headers: changeHeaders(), data: { entries: [first] } })
+    await row('recently_added').getByRole('button', { name: 'Add to the player' }).click()
+    await expect(status(page, 'A list of yours already has this name')).toBeVisible()
+    await expect(row('recently_added').getByRole('button', { name: 'Add to the player' })).toBeVisible()
+    await request.delete(own, { headers: changeHeaders() })
+    await row('recently_added').getByRole('button', { name: 'Add to the player' }).click()
+    await expect(status(page, '“Recently added” is on the player')).toBeVisible()
+    await expect(row('recently_added')).toContainText(/Recently added\s*\d+ tracks?/)
+    expect(await lists()).toEqual(['Daily mix', 'Most played', 'Most played · Forma', 'Recently added'])
     await disconnect(page)
   } finally {
     await request.delete('/__mock/lists')

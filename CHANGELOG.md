@@ -36,6 +36,13 @@ stay short and group related work; how and why it was done is in the
   credits one artist carrying the name; the enrichment run counts it and its
   undo takes it back.
 
+### Playlists
+
+- Adding an automatic playlist reads the card's Playlists folder afresh, so
+  a list of that name you removed since the page opened (on the card's files
+  page, say) no longer blocks it with "a list of yours already has this
+  name".
+
 ## [1.0.0] — 2026-10-08
 
 The first public release: what Disc Player can do, counted from here.

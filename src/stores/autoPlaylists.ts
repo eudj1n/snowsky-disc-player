@@ -217,18 +217,21 @@ function guard(): string | null {
 async function make(list: AutoPlaylist, quiet = false): Promise<boolean> {
   const token = guard()
   if (!token) return false
-  // The owner's own list of that name is never taken over.
-  if (fileOf(list.name) && !state.lists.some((known) => known.name === list.name)) {
-    toast('auto_name_taken', true)
-    return false
-  }
-  const entries = autoEntries(list, input())
-  if (!entries.length) {
-    toast('auto_empty')
-    return false
-  }
   state.busy = true
   try {
+    // The folder as it is now, not as read when the page opened: a list the owner removed since (on the
+    // card's files page, say) is gone, one put there since is seen. The owner's own list of that name is
+    // never taken over.
+    state.files = (await readLists(http, SCOPE).catch(() => null)) ?? state.files
+    if (fileOf(list.name) && !state.lists.some((known) => known.name === list.name)) {
+      toast('auto_name_taken', true)
+      return false
+    }
+    const entries = autoEntries(list, input())
+    if (!entries.length) {
+      toast('auto_empty')
+      return false
+    }
     const stored = await storeList(list, token)
     if (stored !== 'confirmed') {
       toast(stored === 'full' ? 'auto_full' : 'auto_failed', true)
