@@ -2475,8 +2475,11 @@ V2.57 profile; no `commands.json`); the card ejected.
       diagnostics say "from the card · 1.0.0", the database ok (schema 5),
       every play written, and the service's message that an app was
       installed through the manager.
-- [ ] The diagnostics name the app the player serves, "Disc Player", where
-      they now say "Page" (owner, 2026-10-08).
+- [x] (Done 2026-10-21: the row is named by `page.app` from the service's
+      diagnostics, the app's folder name on the card, "Disc Player" where an
+      image names none. Unit `combined008`, e2e service and acceptance
+      diagnostics.) The diagnostics name the app the player serves, "Disc
+      Player", where they said "Page" (owner, 2026-10-08).
 
 ## The boot layer's server in the diagnostics (owner, 2026-10-06), card-only
 
@@ -2647,6 +2650,20 @@ too; it did not.
 ## Later
 
 - AutoEq, stage B (owner, 2026-10-02; the analysis in [autoeq.md](autoeq.md)):
+## The device card connects (owner, 2026-10-21), card-only
+
+The owner: after a drop one had to open the connection dialog to connect
+again; a connect icon on the sidebar's card would spare that.
+
+- [x] While the player is away and the gateway answers, the card's dot gives
+      way to a round connect button (the refresh icon, "Connect"); a press is
+      the explicit Connect of the dialog, never automatic (the no-replay rule
+      stands); when the connection does not come, the dialog opens to say
+      why. Connected, the dot alone shows again; the card itself still opens
+      the dialog. The slim rail and phones keep the dialog only. Evidence:
+      e2e "connects again from the sidebar card after Disconnect, without
+      the dialog"; screenshots in light and dark.
+
   a parametric fit of our own, closer than the fixed bands, once stage A
   proves itself on the physical player.
 - Several application roots on the card, cloud relay and voice clients follow

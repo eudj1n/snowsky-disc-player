@@ -15,8 +15,8 @@ export interface About {
   uptime: number
   supervised: boolean
   image: { variant: string | null; firmware: string | null } | null
-  /** The default app serving the page (combined-009) and its version from its app.json. */
-  page: { source: 'card' | 'image' | 'embedded'; version: string | null }
+  /** The default app serving the page (combined-009): its name on the card and its version from its app.json. */
+  page: { source: 'card' | 'image' | 'embedded'; app: string | null; version: string | null }
   cardOwned: boolean
   database: {
     state: string
@@ -60,6 +60,7 @@ export function parseAbout(value: unknown): About | null {
     image: image ? { variant: text(image.variant), firmware: text(image.firmwareVersion) } : null,
     page: {
       source: page.source === 'card' || page.source === 'image' ? page.source : 'embedded',
+      app: text(page.app),
       version: text(page.version),
     },
     cardOwned: (v.card as Record<string, unknown> | undefined)?.owned === true,

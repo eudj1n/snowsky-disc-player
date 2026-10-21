@@ -960,7 +960,7 @@ export const ru: Messages = {
   about_service: 'Сервис',
   about_build: 'сборка {build}',
   about_image: 'Образ',
-  about_page: 'Страница',
+  about_page: 'Disc Player',
   about_page_card: 'с карты',
   about_page_image: 'из образа',
   about_page_embedded: 'встроенная',

@@ -2,7 +2,7 @@
  * Emulator acceptance against real stock (V2.57 guest), run explicitly:
  *
  *   tests/e2e/emulator/media.sh <container>
- *   E2E_ACCEPTANCE=emulator E2E_BASE_URL=http://127.0.0.1:17870 \
+ *   E2E_ACCEPTANCE=emulator E2E_BASE_URL=http://127.0.0.1:7870 \
  *     E2E_SERIAL=00000000000000 \
  *     npx playwright test --project=desktop
  *   tests/e2e/emulator/media.sh <container> remove
@@ -962,7 +962,9 @@ test("shows the running service's diagnostics on stock", async ({ page }) => {
   await expect(diagnostics).toContainText(/(disc-server )?\d+\.\d+\.\d+ · build [0-9a-f]{12}/, { timeout: 15_000 })
   // The app installed into Apps/Disc Player names its version (combined-009): a release's (1.0.0) or a
   // local build's date and commit.
-  await expect(diagnostics).toContainText(/from the card · (\d+\.\d+\.\d+|\d{4}\.\d{2}\.\d{2}-[0-9a-f]{7})/)
+  await expect(diagnostics).toContainText(
+    /Disc Player\s*from the card · (\d+\.\d+\.\d+|\d{4}\.\d{2}\.\d{2}-[0-9a-f]{7})/,
+  )
   await expect(diagnostics).toContainText(/ok, schema 5/)
   await page.keyboard.press('Escape')
 })

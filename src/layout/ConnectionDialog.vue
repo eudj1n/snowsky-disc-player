@@ -205,7 +205,8 @@ const status = computed(() => {
           <dt class="text-muted">{{ t('about_image') }}</dt>
           <dd class="m-0">{{ [about.about.image.variant, about.about.image.firmware].filter(Boolean).join(' · ') }}</dd>
         </template>
-        <dt class="text-muted">{{ t('about_page') }}</dt>
+        <!-- The app the player serves, by the name it carries on the card (owner, 2026-10-08). -->
+        <dt class="text-muted">{{ about.about.page.app ?? t('about_page') }}</dt>
         <dd class="m-0">
           {{ [t(PAGE_SOURCE[about.about.page.source]), about.about.page.version].filter(Boolean).join(' · ') }}
         </dd>

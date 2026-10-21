@@ -54,6 +54,10 @@ stay short and group related work; how and why it was done is in the
 
 - The card's State tab has a heading line like the other tabs, so the
   heading no longer jumps between them: how many external sources are on.
+- The connection's Diagnostics name the app the player serves, Disc Player,
+  where they said "Page".
+- The sidebar's device card connects again with one press while the player
+  is away, in place of its dot; the dialog is still a press on the card.
 
 ### Playlists
 

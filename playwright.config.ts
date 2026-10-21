@@ -15,6 +15,10 @@ export default defineConfig({
   use: {
     baseURL: external ?? 'http://127.0.0.1:4870',
     trace: 'retain-on-failure',
+    // No audio device: playback in the browser (and the analyser hearing it) runs on Chromium's own clock,
+    // as on CI, instead of the machine's output device, which once stalled it with the time stuck at 0.06 s
+    // (macOS, 2026-10-21).
+    launchOptions: { args: ['--disable-audio-output'] },
   },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },

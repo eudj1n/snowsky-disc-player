@@ -908,7 +908,7 @@ export const en = {
   about_service: 'Service',
   about_build: 'build {build}',
   about_image: 'Image',
-  about_page: 'Page',
+  about_page: 'Disc Player',
   about_page_card: 'from the card',
   about_page_image: 'from the image',
   about_page_embedded: 'built in',

@@ -77,6 +77,27 @@ test('connects as the single owner and reads identity, then disconnects', async 
   expect(errors).toEqual([])
 })
 
+test('connects again from the sidebar card after Disconnect, without the dialog', async ({ page }, info) => {
+  test.skip(info.project.name === 'phone', 'The device card is in the sidebar')
+  const errors = watchErrors(page)
+  await english(page)
+  const aside = page.getByRole('complementary', { name: 'Main navigation' })
+  const again = aside.getByTestId('sidebar-connect')
+  // Not connected yet: the card offers to connect; connected, it shows the dot alone.
+  await expect(again).toBeVisible()
+  await connectAndPair(page)
+  await expect(again).toBeHidden()
+  await disconnect(page)
+  await expect(aside).toContainText('Disconnected')
+  await again.click()
+  await expect(aside).toContainText('Connected', { timeout: 15_000 })
+  await expect(again).toBeHidden()
+  await openConnection(page)
+  await expect(page.getByRole('dialog').getByTestId('connection-state')).toContainText('Connected')
+  await page.keyboard.press('Escape')
+  expect(errors).toEqual([])
+})
+
 test('pairs with the serial number and toggles playback there and back', async ({ page }) => {
   test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
   const errors = watchErrors(page)
@@ -965,6 +986,16 @@ test.describe('player controls on the mock', () => {
     const panel = page.getByRole('complementary', { name: 'Player view' })
     const compact = panel.getByTestId('now-compact')
     await expect(compact).toBeVisible()
+    // The sheet has slid in: a click while it still moves scrolls the sheet to bring the pinned line "into
+    // view" at its static place, the head, and the line fades out under the click (flaky on a loaded machine).
+    await panel.evaluate((element) =>
+      Promise.all(
+        element
+          .getAnimations({ subtree: true })
+          .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+          .map((a) => a.finished),
+      ),
+    )
     // Paused, away and back: Lyrics again opens at the current line. Phones pause from the pinned line,
     // as the full-screen player covers the bar.
     if (info.project.name === 'phone') {

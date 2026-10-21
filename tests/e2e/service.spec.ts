@@ -266,6 +266,9 @@ test("shows the service's diagnostics in the connection dialog", async ({ page }
   await diagnostics.getByText('Diagnostics', { exact: true }).click()
   await expect(diagnostics).toContainText('0.9.0 · build mock')
   await expect(diagnostics).toContainText('usb-engineering · 2.57')
+  // The row is named after the app the player serves, not "Page" (owner, 2026-10-08).
+  await expect(diagnostics).toContainText('Disc Player')
+  await expect(diagnostics).not.toContainText('Page')
   await expect(diagnostics).toContainText('from the card · 2026.09.29')
   await expect(diagnostics).toContainText('ok, schema 5')
   await expect(diagnostics.getByTestId('about-writes')).toHaveText('every play written')

@@ -174,7 +174,7 @@ describe('diagnostics and the audio route', () => {
       future: {},
     })
     // combined-009: the default app and its version (app.json).
-    expect(about?.page).toEqual({ source: 'image', version: '2026.09.29' })
+    expect(about?.page).toEqual({ source: 'image', app: 'Disc Player', version: '2026.09.29' })
     // The combined images' restart log is not shown: the boot layer's status tells (2026-10-06).
     expect(about).not.toHaveProperty('restarts')
     expect(about?.log).toEqual([{ at: 1, message: 'Skip rule: skipped to the next track' }])
@@ -191,6 +191,17 @@ describe('diagnostics and the audio route', () => {
     expect(about?.servicePackage).toEqual({ name: 'disc-server', version: '2.57.2' })
     expect(about?.version).toBe('0.9.0')
     expect(parseAbout({ service: { version: '0.9.0' }, boot: { service: null } })?.servicePackage).toBeNull()
+  })
+
+  it('names the app the player serves, and no app where the image names none', () => {
+    expect(
+      parseAbout({ service: { version: '0.9.0' }, page: { source: 'card', app: 'Radio', version: '2.0' } })?.page,
+    ).toEqual({ source: 'card', app: 'Radio', version: '2.0' })
+    expect(parseAbout({ service: { version: '0.9.0' }, page: { source: 'embedded' } })?.page).toEqual({
+      source: 'embedded',
+      app: null,
+      version: null,
+    })
   })
 
   it('addresses a card file for the browser, each component encoded', () => {

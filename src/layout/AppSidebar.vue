@@ -10,12 +10,13 @@ import { useRoute } from 'vue-router'
 import BrandLogo from '../components/brand/BrandLogo.vue'
 import { t } from '../i18n'
 import { SECTIONS, sectionOf } from '../router'
-import { connection } from '../stores/connection'
+import { connect, connection } from '../stores/connection'
 import { imports } from '../stores/imports'
 import { runFlag } from '../stores/runFlag'
 import { railShown } from '../stores/sidebar'
 import { openDialog } from '../stores/ui'
 import UiIcon from '../ui/UiIcon.vue'
+import UiIconButton from '../ui/UiIconButton.vue'
 
 const route = useRoute()
 /**
@@ -33,6 +34,15 @@ const label = () =>
             ? 'connecting'
             : 'disconnected',
       )
+/**
+ * The player away and the gateway there: the card connects again by itself on a press (owner, 2026-10-21), an
+ * explicit action like the dialog's Connect; what stops it is told in the dialog, opened then.
+ */
+const canConnect = computed(() => connection.connection === 'disconnected' && connection.gateway !== false)
+async function connectFromCard(): Promise<void> {
+  await connect()
+  if (connection.connection !== 'connected') openDialog('connection')
+}
 </script>
 
 <template>
@@ -78,24 +88,39 @@ const label = () =>
         </RouterLink>
       </template>
     </nav>
-    <button
-      type="button"
-      :aria-label="t('disc_connection')"
-      class="mt-auto flex items-center gap-10 rounded-11 border border-line bg-raised px-10 py-13 text-left compact:gap-7 compact:px-8 compact:py-12 slim:justify-center slim:border-0 slim:bg-transparent slim:p-12 phone:hidden"
-      @click="openDialog('connection')"
+    <!-- The device card opens the dialog; a connect button takes the dot's place while the player is away. -->
+    <div
+      class="mt-auto flex items-center gap-10 rounded-11 border border-line bg-raised px-10 py-13 compact:gap-7 compact:px-8 compact:py-12 slim:justify-center slim:border-0 slim:bg-transparent slim:p-12 phone:hidden"
     >
-      <UiIcon name="device" class="size-27" />
-      <span class="slim:hidden">
-        <strong class="block truncate text-footnote compact:text-caption">SNOWSKY DISC</strong>
-        <small class="mt-5 block text-footnote text-muted">{{ label() }}</small>
-      </span>
+      <button
+        type="button"
+        :aria-label="t('disc_connection')"
+        class="flex min-w-0 flex-1 items-center gap-10 p-0 text-left compact:gap-7 slim:flex-none"
+        @click="openDialog('connection')"
+      >
+        <UiIcon name="device" class="size-27" />
+        <span class="slim:hidden">
+          <strong class="block truncate text-footnote compact:text-caption">SNOWSKY DISC</strong>
+          <small class="mt-5 block text-footnote text-muted">{{ label() }}</small>
+        </span>
+      </button>
+      <UiIconButton
+        v-if="canConnect"
+        icon="refresh"
+        :label="t('connect')"
+        small
+        class="-my-1 -mr-3 slim:hidden"
+        data-testid="sidebar-connect"
+        @click="connectFromCard"
+      />
       <span
+        v-else
         aria-hidden="true"
-        class="ml-auto size-6 shrink-0 rounded-full slim:hidden"
+        class="size-6 shrink-0 rounded-full slim:hidden"
         :class="
           connection.connection === 'connected' ? 'bg-[#82a773] shadow-[0_0_0_3px_var(--online-ring)]' : 'bg-[#a7a89e]'
         "
       />
-    </button>
+    </div>
   </aside>
 </template>
