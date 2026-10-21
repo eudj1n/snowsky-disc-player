@@ -18,6 +18,7 @@ stay short and group related work; how and why it was done is in the
   next card release of the DISC server for the names to be kept on the
   player.
 - The equalizer's sliders move in 0.1 dB steps.
+- The headphone field is a search pill like the top bar's, a size smaller.
 
 ### Lyrics
 
@@ -42,6 +43,11 @@ stay short and group related work; how and why it was done is in the
   full-screen button is four arrows out of the centre, and once the lyrics
   are scrolled it sits in the pinned track line, so the full screen is one
   tap away without scrolling back up.
+
+### Your player
+
+- The card's State tab has a heading line like the other tabs, so the
+  heading no longer jumps between them: how many external sources are on.
 
 ### Playlists
 

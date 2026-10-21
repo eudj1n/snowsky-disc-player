@@ -650,6 +650,7 @@ export const en = {
   space_trash: 'In the trash',
   space_free: 'Free',
   space_measured: 'Measured {done} of {total} files',
+  state_sources_on: 'External sources on: {on} of {total}',
   space_measuring: 'Measuring the collection: {done} of {total} files',
   space_measure_note: 'Sizes are read from the files once and remembered in this browser.',
   space_measure_again: 'Measure again',

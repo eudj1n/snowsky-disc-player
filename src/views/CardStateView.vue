@@ -26,7 +26,7 @@ import { chosenImage, hasArtistPhoto } from '../stores/artistPictures'
 import { albumIdentityKey } from '../stores/coverSearch'
 import { connection } from '../stores/connection'
 import { albumCoverState, enrichment, enrichmentLoaded, measureCard, sizeUnreadable } from '../stores/enrichment'
-import { autoImageRole } from '../stores/externalSources'
+import { autoImageRole, externalSources, SOURCES, sourceAllowed } from '../stores/externalSources'
 import { albums, artists, library, tracks } from '../stores/library'
 import {
   chooseFile,
@@ -277,12 +277,19 @@ const cardFolder = (path: string) => path.replace(/^\/tmp\/sdcard\/?/, '')
 const number = (value: number) => new Intl.NumberFormat(locale.value).format(value)
 const ROW =
   'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-16 gap-y-6 border-b border-line py-14 phone:grid-cols-[minmax(0,1fr)]'
+/** The heading's line, as the other tabs have one (owner, 2026-10-21): how many outside sources are on. */
+const sourcesMeta = computed(() =>
+  t('state_sources_on', {
+    on: externalSources.available ? SOURCES.filter((source) => sourceAllowed(source.name)).length : 0,
+    total: SOURCES.length,
+  }),
+)
 </script>
 
 <template>
   <CollectionGate :count="tracks.length">
     <template #heading>
-      <ViewHeading :eyebrow="t('your_player')" :title="t('card_section')">
+      <ViewHeading :eyebrow="t('your_player')" :title="t('card_section')" :meta="sourcesMeta">
         <div class="flex flex-wrap items-center gap-12 self-end">
           <CardTabs current="state" :trash="connection.trash" />
         </div>

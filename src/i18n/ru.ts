@@ -665,6 +665,7 @@ export const ru: Messages = {
   space_trash: 'В корзине',
   space_free: 'Свободно',
   space_measured: 'Измерено файлов: {done} из {total}',
+  state_sources_on: 'Внешних источников включено: {on} из {total}',
   space_measuring: 'Измеряю коллекцию, файлов: {done} из {total}',
   space_measure_note: 'Размеры читаются из файлов один раз и запоминаются в этом браузере.',
   space_measure_again: 'Измерить заново',

@@ -122,8 +122,8 @@ const lookupText = computed<MessageKey | null>(() =>
     </p>
 
     <template v-else>
-      <div class="mt-12 max-w-420">
-        <UiTextField v-model="query" :label="t('autoeq_search')" data-testid="autoeq-search" />
+      <div class="mt-12 max-w-320">
+        <UiTextField v-model="query" variant="search" :label="t('autoeq_search')" data-testid="autoeq-search" />
       </div>
       <p v-if="index === 'loading'" role="status" class="mt-8 mb-0 text-footnote text-muted">
         {{ t('autoeq_loading') }}
