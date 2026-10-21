@@ -2745,8 +2745,15 @@ names need it).
       track's position in the browser not moving within 20 s under the
       guest's load, and the four after it did not run); the guest cleaned up
       after (test media removed, rescanned, the CI album paused).
-- [ ] Published: the tag `v1.1.0` on the release commit after its CI; the
-      release's zip and its SHA-256 from the workflow.
+- [x] Published (2026-10-21): tag `v1.1.0` on `e65bfef` after its CI; the
+      release "Disc Player 1.1.0" with `disc-player-1.1.0.zip` (623,253
+      bytes, SHA-256
+      `85cad2e2faf609cbf00e6f4a1d6983305e5fa42455085a609fcaa44ca16e7b19`,
+      as its `.sha256` says), the notes from the CHANGELOG, and the hosted
+      site on Pages. The zip holds the same 105 entries as the accepted local
+      one, the same bytes except the 44 gzip twins, and the server's tool
+      installs it into a scratch card. The server's release `v2.57.9` is a
+      draft the owner publishes (its package equals the record).
 - [ ] 1.1.0 on the owner's player: the owner installs the published zip and
       reports.
 
