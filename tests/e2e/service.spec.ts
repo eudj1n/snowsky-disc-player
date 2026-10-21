@@ -375,9 +375,9 @@ test('keeps automatic playlists on the player: an artist’s most played and the
     const section = page.getByTestId('auto-playlists')
     const row = (kind: string) => section.locator(`li[data-kind="${kind}"]`)
     await row('most_played').getByRole('button', { name: 'Add to the player' }).click()
-    await expect(row('most_played')).toContainText(/Most played\s*\d+ tracks?/)
+    await expect(row('most_played')).toContainText(/Most played.*\d+ tracks?/)
     // A list on the player says how it is kept and the day it was drawn; one not added opens as a preview, as from Home.
-    await expect(row('most_played')).toContainText(/updated daily · [A-Z][a-z]{2} \d{1,2}/)
+    await expect(row('most_played')).toContainText(/updated daily · [A-Z][a-z]{2} \d{1,2} · \d+ tracks?/)
     await row('daily_mix').getByRole('link', { name: 'Daily mix' }).click()
     await expect(page).toHaveURL(/#\/list\/Daily%20mix\?kind=daily_mix$/)
     await expect(page.getByRole('table').getByRole('row').nth(1)).toBeVisible()
@@ -470,7 +470,7 @@ test('keeps automatic playlists on the player: an artist’s most played and the
     await request.delete(own, { headers: changeHeaders() })
     await row('recently_added').getByRole('button', { name: 'Add to the player' }).click()
     await expect(status(page, '“Recently added” is on the player')).toBeVisible()
-    await expect(row('recently_added')).toContainText(/Recently added\s*\d+ tracks?/)
+    await expect(row('recently_added')).toContainText(/Recently added.*\d+ tracks?/)
     expect(await lists()).toEqual(['Daily mix', 'Most played', 'Most played · Forma', 'Recently added'])
     await disconnect(page)
   } finally {

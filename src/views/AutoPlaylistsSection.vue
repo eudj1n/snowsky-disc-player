@@ -39,13 +39,13 @@ const rowRoute = (row: Row) =>
   row.list
     ? { name: 'list', params: { name: row.list.name } }
     : { name: 'list', params: { name: rowTitle(row) }, query: { kind: row.kind ?? 'most_played' } }
-/** Its size, and for a list on the player the day it was last drawn. */
+/** For a list on the player how it is kept and the day it was last drawn, then its size (every list holds fifty, so the day comes first: owner, 2026-10-21). */
 function rowFacts(row: Row): string {
-  const tracks = row.list ? count(row.list) : row.kind ? autoPreviews.value[row.kind].length : null
-  const parts = tracks === null ? [] : [t('track_count', { count: tracks })]
-  // How it is kept, and the day it was last drawn (owner, 2026-09-30).
+  const parts: string[] = []
   if (row.list) parts.push(keptLabel(row.list))
   if (row.list?.written) parts.push(shortDay(row.list.written, locale.value))
+  const tracks = row.list ? count(row.list) : row.kind ? autoPreviews.value[row.kind].length : null
+  if (tracks !== null) parts.push(t('track_count', { count: tracks }))
   return parts.join(' · ')
 }
 const count = (list: AutoPlaylist) => autoPlaylists.entries[list.name]?.length ?? null

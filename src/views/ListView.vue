@@ -112,13 +112,17 @@ async function onAction(id: string): Promise<void> {
         @sticky="heading.run"
       >
         <template #artwork><ListArt :title="name" :background="background" :artists="artists" /></template>
-        <template #sticky>{{ t('track_count', { count: rows.length }) }}</template>
+        <!-- A list on the player is told by the day it was drawn, every one holding its fifty tracks (owner, 2026-10-21). -->
+        <template #sticky>{{
+          list?.written
+            ? t('auto_updated_on', { date: shortDay(list.written, locale) })
+            : t('track_count', { count: rows.length })
+        }}</template>
         <template #meta>
           <template v-if="list"
-            >{{ t('track_count', { count: rows.length })
-            }}<template v-if="list.written">
-              · {{ t('auto_updated_on', { date: shortDay(list.written, locale) }) }}</template
-            ></template
+            ><template v-if="list.written"
+              >{{ t('auto_updated_on', { date: shortDay(list.written, locale) }) }} · </template
+            >{{ t('track_count', { count: rows.length }) }}</template
           >
           <template v-else-if="preview">{{ t('track_count', { count: rows.length }) }}</template>
           <template v-else>{{ t('auto_list_missing') }}</template>

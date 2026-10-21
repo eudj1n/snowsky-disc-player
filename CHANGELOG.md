@@ -42,6 +42,9 @@ stay short and group related work; how and why it was done is in the
   a list of that name you removed since the page opened (on the card's files
   page, say) no longer blocks it with "a list of yours already has this
   name".
+- An automatic playlist on the player is told by the day it was drawn: in
+  the list page's sticky heading in place of the track count, and first in
+  its line on the Playlists page (every list holds fifty tracks).
 
 ## [1.0.0] — 2026-10-08
 
