@@ -11,6 +11,7 @@ const album = (title: string, artist: string): Album => ({
   genres: [],
   ids: [],
   addedAt: null,
+  firstAddedAt: null,
 })
 
 describe('the Home hero', () => {

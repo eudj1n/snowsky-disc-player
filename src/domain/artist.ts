@@ -11,6 +11,8 @@ export interface Artist {
    * artist's joint credits (owner, 2026-10-02: the Artists page shows these by default).
    */
   own: boolean
+  /** Earliest ADD_TIME among its tracks (seconds): when the artist first reached the collection. */
+  firstAddedAt: number | null
 }
 
 /**
@@ -70,7 +72,10 @@ export const credits = (credit: string | null, name: string) => credit !== null 
 
 /** Artists by their track credits (joint credits count for each artist), in first-seen order. */
 export function groupArtists(tracks: readonly LibraryTrack[]): Artist[] {
-  const artists = new Map<string, { name: string; albums: Set<string>; trackCount: number }>()
+  const artists = new Map<
+    string,
+    { name: string; albums: Set<string>; trackCount: number; firstAddedAt: number | null }
+  >()
   const literal = new Set<string>()
   const albumArtists = new Set<string>()
   for (const track of tracks) {
@@ -80,18 +85,34 @@ export function groupArtists(tracks: readonly LibraryTrack[]): Artist[] {
     for (const name of creditArtists(track.artist)) {
       let artist = artists.get(name)
       if (!artist) {
-        artist = { name, albums: new Set(), trackCount: 0 }
+        artist = { name, albums: new Set(), trackCount: 0, firstAddedAt: null }
         artists.set(name, artist)
       }
       artist.trackCount++
+      if (track.addedAt !== null && (artist.firstAddedAt === null || track.addedAt < artist.firstAddedAt))
+        artist.firstAddedAt = track.addedAt
       if (track.album) artist.albums.add(track.album)
     }
   }
-  return [...artists.values()].map(({ name, albums, trackCount }) => ({
+  return [...artists.values()].map(({ name, albums, trackCount, firstAddedAt }) => ({
     name,
     albumCount: albums.size,
     trackCount,
     literal: literal.has(name),
     own: literal.has(name) || albumArtists.has(name),
+    firstAddedAt,
   }))
+}
+
+/**
+ * The artists new to the collection: those with records of their own whose
+ * first track reached the card at `since` (seconds) or later, the latest
+ * debut first. New's shelf takes `since` from the oldest of its new albums,
+ * so a familiar artist's new album names nobody here (owner, 2026-10-21).
+ */
+export function newArtists(artists: readonly Artist[], since: number, count: number = Infinity): Artist[] {
+  return artists
+    .filter((artist) => artist.own && artist.firstAddedAt !== null && artist.firstAddedAt >= since)
+    .sort((a, b) => (b.firstAddedAt ?? 0) - (a.firstAddedAt ?? 0))
+    .slice(0, count)
 }

@@ -95,6 +95,7 @@ function album(title: string): Album {
       genres: [],
       ids: [],
       addedAt: null,
+      firstAddedAt: null,
     }
   )
 }

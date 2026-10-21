@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
- * "New": the latest additions by ADD_TIME — tracks as a compact grid and
- * albums as a shelf — and the stock play history when it has entries.
- * No banners; everything comes from the stock library database.
+ * "New": the latest additions by ADD_TIME — tracks as a compact grid, albums
+ * as a shelf and the artists who first appeared with those albums — and the
+ * stock play history when it has entries. No banners; everything comes from
+ * the stock library database.
  */
 import { computed, onMounted, ref } from 'vue'
 import CoverCard from '../components/collection/CoverCard.vue'
@@ -12,11 +13,14 @@ import SectionHeading from '../components/common/SectionHeading.vue'
 import HomeIntro from '../components/home/HomeIntro.vue'
 import TrackTiles from '../components/track/TrackTiles.vue'
 import { recentAlbums, albumScope } from '../domain/album'
+import { newArtists } from '../domain/artist'
 import { recentlyAdded, type LibraryTrack, type Track } from '../domain/track'
 import { t } from '../i18n'
+import { artistImage } from '../stores/artistPictures'
 import { albumCover, coverFor } from '../stores/enrichment'
-import { albums, loadRecentlyPlayed, tracks } from '../stores/library'
+import { albums, artists, loadRecentlyPlayed, tracks } from '../stores/library'
 import { nowIsPlaying as isPlaying, nowPlaying } from '../stores/output'
+import { isPinnedArtist } from '../stores/pins'
 import { openTrackMenu } from '../stores/ui'
 import UiSkeleton from '../ui/UiSkeleton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
@@ -34,6 +38,11 @@ const newTracks = computed(() =>
   ),
 )
 const newAlbums = computed(() => recentAlbums(albums.value, 12))
+// Debuts among the latest additions: artists first seen no earlier than the first track of the oldest new
+// album (an album arrives over seconds; its latest track would miss the artist who debuted with it).
+const debuts = computed(() =>
+  newArtists(artists.value, Math.min(...newAlbums.value.map((album) => album.firstAddedAt ?? Infinity)), 12),
+)
 const played = ref<LibraryTrack[]>([])
 onMounted(async () => {
   try {
@@ -100,6 +109,26 @@ const artistTo = (name: string) => artistRoute(name)
         @play="playAlbumCard(album)"
       />
     </CoverRow>
+    <template v-if="debuts.length">
+      <SectionHeading :title="t('new_artists')">
+        <UiTextButton icon="arrow" @click="$router.push('/artists')">{{ t('all_artists') }}</UiTextButton>
+      </SectionHeading>
+      <CoverRow :label="t('new_artists')">
+        <CoverCard
+          v-for="artist in debuts"
+          :key="artist.name"
+          role="listitem"
+          :title="artist.name"
+          :to="artistRoute(artist.name)"
+          artist
+          :cover="artistImage(artist.name)"
+          :pinned-label="isPinnedArtist(artist.name) ? t('pinned_mark') : null"
+          :open-label="t('open_item', { name: artist.name })"
+          :play-label="artist.literal ? t('play_item', { name: artist.name }) : null"
+          @play="playFrom({ kind: 'artist', artist: artist.name })"
+        />
+      </CoverRow>
+    </template>
     <template v-if="played.length">
       <SectionHeading :title="t('recently_played')" />
       <TrackTiles

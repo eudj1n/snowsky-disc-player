@@ -1634,6 +1634,31 @@ test('links the featured album and its artist on Home without playing', async ({
   await expect(page).toHaveURL(/#\/artist\//)
 })
 
+test('New names the artists who first appeared with its latest albums', async ({ page }) => {
+  test.skip(external, 'Needs the mock collection')
+  await english(page)
+  await page.goto('/#/new')
+  const shelf = page.getByRole('list', { name: 'New artists' })
+  // Latest debut first. Mira Sol, whose newest album is among the new ones, debuted with an older album
+  // than any on that shelf: a familiar name. Northline debuted with the shelf's oldest album, Night Drive,
+  // whose tracks reached the card over three seconds: the window opens with its first track. (An earlier
+  // test's imported files add the artist "Imported", the latest debut of all.)
+  await expect(shelf.getByRole('listitem').filter({ hasNotText: 'Imported' })).toHaveText([
+    /Поля/,
+    /Parallel Lines/,
+    /June & the City/,
+    /Forma/,
+    /Берег/,
+    /Sundial/,
+    /Kite Lines/,
+    /Northline/,
+  ])
+  await expect(shelf).not.toContainText('Mira Sol')
+  await shelf.getByRole('link', { name: 'Open Forma' }).click()
+  await expect(page).toHaveURL(/#\/artist\/Forma/)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Forma')
+})
+
 test('places the favorite heart in its own column right before the duration', async ({ page }, info) => {
   test.skip(external, 'Needs the mock collection')
   await english(page)

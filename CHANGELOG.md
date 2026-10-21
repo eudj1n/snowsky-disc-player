@@ -36,6 +36,9 @@ stay short and group related work; how and why it was done is in the
 - Confirming an album's edition identifies its artist too, when the edition
   credits one artist carrying the name; the enrichment run counts it and its
   undo takes it back.
+- New has a shelf of new artists: those who first reached the card with the
+  albums above them, the latest debut first. A familiar artist's new album
+  names nobody here, and the shelf stays away when there is no debut.
 
 ### Now playing
 

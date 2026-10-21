@@ -2664,6 +2664,25 @@ again; a connect icon on the sidebar's card would spare that.
       e2e "connects again from the sidebar card after Disconnect, without
       the dialog"; screenshots in light and dark.
 
+## New artists on New (owner, 2026-10-21), player-only
+
+The owner asked whether New could carry a "New artists" block. Agreed rule:
+the block means debuts in the collection, not the artists of the new tracks
+(those are already written on the cards above it).
+
+- [x] An artist's first appearance is the earliest ADD_TIME among its tracks
+      (`Artist.firstAddedAt`); an album's `firstAddedAt` is its earliest
+      track. The shelf lists the artists with records of their own whose
+      debut is no earlier than the first track of the oldest of the twelve
+      new albums, the latest debut first, twelve at most, as round cards with
+      their pictures; it hides when there is no debut. The window opens with
+      the album's first track, not its last, since an album reaches the card
+      over seconds and its artist debuts with the first of them. Evidence:
+      unit test "names the artists new to the collection since a moment";
+      e2e "New names the artists who first appeared with its latest albums"
+      (Mira Sol, whose debut is older than the shelf's albums, stays away);
+      screenshots at desktop and phone widths, light and dark.
+
 ## Later
 
 - AutoEq, stage B (owner, 2026-10-02; the analysis in [autoeq.md](autoeq.md)):

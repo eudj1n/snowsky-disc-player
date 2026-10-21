@@ -25,6 +25,8 @@ export interface Album {
   ids: number[]
   /** Latest ADD_TIME among its tracks (seconds), for "recently added". */
   addedAt: number | null
+  /** Earliest ADD_TIME among its tracks (seconds): when the album began to reach the card. */
+  firstAddedAt: number | null
 }
 
 /** Groups library tracks into stock title groups; tracks without an album are left out. */
@@ -44,6 +46,7 @@ export function groupAlbums(tracks: readonly LibraryTrack[]): Album[] {
         genres: [],
         ids: [],
         addedAt: null,
+        firstAddedAt: null,
       }
       albums.set(track.album, album)
     }
@@ -57,8 +60,10 @@ export function groupAlbums(tracks: readonly LibraryTrack[]): Album[] {
       album.paths[''] ??= track.path
       if (track.artist) album.paths[track.artist] ??= track.path
     }
-    if (track.addedAt !== null && (album.addedAt === null || track.addedAt > album.addedAt))
-      album.addedAt = track.addedAt
+    if (track.addedAt !== null) {
+      if (album.addedAt === null || track.addedAt > album.addedAt) album.addedAt = track.addedAt
+      if (album.firstAddedAt === null || track.addedAt < album.firstAddedAt) album.firstAddedAt = track.addedAt
+    }
   }
   return [...albums.values()]
 }

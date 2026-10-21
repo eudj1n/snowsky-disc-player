@@ -102,12 +102,13 @@ describe('albums', () => {
       track(5, null, 'C'),
     ])
     expect(
-      albums.map(({ title, artists, trackArtists, trackCount, addedAt, ids, key }) => ({
+      albums.map(({ title, artists, trackArtists, trackCount, addedAt, firstAddedAt, ids, key }) => ({
         title,
         artists,
         trackArtists,
         trackCount,
         addedAt,
+        firstAddedAt,
         ids,
         key,
       })),
@@ -118,6 +119,7 @@ describe('albums', () => {
         trackArtists: ['SOAD'],
         trackCount: 2,
         addedAt: 2,
+        firstAddedAt: 1,
         ids: [1, 2],
         key: '["Mezmerize"]',
       },
@@ -127,6 +129,7 @@ describe('albums', () => {
         trackArtists: ['A', 'B'],
         trackCount: 2,
         addedAt: 4,
+        firstAddedAt: 3,
         ids: [3, 4],
         key: '["Hits"]',
       },
@@ -178,6 +181,7 @@ describe('album sorting', () => {
       genres: [],
       ids: [],
       addedAt,
+      firstAddedAt: addedAt,
     })
     const albums = [card('Ёлка', 'Б', 2), card('album 10', 'а', 3), card('Album 9', 'В', 1)]
     expect(sortAlbums(albums, 'recent', 'ru').map((a) => a.title)).toEqual(['album 10', 'Ёлка', 'Album 9'])
@@ -365,8 +369,8 @@ describe('joint artist credits', () => {
     expect(credits('Alphabet', 'Alpha')).toBe(false)
     const artists = groupArtists([track(1, 'X', 'Alpha'), track(2, 'Y', 'Alpha; Beta')])
     expect(artists).toEqual([
-      { name: 'Alpha', albumCount: 2, trackCount: 2, literal: true, own: true },
-      { name: 'Beta', albumCount: 1, trackCount: 1, literal: false, own: false },
+      { name: 'Alpha', albumCount: 2, trackCount: 2, literal: true, own: true, firstAddedAt: 1 },
+      { name: 'Beta', albumCount: 1, trackCount: 1, literal: false, own: false, firstAddedAt: 2 },
     ])
     // An album credited to an artist is a record of its own, although its tracks credit it jointly.
     const joint = track(3, 'Z', 'Gamma; Delta', 3, 'Delta')
@@ -374,6 +378,22 @@ describe('joint artist credits', () => {
       { name: 'Gamma', own: false },
       { name: 'Delta', own: true },
     ])
+  })
+
+  it('names the artists new to the collection since a moment, the latest debut first', async () => {
+    const { groupArtists, newArtists } = await import('../../src/domain/artist')
+    const artists = groupArtists([
+      track(1, 'Early', 'Old', 10),
+      track(2, 'Debut', 'Fresh', 40),
+      track(3, 'Later', 'Old', 50), // a familiar artist's new album is no debut
+      track(4, 'Second', 'Newer', 60),
+      track(5, 'Guest', 'Newer; Guest', 70), // a joint credit only: no records of its own
+      { ...track(6, 'Unknown', 'Undated', 1), addedAt: null },
+    ])
+    expect(artists.find((artist) => artist.name === 'Old')?.firstAddedAt).toBe(10)
+    expect(newArtists(artists, 40).map((artist) => artist.name)).toEqual(['Newer', 'Fresh'])
+    expect(newArtists(artists, 40, 1).map((artist) => artist.name)).toEqual(['Newer'])
+    expect(newArtists(artists, Infinity)).toEqual([])
   })
 })
 
