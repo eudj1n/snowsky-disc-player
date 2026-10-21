@@ -2726,6 +2726,30 @@ Picture-in-Picture, which the browser opens by itself through the session's
       which the gateway's `img-src 'self'` would block (owner, 2026-10-21:
       the console showed the blocked blob; no server change wanted).
 
+## Release 1.1.0 (owner, 2026-10-21)
+
+The owner: "finish the current tasks and release the server and the player".
+The server's release 2.57.9 is recorded in snowsky-disc-server
+(`releases/2.57.9.json`); this release pairs with it (the AutoEq preset
+names need it).
+
+- [x] The checks of 1.1.0 (2026-10-21): `npm run check` (351 unit tests);
+      the mock suite 169 passed, 64 skipped, with one failure, the New
+      artists case on the phone, which expected Night Drive's artist while
+      an earlier test's imported album had pushed that album off the shelf
+      (the case now takes its expected debuts from the albums shown; the 36
+      cases after it ran in a second pass of the phone project: 79 passed,
+      15 skipped); the emulator acceptance of the 1.1.0 zip of `bb525dc`
+      installed on the server's guest (2.57.9 as the controller): 41 passed,
+      92 skipped, on its second run (the first failed one case, the CUE
+      track's position in the browser not moving within 20 s under the
+      guest's load, and the four after it did not run); the guest cleaned up
+      after (test media removed, rescanned, the CI album paused).
+- [ ] Published: the tag `v1.1.0` on the release commit after its CI; the
+      release's zip and its SHA-256 from the workflow.
+- [ ] 1.1.0 on the owner's player: the owner installs the published zip and
+      reports.
+
 ## Later
 
 - AutoEq, stage B (owner, 2026-10-02; the analysis in [autoeq.md](autoeq.md)):
