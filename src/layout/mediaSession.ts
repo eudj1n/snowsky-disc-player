@@ -11,6 +11,7 @@
 import { watch } from 'vue'
 import { positionDrifted, sessionMetadata, type PositionMark } from '../domain/mediaSession'
 import { trackKey } from '../domain/track'
+import { coverUrl } from '../gateway/media'
 import {
   browserPlayback,
   nextInBrowser,
@@ -27,25 +28,21 @@ import { openMiniPlayer } from './miniPlayer'
 type SessionAction = MediaSessionAction | 'enterpictureinpicture'
 
 export function bindMediaSession(session: MediaSession): void {
-  let artworkUrl: string | null = null
-  let artworkBlob: Blob | null = null
   let mark: PositionMark | null = null
 
   const track = () => (inBrowser.value ? nowPlaying.value.track : null)
 
-  // The track and its cover: an object URL of the cover's bytes, given up with the cover.
+  // The track and its cover. The cover goes by the service's media route, same-origin, which the page's
+  // policy allows (an object URL of its bytes would not pass `img-src 'self'`); named once the page has
+  // seen the cover, so the system is not sent after a cover that is not there.
   watch(
     () => {
       const current = track()
-      return { current, cover: current ? coverFor(current) : null }
+      const cover = current ? coverFor(current) : null
+      return { current, artwork: current?.path && cover ? { src: coverUrl(current.path), type: cover.type } : null }
     },
-    ({ current, cover }) => {
-      if (cover !== artworkBlob) {
-        if (artworkUrl) URL.revokeObjectURL(artworkUrl)
-        artworkUrl = cover ? URL.createObjectURL(cover) : null
-        artworkBlob = cover
-      }
-      const metadata = sessionMetadata(current, artworkUrl ? { src: artworkUrl, type: cover?.type } : null)
+    ({ current, artwork }) => {
+      const metadata = sessionMetadata(current, artwork)
       session.metadata = metadata && typeof MediaMetadata === 'function' ? new MediaMetadata(metadata) : null
     },
     { immediate: true },

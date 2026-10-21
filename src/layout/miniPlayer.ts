@@ -13,6 +13,7 @@
  * itself when the page goes away.
  */
 import { computed, shallowRef } from 'vue'
+import { toast } from '../stores/ui'
 
 interface PictureInPictureWindowOptions {
   width?: number
@@ -73,7 +74,9 @@ export async function openMiniPlayer(): Promise<boolean> {
   let target: Window
   try {
     target = await pip.requestWindow({ width: 340, height: 560 })
-  } catch {
+  } catch (error) {
+    // The browser said no (no user activation, a policy of its own): its reason, for the owner to act on.
+    toast('mini_player_failed', true, { reason: error instanceof Error ? error.message : String(error) })
     return false
   }
   opened = target

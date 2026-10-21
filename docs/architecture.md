@@ -193,7 +193,8 @@ own playback can feed it later. Karaoke and the visualizer share
 
 The browser's media session (`layout/mediaSession.ts`, 2026-10-21) carries
 this browser's own playback to the system's media keys and the browser's
-media panel: the track, its cover as an object URL, the playback state and
+media panel: the track, its cover by the service's same-origin media route
+(an object URL would not pass the page's `img-src 'self'`), the playback state and
 the position (`domain/mediaSession.ts` decides when the position is told
 again: a new track, play or pause, a seek; steady playback is left to the
 system). The player's side sets nothing: its sound is not this page's media.

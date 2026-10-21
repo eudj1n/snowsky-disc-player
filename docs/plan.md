@@ -2706,15 +2706,25 @@ Picture-in-Picture, which the browser opens by itself through the session's
       `enterpictureinpicture` action opens it when the browser asks. Secure
       contexts only: the button is absent on the card's page over plain
       http (`http://ingenic.local:7870`) and present on the hosted https
-      page and on localhost; Chrome's "insecure origins treated as secure"
-      flag lifts that for a lab. Evidence: e2e "opens the mini player in a
+      page and on localhost. Chrome's "insecure origins treated as secure"
+      flag does not help: with it the origin counts as secure and the API
+      appears, but `requestWindow()` never settles and the renderer stops
+      answering (owner, 2026-10-21, Chrome 155; reproduced in headed
+      Chromium 153 on a non-loopback mock). The way to the real player from
+      a secure page is the dev server: `DISC_GATEWAY=http://ingenic.local:7870`
+      in `.env.local`, `npm run dev`, the page at `http://localhost:5173`
+      proxied to the player. Evidence: e2e "opens the mini player in a
       picture-in-picture window of its own, styled as Now playing" (the real
       window in Chromium on 127.0.0.1: the content, one stylesheet link, the
       theme, a pause that reaches the player, the theme following the page,
       closing from the bar); screenshots light and dark.
-- [ ] Automatic picture-in-picture on the device: the owner tries it on the
-      hosted page or with the Chrome flag; the permission prompt comes from
-      the browser on the first leave of the tab while this browser plays.
+- [ ] Automatic picture-in-picture with the real player: the owner tries it
+      from the dev server (localhost) or the hosted page; the permission
+      prompt comes from the browser on the first leave of the tab while this
+      browser plays. The media session's cover goes by the service's
+      same-origin media route (`/api/media/cover/…`), not an object URL,
+      which the gateway's `img-src 'self'` would block (owner, 2026-10-21:
+      the console showed the blocked blob; no server change wanted).
 
 ## Later
 

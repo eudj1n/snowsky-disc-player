@@ -45,7 +45,10 @@ the page as if it came from the card. Nothing is written to the card.
 
 - **Player** — put `DISC_GATEWAY=http://<player-ip>:7870` in `.env.local`
   (ignored by git) and run `npm run dev`. Reads work at once; controls need
-  pairing with the player's serial number.
+  pairing with the player's serial number. The page at `localhost` is a
+  secure context, which the card's page over plain http is not: the mini
+  player (Document Picture-in-Picture) can be tried with the real player
+  from here.
 
 ## Tests
 

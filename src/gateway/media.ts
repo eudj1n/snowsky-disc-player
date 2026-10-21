@@ -52,6 +52,11 @@ export function audioUrl(path: string): string {
   return gatewayUrl(`/api/media/audio${mediaPath(path)}`)
 }
 
+/** The file's cover by its address, for the browser's media session: same-origin, so the page's policy allows it. */
+export function coverUrl(path: string): string {
+  return gatewayUrl(`/api/media/cover${mediaPath(path)}`)
+}
+
 const count = (value: unknown) => (typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : null)
 
 export async function mediaInfo(http: GatewayHttp, path: string): Promise<MediaInfo | null> {

@@ -774,6 +774,7 @@ export const en = {
   mini_player: 'Mini player',
   mini_player_open: 'Mini player: a small window over the others',
   mini_player_close: 'Close the mini player',
+  mini_player_failed: 'The browser did not open the mini player: {reason}',
   mini_player_words: 'picture in picture floating window',
   visualizer_close: 'Leave the visualizer (Esc)',
   visualizer_unavailable: 'This browser cannot analyse the sound, so the disc stays still.',

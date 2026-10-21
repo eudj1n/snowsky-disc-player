@@ -1731,17 +1731,24 @@ test('tells the browser media session what plays here, and nothing while the pla
     page.evaluate(() => ({
       title: navigator.mediaSession.metadata?.title ?? null,
       artist: navigator.mediaSession.metadata?.artist ?? null,
+      // The cover by the service's media route: same-origin, as the page's policy allows.
+      artwork: navigator.mediaSession.metadata?.artwork.map((image) => new URL(image.src).pathname) ?? null,
       state: navigator.mediaSession.playbackState,
     }))
   // The player's sound is not this page's media: the session is empty.
-  await expect.poll(session).toEqual({ title: null, artist: null, state: 'none' })
+  await expect.poll(session).toEqual({ title: null, artist: null, artwork: null, state: 'none' })
   await switchSide(page, 'browser')
   await expect(page.getByTestId('toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 15_000 })
-  await expect.poll(session).toEqual({ title, artist: 'Mira Sol', state: 'playing' })
+  await expect.poll(session).toEqual({
+    title,
+    artist: 'Mira Sol',
+    artwork: [expect.stringMatching(/^\/api\/media\/cover\//)],
+    state: 'playing',
+  })
   await page.getByTestId('toggle').click()
   await expect.poll(session).toMatchObject({ state: 'paused' })
   await switchSide(page, 'disc')
-  await expect.poll(session, { timeout: 15_000 }).toEqual({ title: null, artist: null, state: 'none' })
+  await expect.poll(session, { timeout: 15_000 }).toEqual({ title: null, artist: null, artwork: null, state: 'none' })
   await disconnect(page)
 })
 

@@ -816,6 +816,7 @@ export const ru: Messages = {
   mini_player: 'Мини-плеер',
   mini_player_open: 'Мини-плеер: маленькое окно поверх остальных',
   mini_player_close: 'Закрыть мини-плеер',
+  mini_player_failed: 'Браузер не открыл мини-плеер: {reason}',
   mini_player_words: 'картинка в картинке плавающее окно',
   visualizer_close: 'Выйти из визуализации (Esc)',
   visualizer_unavailable: 'Этот браузер не умеет анализировать звук, поэтому диск не движется.',
