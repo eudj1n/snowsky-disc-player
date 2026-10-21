@@ -48,6 +48,10 @@ stay short and group related work; how and why it was done is in the
 
 ### Your player
 
+- Add music: the three boxes above the steps, which looked like tabs, are
+  gone; the sections themselves show the progress, a check on a step that is
+  done and the accent on the current one.
+
 - The card's State tab has a heading line like the other tabs, so the
   heading no longer jumps between them: how many external sources are on.
 

@@ -35,6 +35,7 @@ import UiDialog from '../ui/UiDialog.vue'
 import UiIcon from '../ui/UiIcon.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
+import ImportStepLabel from './ImportStepLabel.vue'
 
 const router = useRouter()
 const filesInput = ref<HTMLInputElement | null>(null)
@@ -57,7 +58,9 @@ const counts = computed(() => ({
   stopped: imports.items.filter((item) => item.phase === 'not-sent' || item.phase === 'uncertain').length,
   total: imports.items.length,
 }))
-const STEPS: MessageKey[] = ['import_step_card', 'import_step_index', 'import_step_saved']
+/** A section's state from the flow's step: the sections are the progress (owner, 2026-10-21). */
+const stepState = (index: number): 'done' | 'current' | 'ahead' =>
+  importFlow.value.step > index ? 'done' : importFlow.value.step === index ? 'current' : 'ahead'
 const PHASE: Record<ImportPhase, MessageKey> = {
   waiting: 'import_waiting',
   sending: 'import_sending',
@@ -120,27 +123,9 @@ function openNew(): void {
       }}</UiTextButton>
     </p>
 
-    <ol :aria-label="t('import_workflow')" class="my-18 grid list-none grid-cols-3 gap-8 p-0">
-      <li
-        v-for="(step, index) in STEPS"
-        :key="step"
-        :aria-current="importFlow.step === index ? 'step' : undefined"
-        class="rounded-10 border px-12 py-9 text-footnote"
-        :class="
-          importFlow.step > index
-            ? 'border-transparent bg-banner text-secondary'
-            : importFlow.step === index
-              ? 'border-secondary text-ink'
-              : 'border-line text-muted'
-        "
-      >
-        <span class="mr-6 font-semibold tabular-nums">{{ index + 1 }}</span
-        >{{ t(step) }}
-      </li>
-    </ol>
     <p
       role="status"
-      class="mt-0 mb-18 flex flex-wrap items-center gap-x-12 gap-y-6 text-footnote leading-[1.55] text-secondary"
+      class="mt-14 mb-18 flex flex-wrap items-center gap-x-12 gap-y-6 text-footnote leading-[1.55] text-secondary"
       data-testid="import-flow"
     >
       {{ ready ? t(importFlow.message) : t('import_connect') }}
@@ -155,7 +140,7 @@ function openNew(): void {
     </p>
 
     <section class="border-t border-line pt-16">
-      <span class="text-caption2 font-semibold tracking-caps text-muted">{{ t('import_step_transfer') }}</span>
+      <ImportStepLabel :index="0" :label="t('import_step_transfer')" :state="stepState(0)" />
       <div
         class="rounded-16 mt-10 grid place-items-center gap-8 border border-dashed px-16 py-22 text-center transition-colors duration-150"
         :class="dragging ? 'border-secondary bg-banner' : 'border-line bg-raised'"
@@ -280,7 +265,7 @@ function openNew(): void {
     </section>
 
     <section class="mt-18 border-t border-line pt-16">
-      <span class="text-caption2 font-semibold tracking-caps text-muted">{{ t('import_step_scan') }}</span>
+      <ImportStepLabel :index="1" :label="t('import_step_scan')" :state="stepState(1)" />
       <h3 class="mt-8 mb-4 text-callout font-semibold">{{ t('import_scan_title') }}</h3>
       <p class="m-0 text-footnote leading-[1.55] text-muted">{{ t('import_scan_description') }}</p>
       <div class="mt-12 flex flex-wrap items-center justify-between gap-10">
@@ -304,7 +289,7 @@ function openNew(): void {
     </section>
 
     <section class="mt-18 border-t border-line pt-16">
-      <span class="text-caption2 font-semibold tracking-caps text-muted">{{ t('import_step_sync') }}</span>
+      <ImportStepLabel :index="2" :label="t('import_step_sync')" :state="stepState(2)" />
       <h3 class="mt-8 mb-4 text-callout font-semibold">{{ t('import_sync_title') }}</h3>
       <label class="mt-6 flex items-center gap-8 text-footnote text-muted">
         <input
