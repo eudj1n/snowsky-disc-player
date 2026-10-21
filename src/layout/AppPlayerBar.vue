@@ -23,6 +23,7 @@ import { openDialog, togglePanel, ui } from '../stores/ui'
 import { creditArtists, creditLabel } from '../domain/artist'
 import { albumRoute, artistRoute } from '../views/captions'
 import { usePlaybackContext } from './usePlaybackContext'
+import { miniPlayerOpen, miniPlayerSupported, toggleMiniPlayer } from './miniPlayer'
 import { usePlayerControls } from './usePlayerControls'
 import { openVisualizer } from './visualizer'
 
@@ -123,6 +124,10 @@ const labels = computed(() => ({
       :side-label="t(output.side === 'disc' ? 'side_disc' : 'side_browser')"
       :switching="output.switching"
       :visualizer-label="t('visualizer_open')"
+      :mini-player-label="t('mini_player_open')"
+      :mini-player-available="miniPlayerSupported"
+      :mini-player-open="miniPlayerOpen"
+      :mini-player-disabled="!track"
       :volume="player.volume.value"
       :volume-disabled="player.volumeDisabled.value"
       :volume-label="t('disc_volume')"
@@ -137,6 +142,7 @@ const labels = computed(() => ({
       :queue-disabled="!inBrowser && connection.connection !== 'connected'"
       @side="switchSide"
       @visualizer="openVisualizer"
+      @mini-player="toggleMiniPlayer"
       @queue="(opener) => togglePanel('queue', opener)"
       @lyrics="(opener) => togglePanel('lyrics', opener)"
       @volume="player.onVolume"

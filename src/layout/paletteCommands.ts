@@ -12,9 +12,10 @@ import { chooseAppearance, darkActive } from '../stores/appearance'
 import { switchSide } from '../stores/handoff'
 import { setImportDestination } from '../stores/imports'
 import { library, loadCollection } from '../stores/library'
-import { output } from '../stores/output'
+import { nowPlaying, output } from '../stores/output'
 import { openDialog } from '../stores/ui'
 import type { IconName } from '../ui/icons'
+import { miniPlayerOpen, miniPlayerSupported, toggleMiniPlayer } from './miniPlayer'
 
 export interface Command {
   id: string
@@ -59,6 +60,19 @@ export const commands = computed<Command[]>(() => [
     enabled: !output.switching,
     run: switchSide,
   },
+  // The mini player's window, where the browser has one (2026-10-21).
+  ...(miniPlayerSupported
+    ? [
+        {
+          id: 'mini-player',
+          label: t(miniPlayerOpen.value ? 'mini_player_close' : 'mini_player'),
+          icon: 'pip' as const,
+          words: t('mini_player_words'),
+          enabled: nowPlaying.value.track !== null,
+          run: toggleMiniPlayer,
+        },
+      ]
+    : []),
   {
     id: 'refresh',
     label: t('refresh_collection'),

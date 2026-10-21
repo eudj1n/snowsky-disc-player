@@ -1659,6 +1659,92 @@ test('New names the artists who first appeared with its latest albums', async ({
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Forma')
 })
 
+/** Plays Mira Sol's Afterglow on the player unless it plays already; the bar's title. */
+async function playingOnDisc(page: Page): Promise<string> {
+  await page.goto('/#/album/Afterglow/Mira%20Sol')
+  const toggle = page.getByTestId('toggle')
+  if ((await toggle.getAttribute('aria-label')) !== 'Pause') {
+    await page.getByRole('button', { name: 'Play album' }).click()
+    await expect(toggle).toHaveAttribute('aria-label', 'Pause', { timeout: 15_000 })
+  }
+  return (await page.getByTestId('track-title').textContent())?.trim() ?? ''
+}
+
+type PipHost = { documentPictureInPicture?: { window: Window | null } }
+
+test('opens the mini player in a picture-in-picture window of its own, styled as Now playing', async ({
+  page,
+}, info) => {
+  test.skip(external, 'Reads the mock player')
+  test.skip(info.project.name === 'phone', 'The bar offers the window on desktops only')
+  await english(page)
+  await connectAndPair(page)
+  const title = await playingOnDisc(page)
+  // Chromium offers Document Picture-in-Picture to secure contexts only (localhost is one).
+  test.skip(!(await page.evaluate(() => 'documentPictureInPicture' in window)), 'No Document Picture-in-Picture')
+  await page.getByTestId('mini-player-open').click()
+  const mini = () =>
+    page.evaluate(() => {
+      const win = (window as unknown as PipHost).documentPictureInPicture?.window ?? null
+      if (!win) return null
+      const doc = win.document
+      const root = doc.querySelector('[data-testid=mini-player]')
+      return {
+        title: doc.querySelector('[data-testid=mini-title]')?.textContent.trim() ?? null,
+        sheets: doc.querySelectorAll('link[rel=stylesheet]').length,
+        theme: doc.documentElement.dataset.theme ?? null,
+        toggle: doc.querySelector('[data-testid=mini-toggle]')?.getAttribute('aria-label') ?? null,
+        // The page's stylesheet reached the window: the section is laid out as a column, not as a block.
+        column: root ? getComputedStyle(root).flexDirection : null,
+      }
+    })
+  await expect.poll(mini).toEqual({ title, sheets: 1, theme: 'light', toggle: 'Pause', column: 'column' })
+  await expect(page.getByTestId('mini-player-open')).toHaveAttribute('aria-pressed', 'true')
+  // Its pause is the bar's: one guarded command to the player, confirmed by a read.
+  await page.evaluate(() =>
+    (
+      (window as unknown as PipHost).documentPictureInPicture?.window?.document.querySelector(
+        '[data-testid=mini-toggle]',
+      ) as HTMLElement
+    ).click(),
+  )
+  await expect(page.getByTestId('toggle')).toHaveAttribute('aria-label', 'Play', { timeout: 15_000 })
+  await expect.poll(mini).toMatchObject({ toggle: 'Play' })
+  // The window follows the page's theme.
+  await page.evaluate(() => (document.documentElement.dataset.theme = 'dark'))
+  await expect.poll(mini).toMatchObject({ theme: 'dark' })
+  // The bar's button, pressed again, closes the window.
+  await page.getByTestId('mini-player-open').click()
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as PipHost).documentPictureInPicture?.window === null))
+    .toBe(true)
+  await expect(page.getByTestId('mini-player-open')).toHaveAttribute('aria-pressed', 'false')
+  await disconnect(page)
+})
+
+test('tells the browser media session what plays here, and nothing while the player plays', async ({ page }) => {
+  test.skip(external, 'Reads the mock player')
+  await english(page)
+  await connectAndPair(page)
+  const title = await playingOnDisc(page)
+  const session = () =>
+    page.evaluate(() => ({
+      title: navigator.mediaSession.metadata?.title ?? null,
+      artist: navigator.mediaSession.metadata?.artist ?? null,
+      state: navigator.mediaSession.playbackState,
+    }))
+  // The player's sound is not this page's media: the session is empty.
+  await expect.poll(session).toEqual({ title: null, artist: null, state: 'none' })
+  await switchSide(page, 'browser')
+  await expect(page.getByTestId('toggle')).toHaveAttribute('aria-label', 'Pause', { timeout: 15_000 })
+  await expect.poll(session).toEqual({ title, artist: 'Mira Sol', state: 'playing' })
+  await page.getByTestId('toggle').click()
+  await expect.poll(session).toMatchObject({ state: 'paused' })
+  await switchSide(page, 'disc')
+  await expect.poll(session, { timeout: 15_000 }).toEqual({ title: null, artist: null, state: 'none' })
+  await disconnect(page)
+})
+
 test('places the favorite heart in its own column right before the duration', async ({ page }, info) => {
   test.skip(external, 'Needs the mock collection')
   await english(page)

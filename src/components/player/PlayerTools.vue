@@ -13,6 +13,11 @@ defineProps<{
   sideLabel: string
   switching: boolean
   visualizerLabel: string
+  /** The mini player's window (2026-10-21): offered where the browser has one. */
+  miniPlayerLabel: string
+  miniPlayerAvailable: boolean
+  miniPlayerOpen: boolean
+  miniPlayerDisabled: boolean
   volume: number | null
   volumeDisabled: boolean
   volumeLabel: string
@@ -29,6 +34,7 @@ defineProps<{
 const emit = defineEmits<{
   side: []
   visualizer: []
+  miniPlayer: []
   queue: [opener: HTMLElement]
   lyrics: [opener: HTMLElement]
   volume: [value: number]
@@ -56,6 +62,16 @@ const emit = defineEmits<{
       class="phone:hidden"
       data-testid="visualizer-open"
       @click="emit('visualizer')"
+    />
+    <UiIconButton
+      v-if="miniPlayerAvailable"
+      icon="pip"
+      :label="miniPlayerLabel"
+      :pressed="miniPlayerOpen"
+      :disabled="miniPlayerDisabled"
+      class="phone:hidden"
+      data-testid="mini-player-open"
+      @click="emit('miniPlayer')"
     />
     <VolumeControl
       class="w-120 compact:w-100 rail:hidden"

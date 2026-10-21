@@ -2683,6 +2683,39 @@ the block means debuts in the collection, not the artists of the new tracks
       (Mira Sol, whose debut is older than the shelf's albums, stays away);
       screenshots at desktop and phone widths, light and dark.
 
+## Media session and the mini player (owner, 2026-10-21), player-only
+
+The owner saw Spotify's miniplayer in Chrome: a small window over the others,
+opening by itself on leaving the tab once allowed. Two browser APIs: the
+Media Session (the system's media keys and panel) and Document
+Picture-in-Picture, which the browser opens by itself through the session's
+`enterpictureinpicture` action. Requirement: styled as Now playing.
+
+- [x] Media Session for this browser's playback: the track, its cover,
+      play or pause and the position go to the system; play, pause, previous,
+      next and seek come back. Cleared on the player's side (its sound is
+      not this page's media). Evidence: unit tests of `domain/mediaSession.ts`
+      (the credit as shown, when the position is told again); e2e "tells the
+      browser media session what plays here, and nothing while the player
+      plays" (desktop and phone).
+- [x] The mini player: the bar's button (and a palette command) opens a
+      Document Picture-in-Picture window with the Now Playing head on the
+      cover's colours, the timeline, transport, favorite and repeat, on
+      whichever side plays; the page's stylesheet links and theme attributes
+      are copied in and follow the page. The media session's
+      `enterpictureinpicture` action opens it when the browser asks. Secure
+      contexts only: the button is absent on the card's page over plain
+      http (`http://ingenic.local:7870`) and present on the hosted https
+      page and on localhost; Chrome's "insecure origins treated as secure"
+      flag lifts that for a lab. Evidence: e2e "opens the mini player in a
+      picture-in-picture window of its own, styled as Now playing" (the real
+      window in Chromium on 127.0.0.1: the content, one stylesheet link, the
+      theme, a pause that reaches the player, the theme following the page,
+      closing from the bar); screenshots light and dark.
+- [ ] Automatic picture-in-picture on the device: the owner tries it on the
+      hosted page or with the Chrome flag; the permission prompt comes from
+      the browser on the first leave of the tab while this browser plays.
+
 ## Later
 
 - AutoEq, stage B (owner, 2026-10-02; the analysis in [autoeq.md](autoeq.md)):

@@ -191,6 +191,22 @@ tested without a browser; the renderer takes any analyser, so the player's
 own playback can feed it later. Karaoke and the visualizer share
 `layout/fullscreenOverlay.ts` for entering and leaving full screen.
 
+The browser's media session (`layout/mediaSession.ts`, 2026-10-21) carries
+this browser's own playback to the system's media keys and the browser's
+media panel: the track, its cover as an object URL, the playback state and
+the position (`domain/mediaSession.ts` decides when the position is told
+again: a new track, play or pause, a seek; steady playback is left to the
+system). The player's side sets nothing: its sound is not this page's media.
+The mini player (`layout/miniPlayer.ts`, `layout/MiniPlayer.vue`) is a
+Document Picture-in-Picture window of our own origin: the page's stylesheet
+links and root attributes (theme, palettes, text size) are copied in, and the
+component teleports the Now Playing head with the phone's controls into its
+body, driven by the same `usePlayerControls` as the bar. Browsers offer the
+window in secure contexts only (the hosted page, localhost), so the bar shows
+its button only where `documentPictureInPicture` exists; the media session's
+`enterpictureinpicture` action opens it when the browser asks (automatic
+picture-in-picture on leaving the tab, once allowed for the site).
+
 Search covers the whole collection in the page's memory, never the player.
 `domain/globalSearch.ts` prepares each collection's compared text once
 (lower case, no diacritics, ё as е) and ranks a name equal to the query, then

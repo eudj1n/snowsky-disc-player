@@ -51,6 +51,15 @@ stay short and group related work; how and why it was done is in the
 
 ### Your player
 
+- Playing in this browser tells the system: the keyboard's media keys, the
+  browser's media panel and the lock screen show the track with its cover
+  and drive it (play, pause, previous, next, seek).
+- A mini player: a small window over the others, in the style of Now
+  playing, from a button in the bar or the palette; Chrome and Edge open it
+  by themselves when you leave the tab while music plays here, once you
+  allow that for the site. Browsers offer such windows only to secure pages:
+  the hosted page and localhost have the button, the page from the card over
+  plain http does not.
 - Add music: the three boxes above the steps, which looked like tabs, are
   gone; the sections themselves show the progress, a check on a step that is
   done and the accent on the current one.

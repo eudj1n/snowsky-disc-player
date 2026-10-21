@@ -18,6 +18,8 @@ import VisualizerMode from './layout/VisualizerMode.vue'
 import CoverViewer from './layout/CoverViewer.vue'
 import PlaylistDialog from './layout/PlaylistDialog.vue'
 import ListeningPanel from './layout/ListeningPanel.vue'
+import MiniPlayer from './layout/MiniPlayer.vue'
+import './layout/mediaSession'
 import SearchPalette from './layout/SearchPalette.vue'
 import SoundDialog from './layout/SoundDialog.vue'
 import TrackMenuDialog from './layout/TrackMenuDialog.vue'
@@ -109,6 +111,7 @@ watchEffect(() => {
   <PlaylistDialog />
   <KaraokeMode v-if="ui.karaoke" />
   <VisualizerMode v-if="ui.visualizer" />
+  <MiniPlayer />
   <CoverViewer />
   <AppToast />
 </template>
