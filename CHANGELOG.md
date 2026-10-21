@@ -43,6 +43,8 @@ stay short and group related work; how and why it was done is in the
   full-screen button is four arrows out of the centre, and once the lyrics
   are scrolled it sits in the pinned track line, so the full screen is one
   tap away without scrolling back up.
+- The lyrics lookup (find them online, save what was found) follows the
+  lyrics instead of pushing them down.
 
 ### Your player
 

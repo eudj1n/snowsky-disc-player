@@ -189,5 +189,6 @@ watch(
       </div>
       <p v-if="lyrics && source" class="mt-20 mb-0 text-footnote text-muted">{{ source }}</p>
     </div>
+    <slot name="after" />
   </div>
 </template>

@@ -464,44 +464,48 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
                 @click="openKaraoke"
               />
             </div>
-            <div v-if="lookupOffered || isOnline(lyrics.source)" class="mb-14" data-testid="lyrics-lookup">
-              <UiPillButton
-                v-if="isOnline(lyrics.source)"
-                variant="secondary"
-                :disabled="lyrics.saving"
-                data-testid="lyrics-save"
-                @click="saveFoundLyrics"
-                >{{ t('lyrics_save') }}</UiPillButton
-              >
-              <template v-else>
-                <p v-if="lookupMessage" class="mt-0 mb-8 text-footnote text-secondary" role="status">
-                  {{ lookupMessage }}
-                </p>
+            <!-- The lookup follows the lyrics (owner, 2026-10-21): a track with lyrics is read first, the offer
+                 of better ones (word timings) does not push them down. -->
+            <template #after>
+              <div v-if="lookupOffered || isOnline(lyrics.source)" class="mt-16" data-testid="lyrics-lookup">
                 <UiPillButton
-                  v-if="lyrics.lookup !== 'searching'"
+                  v-if="isOnline(lyrics.source)"
                   variant="secondary"
-                  data-testid="lyrics-find"
-                  @click="lookUpLyrics"
-                  >{{ findLabel }}</UiPillButton
+                  :disabled="lyrics.saving"
+                  data-testid="lyrics-save"
+                  @click="saveFoundLyrics"
+                  >{{ t('lyrics_save') }}</UiPillButton
                 >
-                <p class="mt-8 mb-0 text-caption leading-[1.5] text-muted">
-                  {{ lookupNote }}
-                </p>
-              </template>
-            </div>
-            <p
-              v-else-if="lookupOff"
-              class="mt-0 mb-14 text-footnote leading-[1.5] text-secondary"
-              data-testid="lyrics-source-off"
-            >
-              {{ t('lyrics_lookup_off', lookupParams) }}
-              <RouterLink
-                class="text-ink underline underline-offset-2"
-                :to="{ path: '/settings', query: { part: 'sources' } }"
-                @click="onNavigate"
-                >{{ t('external_sources') }}</RouterLink
+                <template v-else>
+                  <p v-if="lookupMessage" class="mt-0 mb-8 text-footnote text-secondary" role="status">
+                    {{ lookupMessage }}
+                  </p>
+                  <UiPillButton
+                    v-if="lyrics.lookup !== 'searching'"
+                    variant="secondary"
+                    data-testid="lyrics-find"
+                    @click="lookUpLyrics"
+                    >{{ findLabel }}</UiPillButton
+                  >
+                  <p class="mt-8 mb-0 text-caption leading-[1.5] text-muted">
+                    {{ lookupNote }}
+                  </p>
+                </template>
+              </div>
+              <p
+                v-else-if="lookupOff"
+                class="mt-16 mb-0 text-footnote leading-[1.5] text-secondary"
+                data-testid="lyrics-source-off"
               >
-            </p>
+                {{ t('lyrics_lookup_off', lookupParams) }}
+                <RouterLink
+                  class="text-ink underline underline-offset-2"
+                  :to="{ path: '/settings', query: { part: 'sources' } }"
+                  @click="onNavigate"
+                  >{{ t('external_sources') }}</RouterLink
+                >
+              </p>
+            </template>
           </LyricsView>
         </section>
       </NowPlayingDetails>
