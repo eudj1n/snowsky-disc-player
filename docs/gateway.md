@@ -2,8 +2,9 @@
 
 The app talks only to the DISC service gateway that served it (same origin,
 no CORS, no TLS). The authoritative contract lives in
-[snowsky-disc-service](https://github.com/eudj1n/snowsky-disc-service):
-`openapi.yaml`, `docs/gateway-contract.md` and `docs/sd-webroot.md`. This
+[snowsky-disc-server](https://github.com/eudj1n/snowsky-disc-server):
+`openapi.yaml`, `docs/contract/gateway-contract.md` and
+`docs/apps/sd-webroot.md`. This
 page records how the app uses it; `src/gateway/` is the only code that does.
 
 ## Surfaces

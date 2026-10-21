@@ -3,7 +3,7 @@
 ```text
 Browser (this app, served from the SD card)
     | same origin: /api/health, /api/data, /api/stock, WS /api/websocket
-DISC service gateway (native, inside the player)      snowsky-disc-service
+DISC service gateway (native, inside the player)      snowsky-disc-server
     | reviewed catalogs, serial number, request IDs, one owner
 Stock FiiO services (TCP 12100, HTTP 12103, SQLite)
 ```

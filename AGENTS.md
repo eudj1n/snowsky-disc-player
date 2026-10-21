@@ -12,13 +12,13 @@ messages. UI strings live in paired `en`/`ru` dictionaries.
 
 ## Related repositories
 
-- [snowsky-disc-service](https://github.com/eudj1n/snowsky-disc-service) —
+- [snowsky-disc-server](https://github.com/eudj1n/snowsky-disc-server) —
   the native gateway inside the player. Owns the contract this app consumes:
-  `openapi.yaml`, `docs/gateway-contract.md`, `docs/sd-webroot.md`, the
-  reviewed command and query catalogs (`firmware/commands`, `firmware/queries`),
-  the release publisher (`scripts/webroot_bundle.py`) and the disposable V2.57
-  emulator used for acceptance. Local checkout: `../snowsky-disc-service`
-  (override with `DISC_SERVICE_DIR`).
+  `openapi.yaml`, `docs/contract/gateway-contract.md`, `docs/apps/sd-webroot.md`,
+  the reviewed command and query catalogs (`firmware/commands`,
+  `firmware/queries`), the app tool (`scripts/app_bundle.py`) and the
+  disposable V2.57 guest used for acceptance. Local checkout:
+  `../snowsky-disc-server` (override with `DISC_SERVER_DIR`).
 - [snowsky-disc-qemu](https://github.com/eudj1n/snowsky-disc-qemu) — the
   reference implementation. `experiments/disc_web` is the UI reference for the
   base implementation; `controller/` defines protocol behavior and guarded

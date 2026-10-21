@@ -1,7 +1,7 @@
 /**
  * FiiO record framing used on the gateway WebSocket: four lowercase hex tag
  * digits, four uppercase hex digits of the total UTF-8 length (header
- * included), then the payload. See the gateway contract in snowsky-disc-service.
+ * included), then the payload. See the gateway contract in snowsky-disc-server.
  */
 export interface DiscRecord {
   tag: string

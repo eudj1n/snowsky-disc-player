@@ -7,7 +7,7 @@ Node.js 20.19+ (CI uses 24). Install once with `npm ci`.
 | Command                           | What it does                                                                                                 |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `npm run dev:mock`                | Visual development without a player: starts the synthetic mock gateway and the Vite dev server proxied to it |
-| `npm run dev:emulator`            | Dev server proxied to the service's disposable V2.57 emulator at `127.0.0.1:17870`                           |
+| `npm run dev:emulator`            | Dev server proxied to the service's disposable V2.57 guest at `127.0.0.1:7870`                               |
 | `npm run dev`                     | Dev server proxied to `DISC_GATEWAY` from `.env.local`, e.g. a real player on the LAN                        |
 | `npm run format` / `format:check` | Prettier (with Tailwind class ordering)                                                                      |
 | `npm run lint`                    | ESLint: TypeScript strict rules, Vue rules, layer boundaries                                                 |
@@ -33,22 +33,15 @@ the page as if it came from the card. Nothing is written to the card.
   favorite selections and serves the queue; data reads are delayed by 700 ms
   (`MOCK_GATEWAY_DELAY`) so loading skeletons are visible. Its serial number
   is `00000000000000`, like the emulator's.
-- **Emulator** — `npm run dev:emulator` while the emulator from
-  snowsky-disc-server is running (`python3 scripts/emulator.py up` there).
-  Real stock behavior, disposable media. Its serial number is
-  `00000000000000`. Stock powers the guest off after 300 seconds
-  of idle unless external power is present; connect emulated USB power for a
-  working session (the container name comes from the service's
-  `work/emulator.json`):
-
-  ```sh
-  docker exec <id>-emu python3 -c "from pathlib import Path; \
-  from emulator.runtime.keys import Device; from emulator.runtime.peripherals import Peripherals; \
-  Peripherals(Device(Path('/work/rootfs'))).set_usb(True)"
-  ```
-
-  After an idle power-off, `python3 scripts/emulator.py boot` in the service
-  checkout brings the guest back.
+- **Emulator** — `npm run dev:emulator` while the disposable guest from
+  snowsky-disc-server is running: `python3 scripts/emulator.py up --reference
+<emulator> --image <boot image> --ota <firmware>/main_os/ota_v257` there
+  (its `docs/development.md`, "Disposable guest"). Real stock behavior on the
+  boot layer's image, disposable media, no idle power-off; the gateway's
+  ports 7870 and 7871 are published on host loopback under the same numbers.
+  Its serial number is `00000000000000`. The guest's record is the service's
+  `work/guest.json`; its container is `<id>-emu`. After a power-off,
+  `python3 scripts/emulator.py power on` there brings the guest back.
 
 - **Player** — put `DISC_GATEWAY=http://<player-ip>:7870` in `.env.local`
   (ignored by git) and run `npm run dev`. Reads work at once; controls need
@@ -70,7 +63,7 @@ the page as if it came from the card. Nothing is written to the card.
   player that already serves this build:
 
   ```sh
-  E2E_BASE_URL=http://127.0.0.1:17870 E2E_SERIAL=00000000000000 npx playwright test
+  E2E_BASE_URL=http://127.0.0.1:7870 E2E_SERIAL=00000000000000 npx playwright test
   ```
 
 ### Emulator acceptance against real stock
@@ -91,10 +84,10 @@ stock paused when playback starts in the browser,
 an artist photo from stubbed Wikimedia within the service's policy) and an upload with a
 scan. It changes device state, so it runs only with
 `E2E_ACCEPTANCE=emulator` and never against a player. Steps, with the
-emulator from snowsky-disc-server booted and USB power emulated:
+guest from snowsky-disc-server up:
 
 ```sh
-C=$(python3 -c "import json;print(json.load(open('../snowsky-disc-server/work/emulator.json'))['id'])")-emu
+C=$(python3 -c "import json;print(json.load(open('../snowsky-disc-server/work/guest.json'))['id'])")-emu
 tests/e2e/emulator/media.sh $C                      # tagged tones on the guest card
 npm run build && DISC_SERVER_DIR=../snowsky-disc-server npm run release
 docker cp work/disc-player-<version>.zip $C:/work/disc-player.zip
@@ -103,7 +96,7 @@ docker exec $C python3 /platform/scripts/app_bundle.py install \
 # The store's auto_playlists collection (2026-09-30) is newer than the guest image's catalogs:
 docker exec $C python3 /platform/scripts/app_bundle.py install-catalog \
   --card /tmp/sdcard --confirm-card-write
-E2E_ACCEPTANCE=emulator E2E_BASE_URL=http://127.0.0.1:17870 E2E_SERIAL=00000000000000 \
+E2E_ACCEPTANCE=emulator E2E_BASE_URL=http://127.0.0.1:7870 E2E_SERIAL=00000000000000 \
   npx playwright test --project=desktop
 tests/e2e/emulator/media.sh $C remove               # then rescan:
 docker exec $C python3 -B /platform/tests/integration/prepare_guest.py

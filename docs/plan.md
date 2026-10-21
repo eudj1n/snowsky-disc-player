@@ -2194,10 +2194,13 @@ Capabilities the current engineering image (snowsky-disc-service
 while porting. Each needs a service change, emulator acceptance and a new
 image; card-only items (catalog or query additions) are marked as such.
 
-- [ ] The service's trash refuses the card's `Apps` folder and what is in
-      it, as it refuses `.disc`: the page keeps it out of the file manager
-      (2026-10-02), but any client of the trash route could move the apps
-      away.
+- [x] (Done in the service since 2.57.4, `f1c2c44`: the trash's path rule
+      refuses `Apps` and anything under it, case ignored as on FAT, with 400;
+      its conformance test covers the folder, an app and a file in it,
+      checked 2026-10-21.) The service's trash refuses the card's `Apps`
+      folder and what is in it, as it refuses `.disc`: the page keeps it out
+      of the file manager (2026-10-02), but any client of the trash route
+      could move the apps away.
 - [x] **Media metadata endpoint.** Read-only, bounded reads from the card:
       FLAC STREAMINFO (duration, sample rate, bit depth, channels), embedded
       PICTURE blocks, folder `cover.jpg`/`folder.jpg`, served per path or per
@@ -2647,9 +2650,6 @@ too; it did not.
       cover among the editions…" (the artist's record and its mark after the
       window's confirmation).
 
-## Later
-
-- AutoEq, stage B (owner, 2026-10-02; the analysis in [autoeq.md](autoeq.md)):
 ## The device card connects (owner, 2026-10-21), card-only
 
 The owner: after a drop one had to open the connection dialog to connect
@@ -2664,6 +2664,9 @@ again; a connect icon on the sidebar's card would spare that.
       e2e "connects again from the sidebar card after Disconnect, without
       the dialog"; screenshots in light and dark.
 
+## Later
+
+- AutoEq, stage B (owner, 2026-10-02; the analysis in [autoeq.md](autoeq.md)):
   a parametric fit of our own, closer than the fixed bands, once stage A
   proves itself on the physical player.
 - Several application roots on the card, cloud relay and voice clients follow
