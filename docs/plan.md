@@ -2754,8 +2754,9 @@ names need it).
       one, the same bytes except the 44 gzip twins, and the server's tool
       installs it into a scratch card. The server's release `v2.57.9` is a
       draft the owner publishes (its package equals the record).
-- [ ] 1.1.0 on the owner's player: the owner installs the published zip and
-      reports.
+- [x] 1.1.0 on the owner's player (2026-10-21, the owner's report): the
+      owner published the server's release 2.57.9 and installed both on the
+      player; "everything works".
 
 ## Later
 
