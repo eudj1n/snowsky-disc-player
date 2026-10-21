@@ -90,6 +90,18 @@ beside the album's own on the card, and what differs is marked.
   </tr>
 </table>
 
+### Sound for your headphones
+
+The Sound settings hold what the player applies itself: gain, balance, the
+DAC filter, DRE and the equalizer. Type your headphones' model and
+[AutoEq](https://github.com/jaakkopasanen/AutoEq)'s correction for them stands
+beside the equalizer, its ten bands and master level; write it to one of your
+presets, which then carries the headphones' name on the player.
+
+<p align="center">
+  <img src="docs/images/readme-autoeq.jpg" width="720" alt="The Sound settings: a headphone model found on AutoEq, its ten bands and master level previewed beside the equalizer, ready to be written to a preset">
+</p>
+
 ## Privacy and safety
 
 There is no account, no cloud and no analytics. The page talks to the player
@@ -109,8 +121,10 @@ and a command whose result is unknown is never repeated by itself.
 - A SNOWSKY DISC with firmware V2.57, running the DISC boot layer
   ([snowsky-disc-boot](https://github.com/eudj1n/snowsky-disc-boot)) and its
   server ([snowsky-disc-server](https://github.com/eudj1n/snowsky-disc-server)),
-  which serves Disc Player from the card. Both are in development; their
-  documentation will describe the installation.
+  which serves Disc Player from the card. The boot layer's
+  [installation guide](https://github.com/eudj1n/snowsky-disc-boot/blob/2.x/docs/install.md)
+  describes the installation; the server's application manager installs
+  Disc Player's release zip onto the card.
 - The player on your Wi-Fi network (set up on the player itself).
 - A current browser on a computer, tablet or phone on the same network.
 

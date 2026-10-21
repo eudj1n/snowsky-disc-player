@@ -3,7 +3,7 @@
  * covers (fixtures/demo-covers). Each picture is written to docs/images (SCREENSHOTS_DIR overrides it).
  */
 import { mkdirSync, readdirSync, readFileSync } from 'node:fs'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 import { chooseSources, connectAndPair, english } from '../e2e/helpers'
 import { COVERS } from './playwright.config'
 
@@ -31,14 +31,14 @@ test.beforeAll(async ({ browser }) => {
   await page.close()
 })
 
-async function shoot(page: Page, name: string): Promise<void> {
+async function shoot(page: Page, name: string, part?: Locator): Promise<void> {
   // Covers and colours settle, the progress bar moves on; no focus ring is left from a closed sheet.
   await page.evaluate(() => {
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
   })
   await page.waitForTimeout(1200)
   // JPEG: the covers' grain makes PNGs several times larger, with nothing to see for it.
-  await page.screenshot({ path: `${OUT}/${name}.jpg`, type: 'jpeg', quality: 90 })
+  await (part ?? page).screenshot({ path: `${OUT}/${name}.jpg`, type: 'jpeg', quality: 90 })
 }
 
 async function play(page: Page, album: string, track: string): Promise<void> {
@@ -153,6 +153,67 @@ test('an album beside its editions', async ({ page }, info) => {
   await shoot(page, 'readme-editions')
   await page.keyboard.press('Escape')
   await chooseSources(page)
+})
+
+test.describe('the sound settings', () => {
+  // The correction's section whole, which the desktop pictures' viewport would cut.
+  test.use({ viewport: { width: 1280, height: 1500 } })
+
+  test('a headphone correction from AutoEq', async ({ page }, info) => {
+    test.skip(info.project.name !== 'desktop')
+    // AutoEq's index and one fixed-band result, as jsDelivr would serve them (fictional gains).
+    const index = [
+      '# Recommended Results',
+      '',
+      '- [Sennheiser HD 600](./oratory1990/over-ear/Sennheiser%20HD%20600)',
+      '- [Sennheiser HD 650](./oratory1990/over-ear/Sennheiser%20HD%20650)',
+      '- [Sennheiser HD 650 (2020)](./crinacle/GRAS%2043AG-7%20over-ear/Sennheiser%20HD%20650%20(2020))',
+      '- [Sennheiser HD 660S2](./oratory1990/over-ear/Sennheiser%20HD%20660S2)',
+      '',
+    ].join('\n')
+    const frequencies = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
+    const gains = [7.0, 2.6, -1.2, -2.2, 0.5, -1.0, 0.7, -1.2, 5.1, -3.6]
+    const fixed = [
+      'Preamp: -7.4 dB',
+      ...gains.map(
+        (gain, i) => `Filter ${String(i + 1)}: ON PK Fc ${String(frequencies[i])} Hz Gain ${gain.toFixed(1)} dB Q 1.41`,
+      ),
+      '',
+    ].join('\n')
+    const headers = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/plain; charset=utf-8' }
+    await page.route('https://cdn.jsdelivr.net/**', async (route) => {
+      const url = new URL(route.request().url())
+      if (url.pathname.endsWith('/results/README.md')) return route.fulfill({ headers, body: index })
+      if (url.pathname.endsWith('%20FixedBandEQ.txt')) return route.fulfill({ headers, body: fixed })
+      await route.fulfill({ status: 404, headers, body: '' })
+    })
+    await chooseSources(page, { autoeq: { allowed: true } })
+    await english(page)
+    await connectAndPair(page)
+    await page.keyboard.press('ControlOrMeta+k')
+    const palette = page.getByTestId('search-palette')
+    await palette.getByRole('combobox').fill('Sound settings')
+    await palette.getByRole('option', { name: 'Sound settings', exact: true }).click()
+    const dialog = page.getByRole('dialog')
+    await expect(dialog.getByTestId('sound-feedback')).toContainText('Current values received', { timeout: 15_000 })
+    const panel = dialog.getByRole('region', { name: 'Headphone correction' })
+    await panel.getByLabel('Headphone model').fill('hd 650')
+    await panel.getByTestId('autoeq-results').getByRole('button').first().click()
+    await expect(panel.getByTestId('autoeq-preview')).toBeVisible({ timeout: 15_000 })
+    await panel.scrollIntoViewIfNeeded()
+    // The section with the dialog’s ground around it; its box reaches the dialog’s bottom edge.
+    const box = await panel.boundingBox()
+    if (!box) throw new Error('the correction section has no box')
+    await page.waitForTimeout(1200)
+    await page.screenshot({
+      path: `${OUT}/readme-autoeq.jpg`,
+      type: 'jpeg',
+      quality: 90,
+      clip: { x: box.x - 24, y: box.y - 14, width: box.width + 48, height: box.height },
+    })
+    await page.keyboard.press('Escape')
+    await chooseSources(page)
+  })
 })
 
 test('phone pictures', async ({ page }, info) => {

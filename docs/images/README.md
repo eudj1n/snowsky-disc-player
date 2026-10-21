@@ -8,6 +8,8 @@ fictional: the names and the eight covers come from the DISC Web demo of
 demo, kept in `tests/e2e/fixtures/demo-covers`. No real library, cover or
 player appears in them. The lyrics, MusicBrainz editions and the card's sizes
 are the mock's; the albums without a demo cover show the page's own sleeve.
+`readme-autoeq.jpg` shows an AutoEq answer stubbed in the browser, its gains
+fictional.
 
 They are taken by `npm run build && npm run screenshots`
 (`tests/screenshots/readme.spec.ts`): desktop at 1280×800 with twice the
