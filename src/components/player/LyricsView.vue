@@ -148,8 +148,9 @@ watch(
 </script>
 
 <template>
-  <!-- At least the sheet's height below the pinned line, so the head can always fold away above the lyrics. -->
-  <div ref="box" class="min-h-[calc(100cqh-72px)]">
+  <!-- With lyrics, at least the sheet's height below the pinned line, so the head can always fold away above
+       them; a track without lyrics leaves no empty scroll below its line (owner, 2026-10-21). -->
+  <div ref="box" :class="lyrics ? 'min-h-[calc(100cqh-72px)]' : ''">
     <slot />
     <div data-testid="lyrics">
       <p v-if="!lyrics" class="m-0 text-footnote leading-[1.55] text-muted" role="status">{{ message }}</p>

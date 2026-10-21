@@ -670,7 +670,10 @@ test.describe('player controls on the mock', () => {
       await expect(panel.getByRole('heading', { name: 'Lyrics', exact: true })).toBeInViewport()
       await expect(lyricsButton).toHaveAttribute('aria-expanded', 'true')
       await expect(queueButton).toHaveAttribute('aria-expanded', 'false')
-      await expect(page.getByTestId('now-compact')).toBeVisible()
+      // A track without lyrics leaves no empty scroll below its line (owner, 2026-10-21): the head stays, so
+      // the pinned line does not show and the full-screen button is the heading's.
+      await expect(page.getByTestId('now-compact')).toBeHidden()
+      await expect(panel.getByTestId('karaoke-open').filter({ visible: true })).toHaveCount(1)
     }
     await page.keyboard.press('Escape')
     await expect(panel).toBeHidden()
@@ -1032,7 +1035,7 @@ test.describe('player controls on the mock', () => {
     await expect(panel).toHaveAttribute('data-on-cover', 'true', { timeout: 15_000 })
     // Light text on the cover's deep colours.
     await expect(panel.getByRole('heading', { name: 'Weightless' })).toHaveCSS('color', 'rgb(255, 255, 255)')
-    await page.getByTestId('karaoke-open').click()
+    await page.getByTestId('karaoke-open').filter({ visible: true }).click()
     await expect(page.getByTestId('karaoke-colours')).toBeAttached()
     await page.keyboard.press('Escape')
     expect(lightFirst).toBeTruthy()
@@ -2895,7 +2898,11 @@ test('shows a karaoke line without word timings white among grey ones, as the si
   await page.getByRole('button', { name: 'Play Weightless' }).click()
   await expect(title).toHaveText('Weightless', { timeout: 15_000 })
   await page.getByRole('button', { name: 'Lyrics' }).filter({ visible: true }).first().click()
-  await page.getByRole('complementary', { name: 'Player view' }).getByTestId('karaoke-open').click()
+  await page
+    .getByRole('complementary', { name: 'Player view' })
+    .getByTestId('karaoke-open')
+    .filter({ visible: true })
+    .click()
   const current = page.getByTestId('karaoke').locator('[aria-current=true]')
   await expect(current).toHaveText('Weightless, first line', { timeout: 15_000 })
   // As in the side panel: the current line plain white, the lines around it grey.
@@ -2933,7 +2940,7 @@ test('sings along in karaoke: word timings sweep the current line and at most se
   await expect(pause.getByTestId('lyrics-pause').locator('span')).toHaveCount(3)
   await expect(pause).toHaveAttribute('aria-label', 'Go to this line')
   await expect(page.getByTestId('lyrics')).not.toContainText('♪')
-  await panel.getByTestId('karaoke-open').click()
+  await panel.getByTestId('karaoke-open').filter({ visible: true }).click()
   const karaoke = page.getByTestId('karaoke')
   await expect(karaoke).toBeVisible()
   await expect(karaoke).toContainText('Still Here')

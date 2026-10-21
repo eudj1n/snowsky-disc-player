@@ -36,10 +36,12 @@ export const ICON_PATHS = {
   /* A memory card: cut corner and contacts (card space, round 16). */
   card: 'M9 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7Z M10 7v3 M13 7v3 M16 7v3',
   folder: 'M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z',
-  /* Karaoke (round 16): a microphone, and full screen in and out. */
+  /* Karaoke (round 16): a microphone, and full screen in and out: four arrows out of the centre, and back
+     into it (owner, 2026-10-21). */
   karaoke: 'M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3Z M5 11a7 7 0 0 0 14 0 M12 18v3 M9 21h6',
-  fullscreen: 'M4 9V4h5 M20 9V4h-5 M4 15v5h5 M20 15v5h-5',
-  'fullscreen-exit': 'M9 4v5H4 M15 4v5h5 M9 20v-5H4 M15 20v-5h5',
+  fullscreen: 'M4 4l5.5 5.5 M9 4H4v5 M20 4l-5.5 5.5 M15 4h5v5 M4 20l5.5-5.5 M4 15v5h5 M20 20l-5.5-5.5 M20 15v5h-5',
+  'fullscreen-exit':
+    'M4 4l5.5 5.5 M9.5 4.5v5h-5 M20 4l-5.5 5.5 M14.5 4.5v5h5 M4 20l5.5-5.5 M9.5 19.5v-5h-5 M20 20l-5.5-5.5 M14.5 19.5v-5h5',
   /* combined-008: dislike (a stop sign), pin and trash. */
   ban: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM5.6 5.6l12.8 12.8',
   pin: 'M9 3h6l-1 6 3 3H7l3-3Z M12 12v9',

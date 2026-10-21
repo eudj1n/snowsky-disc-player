@@ -370,6 +370,14 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
               }}</span>
             </span>
           </button>
+          <!-- Reading the lyrics, the full screen is one tap away without scrolling back up (owner, 2026-10-21). -->
+          <UiIconButton
+            :disabled="!nowPlaying.track"
+            icon="fullscreen"
+            :label="t('karaoke_open')"
+            data-testid="karaoke-open"
+            @click="openKaraoke"
+          />
           <!-- Phones hide the bar while the panel is open: play and pause stay at hand. -->
           <button
             type="button"
@@ -446,7 +454,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
               <h3 id="now-lyrics-title" class="m-0 min-w-0 flex-1 text-title3 font-bold tracking-heading">
                 {{ t('lyrics_heading') }}
               </h3>
+              <!-- One full-screen button: here, or in the pinned line once the head has folded away (owner, 2026-10-21). -->
               <UiIconButton
+                v-show="!compact"
                 :disabled="!nowPlaying.track"
                 icon="fullscreen"
                 :label="t('karaoke_open')"

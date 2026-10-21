@@ -36,6 +36,13 @@ stay short and group related work; how and why it was done is in the
   credits one artist carrying the name; the enrichment run counts it and its
   undo takes it back.
 
+### Now playing
+
+- A track without lyrics leaves no empty scroll below its line. The
+  full-screen button is four arrows out of the centre, and once the lyrics
+  are scrolled it sits in the pinned track line, so the full screen is one
+  tap away without scrolling back up.
+
 ### Playlists
 
 - Adding an automatic playlist reads the card's Playlists folder afresh, so
