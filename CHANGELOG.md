@@ -23,6 +23,10 @@ stay short and group related work; how and why it was done is in the
   asked anew; offered by itself when the name found nothing.
 - The enrichment report's files for the card scroll in a frame of their own
   and follow the writing, as the run's log follows its last line.
+- The State tab's Tags list is a card per folder, as the duplicates are:
+  how many tracks, the folder (a link to its files) and which names stock
+  gave them (“Unknown Artist”, “Unknown album”, “Unknown genre”), the
+  fullest folder first; it was one line per track.
 
 ## [1.1.0] — 2026-10-21
 

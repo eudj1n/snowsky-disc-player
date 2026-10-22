@@ -112,3 +112,33 @@ export function libraryState(facts: LibraryFacts): LibraryState {
     },
   }
 }
+
+/** A folder whose tracks stock lists under its names for missing tags (owner, 2026-10-22: a card per folder). */
+export interface UnknownTagFolder {
+  /** The folder's card path. */
+  folder: string
+  /** Tracks with a missing tag in it. */
+  count: number
+  unknownArtist: number
+  unknownAlbum: number
+  unknownGenre: number
+}
+
+/** The folders of the tracks with a missing tag, most such tracks first, then by path. */
+export function unknownTagFolders(tracks: readonly LibraryTrack[]): UnknownTagFolder[] {
+  const folders = new Map<string, UnknownTagFolder>()
+  for (const track of tracks) {
+    const artist = stockUnknown(track.artist)
+    const album = stockUnknown(track.album)
+    const genre = stockUnknown(track.genre)
+    if (!artist && !album && !genre) continue
+    const folder = track.path ? folderOf(track.path) : ''
+    const row = folders.get(folder) ?? { folder, count: 0, unknownArtist: 0, unknownAlbum: 0, unknownGenre: 0 }
+    row.count++
+    if (artist) row.unknownArtist++
+    if (album) row.unknownAlbum++
+    if (genre) row.unknownGenre++
+    folders.set(folder, row)
+  }
+  return [...folders.values()].sort((a, b) => b.count - a.count || a.folder.localeCompare(b.folder))
+}

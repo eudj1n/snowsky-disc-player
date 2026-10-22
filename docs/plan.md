@@ -2794,6 +2794,13 @@ nothing under a tag spelled wrong, so a query typed by hand.
 - [x] The report's "Files for the card" (owner, 2026-10-22: seventy-five
       lyrics files ran past the window): a frame of a few rows that follows
       the file being written; the run's log follows its last entry too.
+- [x] The State tab's Tags list (owner, 2026-10-22: six hundred lines of
+      title and path could not be read): `unknownTagFolders` groups the
+      tracks by folder, and the list is a card per folder as the Card page's
+      duplicates are, with the count, the folder linked to its files and
+      the stock names given, the fullest folder first. Evidence: unit
+      `unknownTagFolders`; screenshots in `work/shots-tags` (the mock with
+      two albums' genres blanked, desktop dark and light, phone).
 - [x] Evidence: e2e "chooses a cover among the editions…" (the slider's
       cards, arrows and keys, the discography's editions in the slider, a
       search by another title asking MusicBrainz anew), "chooses an

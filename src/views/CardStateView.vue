@@ -14,8 +14,8 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import CardTabs from '../components/card/CardTabs.vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
-import { stockUnknown } from '../domain/album'
-import { libraryState } from '../domain/libraryState'
+import { relativeFolder } from '../domain/files'
+import { libraryState, unknownTagFolders, type UnknownTagFolder } from '../domain/libraryState'
 import { duplicates } from '../domain/space'
 import { inTrash } from '../domain/trash'
 import { locale, t, type MessageKey } from '../i18n'
@@ -91,9 +91,19 @@ const duplicateRows = computed(() =>
     enrichment.files,
   ),
 )
-const unknownTagged = computed(() =>
-  tracks.value.filter((track) => stockUnknown(track.artist) || stockUnknown(track.album) || stockUnknown(track.genre)),
-)
+/** The folders with tracks under stock's names for missing tags, a card each as the duplicates have. */
+const unknownTagged = computed(() => unknownTagFolders(tracks.value))
+const tagFacts = (row: UnknownTagFolder) =>
+  (
+    [
+      ['tag_unknown_artist', row.unknownArtist],
+      ['tag_unknown_album', row.unknownAlbum],
+      ['tag_unknown_genre', row.unknownGenre],
+    ] as const
+  )
+    .filter(([, count]) => count > 0)
+    .map(([key, count]) => t(key, { count: number(count) }))
+    .join(' · ')
 const cueImages = computed(
   () => new Set(tracks.value.flatMap((track) => (track.cue && track.path ? [track.path] : []))),
 )
@@ -458,9 +468,26 @@ const sourcesMeta = computed(() =>
             @click="lists.tags = !lists.tags"
             >{{ t(lists.tags ? 'state_hide_list' : 'state_show_list') }}</UiTextButton
           >
-          <ul v-if="lists.tags" class="col-span-full m-0 grid min-w-0 list-none gap-4 p-0 text-footnote text-secondary">
-            <li v-for="track in unknownTagged.slice(0, 50)" :key="track.id" class="truncate">
-              {{ track.title }}<template v-if="track.path"> · {{ cardFolder(track.path) }}</template>
+          <ul
+            v-if="lists.tags"
+            class="col-span-full m-0 grid min-w-0 list-none gap-10 p-0"
+            data-testid="state-tags-folders"
+          >
+            <li
+              v-for="row in unknownTagged.slice(0, 50)"
+              :key="row.folder"
+              class="rounded-10 bg-soft px-14 py-11 transition-colors duration-150 hover:bg-hover"
+            >
+              <p class="m-0 text-body font-semibold">{{ t('track_count', { count: row.count }) }}</p>
+              <p class="m-0 mt-5 flex flex-wrap items-center gap-x-8 gap-y-2 text-footnote text-muted">
+                <RouterLink
+                  :to="{ name: 'cardFiles', query: { folder: relativeFolder(row.folder) } }"
+                  class="min-w-0 flex-1 basis-180 truncate hover:text-ink hover:underline"
+                  :title="row.folder"
+                  >{{ cardFolder(row.folder) }}</RouterLink
+                >
+                <span class="shrink-0 [font-variant-numeric:tabular-nums]">{{ tagFacts(row) }}</span>
+              </p>
             </li>
           </ul>
         </div>

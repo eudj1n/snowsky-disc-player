@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { groupAlbums } from '../../src/domain/album'
-import { libraryState, type LibraryFacts } from '../../src/domain/libraryState'
+import { libraryState, unknownTagFolders, type LibraryFacts } from '../../src/domain/libraryState'
 import type { LibraryTrack } from '../../src/domain/track'
 
 const CARD = '/tmp/sdcard'
@@ -74,5 +74,21 @@ describe('the library state', () => {
     expect(state.albums.covers).toEqual({ embedded: 1, folder: 1, none: 1, unknown: 1 })
     expect(state.lyrics.sidecar).toBe(1)
     expect(state.albums.noYear).toBe(3)
+  })
+})
+
+describe('unknownTagFolders', () => {
+  it('groups the tracks with a missing tag by folder, the fullest folder first', () => {
+    const rows = unknownTagFolders([
+      track(1, 'A', 'X', 'X/A', null),
+      track(2, 'A', 'X', 'X/A', 'Unknown Genre'),
+      track(3, 'A', 'X', 'X/A', 'Rock'),
+      track(4, 'Unknown album', 'Unknown Artist', 'Loose', null),
+      track(5, 'B', 'Y', 'Y/B', 'Jazz'),
+    ])
+    expect(rows).toEqual([
+      { folder: `${CARD}/X/A`, count: 2, unknownArtist: 0, unknownAlbum: 0, unknownGenre: 2 },
+      { folder: `${CARD}/Loose`, count: 1, unknownArtist: 1, unknownAlbum: 1, unknownGenre: 1 },
+    ])
   })
 })
