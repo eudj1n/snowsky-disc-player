@@ -2864,7 +2864,8 @@ Read-only now:
       "tells a folder of several albums and artists apart with chips…"
       (Afterglow's files moved into the Inner Space folder by the test's
       routes: the rows, the dimming, All); screenshots `mixed-*` and
-      `many-light` in `work/shots-files`.
+      `many-light` in `work/shots-files`. The mock suite after all of
+      today's rounds: 194 passed, 74 skipped (2026-10-22).
 
 ## Later
 
