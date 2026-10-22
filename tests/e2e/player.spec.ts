@@ -3111,6 +3111,61 @@ test('browses the card, creates a folder and adds music into it', async ({ page 
   await disconnect(page)
 })
 
+test('tells a folder of several albums and artists apart with chips, dimming the files of the others', async ({
+  page,
+}) => {
+  test.skip(external, 'Needs the mock collection')
+  test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
+  // Afterglow's files (Northline's and Mira Sol's) moved into the Inner Space folder, as a mixed folder is.
+  const moved: string[] = []
+  await page.route('**/api/data/tracks*', async (route) => {
+    const response = await route.fetch()
+    const body = (await response.json()) as { columns: string[]; rows: (string | number | null)[][] }
+    const col = (name: string) => body.columns.indexOf(name)
+    for (const row of body.rows) {
+      if (row[col('ALBUM')] !== 'Afterglow') continue
+      const old = String(row[col('PATH')])
+      const name = old.slice(old.lastIndexOf('/') + 1)
+      row[col('PATH')] = `/tmp/sdcard/Forma - Inner Space/${name}`
+      moved.push(name)
+    }
+    await route.fulfill({ response, json: body })
+  })
+  await page.route('**/api/card/folder/Forma%20-%20Inner%20Space', async (route) => {
+    const response = await route.fetch()
+    const body = (await response.json()) as { entries: object[]; count: number }
+    for (const name of moved) body.entries.push({ name, dir: false, kind: 'audio', bytes: 30_000_000 })
+    body.count = body.entries.length
+    await route.fulfill({ response, json: body })
+  })
+  await english(page)
+  await connectAndPair(page)
+  await page.goto('/#/card/files?folder=Forma%20-%20Inner%20Space')
+  const facts = page.getByTestId('files-facts')
+  await expect(facts).toContainText('11 tracks', { timeout: 15_000 })
+  await expect(facts).toContainText('2 albums')
+  const albums = page.getByRole('group', { name: 'Albums in this folder' }).getByRole('button')
+  await expect(albums).toHaveText(['All', 'Afterglow · 7', 'Inner Space · 4'])
+  const artists = page.getByRole('group', { name: 'Artists in this folder' }).getByRole('button')
+  await expect(artists).toHaveText(['All', 'Northline · 5', 'Forma · 4', 'Mira Sol · 2'])
+  // An album chosen: the other album's files are dimmed and disabled, still listed.
+  const list = page.getByTestId('files-list')
+  const orbit = list.getByRole('listitem').filter({ hasText: '01 Orbit.flac' })
+  const firstLight = list.getByRole('listitem').filter({ hasText: '01 First Light.flac' })
+  await albums.nth(1).click()
+  await expect(orbit).toHaveAttribute('aria-disabled', 'true')
+  await expect(orbit.getByRole('button', { name: 'Details of 01 Orbit.flac' })).toBeDisabled()
+  await expect(firstLight).not.toHaveAttribute('aria-disabled', 'true')
+  // An artist within it narrows further; All opens up again.
+  await artists.nth(3).click()
+  await expect(firstLight).toHaveAttribute('aria-disabled', 'true')
+  await albums.first().click()
+  await artists.first().click()
+  await expect(orbit).not.toHaveAttribute('aria-disabled', 'true')
+  await expect(list.getByRole('listitem').filter({ hasText: '01 Orbit.flac' })).toHaveCount(1)
+  await disconnect(page)
+})
+
 test("keeps the card's apps folder out of the file manager", async ({ page }) => {
   test.skip(external, 'Needs the mock card')
   await english(page)

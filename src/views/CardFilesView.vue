@@ -43,6 +43,8 @@ import { playback } from '../stores/playback'
 import { operation, run } from '../stores/operation'
 import { pairing, pairingToken } from '../stores/pairing'
 import { openDialog, openTrackPanel, toast } from '../stores/ui'
+import UiChips from '../ui/UiChips.vue'
+import UiSelect from '../ui/UiSelect.vue'
 import UiIcon from '../ui/UiIcon.vue'
 import UiNowPlaying from '../ui/UiNowPlaying.vue'
 import UiIconButton from '../ui/UiIconButton.vue'
@@ -138,7 +140,7 @@ const factsLine = computed(() => {
   const found = facts.value
   if (!found.tracks) return []
   const parts: string[] = []
-  if (!found.album) parts.push(t('album_count', { count: found.albums }))
+  if (!found.album) parts.push(t('album_count', { count: found.albums.length }))
   if (factsAlbum.value) parts.push(t(factsAlbum.value.identified ? 'heading_verified' : 'info_not_identified'))
   const year = factsAlbum.value?.year ?? found.year
   if (year) parts.push(String(year))
@@ -150,6 +152,45 @@ const factsLine = computed(() => {
   if (found.unknownTags) parts.push(t('files_facts_unknown', { count: found.unknownTags }))
   return parts
 })
+
+/**
+ * Several albums or artists in one folder (owner, 2026-10-22): a labelled row for each, chips as the album page
+ * has while they are few, a list to choose from when they are many (a compilation's twenty artists); a chosen
+ * one leaves the files that are not its own dimmed and disabled, never hidden.
+ */
+const MAX_CHIPS = 6
+const chosenAlbum = ref('')
+const chosenArtist = ref('')
+watch(folder, () => {
+  chosenAlbum.value = ''
+  chosenArtist.value = ''
+})
+const chipOptions = <T extends { tracks: number }>(rows: readonly T[], name: (row: T) => string) => [
+  { value: '', text: t('files_all') },
+  ...rows.map((row) => ({ value: name(row), text: `${name(row)} · ${String(row.tracks)}` })),
+]
+const albumChips = computed(() =>
+  facts.value.albums.length > 1 ? chipOptions(facts.value.albums, (row) => row.title) : null,
+)
+const artistChips = computed(() =>
+  facts.value.artists.length > 1 ? chipOptions(facts.value.artists, (row) => row.name) : null,
+)
+/** Library tracks by file stem in this folder, so a lyrics file follows its track's fate. */
+const trackByStem = computed(() => {
+  const map = new Map<string, LibraryTrack>()
+  for (const row of rows.value) if (row.track) map.set(row.entry.name.replace(/\.[^.]*$/, ''), row.track)
+  return map
+})
+function dimmed(row: Row): boolean {
+  if (!chosenAlbum.value && !chosenArtist.value) return false
+  const track =
+    row.track ?? (/\.lrc$/i.test(row.entry.name) ? trackByStem.value.get(row.entry.name.slice(0, -4)) : null)
+  if (!track) return false
+  return (
+    (chosenAlbum.value !== '' && track.album !== chosenAlbum.value) ||
+    (chosenArtist.value !== '' && track.artist !== chosenArtist.value)
+  )
+}
 
 /** A file's name opens its track in the panel, as a row's title does elsewhere (owner, 2026-10-22). */
 function openDetails(row: Row, event: MouseEvent): void {
@@ -323,6 +364,45 @@ function addHere(): void {
     </template>
   </p>
 
+  <div v-if="albumChips || artistChips" class="mb-16 grid gap-8" data-testid="files-chips">
+    <template
+      v-for="row in [
+        albumChips && { kind: 'albums', options: albumChips },
+        artistChips && { kind: 'artists', options: artistChips },
+      ]"
+      :key="row ? row.kind : ''"
+    >
+      <div v-if="row" class="grid grid-cols-[56px_minmax(0,1fr)] items-start gap-x-12">
+        <span class="pt-11 text-caption2 font-semibold tracking-caps text-muted uppercase">{{
+          t(row.kind === 'albums' ? 'files_albums' : 'files_artists')
+        }}</span>
+        <UiChips
+          v-if="row.options.length <= MAX_CHIPS + 1"
+          :model-value="row.kind === 'albums' ? chosenAlbum : chosenArtist"
+          :label="t(row.kind === 'albums' ? 'files_albums_here' : 'files_artists_here')"
+          :options="row.options"
+          @update:model-value="(value) => (row.kind === 'albums' ? (chosenAlbum = value) : (chosenArtist = value))"
+        />
+        <UiSelect v-else class="justify-self-start">
+          <select
+            :value="row.kind === 'albums' ? chosenAlbum : chosenArtist"
+            :aria-label="t(row.kind === 'albums' ? 'files_albums_here' : 'files_artists_here')"
+            class="rounded-18 border border-line bg-raised px-14 py-7 text-footnote text-ink"
+            @change="
+              (event) => {
+                const value = (event.target as HTMLSelectElement).value
+                if (row.kind === 'albums') chosenAlbum = value
+                else chosenArtist = value
+              }
+            "
+          >
+            <option v-for="option in row.options" :key="option.value" :value="option.value">{{ option.text }}</option>
+          </select>
+        </UiSelect>
+      </div>
+    </template>
+  </div>
+
   <div class="mb-16 flex flex-wrap items-center gap-10">
     <UiPillButton
       icon="add-music"
@@ -373,16 +453,17 @@ function addHere(): void {
     <li
       v-for="row in rows"
       :key="row.entry.name"
-      class="group/row flex items-center gap-14 border-b border-line py-9 last:border-b-0"
+      class="group/row flex items-center gap-14 border-b border-line py-9 transition-opacity duration-150 last:border-b-0 aria-disabled:opacity-40"
       :class="[CARD_ROW, { [CARD_ROW_CURRENT]: isCurrent(row) }]"
       :data-folder="row.entry.folder ? 'true' : undefined"
       :aria-current="isCurrent(row) ? 'true' : undefined"
+      :aria-disabled="dimmed(row) ? 'true' : undefined"
     >
       <component
         :is="canPlay(row) ? 'button' : 'span'"
         :type="canPlay(row) ? 'button' : undefined"
         :aria-label="canPlay(row) ? playLabel(row) : undefined"
-        :disabled="canPlay(row) ? !ready : undefined"
+        :disabled="canPlay(row) ? !ready || dimmed(row) : undefined"
         class="relative grid size-36 shrink-0 place-items-center overflow-hidden rounded-6 p-0"
         :class="row.entry.folder || !row.track ? 'bg-soft text-secondary' : ''"
         @click="canPlay(row) && activate(row)"
@@ -422,6 +503,7 @@ function addHere(): void {
           type="button"
           class="block max-w-full truncate rounded-4 text-left text-body hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           :aria-label="t('files_details', { name: row.entry.name })"
+          :disabled="dimmed(row)"
           data-testid="files-details"
           @click="openDetails(row, $event)"
         >
@@ -460,7 +542,7 @@ function addHere(): void {
         v-if="connection.trash && writable"
         icon="trash"
         :label="`${t('move_to_trash')}: ${row.entry.name}`"
-        :disabled="!ready || trash.busy || isCurrent(row)"
+        :disabled="!ready || trash.busy || isCurrent(row) || dimmed(row)"
         class="opacity-60 group-focus-within/row:opacity-100 group-hover/row:opacity-100 [&>svg]:size-16"
         data-testid="files-trash"
         @click="toTrash(row)"

@@ -27,7 +27,10 @@ stay short and group related work; how and why it was done is in the
   path: the album, linked, whether MusicBrainz knows it, the year of the
   tags, the formats, the cover (a file, or embedded), how many files have
   lyrics beside them, and tracks with unknown tags. A music file's name
-  opens its track in the panel, as a title does elsewhere.
+  opens its track in the panel, as a title does elsewhere. A folder of
+  several albums or artists gets a row of chips for each (a list to choose
+  from when they are many): a chosen one dims the files of the others, which
+  stay listed.
 - The State tab's Tags list is a card per folder, as the duplicates are:
   how many tracks, the folder (a link to its files) and which names stock
   gave them (“Unknown Artist”, “Unknown album”, “Unknown genre”), the

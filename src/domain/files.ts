@@ -142,9 +142,12 @@ export function folderStats(
 export interface FolderFacts {
   /** Library tracks whose file is in the folder itself (not below it). */
   tracks: number
-  /** Their one album, when they share one; otherwise null and `albums` says how many. */
+  /** Their one album, when they share one; otherwise null and `albums` lists them. */
   album: { title: string; artist: string | null } | null
-  albums: number
+  /** The albums of those tracks, the fullest first; an artist where the album's tracks share one. */
+  albums: { title: string; artist: string | null; tracks: number }[]
+  /** The track artists, the fullest first. */
+  artists: { name: string; tracks: number }[]
   /** The year of the tags, where one file's is known. */
   year: number | null
   /** The audio files' extensions, in upper case, as they come. */
@@ -170,12 +173,27 @@ export function folderFacts(input: {
   const inside = input.tracks.filter(
     (track) => track.path?.startsWith(prefix) && !track.path.slice(prefix.length).includes('/'),
   )
-  const albums = new Map<string, { title: string; artist: string | null }>()
+  const albums = new Map<string, { title: string; artist: string | null; tracks: number }>()
+  const artists = new Map<string, { name: string; tracks: number }>()
   for (const track of inside) {
-    if (!track.album) continue
-    const artists = new Set(inside.filter((other) => other.album === track.album).map((other) => other.artist))
-    albums.set(track.album, { title: track.album, artist: artists.size === 1 ? [...artists][0] || null : null })
+    if (track.album) {
+      const credits = new Set(inside.filter((other) => other.album === track.album).map((other) => other.artist))
+      const album = albums.get(track.album) ?? {
+        title: track.album,
+        artist: credits.size === 1 ? [...credits][0] || null : null,
+        tracks: 0,
+      }
+      album.tracks++
+      albums.set(track.album, album)
+    }
+    if (track.artist) {
+      const artist = artists.get(track.artist) ?? { name: track.artist, tracks: 0 }
+      artist.tracks++
+      artists.set(track.artist, artist)
+    }
   }
+  const fullest = <T extends { tracks: number }>(rows: T[], name: (row: T) => string) =>
+    rows.sort((a, b) => b.tracks - a.tracks || name(a).localeCompare(name(b)))
   const files = input.entries.filter((entry) => !entry.folder)
   const audio = files.filter((entry) => {
     const kind = entry.kind ?? null
@@ -190,8 +208,9 @@ export function folderFacts(input: {
   })
   return {
     tracks: inside.length,
-    album: albums.size === 1 ? ([...albums.values()][0] ?? null) : null,
-    albums: albums.size,
+    album: albums.size === 1 ? ([...albums.values()].map(({ title, artist }) => ({ title, artist }))[0] ?? null) : null,
+    albums: fullest([...albums.values()], (row) => row.title),
+    artists: fullest([...artists.values()], (row) => row.name),
     year: years.length ? Math.min(...years) : null,
     formats: [...new Set(audio.map((entry) => entry.name.replace(/^.*\./, '').toUpperCase()))].sort(),
     cover: cover?.name ?? null,

@@ -739,6 +739,11 @@ export const ru: Messages = {
     other: '{count} трека с неизвестными тегами',
   },
   files_details: 'Подробности: {name}',
+  files_all: 'Все',
+  files_albums: 'Альбомы',
+  files_artists: 'Исполнители',
+  files_albums_here: 'Альбомы в этой папке',
+  files_artists_here: 'Исполнители в этой папке',
   folder_entries: {
     one: '{count} элемент',
     few: '{count} элемента',

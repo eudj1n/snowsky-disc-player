@@ -207,12 +207,33 @@ describe('folder facts', () => {
     ).toEqual({
       tracks: 2,
       album: { title: 'Inner Space', artist: 'Forma' },
-      albums: 1,
+      albums: [{ title: 'Inner Space', artist: 'Forma', tracks: 2 }],
+      artists: [{ name: 'Forma', tracks: 2 }],
       year: 2019,
       formats: ['FLAC', 'MP3'],
       cover: 'folder.jpg',
       lyrics: { have: 1, of: 2 },
       unknownTags: 1,
+    })
+    // Two albums and two artists in one folder: the fullest first, an album's artist only where its tracks agree.
+    const mixed = [
+      ...tracks.slice(0, 2),
+      { ...song(4, '04 Dawn.flac', 'Afterglow'), artist: 'Northline' },
+      { ...song(5, '05 Dusk.flac', 'Afterglow'), artist: 'Mira Sol' },
+      { ...song(6, '06 Night.flac', 'Afterglow'), artist: 'Mira Sol' },
+    ]
+    expect(folderFacts({ tracks: mixed, entries, folder: 'Forma', years: {} })).toMatchObject({
+      tracks: 5,
+      album: null,
+      albums: [
+        { title: 'Afterglow', artist: null, tracks: 3 },
+        { title: 'Inner Space', artist: 'Forma', tracks: 2 },
+      ],
+      artists: [
+        { name: 'Forma', tracks: 2 },
+        { name: 'Mira Sol', tracks: 2 },
+        { name: 'Northline', tracks: 1 },
+      ],
     })
     expect(folderFacts({ tracks, entries: [], folder: 'Forma/Deep', years: {} })).toMatchObject({
       tracks: 1,

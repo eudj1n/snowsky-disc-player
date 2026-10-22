@@ -2851,6 +2851,20 @@ Read-only now:
       files the library does not know keep a plain name. Evidence: the same
       e2e (the panel's title "Orbit"); screenshots in `work/shots-files`
       (desktop dark and light with the panel, phone).
+- [x] Several albums or artists in one folder (owner, 2026-10-22: show
+      them, not mixed, two rows when both; a choice dims the other files,
+      never hides them; chips as the album page's, or lists if one row):
+      `folderFacts` lists the albums and the artists with their counts, the
+      fullest first; the page shows a labelled row for each kind when there
+      is more than one, chips with "All" first up to six, a select beyond
+      (a compilation's artists); a chosen album or artist leaves the files
+      not its own dimmed (`aria-disabled`, play, details and trash
+      disabled), a lyrics file following its track; the choice resets with
+      the folder. Evidence: unit "folder facts" (the mixed folder); e2e
+      "tells a folder of several albums and artists apart with chips…"
+      (Afterglow's files moved into the Inner Space folder by the test's
+      routes: the rows, the dimming, All); screenshots `mixed-*` and
+      `many-light` in `work/shots-files`.
 
 ## Later
 
