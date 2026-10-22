@@ -2,13 +2,20 @@
 /**
  * Single-line input with a visually hidden label. The `search` variant is the
  * top bar's search pill, a size smaller (owner, 2026-10-21): a search icon
- * leading, round, on the soft background.
+ * leading, round, on the soft background. The `pill` variant is the same
+ * pill without the icon, as high as a pill button, to stand in a row with
+ * one (owner, 2026-10-22).
  */
 import UiIcon from './UiIcon.vue'
 
 const model = defineModel<string>({ required: true })
 withDefaults(
-  defineProps<{ label: string; type?: 'text' | 'password'; invalid?: boolean; variant?: 'field' | 'search' }>(),
+  defineProps<{
+    label: string
+    type?: 'text' | 'password'
+    invalid?: boolean
+    variant?: 'field' | 'search' | 'pill'
+  }>(),
   { type: 'text', invalid: false, variant: 'field' },
 )
 </script>
@@ -33,7 +40,9 @@ withDefaults(
       :class="
         variant === 'search'
           ? 'rounded-full bg-soft py-7 pr-14 pl-34 text-footnote transition-colors duration-150 hover:bg-hover [&::-webkit-search-cancel-button]:appearance-none'
-          : ['rounded-xl border bg-surface px-3 py-2', invalid ? 'border-warn' : 'border-line']
+          : variant === 'pill'
+            ? 'rounded-full bg-soft px-16 py-12 text-body leading-none transition-colors duration-150 hover:bg-hover'
+            : ['rounded-xl border bg-surface px-3 py-2', invalid ? 'border-warn' : 'border-line']
       "
     />
   </label>

@@ -2785,7 +2785,8 @@ nothing under a tag spelled wrong, so a query typed by hand.
       tracks' message no longer tells one to choose the edition again.
 - [x] A search by another name: a text button opens the field (the
       artist's name, or the album's title and artist, prefilled with the
-      card's), opened by itself when nothing was found; the search runs
+      card's; pills as high as the Search button beside them, the top bar's
+      field without its icon), opened by itself when nothing was found; the search runs
       with what was typed, the identity stays under the card's name
       (`findArtistCandidates(name, query)`, `findEditions` with the typed
       title and artist; browsing the artist's albums takes the typed

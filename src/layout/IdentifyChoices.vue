@@ -274,12 +274,18 @@ const CHOICE =
       <div class="min-w-160 flex-1">
         <UiTextField
           v-model="queryName"
+          variant="pill"
           :label="t(target.kind === 'artist' ? 'identify_query_name' : 'identify_query_title')"
           data-testid="identify-query"
         />
       </div>
       <div v-if="target.kind === 'album'" class="min-w-140 flex-1">
-        <UiTextField v-model="queryArtist" :label="t('identify_query_artist')" data-testid="identify-query-artist" />
+        <UiTextField
+          v-model="queryArtist"
+          variant="pill"
+          :label="t('identify_query_artist')"
+          data-testid="identify-query-artist"
+        />
       </div>
       <UiPillButton variant="secondary" type="submit" :disabled="!canSearch" data-testid="identify-search-go">{{
         t('identify_search')
