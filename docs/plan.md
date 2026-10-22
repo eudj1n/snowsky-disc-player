@@ -2760,6 +2760,14 @@ names need it).
 
 ## Later
 
+- Recommendations from one's own music (owner, 2026-10-22; the analysis in
+  [recommendations.md](recommendations.md)): "In the style of {artist | track
+  | album}", "Best of", "The albums you lack", "New from your artists" and
+  "My wave" over the collection, from ListenBrainz (similar artists and
+  recordings, popularity, tags, fresh releases; no key, CORS open), Last.fm
+  and Discogs with the owner's keys, and the history on the card; audio
+  features computed in the browser as a later stage. The owner returns to it
+  later.
 - AutoEq, stage B (owner, 2026-10-02; the analysis in [autoeq.md](autoeq.md)):
   a parametric fit of our own, closer than the fixed bands, once stage A
   proves itself on the physical player.
