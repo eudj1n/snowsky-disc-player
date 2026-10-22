@@ -5,6 +5,7 @@
  * the library adds what it knows about the music below a folder. Folders are
  * addressed relative to the card root ('' is the root itself).
  */
+import { stockUnknown } from './album'
 import type { FileFacts } from './space'
 import { CARD_ROOT } from './imports'
 import type { LibraryTrack } from './track'
@@ -134,5 +135,69 @@ export function folderStats(
     files: paths.length,
     measured: measured.length,
     album: albums.size === 1 && only ? only : null,
+  }
+}
+
+/** What is known about the music right in a folder (owner, 2026-10-22: a line under the folder's path). */
+export interface FolderFacts {
+  /** Library tracks whose file is in the folder itself (not below it). */
+  tracks: number
+  /** Their one album, when they share one; otherwise null and `albums` says how many. */
+  album: { title: string; artist: string | null } | null
+  albums: number
+  /** The year of the tags, where one file's is known. */
+  year: number | null
+  /** The audio files' extensions, in upper case, as they come. */
+  formats: string[]
+  /** The folder's cover file (cover, folder or front first, else any image), by name. */
+  cover: string | null
+  /** Audio files with a same-stem .lrc beside them, of all audio files listed. */
+  lyrics: { have: number; of: number }
+  /** Tracks stock lists under its names for missing tags. */
+  unknownTags: number
+}
+
+const stem = (name: string) => name.replace(/\.[^.]*$/, '').toLowerCase()
+const COVER_STEMS = new Set(['cover', 'folder', 'front'])
+
+export function folderFacts(input: {
+  tracks: readonly LibraryTrack[]
+  entries: readonly FolderEntry[]
+  folder: string
+  years: Readonly<Record<string, number>>
+}): FolderFacts {
+  const prefix = cardFolder(input.folder)
+  const inside = input.tracks.filter(
+    (track) => track.path?.startsWith(prefix) && !track.path.slice(prefix.length).includes('/'),
+  )
+  const albums = new Map<string, { title: string; artist: string | null }>()
+  for (const track of inside) {
+    if (!track.album) continue
+    const artists = new Set(inside.filter((other) => other.album === track.album).map((other) => other.artist))
+    albums.set(track.album, { title: track.album, artist: artists.size === 1 ? [...artists][0] || null : null })
+  }
+  const files = input.entries.filter((entry) => !entry.folder)
+  const audio = files.filter((entry) => {
+    const kind = entry.kind ?? null
+    return kind ? kind === 'audio' : !entry.image && !entry.playlist && !/\.(lrc|cue)$/i.test(entry.name)
+  })
+  const lyrics = new Set(files.filter((entry) => /\.lrc$/i.test(entry.name)).map((entry) => stem(entry.name)))
+  const images = files.filter((entry) => entry.image)
+  const cover = images.find((entry) => COVER_STEMS.has(stem(entry.name))) ?? images[0] ?? null
+  const years = inside.flatMap((track) => {
+    const year = track.path ? input.years[track.path] : undefined
+    return year ? [year] : []
+  })
+  return {
+    tracks: inside.length,
+    album: albums.size === 1 ? ([...albums.values()][0] ?? null) : null,
+    albums: albums.size,
+    year: years.length ? Math.min(...years) : null,
+    formats: [...new Set(audio.map((entry) => entry.name.replace(/^.*\./, '').toUpperCase()))].sort(),
+    cover: cover?.name ?? null,
+    lyrics: { have: audio.filter((entry) => lyrics.has(stem(entry.name))).length, of: audio.length },
+    unknownTags: inside.filter(
+      (track) => stockUnknown(track.artist) || stockUnknown(track.album) || stockUnknown(track.genre),
+    ).length,
   }
 }

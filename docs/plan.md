@@ -2810,8 +2810,58 @@ nothing under a tag spelled wrong, so a query typed by hand.
       a two-disc album's eighth edition and the search's fields); the mock
       suite 192 passed, 74 skipped (2026-10-22).
 
+## The folder's facts and the track panel from a file (owner, 2026-10-22), player-only
+
+The owner asked, from a folder in the file manager: what stock and this
+page know about a folder (an album's binding?), and whether a music file
+could open a panel like Track info, with the media facts and tags, as a
+place to read tags now and write them later. The answer recorded:
+
+- Stock has no folder entity: `SONG` rows carry `PATH` and the tags
+  (`TITLE`, `ALBUM`, `ARTIST`, `ALBUM_ARTIST`, `GENRE`, `DISC`, `TRACK`),
+  the format facts and `ADD_TIME`, no year; a folder listing gives names and
+  kinds. The page's store keeps nothing by folder: identities by album key
+  (title and artist), decisions by album or artist name, pins by album,
+  images by artist; covers, durations and years by file path in the
+  browser's cache. The folder's album is derived from the tracks whose
+  path lies in it.
+- The gateway's `/api/media/info` reads the file itself: format, duration,
+  rate, depth, channels, bit rate, the tags (title, artist, album, album
+  artist, genre, track, disc, date), where the cover and lyrics are; the
+  server parses FLAC, WAV, MP3 (ID3v2 and v1), AAC ADTS and MP4; DSF, APE,
+  OGG and the others are admitted but yield no tags.
+- Writing tags needs a route of the server (contract first), then stock's
+  scan; a changed album or artist moves the page's album key, so identities
+  and pins would have to follow. Deferred: see Later.
+
+Read-only now:
+
+- [x] A line under the folder's path (`folderFacts`, domain): the tracks
+      right in the folder, their one album linked (else how many albums),
+      "Identified in MusicBrainz" or "Not identified yet" (the album's
+      identity by its key), the year (the album's, read once, else a
+      file's), the audio formats, the cover (a file by name, else
+      "embedded cover" or "no cover" as the album's cover state says), the
+      files with a same-stem `.lrc` of all audio files, and the tracks with
+      stock's unknown names. Evidence: unit "folder facts"; e2e "browses
+      the card…" (the line for Inner Space: 4 tracks, the album link, not
+      identified, 2019, FLAC, embedded cover, lyrics 0 of 4).
+- [x] A music file's name is a button that opens its track in the panel
+      (the folder as its play target), as a row's title does elsewhere;
+      files the library does not know keep a plain name. Evidence: the same
+      e2e (the panel's title "Orbit"); screenshots in `work/shots-files`
+      (desktop dark and light with the panel, phone).
+
 ## Later
 
+- Writing tags from the page (owner, 2026-10-22): a route of the server
+  (`PUT /api/media/tags/<path>` or alike) that rewrites the tag block of
+  FLAC, MP3 and MP4 files (in place within padding, else a temporary file
+  and a rename, as the trash moves), followed by stock's scan; the page
+  then edits one file's tags in its panel, a folder's at once (album,
+  artist, genre, numbering), and fills them from the identified MusicBrainz
+  edition with a preview of the differences; identities and pins follow a
+  changed album key.
 - Recommendations from one's own music (owner, 2026-10-22; the analysis in
   [recommendations.md](recommendations.md)): "In the style of {artist | track
   | album}", "Best of", "The albums you lack", "New from your artists" and

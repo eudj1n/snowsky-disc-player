@@ -3075,6 +3075,18 @@ test('browses the card, creates a folder and adds music into it', async ({ page 
   // A file names its track and links its album from the library.
   const orbit = list.getByRole('listitem').filter({ hasText: '01 Orbit.flac' })
   await expect(orbit.getByRole('link', { name: 'Inner Space' })).toBeVisible()
+  // A line of what is known about the folder's music (owner, 2026-10-22): the album, linked, whether
+  // MusicBrainz knows it, the year of the tags, the formats, the cover file and the lyrics beside the files.
+  const facts = page.getByTestId('files-facts')
+  await expect(facts).toContainText('4 tracks')
+  await expect(facts.getByRole('link', { name: 'Album “Inner Space”' })).toBeVisible()
+  await expect(facts).toContainText('Not identified yet')
+  await expect(facts).toContainText('2019', { timeout: 15_000 })
+  await expect(facts).toContainText('FLAC\u00a0·\u00a0embedded cover\u00a0·\u00a0lyrics 0 of 4')
+  // The file's name opens its track in the panel, as a title does elsewhere.
+  await orbit.getByRole('button', { name: 'Details of 01 Orbit.flac' }).click()
+  await expect(page.getByTestId('track-panel-title')).toHaveText('Orbit')
+  await page.keyboard.press('Escape')
   await page.getByTestId('files-path').getByRole('link', { name: 'Card' }).click()
   await expect(list.getByRole('link', { name: 'Forma - Inner Space' })).toBeVisible()
   // The service's .disc folder is not the owner's to browse.

@@ -728,6 +728,17 @@ export const ru: Messages = {
   remembered_play_first: 'Нажмите Play, чтобы продолжить с того места, где плеер остановился.',
   remembered_changed: 'Запомненный трек уже не там, где был; выберите его в коллекции.',
   files_truncated: 'Показаны только первые {count} элементов.',
+  files_facts_cover: 'обложка {name}',
+  files_facts_no_cover: 'обложки нет',
+  files_facts_cover_embedded: 'обложка встроена',
+  files_facts_lyrics: 'тексты {have} из {of}',
+  files_facts_unknown: {
+    one: '{count} трек с неизвестными тегами',
+    few: '{count} трека с неизвестными тегами',
+    many: '{count} треков с неизвестными тегами',
+    other: '{count} трека с неизвестными тегами',
+  },
+  files_details: 'Подробности: {name}',
   folder_entries: {
     one: '{count} элемент',
     few: '{count} элемента',

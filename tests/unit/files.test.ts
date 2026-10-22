@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   breadcrumbs,
   cardFolder,
+  folderFacts,
   folderNameProblem,
   folderStats,
   joinFolder,
@@ -164,5 +165,60 @@ describe('folder gateway', () => {
     expect(await createFolder(http, 't', 'Music', 'Ghost')).toBe('uncertain')
     const refused = fake(() => new Response('Scan active', { status: 503 }))
     expect(await createFolder(refused, 't', '', 'X')).toBe('not-sent')
+  })
+})
+
+describe('folder facts', () => {
+  it('tells the album, year, formats, cover, lyrics and unknown tags of the music right in a folder', () => {
+    const song = (id: number, name: string, album: string, genre: string | null = 'Pop'): LibraryTrack =>
+      ({
+        id,
+        fileName: name,
+        title: name,
+        album,
+        artist: 'Forma',
+        albumArtist: null,
+        genre,
+        path: `/tmp/sdcard/Forma/${name}`,
+        durationMs: 1000,
+        disc: null,
+        trackNumber: id,
+        sampleRate: null,
+        bitDepth: null,
+        bitRate: null,
+        cue: false,
+        m3u: false,
+        addedAt: id,
+      }) as unknown as LibraryTrack
+    const entries: FolderEntry[] = [
+      entry('01 Orbit.flac'),
+      entry('01 Orbit.lrc'),
+      entry('02 Still.mp3'),
+      { ...entry('folder.jpg'), image: true },
+      { ...entry('Deep', true) },
+    ]
+    const tracks = [
+      song(1, '01 Orbit.flac', 'Inner Space'),
+      song(2, '02 Still.mp3', 'Inner Space', 'Unknown Genre'),
+      { ...song(3, '03 Below.flac', 'Other'), path: '/tmp/sdcard/Forma/Deep/03 Below.flac' },
+    ]
+    expect(
+      folderFacts({ tracks, entries, folder: 'Forma', years: { '/tmp/sdcard/Forma/02 Still.mp3': 2019 } }),
+    ).toEqual({
+      tracks: 2,
+      album: { title: 'Inner Space', artist: 'Forma' },
+      albums: 1,
+      year: 2019,
+      formats: ['FLAC', 'MP3'],
+      cover: 'folder.jpg',
+      lyrics: { have: 1, of: 2 },
+      unknownTags: 1,
+    })
+    expect(folderFacts({ tracks, entries: [], folder: 'Forma/Deep', years: {} })).toMatchObject({
+      tracks: 1,
+      album: { title: 'Other', artist: 'Forma' },
+      cover: null,
+      lyrics: { have: 0, of: 0 },
+    })
   })
 })

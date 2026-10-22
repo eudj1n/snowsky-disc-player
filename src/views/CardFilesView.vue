@@ -16,6 +16,7 @@ import CardTabs from '../components/card/CardTabs.vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
 import { formatBytes } from '../domain/device'
 import {
+  folderFacts,
   breadcrumbs,
   folderNameProblem,
   folderParts,
@@ -31,14 +32,17 @@ import { createFolder, listFolder, MAX_ENTRIES, type FolderListing } from '../ga
 import { locale, t, type MessageKey } from '../i18n'
 import { connection, http } from '../stores/connection'
 import { cardChangedSinceListing, trash, trashPath } from '../stores/trash'
-import { coverFor, enrichment, wantSizes } from '../stores/enrichment'
+import { albumCoverState, albumYear, coverFor, enrichment, wantSizes } from '../stores/enrichment'
 import { setImportDestination } from '../stores/imports'
+import { albumIdentity } from '../stores/musicbrainzIds'
+import { albumIdentityKey } from '../stores/coverSearch'
+import { groupAlbums } from '../domain/album'
 import { tracks } from '../stores/library'
 import { nowIsPlaying as isPlaying, nowPlaying } from '../stores/output'
 import { playback } from '../stores/playback'
 import { operation, run } from '../stores/operation'
 import { pairing, pairingToken } from '../stores/pairing'
-import { openDialog, toast } from '../stores/ui'
+import { openDialog, openTrackPanel, toast } from '../stores/ui'
 import UiIcon from '../ui/UiIcon.vue'
 import UiNowPlaying from '../ui/UiNowPlaying.vue'
 import UiIconButton from '../ui/UiIconButton.vue'
@@ -101,6 +105,61 @@ const rows = computed(() =>
   }),
 )
 const here = computed(() => folderStats(tracks.value, enrichment.files, folder.value))
+
+/**
+ * A line of what is known about the music right here (owner, 2026-10-22): its album, linked, and whether
+ * MusicBrainz knows it, the year, the formats, the cover file, how many files have lyrics beside them, and
+ * the tracks stock lists under its names for missing tags.
+ */
+const facts = computed(() =>
+  folderFacts({
+    tracks: tracks.value,
+    entries: listing.value?.entries ?? [],
+    folder: folder.value,
+    years: enrichment.years,
+  }),
+)
+const factsAlbum = computed(() => {
+  const album = facts.value.album
+  if (!album) return null
+  const group = groupAlbums(tracks.value.filter((track) => track.album === album.title)).find(
+    (candidate) => candidate.title === album.title,
+  )
+  const scope = group && album.artist && group.trackArtists.length === 1 ? album.artist : null
+  return {
+    ...album,
+    identified: group ? albumIdentity(albumIdentityKey(group, scope)) !== null : false,
+    // The release's year and cover as the album pages know them (read once per album, remembered).
+    year: group ? albumYear(group, scope) : null,
+    cover: group ? albumCoverState(group, scope) : 'unknown',
+  }
+})
+const factsLine = computed(() => {
+  const found = facts.value
+  if (!found.tracks) return []
+  const parts: string[] = []
+  if (!found.album) parts.push(t('album_count', { count: found.albums }))
+  if (factsAlbum.value) parts.push(t(factsAlbum.value.identified ? 'heading_verified' : 'info_not_identified'))
+  const year = factsAlbum.value?.year ?? found.year
+  if (year) parts.push(String(year))
+  if (found.formats.length) parts.push(found.formats.join(', '))
+  if (found.cover) parts.push(t('files_facts_cover', { name: found.cover }))
+  else if (factsAlbum.value?.cover === 'found') parts.push(t('files_facts_cover_embedded'))
+  else if (factsAlbum.value?.cover === 'missing') parts.push(t('files_facts_no_cover'))
+  if (found.lyrics.of) parts.push(t('files_facts_lyrics', { have: found.lyrics.have, of: found.lyrics.of }))
+  if (found.unknownTags) parts.push(t('files_facts_unknown', { count: found.unknownTags }))
+  return parts
+})
+
+/** A file's name opens its track in the panel, as a row's title does elsewhere (owner, 2026-10-22). */
+function openDetails(row: Row, event: MouseEvent): void {
+  if (!row.track) return
+  openTrackPanel(
+    row.track,
+    { kind: 'folder', folder: folder.value, file: row.entry.name },
+    event.currentTarget instanceof HTMLElement ? event.currentTarget : null,
+  )
+}
 
 /*
  * Playing from the card (owner, round 16): a folder plays from its first audio
@@ -246,6 +305,24 @@ function addHere(): void {
     </template>
   </nav>
 
+  <p
+    v-if="factsLine.length"
+    class="-mt-6 mb-14 flex flex-wrap items-center text-footnote text-muted"
+    data-testid="files-facts"
+  >
+    <span>{{ t('track_count', { count: facts.tracks }) }}</span>
+    <template v-if="factsAlbum">
+      <span aria-hidden="true">&nbsp;·&nbsp;</span>
+      <RouterLink :to="albumRoute(factsAlbum.title, factsAlbum.artist)" class="hover:text-ink hover:underline">{{
+        t('files_album', { name: factsAlbum.title })
+      }}</RouterLink>
+    </template>
+    <template v-for="part in factsLine" :key="part">
+      <span aria-hidden="true">&nbsp;·&nbsp;</span>
+      <span>{{ part }}</span>
+    </template>
+  </p>
+
   <div class="mb-16 flex flex-wrap items-center gap-10">
     <UiPillButton
       icon="add-music"
@@ -340,6 +417,16 @@ function addHere(): void {
           class="block truncate text-body font-semibold hover:underline"
           >{{ row.entry.name }}</RouterLink
         >
+        <button
+          v-else-if="row.track"
+          type="button"
+          class="block max-w-full truncate rounded-4 text-left text-body hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          :aria-label="t('files_details', { name: row.entry.name })"
+          data-testid="files-details"
+          @click="openDetails(row, $event)"
+        >
+          {{ row.entry.name }}
+        </button>
         <span v-else class="block truncate text-body">{{ row.entry.name }}</span>
         <p class="m-0 mt-2 truncate text-footnote text-muted">
           <template v-if="row.stats">

@@ -23,6 +23,11 @@ stay short and group related work; how and why it was done is in the
   asked anew; offered by itself when the name found nothing.
 - The enrichment report's files for the card scroll in a frame of their own
   and follow the writing, as the run's log follows its last line.
+- The file manager tells what it knows about a folder's music under its
+  path: the album, linked, whether MusicBrainz knows it, the year of the
+  tags, the formats, the cover (a file, or embedded), how many files have
+  lyrics beside them, and tracks with unknown tags. A music file's name
+  opens its track in the panel, as a title does elsewhere.
 - The State tab's Tags list is a card per folder, as the duplicates are:
   how many tracks, the folder (a link to its files) and which names stock
   gave them (“Unknown Artist”, “Unknown album”, “Unknown genre”), the
