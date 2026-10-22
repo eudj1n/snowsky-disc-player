@@ -1,13 +1,16 @@
 <script setup lang="ts">
 /**
  * An album's editions beside the album on the card (owner, 2026-10-08:
- * choosing an edition blind is hard). On the left what MusicBrainz proposes:
- * its editions and the chosen one's tracks, read when it is chosen; on the
- * right the album's tracks on the card. The two lists start on one line and
- * pair by row (`domain/tracklists.ts`); on narrow screens they stack. Both
- * scroll together in a few rows' height (owner, 2026-10-20: a thirty-track
- * album ran off the screen), with a disc's heading staying in view while
- * its tracks pass, where a list spans several discs.
+ * choosing an edition blind is hard). Above, what MusicBrainz proposes, one
+ * edition at a time across the width (owner, 2026-10-22: the card's own
+ * title and artist stood beside it and said what the heading says); below,
+ * on the left the chosen edition's tracks, read when it is chosen, on the
+ * right the album's tracks on the card with its folder. The two lists start
+ * on one line and pair by row (`domain/tracklists.ts`); on narrow screens
+ * they stack. Both scroll together in a few rows' height (owner,
+ * 2026-10-20: a thirty-track album ran off the screen), with a disc's
+ * heading staying in view while its tracks pass, where a list spans several
+ * discs.
  */
 import { computed, watch } from 'vue'
 import { albumTracks, byTrackNumber, discOf } from '../domain/album'
@@ -95,31 +98,17 @@ const ROW =
 </script>
 
 <template>
-  <div class="grid grid-cols-2 gap-x-28 gap-y-10 sheet:grid-cols-1" data-testid="album-compare">
-    <section
-      class="row-span-2 grid min-w-0 grid-rows-subgrid"
-      :aria-label="t('compare_proposed')"
-      data-testid="compare-proposed"
-    >
+  <div data-testid="album-compare">
+    <section :aria-label="t('compare_proposed')" data-testid="compare-proposed">
       <h3 :class="HEADING">{{ t('compare_proposed') }}</h3>
-      <IdentifyChoices v-model="chosen" :target="target" compact />
+      <IdentifyChoices v-model="chosen" :target="target" />
     </section>
-    <section
-      class="row-span-2 grid min-w-0 grid-rows-subgrid sheet:mt-14"
-      :aria-label="t('compare_current')"
-      data-testid="compare-current"
-    >
-      <h3 :class="HEADING">{{ t('compare_current') }}</h3>
-      <div class="grid min-w-0 content-start gap-2 text-footnote">
-        <strong class="truncate font-semibold text-ink">{{ target.title }}</strong>
-        <span class="truncate text-secondary">{{ target.artist }}</span>
-        <span v-for="folder in folders.slice(0, 3)" :key="folder" class="truncate text-muted" :title="folder">{{
-          folder
-        }}</span>
-      </div>
-    </section>
+    <div class="mt-14 grid grid-cols-2 gap-x-28 sheet:grid-cols-1" data-testid="compare-tracks-head">
+      <h3 :class="HEADING">{{ t('compare_edition') }}</h3>
+      <h3 :class="HEADING" class="sheet:hidden">{{ t('compare_current') }}</h3>
+    </div>
     <div
-      class="col-span-2 grid max-h-[min(400px,45dvh)] grid-cols-2 gap-x-28 overflow-y-auto overscroll-contain sheet:col-span-1 sheet:grid-cols-1 sheet:gap-y-14"
+      class="mt-6 grid max-h-[min(400px,45dvh)] grid-cols-2 gap-x-28 overflow-y-auto overscroll-contain sheet:grid-cols-1 sheet:gap-y-14"
       data-testid="compare-tracks"
     >
       <div class="min-w-0">
@@ -149,7 +138,10 @@ const ROW =
         </ol>
       </div>
       <div class="min-w-0">
-        <p :class="LINE">{{ summary(lists.current.rows.length, lists.current.lengthMs) }}</p>
+        <h3 :class="HEADING" class="mb-6 hidden sheet:block">{{ t('compare_current') }}</h3>
+        <p :class="LINE" :title="folders.join('\n')">
+          {{ [summary(lists.current.rows.length, lists.current.lengthMs), ...folders.slice(0, 1)].join(' · ') }}
+        </p>
         <ol class="m-0 mt-6 list-none p-0" data-testid="compare-current-tracks">
           <template v-for="(item, index) in currentRows" :key="index">
             <li v-if="item.kind === 'disc'" role="presentation" :class="DISC">

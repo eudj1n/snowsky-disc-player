@@ -2381,14 +2381,26 @@ test('chooses a cover among the editions and fanart.tv, keeps the edition and sa
   await expect(fact('musicbrainz')).toContainText('Confirmed and kept on the player')
   // Identified, the album's name takes a quiet mark (owner, 2026-10-02).
   await expect(page.getByTestId('heading-verified')).toHaveAttribute('aria-label', 'Identified in MusicBrainz')
-  // The editions window names each edition's track count too; the card's count ranks its editions first.
+  // The editions window shows the editions one at a time, in full (owner, 2026-10-22), the card's count
+  // ranking its editions first; each names its track count.
   await fact('musicbrainz').getByTestId('fact-identify').click()
-  const choices = page.getByTestId('identify-choices').getByRole('button')
-  await expect(choices).toHaveCount(3, { timeout: 15_000 })
-  await expect(choices.first()).toContainText('3 tracks')
-  await expect(choices.first().getByTestId('edition-tracks')).toHaveAttribute('data-match', 'true')
-  await expect(choices.last()).toContainText('Vinyl · 2010 · 4 tracks')
-  await expect(choices.last().getByTestId('edition-tracks')).not.toHaveAttribute('data-match', 'true')
+  const card = page.getByTestId('identify-edition')
+  const position = page.getByTestId('identify-position')
+  await expect(position).toHaveText('Edition 1 of 3', { timeout: 15_000 })
+  await expect(card).toContainText('3 tracks')
+  await expect(card.getByTestId('edition-tracks')).toHaveAttribute('data-match', 'true')
+  await expect(dialog.getByTestId('identify-previous')).toBeDisabled()
+  await dialog.getByTestId('identify-next').click()
+  await dialog.getByTestId('identify-next').click()
+  await expect(position).toHaveText('Edition 3 of 3')
+  await expect(card).toContainText('Lumen Records NL-001 · Japan · Vinyl · 2010')
+  await expect(card).toContainText('4 tracks')
+  await expect(card.getByTestId('edition-tracks')).not.toHaveAttribute('data-match', 'true')
+  await expect(dialog.getByTestId('identify-next')).toBeDisabled()
+  // The arrow keys pass the editions too.
+  await card.focus()
+  await page.keyboard.press('ArrowLeft')
+  await expect(position).toHaveText('Edition 2 of 3')
   // When no edition fits, the artist's albums can be browsed, oldest first, and one chosen (owner, 2026-10-02).
   await dialog.getByTestId('identify-discography').click()
   await expect(dialog.getByTestId('identify-view')).toHaveText("Northline's albums in MusicBrainz")
@@ -2396,13 +2408,22 @@ test('chooses a cover among the editions and fanart.tv, keeps the edition and sa
   await expect(groups).toHaveText(['Night Drive · 2003 · Album', 'City Lights · 2006 · EP'], { timeout: 15_000 })
   await groups.first().click()
   await expect(dialog.getByTestId('identify-view')).toHaveText('Editions of “Night Drive”')
-  await expect(choices).toHaveCount(2, { timeout: 15_000 })
-  await expect(choices.first()).toContainText('remaster')
-  await expect(choices.first().getByTestId('edition-tracks')).toHaveAttribute('data-match', 'true')
+  await expect(position).toHaveText('Edition 1 of 2', { timeout: 15_000 })
+  await expect(card).toContainText('remaster')
+  await expect(card.getByTestId('edition-tracks')).toHaveAttribute('data-match', 'true')
   await dialog.getByTestId('identify-back').click()
   await expect(groups).toHaveCount(2)
   await dialog.getByTestId('identify-back').click()
-  await expect(choices).toHaveCount(3)
+  await expect(position).toHaveText('Edition 1 of 3')
+  // A search by another title or artist (owner, 2026-10-22: a tag spelled wrong) asks MusicBrainz anew.
+  await dialog.getByTestId('identify-search-other').click()
+  await dialog.getByTestId('identify-query').fill('Night Drive (Deluxe)')
+  const before = asked.length
+  await dialog.getByTestId('identify-search-go').click()
+  await expect
+    .poll(() => asked.slice(before).some((url) => url.searchParams.get('query')?.includes('"Night Drive (Deluxe)"')))
+    .toBe(true)
+  await expect(position).toHaveText('Edition 1 of 3', { timeout: 15_000 })
   // Confirming an edition identifies the album's artist with its one credit too (owner, 2026-10-20), kept on
   // the player like an identity of its own.
   expect(
@@ -2410,7 +2431,6 @@ test('chooses a cover among the editions and fanart.tv, keeps the edition and sa
       (record) => record.value.kind === 'artist' && record.value.name === 'Northline',
     ),
   ).toBeUndefined()
-  await choices.first().click()
   await dialog.getByTestId('identify-confirm').click()
   await expect
     .poll(
@@ -2489,9 +2509,12 @@ test("chooses an artist's photo and background among the sources, keeps them on 
   const NAMESAKE = '6f1d2c3b-0000-4000-8000-00000000a002'
   const asked: URL[] = []
   const cors = { 'Access-Control-Allow-Origin': '*' }
+  // MusicBrainz does not answer the first search (owner, 2026-10-22: Retry asks again).
+  let unanswered = 1
   await page.route('https://musicbrainz.org/ws/2/**', async (route) => {
     const url = new URL(route.request().url())
     asked.push(url)
+    if (url.pathname === '/ws/2/artist/' && unanswered-- > 0) return route.fulfill({ headers: cors, status: 503 })
     await route.fulfill({
       headers: cors,
       json:
@@ -2598,10 +2621,12 @@ test("chooses an artist's photo and background among the sources, keeps them on 
   // Identified in its own window, among the candidates (owner, 2026-10-02).
   await fact('musicbrainz').getByTestId('fact-identify').click()
   const candidates = page.getByTestId('identify-choices').getByRole('button')
+  await expect(page.getByTestId('identify-status')).toHaveText('MusicBrainz could not be reached.', { timeout: 15_000 })
+  await page.getByTestId('identify-retry').click()
   await expect(candidates).toHaveCount(2, { timeout: 15_000 })
   // Named exactly so, the best score first; the namesake shows what tells it apart.
   await expect(candidates.first()).toHaveText('Northline · Group · United Kingdom · 2001– · synth-pop band')
-  expect(asked[0]?.searchParams.get('query')).toBe('artist:"Northline" OR alias:"Northline"')
+  expect(asked[1]?.searchParams.get('query')).toBe('artist:"Northline" OR alias:"Northline"')
   await candidates.first().click()
   await page.getByTestId('identify-confirm').click()
   await expect(fact('musicbrainz')).toContainText('Confirmed and kept on the player', { timeout: 15_000 })
@@ -2923,7 +2948,7 @@ test('enriches the library from the Card state tab in its window: a sure run, it
   await report.getByTestId('state-review').click()
   const ask = dialog.getByTestId('state-ask')
   await expect(ask).toContainText('Which edition is it?', { timeout: 15_000 })
-  await expect(ask.getByTestId('identify-choices').getByRole('button').first()).toHaveAttribute('aria-pressed', 'true')
+  await expect(ask.getByTestId('identify-position')).toContainText('of', { timeout: 15_000 })
   // The chosen edition's tracks beside the album's on the card, the one that differs marked.
   const proposed = ask.getByTestId('compare-proposed-tracks').getByRole('listitem')
   await expect(proposed).toHaveCount(3, { timeout: 15_000 })

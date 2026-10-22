@@ -2758,6 +2758,47 @@ names need it).
       owner published the server's release 2.57.9 and installed both on the
       player; "everything works".
 
+## The identify window: one edition at a time, Retry, a search by another name (owner, 2026-10-22), player-only
+
+The owner, from the enrichment run on the physical player: the "On the
+card" column repeats the window's heading, so one column, with the editions
+passed one at a time as a slider and shown in full in three lines (the day
+before they were cut to a row); a Retry beside Skip, since a quick run
+through the items meets an unanswered request now and then, and "choose
+the edition again to retry" cannot be done with one edition; the artists'
+candidates stretch the window when they are many; and MusicBrainz finds
+nothing under a tag spelled wrong, so a query typed by hand.
+
+- [x] `IdentifyChoices.vue`: the editions as one card with the previous and
+      next arrows in round buttons (and the arrow keys), the title with what tells it apart,
+      the issue line, the track count with its mark, "Edition n of m"; the
+      card's edition is the choice, so its tracks are read as the cards
+      pass. The candidates and the artist's albums stay lists, in a frame
+      of a few rows' height. `AlbumCompare.vue` drops the "On the card"
+      column: the proposal spans the width, the two track lists keep their
+      headings ("In this edition", "On the card"), the card's folder joins
+      its summary line.
+- [x] Retry: the store keeps the last search (`lastSearch`) and
+      `retryIdentify` asks it again, or the chosen edition's tracks when
+      their read failed; `identifyFailed` shows the button in the identify
+      window (beside Cancel) and the enrichment run (beside Skip). The
+      tracks' message no longer tells one to choose the edition again.
+- [x] A search by another name: a text button opens the field (the
+      artist's name, or the album's title and artist, prefilled with the
+      card's), opened by itself when nothing was found; the search runs
+      with what was typed, the identity stays under the card's name
+      (`findArtistCandidates(name, query)`, `findEditions` with the typed
+      title and artist; browsing the artist's albums takes the typed
+      artist).
+- [x] Evidence: e2e "chooses a cover among the editions…" (the slider's
+      cards, arrows and keys, the discography's editions in the slider, a
+      search by another title asking MusicBrainz anew), "chooses an
+      artist's photo…" (a 503 on the first search, Retry, the candidates),
+      "enriches the library…" (the review's edition in the slider);
+      screenshots in `work/shots-identify` (desktop light and dark, phone;
+      a two-disc album's eighth edition and the search's fields); the mock
+      suite 192 passed, 74 skipped (2026-10-22).
+
 ## Later
 
 - Recommendations from one's own music (owner, 2026-10-22; the analysis in

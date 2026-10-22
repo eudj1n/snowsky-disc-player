@@ -311,16 +311,25 @@ const search = reactive<Identify>({
 /** The details panel's search: candidates for an artist, or editions for an album (owner, 2026-10-01). */
 export const identifying = readonly(search)
 
+/** The last search asked, to ask again when MusicBrainz did not answer (owner, 2026-10-22). */
+let lastSearch: (() => Promise<void>) | null = null
+
 export function forgetCandidates(): void {
+  lastSearch = null
   Object.assign(search, { key: null, ...IDLE, artists: [], editions: [], found: [], groups: [], saving: false })
 }
 
-/** The artists MusicBrainz offers for a name, on the listener's request (the name leaves the network). */
-export async function findArtistCandidates(name: string): Promise<void> {
+/**
+ * The artists MusicBrainz offers for a name, on the listener's request (the name leaves the network). The
+ * query is the name unless the listener typed another (owner, 2026-10-22: a tag spelled wrong); the identity
+ * is kept under the name on the card either way.
+ */
+export async function findArtistCandidates(name: string, query: string = name): Promise<void> {
   if (!identifyAllowed()) return
+  lastSearch = () => findArtistCandidates(name, query)
   Object.assign(search, { key: name, ...IDLE, status: 'searching', artists: [], editions: [], found: [], groups: [] })
   try {
-    const artists = await searchArtists(name)
+    const artists = await searchArtists(query)
     if (search.key !== name) return
     search.artists = artists
     search.status = artists.length ? 'ready' : 'missing'
@@ -342,7 +351,10 @@ export async function chooseArtistCandidate(name: string, candidate: ArtistCandi
   }
 }
 
-/** The album's editions MusicBrainz offers, on the listener's request (its title and artist leave the network). */
+/**
+ * The album's editions MusicBrainz offers, on the listener's request (its title and artist leave the network);
+ * the title and artist are the card's unless the listener typed others (owner, 2026-10-22).
+ */
 export async function findEditions(
   key: string,
   title: string,
@@ -350,6 +362,7 @@ export async function findEditions(
   trackCount: number | null,
 ): Promise<void> {
   if (!identifyAllowed()) return
+  lastSearch = () => findEditions(key, title, artist, trackCount)
   Object.assign(search, { key, ...IDLE, status: 'searching', artists: [], editions: [], found: [], groups: [] })
   try {
     const editions = rankReleases(await findReleases(title, artist), trackCount, title)
@@ -368,6 +381,7 @@ export async function findEditions(
  */
 export async function findArtistAlbums(key: string, artist: string): Promise<void> {
   if (!identifyAllowed() || search.key !== key) return
+  lastSearch = () => findArtistAlbums(key, artist)
   Object.assign(search, { view: 'groups', status: 'searching', editions: [], group: null })
   try {
     const mbid = artistIdentity(artist)?.mbid ?? bestArtist(await searchArtists(artist), artist)?.id
@@ -388,6 +402,7 @@ export async function findGroupEditions(
   trackCount: number | null,
 ): Promise<void> {
   if (!identifyAllowed() || search.key !== key) return
+  lastSearch = () => findGroupEditions(key, group, title, trackCount)
   Object.assign(search, { view: 'group', status: 'searching', editions: [], group: { ...group } })
   try {
     const editions = rankReleases(await groupReleases(group.id), trackCount, title)
@@ -408,6 +423,19 @@ export function identifyBack(): void {
       editions: search.found,
       status: search.found.length ? 'ready' : 'missing',
     })
+}
+
+/**
+ * MusicBrainz did not answer the search, or the chosen edition's tracks (owner, 2026-10-22: a Retry button
+ * beside Skip, since a quick run through the items meets an unanswered request now and then).
+ */
+export const identifyFailed = (chosenEdition: string | null): boolean =>
+  search.status === 'failed' || (chosenEdition !== null && tracklists.get(chosenEdition)?.status === 'failed')
+
+/** Asks again what MusicBrainz did not answer: the search, else the chosen edition's tracks. */
+export function retryIdentify(chosenEdition: string | null): void {
+  if (search.status === 'failed') void lastSearch?.()
+  else if (chosenEdition && tracklists.get(chosenEdition)?.status === 'failed') void showEditionTracks(chosenEdition)
 }
 
 /** An edition's tracks, read when it is chosen, to set beside the album on the card (owner, 2026-10-08). */

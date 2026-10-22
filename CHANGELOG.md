@@ -7,6 +7,21 @@ what goes on the card, and its notes are the release's section below. Entries
 stay short and group related work; how and why it was done is in the
 [plan](docs/plan.md).
 
+## [Unreleased]
+
+### Your collection
+
+- The editions MusicBrainz proposes for an album pass one at a time, in full
+  (the title, the issue, the track count), with arrows and the arrow keys;
+  the album's own title and artist no longer stand beside them. The lists
+  of an artist's namesakes and of an artist's albums scroll in a frame of a
+  few rows, so the window keeps its height.
+- Retry, beside Skip and Cancel, asks MusicBrainz again when it did not
+  answer the search or the edition's tracks.
+- Search by another name: when the tag on the card is spelled wrong, type
+  the artist's name, or the album's title and artist, and MusicBrainz is
+  asked anew; offered by itself when the name found nothing.
+
 ## [1.1.0] — 2026-10-21
 
 ### Sound

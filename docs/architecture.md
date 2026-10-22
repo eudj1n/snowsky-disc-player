@@ -150,9 +150,14 @@ then the albums of the run's scope, each step through the existing gateways
 `takeArtistImages`); the automatic mode takes what `domain/runMatches.ts`
 calls sure, the manual steps show `layout/IdentifyChoices.vue` for an artist
 and `layout/AlbumCompare.vue` for an album, both shared with the identify
-window. The comparison sets the chosen edition's tracks (`releaseTracks`,
-read one edition at a time by `showEditionTracks`) beside the album's tracks
-on the card, paired by row in `domain/tracklists.ts`. The tab shows the state
+window. The editions pass one at a time (a card with arrows); the candidates
+and the artist's albums are lists in a frame. The comparison sets the chosen
+edition's tracks (`releaseTracks`, read one edition at a time by
+`showEditionTracks`) beside the album's tracks on the card, paired by row in
+`domain/tracklists.ts`. What MusicBrainz did not answer is asked again by
+`retryIdentify` (the last search, or the edition's tracks), and a name typed
+by the listener searches in place of the card's (`findArtistCandidates`,
+`findEditions`), the identity staying under the card's name. The tab shows the state
 and opens the run in a window (`UiDialog`); closing it leaves the run going,
 with a line above the state that opens it again. Every decision, with its run and what it wrote, goes
 to the store's `enrichment` collection: a closed tab resumes, "not found" is

@@ -49,7 +49,14 @@ import {
   type RunMode,
   type RunTask,
 } from '../stores/libraryRun'
-import { albumIdentity, artistIdentity, identifyAllowed, identifying } from '../stores/musicbrainzIds'
+import {
+  albumIdentity,
+  artistIdentity,
+  identifyAllowed,
+  identifyFailed,
+  identifying,
+  retryIdentify,
+} from '../stores/musicbrainzIds'
 import { pairing } from '../stores/pairing'
 import { loadTrash, trash } from '../stores/trash'
 import UiChips from '../ui/UiChips.vue'
@@ -592,6 +599,13 @@ const sourcesMeta = computed(() =>
             <UiPillButton variant="secondary" data-testid="state-skip" @click="skipChoice">{{
               t('state_skip')
             }}</UiPillButton>
+            <UiPillButton
+              v-if="identifyFailed(chosen)"
+              variant="secondary"
+              data-testid="state-retry"
+              @click="retryIdentify(chosen)"
+              >{{ t('identify_retry') }}</UiPillButton
+            >
             <UiPillButton
               :disabled="
                 !chosen || identifying.saving || identifying.status !== 'ready' || identifying.view === 'groups'

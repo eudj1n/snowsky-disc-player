@@ -8,7 +8,8 @@
  * track count, marked when the album on the card has as many (2026-10-02).
  * When no edition fits, the artist's albums can be browsed and one chosen,
  * whose editions then show the same way (owner, 2026-10-02). An album's
- * editions show beside its tracks on the card (owner, 2026-10-08).
+ * editions show beside its tracks on the card (owner, 2026-10-08). What
+ * MusicBrainz did not answer is asked again with Retry (owner, 2026-10-22).
  */
 import { ref, watch } from 'vue'
 import { t } from '../i18n'
@@ -20,7 +21,9 @@ import {
   findArtistCandidates,
   findEditions,
   forgetCandidates,
+  identifyFailed,
   identifying,
+  retryIdentify,
 } from '../stores/musicbrainzIds'
 import UiDialog from '../ui/UiDialog.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
@@ -85,6 +88,13 @@ function close(): void {
       <IdentifyChoices v-else v-model="chosen" :target="target" />
       <div class="mt-18 flex justify-end gap-8">
         <UiPillButton variant="secondary" @click="close">{{ t('cancel') }}</UiPillButton>
+        <UiPillButton
+          v-if="identifyFailed(chosen)"
+          variant="secondary"
+          data-testid="identify-retry"
+          @click="retryIdentify(chosen)"
+          >{{ t('identify_retry') }}</UiPillButton
+        >
         <UiPillButton
           :disabled="!chosen || identifying.saving || identifying.status !== 'ready' || identifying.view === 'groups'"
           data-testid="identify-confirm"
