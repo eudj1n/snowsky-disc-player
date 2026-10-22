@@ -11,7 +11,7 @@
  * opens the window again. A run keeps going while the page shows another
  * section, and the Card item carries a dot meanwhile.
  */
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import CardTabs from '../components/card/CardTabs.vue'
 import ViewHeading from '../components/common/ViewHeading.vue'
 import { stockUnknown } from '../domain/album'
@@ -258,6 +258,27 @@ watch(current, () => (chosen.value = null))
 async function confirm(): Promise<void> {
   if (chosen.value) await confirmChoice(chosen.value)
 }
+
+/* The lists follow the progress (owner, 2026-10-22): the log its last entry, the files the last one written. */
+const logList = ref<HTMLElement | null>(null)
+const filesList = ref<HTMLElement | null>(null)
+function follow(list: HTMLElement | null, index: number): void {
+  if (!list || index < 0) return
+  const row = list.children[index]
+  if (row instanceof HTMLElement) row.scrollIntoView({ block: 'nearest' })
+}
+watch(
+  () => libraryRun.log.length,
+  (length) => void nextTick(() => follow(logList.value, length - 1)),
+)
+const lastWritten = computed(() => {
+  for (let index = libraryRun.files.length - 1; index >= 0; index--)
+    if (libraryRun.files[index]?.status !== 'new') return index
+  return -1
+})
+watch(lastWritten, (index) => {
+  if (libraryRun.phase === 'writing') void nextTick(() => follow(filesList.value, index))
+})
 
 /* The report. */
 const covers = computed(() => libraryRun.files.filter((file) => file.kind === 'cover'))
@@ -618,6 +639,7 @@ const sourcesMeta = computed(() =>
         </div>
 
         <ul
+          ref="logList"
           class="mt-18 mb-0 grid max-h-150 list-none gap-6 overflow-y-auto overscroll-contain p-0 text-footnote"
           data-testid="state-log"
         >
@@ -741,7 +763,12 @@ const sourcesMeta = computed(() =>
               @click="writeFiles"
               >{{ t('state_files_write') }}</UiPillButton
             >
-            <ul v-if="libraryRun.files.length" class="col-span-full m-0 grid min-w-0 list-none gap-6 p-0">
+            <ul
+              v-if="libraryRun.files.length"
+              ref="filesList"
+              class="col-span-full m-0 grid max-h-[min(320px,40dvh)] min-w-0 list-none gap-6 overflow-y-auto overscroll-contain p-0 pr-4"
+              data-testid="state-files-list"
+            >
               <li v-for="file in libraryRun.files" :key="file.id" class="min-w-0">
                 <label class="flex min-w-0 items-baseline gap-10 text-footnote text-ink has-disabled:text-muted">
                   <input

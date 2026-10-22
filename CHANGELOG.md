@@ -21,6 +21,8 @@ stay short and group related work; how and why it was done is in the
 - Search by another name: when the tag on the card is spelled wrong, type
   the artist's name, or the album's title and artist, and MusicBrainz is
   asked anew; offered by itself when the name found nothing.
+- The enrichment report's files for the card scroll in a frame of their own
+  and follow the writing, as the run's log follows its last line.
 
 ## [1.1.0] — 2026-10-21
 

@@ -2791,6 +2791,9 @@ nothing under a tag spelled wrong, so a query typed by hand.
       (`findArtistCandidates(name, query)`, `findEditions` with the typed
       title and artist; browsing the artist's albums takes the typed
       artist).
+- [x] The report's "Files for the card" (owner, 2026-10-22: seventy-five
+      lyrics files ran past the window): a frame of a few rows that follows
+      the file being written; the run's log follows its last entry too.
 - [x] Evidence: e2e "chooses a cover among the editions…" (the slider's
       cards, arrows and keys, the discography's editions in the slider, a
       search by another title asking MusicBrainz anew), "chooses an
