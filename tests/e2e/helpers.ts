@@ -67,7 +67,14 @@ export async function chooseSources(
   choices: Partial<Record<string, { allowed?: boolean; auto?: boolean; key?: string }>> = {},
   /** Which artist images the automatic lookups take; by default photos only, as with nothing kept. */
   images: { photo: boolean; background: boolean } = { photo: true, background: false },
+  /** The sources may suggest what the card lacks (owner, 2026-10-23); off as with nothing kept. */
+  recommend = false,
 ): Promise<void> {
+  const chosen = await page.request.put('/api/store/external_sources/record', {
+    headers: changeHeaders(),
+    data: { source: 'recommendations', allowed: recommend, at: Math.floor(Date.now() / 1000) },
+  })
+  expect(chosen.status(), 'recommendations').toBe(200)
   for (const source of SOURCE_NAMES) {
     const choice = choices[source]
     const allowed = choice?.allowed === true

@@ -10,20 +10,30 @@
  */
 import { computed, ref, watch } from 'vue'
 import Artwork from '../components/artwork/Artwork.vue'
+import SectionHeading from '../components/common/SectionHeading.vue'
 import TrackFacts from '../components/player/TrackFacts.vue'
 import ArtistCredit from '../components/track/ArtistCredit.vue'
 import type { Lyrics } from '../domain/lyrics'
 import { libraryRow, trackFacts } from '../domain/nowFacts'
-import { sameTrack, type Track } from '../domain/track'
+import { sameTrack, type LibraryTrack, type Track } from '../domain/track'
 import { t } from '../i18n'
+import { playInBrowser } from '../stores/browser'
 import { connection } from '../stores/connection'
 import { disliked, isDisliked, toggleDislike } from '../stores/disliked'
+import { recommendOutside } from '../stores/externalSources'
 import { coverFor, enrichment, wantFileFacts } from '../stores/enrichment'
 import { history, loadHistory } from '../stores/history'
 import { ownLyrics } from '../stores/lyrics'
 import { trackByPath, tracks, library } from '../stores/library'
-import { nowIsPlaying, nowPlaying } from '../stores/output'
-import { openPlaylistDialog, showCover, ui } from '../stores/ui'
+import { inBrowser, nowIsPlaying, nowPlaying } from '../stores/output'
+import {
+  canAskSimilar,
+  lookUpSimilarTracks,
+  recommendationsAllowed,
+  recommendationsAutomatic,
+  trackSimilar,
+} from '../stores/recommendations'
+import { openPlaylistDialog, openTrackPanel, showCover, ui } from '../stores/ui'
 import UiCircleButton from '../ui/UiCircleButton.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import { artistRoute, trackAlbumRoute } from '../views/captions'
@@ -117,6 +127,52 @@ const lyricsMessage = computed(() =>
       : t('lyrics_none'),
 )
 const LINK = 'hover:text-ink hover:underline hover:underline-offset-3'
+
+/*
+ * Similar tracks, by ListenBrainz (owner, 2026-10-23, stage 3): the recordings its listeners play with this
+ * one, laid against the card. Asked by itself when the source works automatically, else on a click; only for
+ * a track whose album is identified (its recording comes from the edition). "Not on the card" counts only
+ * when the owner lets the sources suggest what the card lacks.
+ */
+const libraryTrack = computed<LibraryTrack | null>(() => {
+  const path = track.value?.path
+  return path ? (trackByPath.value.get(path) ?? null) : null
+})
+const similar = computed(() => (libraryTrack.value ? trackSimilar(libraryTrack.value) : null))
+const similarShown = computed(() => recommendationsAllowed() && libraryTrack.value !== null)
+const similarAskable = computed(() => libraryTrack.value !== null && canAskSimilar(libraryTrack.value))
+function askSimilar(): void {
+  if (libraryTrack.value) void lookUpSimilarTracks(libraryTrack.value)
+}
+watch(
+  () =>
+    similarShown.value && similarAskable.value && recommendationsAutomatic() && !similar.value
+      ? track.value?.path
+      : null,
+  (path) => {
+    if (path) askSimilar()
+  },
+  { immediate: true },
+)
+const similarTracks = computed(() => similar.value?.onCard.map((item) => item.track) ?? [])
+function openSimilar(item: LibraryTrack, event: MouseEvent): void {
+  openTrackPanel(
+    item,
+    { kind: 'library', track: { title: item.title, artist: item.artist } },
+    event.currentTarget as HTMLElement,
+  )
+}
+function playSimilarHere(): void {
+  if (similarTracks.value.length) playInBrowser(similarTracks.value)
+}
+function addSimilarToPlaylist(): void {
+  if (similarTracks.value.length)
+    openPlaylistDialog({
+      mode: 'add',
+      tracks: similarTracks.value.map((item) => ({ ...item })),
+      title: t('similar_tracks'),
+    })
+}
 </script>
 
 <template>
@@ -177,6 +233,76 @@ const LINK = 'hover:text-ink hover:underline hover:underline-offset-3'
       @dislike="track && toggleDislike(track)"
       @navigate="emit('navigate')"
     />
+    <section v-if="similarShown" class="mt-30" :aria-label="t('similar_tracks')" data-testid="track-panel-similar">
+      <SectionHeading
+        :title="t('similar_tracks')"
+        :hint="t('similar_tracks_by')"
+        class="mt-0! mb-10 [&_h2]:text-title3"
+      />
+      <p v-if="!similarAskable" class="m-0 text-footnote leading-[1.55] text-muted">
+        {{ t('similar_tracks_identify') }}
+      </p>
+      <p v-else-if="!similar" class="m-0">
+        <UiPillButton variant="secondary" data-testid="track-panel-similar-ask" @click="askSimilar">{{
+          t('recommend_ask')
+        }}</UiPillButton>
+      </p>
+      <p v-else-if="similar.status === 'loading'" role="status" class="m-0 text-footnote text-muted">
+        {{ t('recommend_asking') }}
+      </p>
+      <p v-else-if="similar.status === 'unidentified'" class="m-0 text-footnote leading-[1.55] text-muted">
+        {{ t('similar_tracks_identify') }}
+      </p>
+      <p
+        v-else-if="similar.status === 'failed'"
+        class="m-0 flex flex-wrap items-center gap-12 text-footnote text-muted"
+      >
+        {{ t('recommend_failed') }}
+        <UiPillButton variant="secondary" data-testid="track-panel-similar-retry" @click="askSimilar">{{
+          t('identify_retry')
+        }}</UiPillButton>
+      </p>
+      <template v-else>
+        <ul v-if="similar.onCard.length" class="m-0 grid list-none gap-2 p-0" data-testid="track-panel-similar-list">
+          <li v-for="item in similar.onCard" :key="item.track.path ?? item.track.title">
+            <button
+              type="button"
+              class="w-full rounded-8 px-8 py-6 text-left text-footnote hover:bg-hover"
+              @click="openSimilar(item.track, $event)"
+            >
+              <span class="text-ink">{{ item.track.title }}</span>
+              <span v-if="item.track.artist" class="text-muted"> · {{ item.track.artist }}</span>
+            </button>
+          </li>
+        </ul>
+        <p v-else class="m-0 text-footnote leading-[1.55] text-muted">{{ t('similar_tracks_none') }}</p>
+        <p
+          v-if="recommendOutside() && similar.absent > 0"
+          class="mt-8 mb-0 text-footnote text-muted"
+          data-testid="track-panel-similar-absent"
+        >
+          {{ t('similar_tracks_absent', { count: similar.absent }) }}
+        </p>
+        <div v-if="similar.onCard.length" class="mt-12 flex flex-wrap gap-8">
+          <UiPillButton
+            v-if="inBrowser"
+            variant="secondary"
+            icon="play"
+            data-testid="track-panel-similar-play"
+            @click="playSimilarHere"
+            >{{ t('similar_play_here') }}</UiPillButton
+          >
+          <UiPillButton
+            variant="secondary"
+            icon="playlist"
+            :disabled="!onCard"
+            data-testid="track-panel-similar-add"
+            @click="addSimilarToPlaylist"
+            >{{ t('add_to_playlist') }}</UiPillButton
+          >
+        </div>
+      </template>
+    </section>
     <section class="mt-30" aria-labelledby="track-panel-lyrics" data-testid="track-panel-lyrics">
       <h3 id="track-panel-lyrics" class="mt-0 mb-10 text-title3 font-bold tracking-heading">
         {{ t('lyrics_heading') }}

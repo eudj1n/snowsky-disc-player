@@ -267,7 +267,7 @@ function playAlbum(item: Album): void {
       </CoverRow>
     </template>
     <template v-if="also.length">
-      <SectionHeading :title="t('genre_also', { genre: shown })" :subtitle="t('genre_also_by')" />
+      <SectionHeading :title="t('genre_also', { genre: shown })" :hint="t('genre_also_by')" />
       <CoverRow :label="t('genre_also', { genre: shown })" data-testid="genre-also">
         <CoverCard
           v-for="artist in also"
@@ -285,7 +285,7 @@ function playAlbum(item: Album): void {
       </CoverRow>
     </template>
     <section v-if="related.length" :aria-label="t('genre_related')" data-testid="genre-related">
-      <SectionHeading :title="t('genre_related')" :subtitle="t('genre_related_by')" />
+      <SectionHeading :title="t('genre_related')" :hint="t('genre_related_by')" />
       <p class="m-0 text-footnote leading-[1.8] text-secondary">
         <template v-for="(item, index) in related" :key="item.tag">
           <template v-if="index > 0"> · </template>

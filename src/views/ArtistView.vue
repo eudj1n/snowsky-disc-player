@@ -51,6 +51,7 @@ import {
   recommendationsAutomatic,
 } from '../stores/recommendations'
 import { artistTags, loadArtistTags } from '../stores/artistTags'
+import { recommendOutside } from '../stores/externalSources'
 import { genreRoute } from './captions'
 import { albumCardRoute, albumRoute, artistAlbumLines, artistRoute, withYear } from './captions'
 import { useCrumbs } from './crumbs'
@@ -207,13 +208,15 @@ const similar = computed(() =>
 )
 const similarOnCard = computed(() => similar.value.onCard.slice(0, SIMILAR_SHOWN))
 const similarAbsent = computed(() =>
-  similar.value.absent
-    .slice(0, ABSENT_SHOWN)
-    .map((artist) => artist.name)
-    .join(', '),
+  !recommendOutside()
+    ? ''
+    : similar.value.absent
+        .slice(0, ABSENT_SHOWN)
+        .map((artist) => artist.name)
+        .join(', '),
 )
 const lacking = computed(() =>
-  recommended.value?.status === 'ready'
+  recommended.value?.status === 'ready' && recommendOutside()
     ? groupsNotOnCard(
         recommended.value.groups,
         [...own.value, ...appears.value],
@@ -288,7 +291,7 @@ const recommendedNothing = computed(
       <CoverGrid><CoverCardSkeleton v-for="n in 4" :key="n" /></CoverGrid>
     </template>
     <p v-if="tags.length" class="mt-0 mb-24 text-footnote leading-[1.6] text-secondary" data-testid="artist-tags">
-      <span class="text-muted">{{ t('artist_tags') }}:&nbsp;</span>
+      <span class="text-muted" :title="t('artist_tags_by')">{{ t('artist_tags') }}:&nbsp;</span>
       <template v-for="(tag, index) in tags" :key="tag.tag">
         <template v-if="index > 0"> · </template>
         <RouterLink
@@ -332,7 +335,7 @@ const recommendedNothing = computed(
       />
     </section>
     <section v-if="popular.length" :aria-label="t('popular_tracks')" data-testid="popular-tracks">
-      <SectionHeading :title="t('popular_tracks')" :subtitle="t('popular_by')" :class="{ 'mt-0!': !hot.length }" />
+      <SectionHeading :title="t('popular_tracks')" :hint="t('popular_by')" :class="{ 'mt-0!': !hot.length }" />
       <TrackTiles
         :tracks="popularTracks"
         :play-label="t('play_label')"
@@ -406,7 +409,7 @@ const recommendedNothing = computed(
       :aria-label="t('similar_artists')"
       data-testid="similar-artists"
     >
-      <SectionHeading :title="t('similar_artists')" :subtitle="t('similar_by')" />
+      <SectionHeading :title="t('similar_artists')" :hint="t('similar_by')" />
       <CoverGrid v-if="similarOnCard.length">
         <CoverCard
           v-for="artist in similarOnCard"
@@ -432,7 +435,7 @@ const recommendedNothing = computed(
       :aria-label="t('lacking_albums', { name: creditLabel(name) })"
       data-testid="lacking-albums"
     >
-      <SectionHeading :title="t('lacking_albums', { name: creditLabel(name) })" :subtitle="t('lacking_by')" />
+      <SectionHeading :title="t('lacking_albums', { name: creditLabel(name) })" :hint="t('lacking_by')" />
       <ul class="m-0 grid list-none gap-6 p-0 text-footnote text-secondary">
         <li v-for="group in lacking" :key="group.mbid">{{ lackingLine(group) }}</li>
       </ul>

@@ -368,6 +368,8 @@ export async function groupReleases(groupId: string, fetchImpl: typeof fetch = f
 }
 
 /** One track of an edition, as its media list it. */
+const MBID_FORM = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+
 export interface EditionTrack {
   /** The medium's position: 1 for a single disc. */
   disc: number
@@ -375,6 +377,8 @@ export interface EditionTrack {
   number: string
   title: string
   lengthMs: number | null
+  /** The recording's MusicBrainz id (owner, 2026-10-23: what ListenBrainz's similarity goes by). */
+  recording: string | null
 }
 
 /** The tracks of an edition, medium by medium (one request, paced: only its id leaves); null when MusicBrainz does not know it. */
@@ -394,12 +398,14 @@ export async function releaseTracks(id: string, fetchImpl: typeof fetch = fetch)
     return tracks.flatMap((track, place) => {
       const title = text(track.title)
       if (!title) return []
+      const recording = text((track.recording as Record<string, unknown> | undefined)?.id)
       return [
         {
           disc,
           number: text(track.number) ?? String(typeof track.position === 'number' ? track.position : place + 1),
           title,
           lengthMs: typeof track.length === 'number' && track.length > 0 ? track.length : null,
+          recording: recording && MBID_FORM.test(recording) ? recording : null,
         },
       ]
     })

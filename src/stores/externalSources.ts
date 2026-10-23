@@ -132,6 +132,11 @@ export type ImageRole = 'photo' | 'background'
 /** The record of the artist images' kind, which says which images the automatic lookups take. */
 const ROLES_RECORD = 'artist_images'
 /**
+ * The record that lets the sources suggest what the card lacks (owner, 2026-10-23): similar artists and
+ * albums absent from it, similar tracks not here. Off, the listeners' data tells facts about the card alone.
+ */
+const RECOMMEND_RECORD = 'recommendations'
+/**
  * Which artist images the automatic lookups take, one lookup or a whole batch (owner, 2026-10-02): photos by
  * default, a background only when asked for, since one is not always wanted. By hand both can be chosen.
  */
@@ -143,13 +148,21 @@ interface SourcesModel {
   choices: Partial<Record<SourceName, SourceChoice>>
   /** Which artist images the automatic lookups take. */
   roles: Record<ImageRole, boolean>
+  /** The sources may suggest what the card lacks. */
+  recommend: boolean
   /** The card release declares the collection. */
   available: boolean
   /** The source (or the artist images' kind) whose change waits for the player's reply. */
-  busy: SourceName | typeof ROLES_RECORD | null
+  busy: SourceName | typeof ROLES_RECORD | typeof RECOMMEND_RECORD | null
 }
 
-const state = reactive<SourcesModel>({ choices: {}, roles: { ...DEFAULT_ROLES }, available: false, busy: null })
+const state = reactive<SourcesModel>({
+  choices: {},
+  roles: { ...DEFAULT_ROLES },
+  recommend: false,
+  available: false,
+  busy: null,
+})
 export const externalSources = readonly(state)
 
 const known = (name: string): name is SourceName => SOURCES.some((source) => source.name === name)
@@ -170,6 +183,8 @@ export const sourceAutomatic = (name: SourceName): boolean =>
   info(name).automatic && sourceAllowed(name) && state.choices[name]?.auto === true
 /** The automatic lookups take this kind of artist image. */
 export const autoImageRole = (role: ImageRole): boolean => state.roles[role]
+/** The sources may suggest what the card lacks (off: facts about the card alone). */
+export const recommendOutside = (): boolean => state.recommend
 
 export async function loadExternalSources(): Promise<void> {
   if (!connection.store) return
@@ -178,8 +193,10 @@ export async function loadExternalSources(): Promise<void> {
     state.available = records !== null
     const choices: SourcesModel['choices'] = {}
     const roles = { ...DEFAULT_ROLES }
+    let recommend = false
     for (const { value } of records ?? [])
-      if (value.source === ROLES_RECORD) {
+      if (value.source === RECOMMEND_RECORD) recommend = value.allowed === true
+      else if (value.source === ROLES_RECORD) {
         if (typeof value.auto_photo === 'boolean') roles.photo = value.auto_photo
         if (typeof value.auto_background === 'boolean') roles.background = value.auto_background
       } else if (known(value.source))
@@ -190,6 +207,7 @@ export async function loadExternalSources(): Promise<void> {
         }
     state.choices = choices
     state.roles = roles
+    state.recommend = recommend
   } catch {
     // Unreachable for now: the last choice stays.
   }
@@ -245,6 +263,13 @@ export async function chooseAutoImageRole(role: ImageRole, take: boolean): Promi
     at: Math.floor(Date.now() / 1000),
   })
   if (kept) state.roles = roles
+  return kept
+}
+
+/** Lets the sources suggest what the card lacks, or keeps them to facts about the card. */
+export async function chooseRecommend(on: boolean): Promise<boolean> {
+  const kept = await put(RECOMMEND_RECORD, { source: RECOMMEND_RECORD, allowed: on, at: Math.floor(Date.now() / 1000) })
+  if (kept) state.recommend = on
   return kept
 }
 

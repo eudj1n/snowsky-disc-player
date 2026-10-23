@@ -5,9 +5,10 @@
  * by the world's listen counts, and the albums the card lacks. Names are
  * compared loosely where no MusicBrainz id ties them.
  */
-import type { Album } from './album'
+import { byTrackNumber, type Album } from './album'
+import { creditArtists, creditLabel } from './artist'
 import { foldName } from './fold'
-import type { Track } from './track'
+import type { LibraryTrack, Track } from './track'
 
 /** An artist ListenBrainz's listeners play in the same sessions as another. */
 export interface SimilarArtist {
@@ -132,4 +133,96 @@ export function groupsNotOnCard(
     if (found.length >= limit) break
   }
   return found
+}
+
+/** A recording ListenBrainz's listeners play in the same sessions as another. */
+export interface SimilarRecording {
+  mbid: string
+  name: string
+  /** The credit as ListenBrainz spells it ("A & B"). */
+  artist: string
+  score: number
+}
+/** One track of an edition as the identity keeps it: its recording, and its title when read from MusicBrainz. */
+export interface EditionRecording {
+  recording: string | null
+  title: string | null
+}
+
+/**
+ * The recording of a track of the card, from its album's edition: by position when the card holds as many
+ * tracks as the edition (the usual case), else by the title where the edition's titles are known.
+ */
+export function recordingOfTrack(
+  albumTracks: readonly LibraryTrack[],
+  track: Pick<Track, 'path' | 'title'>,
+  edition: readonly EditionRecording[],
+): string | null {
+  const ordered = byTrackNumber(albumTracks)
+  if (ordered.length === edition.length) {
+    const index = ordered.findIndex((item) => item.path === track.path)
+    const found = index >= 0 ? edition[index]?.recording : null
+    if (found) return found
+  }
+  const key = foldName(track.title)
+  return edition.find((item) => item.title && foldName(item.title) === key)?.recording ?? null
+}
+
+export interface SimilarTrack {
+  track: LibraryTrack
+  score: number
+}
+export interface SimilarTracks {
+  onCard: SimilarTrack[]
+  /** Similar recordings the card lacks. */
+  absent: number
+}
+
+/**
+ * The similar recordings the card holds, in ListenBrainz's order, each track once and never the seed: by the
+ * track's recording where known, else by the title and the credit read loosely (the credit as a whole, or one
+ * artist of it named in ListenBrainz's).
+ */
+export function similarTracksOnCard(
+  similar: readonly SimilarRecording[],
+  tracks: readonly LibraryTrack[],
+  seed: Pick<Track, 'path'>,
+  recordingOf: (track: LibraryTrack) => string | null,
+): SimilarTracks {
+  const byRecording = new Map<string, LibraryTrack>()
+  const byName = new Map<string, LibraryTrack[]>()
+  for (const track of tracks) {
+    if (track.path === seed.path || !track.path) continue
+    const recording = recordingOf(track)
+    if (recording && !byRecording.has(recording)) byRecording.set(recording, track)
+    const key = foldName(track.title)
+    byName.set(key, [...(byName.get(key) ?? []), track])
+  }
+  const credited = (track: LibraryTrack, artist: string): boolean => {
+    if (!track.artist) return false
+    const wanted = foldName(artist)
+    return (
+      foldName(creditLabel(track.artist)) === wanted ||
+      creditArtists(track.artist).some((name) => foldName(name) !== '' && wanted.includes(foldName(name)))
+    )
+  }
+  const self = tracks.find((track) => track.path === seed.path) ?? null
+  const onCard: SimilarTrack[] = []
+  const taken = new Set<string>()
+  let absent = 0
+  for (const recording of similar) {
+    const track =
+      byRecording.get(recording.mbid) ??
+      byName.get(foldName(recording.name))?.find((item) => credited(item, recording.artist)) ??
+      null
+    if (!track?.path) {
+      // The seed itself, spelled as ListenBrainz spells it, is neither here nor lacking.
+      if (!(self && foldName(self.title) === foldName(recording.name) && credited(self, recording.artist))) absent++
+      continue
+    }
+    if (taken.has(track.path)) continue
+    taken.add(track.path)
+    onCard.push({ track, score: recording.score })
+  }
+  return { onCard, absent }
 }

@@ -3510,35 +3510,55 @@ test('shows what ListenBrainz says of an identified artist: popular tracks, simi
     await expect(similar.getByRole('article')).toHaveCount(2)
     await expect(similar.getByRole('link', { name: 'Open Northline' })).toBeVisible()
     await expect(similar.getByRole('link', { name: 'Open Kite Lines' })).toBeVisible()
-    await expect(page.getByTestId('similar-absent')).toHaveText('Not on the card: Echo Field.')
+    // What the card lacks is told only once the owner lets the sources suggest it (owner, 2026-10-23).
+    await expect(page.getByTestId('similar-absent')).toHaveCount(0)
+    await expect(page.getByTestId('lacking-albums')).toHaveCount(0)
+    await expect(page.getByTestId('recommend-state')).toHaveCount(0)
+    // The sections' provenance stays behind an info button, shown as a line while pressed.
+    await expect(similar.getByTestId('section-subtitle')).toHaveCount(0)
+    await similar.getByTestId('section-hint').click()
+    await expect(similar.getByTestId('section-subtitle')).toHaveText(
+      'Played in the same sessions by ListenBrainz listeners',
+    )
+    await chooseSources(
+      page,
+      { musicbrainz: { allowed: true }, listenbrainz: { allowed: true } },
+      { photo: true, background: false },
+      true,
+    )
+    await page.reload()
+    await page.getByTestId('recommend-ask').click()
+    await expect(page.getByTestId('similar-absent')).toHaveText('Not on the card: Echo Field.', { timeout: 15_000 })
     // The albums and EPs the card lacks: Afterglow is here, the single is not told.
     const lacking = page.getByTestId('lacking-albums')
     await expect(lacking.getByRole('heading', { name: 'Also by Mira Sol' })).toBeVisible()
     await expect(lacking).toContainText('Low Tide · 2021')
     await expect(lacking).not.toContainText('Afterglow')
     await expect(lacking).not.toContainText('Late Train')
-    await expect(page.getByTestId('recommend-state')).toHaveCount(0)
+    expect(asked).toHaveLength(6)
 
     // With the token (optional, kept with the source) and automatic: the page asks by itself, the token goes
     // to the main API only, and the most listened tracks come: the artist's tracks on the card by the
     // world's listens, one ListenBrainz knows not here. A partial answer was not kept, so all three go again.
-    await chooseSources(page, {
-      musicbrainz: { allowed: true },
-      listenbrainz: { allowed: true, auto: true, key: 'lb-test-token' },
-    })
+    await chooseSources(
+      page,
+      { musicbrainz: { allowed: true }, listenbrainz: { allowed: true, auto: true, key: 'lb-test-token' } },
+      { photo: true, background: false },
+      true,
+    )
     await page.reload()
     const popular = page.getByTestId('popular-tracks')
     await expect(popular.getByRole('heading', { name: 'Popular' })).toBeVisible({ timeout: 15_000 })
     await expect(page.getByTestId('recommend-ask')).toHaveCount(0)
     await expect(page.getByTestId('recommend-token')).toHaveCount(0)
-    expect(asked).toHaveLength(6)
+    expect(asked).toHaveLength(9)
     await expect(popular).toContainText('Afterglow (Reprise)')
     await expect(popular).toContainText('Late Train')
     await expect(popular).not.toContainText('Nowhere Here')
     // The complete answer is kept for a week: a reload sends nothing.
     await page.reload()
     await expect(page.getByTestId('popular-tracks')).toBeVisible({ timeout: 15_000 })
-    expect(asked).toHaveLength(6)
+    expect(asked).toHaveLength(9)
     await disconnect(page)
   } finally {
     for (const name of ['Mira Sol', 'Northline']) await forgetRecord(page, 'musicbrainz', { kind: 'artist', name })
@@ -3613,7 +3633,7 @@ test("shows the listeners' genres of an artist, and on a genre page the artists 
     await related.getByRole('link', { name: 'jazz' }).click()
     await page.getByRole('link', { name: 'Open Mira Sol' }).first().click()
     const tags = page.getByTestId('artist-tags')
-    await expect(tags).toHaveText('Genres by ListenBrainz listeners: jazz · ambient · vocal jazz')
+    await expect(tags).toHaveText('Genres: jazz · ambient · vocal jazz')
     await expect(tags.getByRole('link', { name: 'ambient' })).toHaveAttribute('href', '#/genre/Ambient')
     await expect(tags.getByRole('link', { name: 'vocal jazz' })).toHaveCount(0)
     expect(asked).toHaveLength(1)
@@ -3627,5 +3647,88 @@ test("shows the listeners' genres of an artist, and on a genre page the artists 
     await disconnect(page)
   } finally {
     for (const name of ['Mira Sol', 'Northline']) await forgetRecord(page, 'musicbrainz', { kind: 'artist', name })
+  }
+})
+
+test("offers a track's similar ones from its panel, by the edition's recording, with a queue from them", async ({
+  page,
+}, info) => {
+  test.skip(external, 'Needs the mock collection')
+  test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
+  test.skip(info.project.name === 'phone', 'On phones the panel covers the rows (the close button leads back)')
+  const RELEASE = '6f1d2c3b-0000-4000-8000-00000000d001'
+  const recording = (n: number) => `6f1d2c3b-0000-4000-8000-00000000e00${String(n)}`
+  const cors = { 'Access-Control-Allow-Origin': '*' }
+  // Blue Hours (Mira Sol) identified earlier, its edition's recordings kept with the identity (stage 3).
+  const key = JSON.stringify([JSON.stringify(['Blue Hours']), 'Mira Sol'])
+  const reply = await page.request.put('/api/store/musicbrainz/record', {
+    headers: changeHeaders(),
+    data: {
+      kind: 'album',
+      name: key,
+      mbid: RELEASE,
+      facts: { title: 'Blue Hours', artist: 'Mira Sol', recordings: [1, 2, 3, 4].map(recording) },
+      at: Math.floor(Date.now() / 1000),
+    },
+  })
+  expect(reply.status()).toBe(200)
+  const asked: string[] = []
+  await page.route('https://labs.api.listenbrainz.org/similar-recordings/**', (route) => {
+    asked.push(route.request().url())
+    return route.fulfill({
+      headers: cors,
+      json: [
+        { recording_mbid: recording(7), recording_name: 'Late train', artist_credit_name: 'Mira Sol', score: 300 },
+        {
+          recording_mbid: recording(8),
+          recording_name: 'Mr. Brightside',
+          artist_credit_name: 'The Killers',
+          score: 250,
+        },
+        { recording_mbid: recording(9), recording_name: 'City Glow', artist_credit_name: 'Northline', score: 200 },
+      ],
+    })
+  })
+  await page.route('https://musicbrainz.org/ws/2/**', (route) => {
+    asked.push(route.request().url())
+    return route.fulfill({ headers: cors, status: 503 })
+  })
+  try {
+    await chooseSources(
+      page,
+      { musicbrainz: { allowed: true }, listenbrainz: { allowed: true } },
+      { photo: true, background: false },
+      true,
+    )
+    await english(page)
+    await connectAndPair(page)
+    await page.goto('/#/album/Blue%20Hours/Mira%20Sol')
+    const title = (name: string) =>
+      page.getByRole('row').filter({ hasText: name }).getByRole('button', { name, exact: true })
+    await title('Window Seat').click()
+    const panel = page.getByTestId('track-panel')
+    await expect(panel.getByTestId('track-panel-title')).toHaveText('Window Seat')
+    const section = panel.getByTestId('track-panel-similar')
+    await expect(section.getByRole('heading', { name: 'Similar tracks' })).toBeVisible()
+    // Not automatic: asked on the click, by the third track's recording; MusicBrainz is not needed.
+    expect(asked).toEqual([])
+    await section.getByTestId('track-panel-similar-ask').click()
+    const list = section.getByTestId('track-panel-similar-list')
+    await expect(list.getByRole('listitem')).toHaveCount(2, { timeout: 15_000 })
+    expect(asked).toHaveLength(1)
+    expect(asked[0]).toContain(`recording_mbids=${recording(3)}`)
+    await expect(list.getByRole('listitem').first()).toContainText('Late Train · Mira Sol')
+    await expect(list.getByRole('listitem').nth(1)).toContainText('City Glow · Northline')
+    await expect(section.getByTestId('track-panel-similar-absent')).toHaveText('1 more is not on the card.')
+    await expect(section.getByTestId('track-panel-similar-add')).toBeEnabled()
+    // A similar track opens in the panel; its album is not identified, so ListenBrainz cannot be asked for it.
+    await list.getByRole('button', { name: /Late Train/ }).click()
+    await expect(panel.getByTestId('track-panel-title')).toHaveText('Late Train')
+    await expect(panel.getByTestId('track-panel-similar')).toContainText('Identify the album first')
+    expect(asked).toHaveLength(1)
+    await page.keyboard.press('Escape')
+    await disconnect(page)
+  } finally {
+    await forgetRecord(page, 'musicbrainz', { kind: 'album', name: key })
   }
 })

@@ -32,11 +32,13 @@ vi.mock('../../src/gateway/store', () => ({
 const {
   autoImageRole,
   chooseAutoImageRole,
+  chooseRecommend,
   chooseSource,
   externalSources,
   loadExternalSources,
   missingKey,
   missingNeeds,
+  recommendOutside,
   sourceAllowed,
   setSourceKey,
   sourceAutomatic,
@@ -102,6 +104,16 @@ describe('external sources', () => {
     expect([missingKey('fanarttv'), sourceAllowed('fanarttv')]).toEqual([true, false])
     await setSourceKey('listenbrainz', 'abc-123')
     expect(store.puts.at(-1)).toMatchObject({ source: 'listenbrainz', allowed: true, auto: true, api_key: 'abc-123' })
+  })
+
+  it('keeps the sources to facts about the card until the owner lets them suggest what it lacks', async () => {
+    expect(recommendOutside()).toBe(false)
+    await chooseRecommend(true)
+    expect(store.puts.at(-1)).toMatchObject({ source: 'recommendations', allowed: true })
+    expect(recommendOutside()).toBe(true)
+    store.records = [record({ source: 'recommendations', allowed: false })]
+    await loadExternalSources()
+    expect(recommendOutside()).toBe(false)
   })
 
   it('keeps the sources found by MusicBrainz ids off while MusicBrainz is not allowed', async () => {

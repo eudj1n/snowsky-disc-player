@@ -2975,8 +2975,53 @@ the listeners give them together with the page's genre, counted by artists.
       artists they tag so and the related genres" (one batch for two
       identified artists, the cards' order, the links, the artist's line
       from the tab, then automatic from the browser's copies).
-- [ ] Next: similar recordings ("in the style of {track}") with the
-      recording ids kept when an edition is confirmed.
+- [x] Next: similar recordings ("in the style of {track}") with the
+      recording ids kept when an edition is confirmed: stage 3, below.
+
+## ListenBrainz, stage 3: similar tracks and the recordings kept (owner, 2026-10-23), player-only
+
+The recording ids: `releaseTracks` reads each track's `recording.id`; the
+edition's list goes into the album identity's facts as `recordings` (track
+order, '' where unknown) when the record stays within the store's 3072
+bytes (some 65 tracks), at confirmation or, for an album identified
+earlier, when its tracks are first read (`stores/recordings.ts`: one paced
+request, the list kept in this browser for good and written to the identity
+when paired). A track's recording is found by position when the card holds
+as many tracks as the edition, else by title where the titles are known.
+Labs' `similar-recordings` (seven algorithms; the long window over every
+listener taken) answers by recording id with names and credits; the answer
+is laid against the card by recordings where the identities keep them,
+else by title and credit read loosely, the seed itself aside.
+
+- [x] The track's panel: "Similar tracks" with the Ask, asking, failed and
+      "identify the album first" states; rows open their track in the
+      panel; "Play these here" on the browser's side and "Add to playlist"
+      make a queue of them. The count not on the card shows only with the
+      Recommendations choice.
+- [x] The owner's three points the same day: (1) the sections' provenance
+      ("Played in the same sessions…", "By ListenBrainz listen counts") was
+      too much text: it stays behind an info button beside the title
+      (`SectionHeading` `hint`), shown as the subtitle while pressed; the
+      artist's genres line keeps "Genres" with the provenance as its
+      title. (2) What the card lacks (similar artists absent, the albums
+      you lack, similar tracks not here) is a choice of its own, named
+      Recommendations, in the Similar music group of Settings: the record
+      `recommendations` of `external_sources` (`allowed`; no new field, the
+      store's schema admits none), off by default, so the listeners' data
+      tells facts about the card alone until the owner asks for more. The
+      source kind is named Similar music since. (3) Cover Art Archive is
+      already a source here (since 2026-10-01): covers by MusicBrainz
+      release id, the images from archive.org's hosts.
+- [x] Evidence: unit tests (`recordingOfTrack`, `similarTracksOnCard`, the
+      Labs request, the recording id in `releaseTracks`, the
+      Recommendations record); e2e "offers a track's similar ones from its
+      panel" (desktop: the identity's recordings, the third track's id in
+      the request, two rows, one not on the card, a row opening its track
+      whose album is not identified) and the earlier ListenBrainz e2e now
+      covering the choice and the hint button. The mock suite after the
+      three stages: 178 passed, 18 skipped (2026-10-23).
+- [ ] Next stages: fresh releases on New; My wave; the account's LB Radio
+      with the token already kept.
 
 ## The app's origins are its own (owner, 2026-10-23), player-only
 

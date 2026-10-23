@@ -9,12 +9,28 @@
  * counts, cheap to read again, and nothing the owner chose.
  */
 import { reactive, readonly } from 'vue'
-import type { PopularGroup, PopularRecording, SimilarArtist } from '../domain/recommendations'
-import { ListenBrainzTokenNeeded, popularGroups, popularRecordings, similarArtists } from '../gateway/listenbrainz'
+import {
+  similarTracksOnCard,
+  type PopularGroup,
+  type PopularRecording,
+  type SimilarArtist,
+  type SimilarRecording,
+  type SimilarTrack,
+} from '../domain/recommendations'
+import type { LibraryTrack } from '../domain/track'
+import {
+  ListenBrainzTokenNeeded,
+  popularGroups,
+  popularRecordings,
+  similarArtists,
+  similarRecordings,
+} from '../gateway/listenbrainz'
 import { cacheGet, cacheSet } from '../lib/idb'
 import { originAllowed } from './connection'
 import { sourceAllowed, sourceAutomatic, sourceKey } from './externalSources'
+import { tracks } from './library'
 import { artistIdentity } from './musicbrainzIds'
+import { identifiedAlbumOf, knownRecordings, recordingOf } from './recordings'
 
 export type RecommendationStatus = 'loading' | 'ready' | 'failed'
 export interface ArtistRecommendations {
@@ -95,4 +111,56 @@ export async function lookUpArtistRecommendations(name: string): Promise<void> {
 /** Forgets what this tab holds (tests). */
 export function resetRecommendations(): void {
   state.artists = {}
+  similar.byPath = {}
+}
+
+/* Similar tracks (stage 3, the same day): by the track's recording, matched on the card. */
+export type SimilarStatus = 'unidentified' | 'loading' | 'ready' | 'failed'
+export interface TrackSimilar {
+  status: SimilarStatus
+  onCard: SimilarTrack[]
+  absent: number
+}
+const similar = reactive<{ byPath: Record<string, TrackSimilar> }>({ byPath: {} })
+export const similarTracks = readonly(similar)
+const similarKey = (recording: string) => `listenbrainz:similar:${recording}`
+interface KeptSimilar {
+  at: number
+  recordings: SimilarRecording[]
+}
+
+/** What this tab knows of a track's similar ones. */
+export const trackSimilar = (track: Pick<LibraryTrack, 'path'>): TrackSimilar | null =>
+  track.path ? (similar.byPath[track.path] ?? null) : null
+/** The track's album is identified, so ListenBrainz can be asked about it. */
+export const canAskSimilar = (track: LibraryTrack): boolean => identifiedAlbumOf(track) !== null
+
+/**
+ * Asks ListenBrainz for the recordings its listeners play with this track's (the browser's week-old answer
+ * when there is one), laid against the card: by recordings where the identities keep them, else by names.
+ */
+export async function lookUpSimilarTracks(track: LibraryTrack): Promise<void> {
+  const path = track.path
+  if (!path || !recommendationsAllowed() || similar.byPath[path]?.status === 'loading') return
+  const set = (value: TrackSimilar) => (similar.byPath = { ...similar.byPath, [path]: value })
+  set({ status: 'loading', onCard: [], absent: 0 })
+  const recording = await recordingOf(track)
+  if (!recording) {
+    set({ status: 'unidentified', onCard: [], absent: 0 })
+    return
+  }
+  const now = Date.now()
+  let recordings: SimilarRecording[]
+  const kept = await cacheGet<KeptSimilar>(similarKey(recording))
+  if (kept && typeof kept.at === 'number' && now - kept.at < KEEP_MS) recordings = kept.recordings
+  else
+    try {
+      recordings = await similarRecordings(recording)
+      await cacheSet(similarKey(recording), { at: now, recordings } satisfies KeptSimilar)
+    } catch {
+      set({ status: 'failed', onCard: [], absent: 0 })
+      return
+    }
+  const found = similarTracksOnCard(recordings, tracks.value, track, knownRecordings())
+  set({ status: 'ready', onCard: found.onCard, absent: found.absent })
 }

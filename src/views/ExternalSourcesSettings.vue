@@ -17,6 +17,7 @@ import { originAllowed, originHosts } from '../stores/connection'
 import { coverOriginsAdmitted } from '../stores/coverSearch'
 import {
   chooseAutoImageRole,
+  chooseRecommend,
   chooseSource,
   externalSources,
   missingKey,
@@ -153,6 +154,11 @@ const ROLES: readonly { role: ImageRole; text: MessageKey }[] = [
   { role: 'photo', text: 'source_role_photo' },
   { role: 'background', text: 'source_role_background' },
 ]
+async function chooseRecommendations(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement
+  await chooseRecommend(input.checked)
+  input.checked = externalSources.recommend
+}
 async function chooseRole(event: Event, role: ImageRole): Promise<void> {
   const input = event.target as HTMLInputElement
   await chooseAutoImageRole(role, input.checked)
@@ -207,6 +213,27 @@ async function chooseRole(event: Event, role: ImageRole): Promise<void> {
           </label>
         </div>
         <p class="m-0 text-caption leading-[1.5] text-muted">{{ t('source_roles_about') }}</p>
+      </div>
+      <!-- The similar-music group's choice (owner, 2026-10-23): facts about the card alone, or also what it lacks. -->
+      <div
+        v-if="group.kind === 'recommendations'"
+        class="mb-14 grid gap-4 border-b border-line pb-14"
+        role="group"
+        :aria-label="t('source_recommend')"
+        data-testid="source-recommend"
+      >
+        <label class="flex items-center gap-8 text-footnote text-ink has-disabled:text-muted">
+          <input
+            type="checkbox"
+            class="accent-progress-fill"
+            :checked="externalSources.recommend"
+            :disabled="blocked !== null || externalSources.busy !== null"
+            data-testid="source-recommend-on"
+            @change="chooseRecommendations($event)"
+          />
+          {{ t('source_recommend') }}
+        </label>
+        <p class="m-0 text-caption leading-[1.5] text-muted">{{ t('source_recommend_about') }}</p>
       </div>
       <div class="grid gap-10">
         <article

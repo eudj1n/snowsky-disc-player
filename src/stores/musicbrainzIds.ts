@@ -63,6 +63,8 @@ export interface AlbumFacts {
   /** From the release group: when the album first came out, and its secondary types (Live, Compilation…). */
   firstRelease?: string | null
   secondaryTypes?: string[]
+  /** The edition's recordings in track order, '' where unknown (owner, 2026-10-23), when they fit the record. */
+  recordings?: string[]
 }
 export interface AlbumIdentity {
   /** The edition (MusicBrainz release). */
@@ -175,16 +177,57 @@ export const albumFacts = (release: ReleaseCandidate, group: ReleaseGroupFacts |
   ...(group ? { firstRelease: group.firstRelease, secondaryTypes: group.secondaryTypes.slice(0, 6) } : {}),
 })
 
+/** The facts with the edition's recordings, when the record still fits the store's limit. */
+export function withRecordings(facts: AlbumFacts, recordings: readonly string[] | null): AlbumFacts {
+  if (!recordings?.length) return facts
+  const list = recordings.map((id) => (MBID.test(id) ? id : ''))
+  const full = { ...facts, recordings: list }
+  return new TextEncoder().encode(JSON.stringify(full)).length <= FACTS_BYTES ? full : facts
+}
+
+/**
+ * Keeps the edition's recordings with an album identified before they were kept (owner, 2026-10-23): the
+ * record is written again with them when it fits; false when it does not, or the player does not keep it.
+ */
+export async function keepAlbumRecordings(key: string, recordings: readonly string[]): Promise<boolean> {
+  const identity = state.albums[key]
+  if (!identity?.facts || identity.facts.recordings) return false
+  const facts = withRecordings(identity.facts, recordings)
+  if (!facts.recordings) return false
+  state.albums = { ...state.albums, [key]: { ...identity, facts } }
+  const token = pairingToken()
+  if (!token || !state.available || !identity.kept) return false
+  try {
+    const outcome = await putRecord(
+      http,
+      'musicbrainz',
+      {
+        kind: 'album',
+        name: key,
+        mbid: identity.mbid,
+        ...(identity.group ? { group: identity.group } : {}),
+        facts,
+        at: Math.floor(Date.now() / 1000),
+      },
+      token,
+    )
+    return outcome === 'confirmed'
+  } catch {
+    return false
+  }
+}
+
 /** Confirms which edition an album is (its MusicBrainz release and group); the player keeps it when paired. */
 export async function confirmAlbum(
   key: string,
   release: ReleaseCandidate,
   group: ReleaseGroupFacts | null = null,
+  recordings: readonly string[] | null = null,
 ): Promise<boolean> {
   const identity: AlbumIdentity = {
     mbid: release.id,
     group: release.group && MBID.test(release.group) ? release.group : null,
-    facts: albumFacts(release, group),
+    facts: withRecordings(albumFacts(release, group), recordings),
     kept: false,
   }
   state.albums = { ...state.albums, [key]: identity }
@@ -489,7 +532,10 @@ export async function confirmEdition(
   search.saving = true
   try {
     const group = release.group && identifyAllowed() ? await releaseGroup(release.group).catch(() => null) : null
-    const kept = await confirmAlbum(key, release, group)
+    // The edition's tracks were read for the choice: their recordings go with the identity (owner, 2026-10-23).
+    const read = tracklists.get(release.id)
+    const recordings = read?.status === 'ready' ? read.tracks.map((track) => track.recording ?? '') : null
+    const kept = await confirmAlbum(key, release, group, recordings)
     if (artist) await identifyCreditedArtist(artist, release)
     if (search.key === key) forgetCandidates()
     return kept

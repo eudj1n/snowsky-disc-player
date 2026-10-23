@@ -180,8 +180,14 @@ describe('MusicBrainz releases', () => {
                 {
                   position: 1,
                   tracks: [
-                    { position: 1, number: '1', title: 'Going Under', length: 214_000 },
-                    { position: 2, title: 'Bring Me to Life', length: null },
+                    {
+                      position: 1,
+                      number: '1',
+                      title: 'Going Under',
+                      length: 214_000,
+                      recording: { id: '9c9f1380-2516-4fc9-a3e6-f9f61941d090' },
+                    },
+                    { position: 2, title: 'Bring Me to Life', length: null, recording: { id: 'not-an-mbid' } },
                   ],
                 },
                 { position: 2, tracks: [{ position: 1, number: 'A1', title: 'Whisper', length: 0 }, { title: '' }] },
@@ -189,10 +195,17 @@ describe('MusicBrainz releases', () => {
             }),
       )
     }) as typeof fetch
+    // The recording's id goes with each track (owner, 2026-10-23), only in MusicBrainz's form.
     expect(await releaseTracks('r1', fetchImpl)).toEqual([
-      { disc: 1, number: '1', title: 'Going Under', lengthMs: 214_000 },
-      { disc: 1, number: '2', title: 'Bring Me to Life', lengthMs: null },
-      { disc: 2, number: 'A1', title: 'Whisper', lengthMs: null },
+      {
+        disc: 1,
+        number: '1',
+        title: 'Going Under',
+        lengthMs: 214_000,
+        recording: '9c9f1380-2516-4fc9-a3e6-f9f61941d090',
+      },
+      { disc: 1, number: '2', title: 'Bring Me to Life', lengthMs: null, recording: null },
+      { disc: 2, number: 'A1', title: 'Whisper', lengthMs: null, recording: null },
     ])
     expect(asked[0]).toBe('https://musicbrainz.org/ws/2/release/r1?inc=recordings&fmt=json')
     resetPacing()

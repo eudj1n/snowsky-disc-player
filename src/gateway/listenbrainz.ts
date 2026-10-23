@@ -14,7 +14,7 @@
  * as `Authorization: Token …` to the main API only: Labs admits no such
  * header in its CORS preflight, and needs none.
  */
-import type { PopularGroup, PopularRecording, SimilarArtist } from '../domain/recommendations'
+import type { PopularGroup, PopularRecording, SimilarArtist, SimilarRecording } from '../domain/recommendations'
 import type { WeightedTag } from '../domain/tags'
 
 const API = 'https://api.listenbrainz.org/1'
@@ -23,9 +23,12 @@ const TIMEOUT_MS = 20_000
 /** The Labs algorithm the ListenBrainz site itself uses for similar artists (2026-10-23). */
 const SIMILAR_ARTISTS_ALGORITHM =
   'session_based_days_7500_session_300_contribution_5_threshold_10_limit_100_filter_True_skip_30'
+/** For similar recordings: the long window over every listener (one of seven Labs offers, 2026-10-23). */
+const SIMILAR_RECORDINGS_ALGORITHM = 'session_based_days_7500_session_300_contribution_5_threshold_15_limit_50_skip_30'
 export const LISTENBRAINZ_SITE = 'https://listenbrainz.org'
 /** How many of each the page keeps. */
 export const SIMILAR_ARTISTS_KEPT = 40
+export const SIMILAR_RECORDINGS_KEPT = 100
 export const POPULAR_RECORDINGS_KEPT = 200
 export const POPULAR_GROUPS_KEPT = 60
 /** Artists per metadata request (the answer runs to some 3 KB an artist). */
@@ -175,4 +178,20 @@ export async function artistTags(
     for (const id of batch) found[id] ??= []
   }
   return found
+}
+
+/** Recordings ListenBrainz's listeners play in the same sessions as this one, the closest first. */
+export async function similarRecordings(mbid: string, fetchImpl: typeof fetch = fetch): Promise<SimilarRecording[]> {
+  const query = new URLSearchParams({ recording_mbids: mbid, algorithm: SIMILAR_RECORDINGS_ALGORITHM })
+  const body = await read(`${LABS}/similar-recordings/json?${query}`, fetchImpl)
+  if (!Array.isArray(body)) return []
+  const found: SimilarRecording[] = []
+  for (const item of body) {
+    const row = record(item)
+    const id = text(row?.recording_mbid)
+    const name = text(row?.recording_name)
+    if (!row || !id || !MBID.test(id) || !name || id === mbid) continue
+    found.push({ mbid: id, name, artist: text(row.artist_credit_name) ?? '', score: count(row.score) })
+  }
+  return found.sort((a, b) => b.score - a.score).slice(0, SIMILAR_RECORDINGS_KEPT)
 }

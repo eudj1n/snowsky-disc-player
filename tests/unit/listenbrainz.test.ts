@@ -6,6 +6,7 @@ import {
   popularRecordings,
   resetListenBrainzPacing,
   similarArtists,
+  similarRecordings,
   SIMILAR_ARTISTS_KEPT,
   TAGS_BATCH,
 } from '../../src/gateway/listenbrainz'
@@ -148,6 +149,33 @@ describe('ListenBrainz', () => {
     ])
     expect(found[ids[1] ?? '']).toEqual([])
     expect(found[ids[TAGS_BATCH] ?? '']).toHaveLength(2)
+  })
+
+  it('reads similar recordings with their credit, the closest first, the recording itself aside', async () => {
+    const asked: string[] = []
+    const found = await similarRecordings(
+      OTHER,
+      answer(
+        200,
+        [
+          { recording_mbid: THIRD, recording_name: 'Somewhere Only We Know', artist_credit_name: 'Keane', score: 310 },
+          { recording_mbid: MBID, recording_name: 'Mr. Brightside', artist_credit_name: 'The Killers', score: 356 },
+          { recording_mbid: OTHER, recording_name: 'Itself', artist_credit_name: 'X', score: 999 },
+          { recording_mbid: 'nope', recording_name: 'Broken', score: 1 },
+        ],
+        asked,
+      ),
+    )
+    expect(found).toEqual([
+      { mbid: MBID, name: 'Mr. Brightside', artist: 'The Killers', score: 356 },
+      { mbid: THIRD, name: 'Somewhere Only We Know', artist: 'Keane', score: 310 },
+    ])
+    expect(asked[0]).toMatch(
+      /^https:\/\/labs\.api\.listenbrainz\.org\/similar-recordings\/json\?recording_mbids=a74b1b7f/,
+    )
+    expect(asked[0]).toContain(
+      'algorithm=session_based_days_7500_session_300_contribution_5_threshold_15_limit_50_skip_30',
+    )
   })
 
   it('waits out the window a 429 names, then asks once more', async () => {
