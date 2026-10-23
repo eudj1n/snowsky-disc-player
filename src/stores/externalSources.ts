@@ -16,7 +16,8 @@
  * corrections for the equalizer, read on a click only. lrc.red (the same
  * day) comes before LRCLIB among the lyrics sources: it has word timings.
  * ListenBrainz (owner, 2026-10-23) brings recommendations by MusicBrainz id:
- * similar artists and the world's listen counts.
+ * similar artists and the world's listen counts; the owner's user token is
+ * optional there (the most listened recordings need it since that day).
  */
 import { reactive, readonly, watch } from 'vue'
 import { putRecord, readCollection } from '../gateway/store'
@@ -42,6 +43,8 @@ export interface SourceInfo {
   automatic: boolean
   /** It is asked only with the owner's own key, and where that key is got. */
   key?: string
+  /** The key is optional: the source works without it and does more with it (ListenBrainz's token). */
+  keyOptional?: boolean
 }
 
 export const SOURCES: readonly SourceInfo[] = [
@@ -87,6 +90,8 @@ export const SOURCES: readonly SourceInfo[] = [
     site: 'https://listenbrainz.org',
     needs: ['musicbrainz'],
     automatic: true,
+    key: 'https://listenbrainz.org/settings/',
+    keyOptional: true,
   },
   {
     name: 'autoeq',
@@ -154,8 +159,9 @@ export const missingNeeds = (name: SourceName): SourceName[] =>
   info(name).needs.filter((need) => state.choices[need]?.allowed !== true)
 /** The key the source is asked with, when it takes one. */
 export const sourceKey = (name: SourceName): string | null => state.choices[name]?.key ?? null
-/** A source that takes a key has none yet. */
-export const missingKey = (name: SourceName): boolean => info(name).key !== undefined && sourceKey(name) === null
+/** A source that cannot work without a key has none yet. */
+export const missingKey = (name: SourceName): boolean =>
+  info(name).key !== undefined && !info(name).keyOptional && sourceKey(name) === null
 /** The owner allowed the source and what it needs (the release's origins are checked by its own module). */
 export const sourceAllowed = (name: SourceName): boolean =>
   state.choices[name]?.allowed === true && missingNeeds(name).length === 0 && !missingKey(name)

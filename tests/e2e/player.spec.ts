@@ -3447,6 +3447,13 @@ test('shows what ListenBrainz says of an identified artist: popular tracks, simi
   await page.route('https://api.listenbrainz.org/**', (route) => {
     const url = route.request().url()
     asked.push(url)
+    // Since 2026-10-23 the most listened recordings need the owner's token; ListenBrainz says so with a 401.
+    if (url.includes('top-recordings') && route.request().headers()['authorization'] !== 'Token lb-test-token')
+      return route.fulfill({
+        headers: cors,
+        status: 401,
+        json: { code: 401, error: 'you need to provide an Auth token' },
+      })
     return route.fulfill({
       headers: cors,
       json: url.includes('top-recordings')
@@ -3489,14 +3496,15 @@ test('shows what ListenBrainz says of an identified artist: popular tracks, simi
     await expect(ask).toBeVisible({ timeout: 15_000 })
     expect(asked).toEqual([])
     await ask.click()
-    const popular = page.getByTestId('popular-tracks')
-    await expect(popular.getByRole('heading', { name: 'Popular' })).toBeVisible({ timeout: 15_000 })
-    expect(asked).toHaveLength(3)
-    // The artist's tracks on the card by the world's listens; one ListenBrainz knows is not here.
-    await expect(popular).toContainText('Afterglow (Reprise)')
-    await expect(popular).toContainText('Late Train')
-    await expect(popular).not.toContainText('Nowhere Here')
     const similar = page.getByTestId('similar-artists')
+    await expect(similar.getByRole('heading', { name: 'Similar artists' })).toBeVisible({ timeout: 15_000 })
+    expect(asked).toHaveLength(3)
+    // Without the owner's token ListenBrainz withholds the most listened tracks: the rest shows, with a hint.
+    await expect(page.getByTestId('popular-tracks')).toHaveCount(0)
+    await expect(page.getByTestId('recommend-token')).toContainText('withholds the most listened tracks')
+    await expect(
+      page.getByTestId('recommend-token').getByRole('link', { name: 'Enter it under External sources' }),
+    ).toBeVisible()
     await expect(similar.getByRole('article')).toHaveCount(2)
     await expect(similar.getByRole('link', { name: 'Open Northline' })).toBeVisible()
     await expect(similar.getByRole('link', { name: 'Open Kite Lines' })).toBeVisible()
@@ -3509,12 +3517,26 @@ test('shows what ListenBrainz says of an identified artist: popular tracks, simi
     await expect(lacking).not.toContainText('Late Train')
     await expect(page.getByTestId('recommend-state')).toHaveCount(0)
 
-    // Automatic: the page asks by itself, from this browser's week-old copy (nothing sent again).
-    await chooseSources(page, { musicbrainz: { allowed: true }, listenbrainz: { allowed: true, auto: true } })
+    // With the token (optional, kept with the source) and automatic: the page asks by itself, the token goes
+    // to the main API only, and the most listened tracks come: the artist's tracks on the card by the
+    // world's listens, one ListenBrainz knows not here. A partial answer was not kept, so all three go again.
+    await chooseSources(page, {
+      musicbrainz: { allowed: true },
+      listenbrainz: { allowed: true, auto: true, key: 'lb-test-token' },
+    })
+    await page.reload()
+    const popular = page.getByTestId('popular-tracks')
+    await expect(popular.getByRole('heading', { name: 'Popular' })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByTestId('recommend-ask')).toHaveCount(0)
+    await expect(page.getByTestId('recommend-token')).toHaveCount(0)
+    expect(asked).toHaveLength(6)
+    await expect(popular).toContainText('Afterglow (Reprise)')
+    await expect(popular).toContainText('Late Train')
+    await expect(popular).not.toContainText('Nowhere Here')
+    // The complete answer is kept for a week: a reload sends nothing.
     await page.reload()
     await expect(page.getByTestId('popular-tracks')).toBeVisible({ timeout: 15_000 })
-    await expect(page.getByTestId('recommend-ask')).toHaveCount(0)
-    expect(asked).toHaveLength(3)
+    expect(asked).toHaveLength(6)
     await disconnect(page)
   } finally {
     for (const name of ['Mira Sol', 'Northline']) await forgetRecord(page, 'musicbrainz', { kind: 'artist', name })

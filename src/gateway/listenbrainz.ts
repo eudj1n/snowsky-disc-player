@@ -7,6 +7,12 @@
  * requests a window): one request at a time, and a 429 waits out the
  * window it names before the next. Answers are trimmed to what the page
  * shows (the full ones run to a megabyte for a well-known artist).
+ *
+ * Since 2026-10-23 ListenBrainz answers an artist's most listened
+ * recordings only with a user token ("due to bad actors and AI scrapers";
+ * 401 without one). The owner's token, from the ListenBrainz settings, goes
+ * as `Authorization: Token …` to the main API only: Labs admits no such
+ * header in its CORS preflight, and needs none.
  */
 import type { PopularGroup, PopularRecording, SimilarArtist } from '../domain/recommendations'
 
@@ -29,16 +35,24 @@ const count = (value: unknown): number => (typeof value === 'number' && Number.i
 const record = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' ? (value as Record<string, unknown>) : null
 
+/** ListenBrainz wants the owner's token for this (401); asked again only with one. */
+export class ListenBrainzTokenNeeded extends Error {}
+
 /* One request at a time, each after the window a 429 named. */
 let chain: Promise<unknown> = Promise.resolve()
 let resumeAt = 0
 const sleep = (ms: number) => new Promise<void>((done) => setTimeout(done, ms))
-async function read(url: string, fetchImpl: typeof fetch): Promise<unknown> {
+async function read(url: string, fetchImpl: typeof fetch, token: string | null = null): Promise<unknown> {
   const task = chain.then(async () => {
     for (let attempt = 0; attempt < 2; attempt++) {
       const wait = resumeAt - Date.now()
       if (wait > 0) await sleep(wait)
-      const response = await fetchImpl(url, { signal: AbortSignal.timeout(TIMEOUT_MS), credentials: 'omit' })
+      const response = await fetchImpl(url, {
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+        credentials: 'omit',
+        ...(token ? { headers: { Authorization: `Token ${token}` } } : {}),
+      })
+      if (response.status === 401) throw new ListenBrainzTokenNeeded('ListenBrainz wants a user token')
       if (response.status === 429) {
         const seconds = Number(response.headers.get('X-RateLimit-Reset-In'))
         resumeAt = Date.now() + (Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : 10_000)
@@ -75,9 +89,13 @@ export async function similarArtists(mbid: string, fetchImpl: typeof fetch = fet
   return found.sort((a, b) => b.score - a.score).slice(0, SIMILAR_ARTISTS_KEPT)
 }
 
-/** The artist's recordings by ListenBrainz's listen counts, the most listened first. */
-export async function popularRecordings(mbid: string, fetchImpl: typeof fetch = fetch): Promise<PopularRecording[]> {
-  const body = await read(`${API}/popularity/top-recordings-for-artist/${encodeURIComponent(mbid)}`, fetchImpl)
+/** The artist's recordings by ListenBrainz's listen counts, the most listened first; the owner's token when there is one. */
+export async function popularRecordings(
+  mbid: string,
+  fetchImpl: typeof fetch = fetch,
+  token: string | null = null,
+): Promise<PopularRecording[]> {
+  const body = await read(`${API}/popularity/top-recordings-for-artist/${encodeURIComponent(mbid)}`, fetchImpl, token)
   if (!Array.isArray(body)) return []
   const found: PopularRecording[] = []
   for (const item of body) {
@@ -91,8 +109,16 @@ export async function popularRecordings(mbid: string, fetchImpl: typeof fetch = 
 }
 
 /** The artist's release groups by ListenBrainz's listen counts, the most listened first. */
-export async function popularGroups(mbid: string, fetchImpl: typeof fetch = fetch): Promise<PopularGroup[]> {
-  const body = await read(`${API}/popularity/top-release-groups-for-artist/${encodeURIComponent(mbid)}`, fetchImpl)
+export async function popularGroups(
+  mbid: string,
+  fetchImpl: typeof fetch = fetch,
+  token: string | null = null,
+): Promise<PopularGroup[]> {
+  const body = await read(
+    `${API}/popularity/top-release-groups-for-artist/${encodeURIComponent(mbid)}`,
+    fetchImpl,
+    token,
+  )
   if (!Array.isArray(body)) return []
   const found: PopularGroup[] = []
   for (const item of body) {

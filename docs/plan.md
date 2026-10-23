@@ -2926,6 +2926,21 @@ player: the world's counts, nothing the owner chose.
       with nothing sent again); screenshots light and dark, desktop and
       phone (`work/shots-recommend`); Settings shows the new group. The
       mock suite after it: 175 passed, 17 skipped (2026-10-23).
+- [x] The owner's token (the same day, in the evening): ListenBrainz began
+      answering `top-recordings-for-artist` with 401 ("due to bad actors
+      and AI scrapers … provide an Auth token"), where it had answered
+      200 in the afternoon; the release groups and Labs stay open. The
+      source takes the owner's user token as an optional key (Settings,
+      "User token", from the ListenBrainz settings page; `keyOptional` on
+      the source, so it works without one), sent as `Authorization: Token`
+      to the main API only (Labs admits no such header in its preflight).
+      The store takes the three answers apart: a part withheld for want of
+      the token leaves its section empty and the page says so with a link
+      to Settings; a partial answer is not kept, so a token entered later
+      is tried at once. Evidence: unit tests (the header, the 401 as a
+      named error, the optional key in the sources store); the e2e now
+      runs without the token (similar and lacking albums, the hint) and
+      then with it (Popular, six requests, then nothing from the copy).
 - [ ] Next stages, in the analysis' order: tags with weights and tag
       similarity (fuller genres, "in the style of {genre}"); similar
       recordings ("in the style of {track}", a queue from it); fresh

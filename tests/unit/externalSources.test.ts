@@ -35,8 +35,10 @@ const {
   chooseSource,
   externalSources,
   loadExternalSources,
+  missingKey,
   missingNeeds,
   sourceAllowed,
+  setSourceKey,
   sourceAutomatic,
 } = await import('../../src/stores/externalSources')
 
@@ -83,6 +85,23 @@ describe('external sources', () => {
     await chooseSource('lrclib', { allowed: false })
     expect(store.puts.at(-1)).toMatchObject({ source: 'lrclib', allowed: false, auto: false })
     expect(sourceAllowed('lrclib')).toBe(false)
+  })
+
+  it('lets a source with an optional key work without it (ListenBrainz), unlike one that needs its key', async () => {
+    store.records = [
+      record({ source: 'musicbrainz', allowed: true }),
+      record({ source: 'listenbrainz', allowed: true, auto: true }),
+      record({ source: 'fanarttv', allowed: true, auto: true }),
+    ]
+    await loadExternalSources()
+    expect([missingKey('listenbrainz'), sourceAllowed('listenbrainz'), sourceAutomatic('listenbrainz')]).toEqual([
+      false,
+      true,
+      true,
+    ])
+    expect([missingKey('fanarttv'), sourceAllowed('fanarttv')]).toEqual([true, false])
+    await setSourceKey('listenbrainz', 'abc-123')
+    expect(store.puts.at(-1)).toMatchObject({ source: 'listenbrainz', allowed: true, auto: true, api_key: 'abc-123' })
   })
 
   it('keeps the sources found by MusicBrainz ids off while MusicBrainz is not allowed', async () => {

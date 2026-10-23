@@ -287,6 +287,11 @@ export const ru: Messages = {
   source_listenbrainz_sends:
     'Отправляет в ListenBrainz идентификатор исполнителя в MusicBrainz; ничего из вашего прослушивания.',
   source_listenbrainz_auto: 'когда открывается опознанный исполнитель',
+  source_listenbrainz_key:
+    'Пользовательский токен ListenBrainz не обязателен: без него ListenBrainz отвечает про похожих исполнителей и альбомы, но с октября 2026 года не отдаёт самые слушаемые треки. Он есть на странице настроек ListenBrainz.',
+  source_key_token: 'Пользовательский токен',
+  recommend_token: 'Без вашего токена ListenBrainz не отдаёт самые слушаемые треки.',
+  recommend_token_link: 'Ввести его в разделе «Внешние источники»',
   popular_tracks: 'Популярное',
   popular_by: 'По прослушиваниям в ListenBrainz',
   similar_artists: 'Похожие исполнители',

@@ -278,6 +278,11 @@ export const en = {
     'Similar artists, the world’s most listened tracks and the albums you lack, on an identified artist’s page. Kept in this browser for a week.',
   source_listenbrainz_sends: 'Sends the artist’s MusicBrainz id to ListenBrainz; nothing of your listening.',
   source_listenbrainz_auto: 'when the page of an identified artist opens',
+  source_listenbrainz_key:
+    'Your ListenBrainz user token is optional: without it ListenBrainz answers similar artists and albums but, since October 2026, withholds the most listened tracks. It is on your ListenBrainz settings page.',
+  source_key_token: 'User token',
+  recommend_token: 'ListenBrainz withholds the most listened tracks without your user token.',
+  recommend_token_link: 'Enter it under External sources',
   popular_tracks: 'Popular',
   popular_by: 'By ListenBrainz listen counts',
   similar_artists: 'Similar artists',

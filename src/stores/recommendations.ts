@@ -10,10 +10,10 @@
  */
 import { reactive, readonly } from 'vue'
 import type { PopularGroup, PopularRecording, SimilarArtist } from '../domain/recommendations'
-import { popularGroups, popularRecordings, similarArtists } from '../gateway/listenbrainz'
+import { ListenBrainzTokenNeeded, popularGroups, popularRecordings, similarArtists } from '../gateway/listenbrainz'
 import { cacheGet, cacheSet } from '../lib/idb'
 import { originAllowed } from './connection'
-import { sourceAllowed, sourceAutomatic } from './externalSources'
+import { sourceAllowed, sourceAutomatic, sourceKey } from './externalSources'
 import { artistIdentity } from './musicbrainzIds'
 
 export type RecommendationStatus = 'loading' | 'ready' | 'failed'
@@ -22,6 +22,8 @@ export interface ArtistRecommendations {
   similar: SimilarArtist[]
   recordings: PopularRecording[]
   groups: PopularGroup[]
+  /** ListenBrainz withheld a part for want of the owner's token (the most listened recordings, since 2026-10-23). */
+  tokenNeeded: boolean
 }
 interface Kept {
   at: number
@@ -50,26 +52,44 @@ export const artistRecommendations = (name: string): ArtistRecommendations | nul
 const fresh = (kept: Kept | undefined, now: number): kept is Kept =>
   kept !== undefined && typeof kept.at === 'number' && now - kept.at < KEEP_MS
 
-/** Asks ListenBrainz about the artist (or takes this browser's week-old answer); nothing without its id. */
+/**
+ * Asks ListenBrainz about the artist (or takes this browser's week-old answer); nothing without its id. The
+ * three answers are taken apart: one ListenBrainz withholds for want of the token leaves its section empty
+ * and is noted, one it fails leaves its section empty, and only all three failing is a failure. A complete
+ * answer is kept for a week; a partial one stays in this tab, so the token entered later is tried at once.
+ */
 export async function lookUpArtistRecommendations(name: string): Promise<void> {
   const mbid = artistIdentity(name)?.mbid
   if (!mbid || !recommendationsAllowed() || state.artists[name]?.status === 'loading') return
-  state.artists = { ...state.artists, [name]: { status: 'loading', similar: [], recordings: [], groups: [] } }
+  const empty = { similar: [], recordings: [], groups: [], tokenNeeded: false }
+  state.artists = { ...state.artists, [name]: { status: 'loading', ...empty } }
   const now = Date.now()
   const kept = await cacheGet<Kept>(cacheKey(mbid))
   if (fresh(kept, now)) {
-    state.artists = { ...state.artists, [name]: { status: 'ready', ...kept } }
+    state.artists = { ...state.artists, [name]: { status: 'ready', ...kept, tokenNeeded: false } }
     return
   }
-  try {
-    const similar = await similarArtists(mbid)
-    const recordings = await popularRecordings(mbid)
-    const groups = await popularGroups(mbid)
-    state.artists = { ...state.artists, [name]: { status: 'ready', similar, recordings, groups } }
-    await cacheSet(cacheKey(mbid), { at: now, similar, recordings, groups } satisfies Kept)
-  } catch {
-    state.artists = { ...state.artists, [name]: { status: 'failed', similar: [], recordings: [], groups: [] } }
+  const token = sourceKey('listenbrainz')
+  const outcome = { tokenNeeded: false, failed: 0 }
+  const take = async <T>(ask: () => Promise<T[]>): Promise<T[]> => {
+    try {
+      return await ask()
+    } catch (error) {
+      if (error instanceof ListenBrainzTokenNeeded) outcome.tokenNeeded = true
+      else outcome.failed++
+      return []
+    }
   }
+  const similar = await take(() => similarArtists(mbid))
+  const recordings = await take(() => popularRecordings(mbid, fetch, token))
+  const groups = await take(() => popularGroups(mbid, fetch, token))
+  const { tokenNeeded, failed } = outcome
+  if (failed === 3) {
+    state.artists = { ...state.artists, [name]: { status: 'failed', ...empty } }
+    return
+  }
+  state.artists = { ...state.artists, [name]: { status: 'ready', similar, recordings, groups, tokenNeeded } }
+  if (!failed && !tokenNeeded) await cacheSet(cacheKey(mbid), { at: now, similar, recordings, groups } satisfies Kept)
 }
 
 /** Forgets what this tab holds (tests). */

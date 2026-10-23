@@ -211,6 +211,7 @@ const lackingLine = (group: { name: string; date: string | null }) =>
 const recommendedNothing = computed(
   () =>
     recommended.value?.status === 'ready' &&
+    !recommended.value.tokenNeeded &&
     !popular.value.length &&
     !similar.value.onCard.length &&
     !similar.value.absent.length &&
@@ -406,5 +407,15 @@ const recommendedNothing = computed(
         <li v-for="group in lacking" :key="group.mbid">{{ lackingLine(group) }}</li>
       </ul>
     </section>
+    <p
+      v-if="recommended?.status === 'ready' && recommended.tokenNeeded"
+      class="mt-18 mb-0 text-footnote text-secondary"
+      data-testid="recommend-token"
+    >
+      {{ t('recommend_token') }}
+      <RouterLink to="/settings?part=sources" class="text-ink underline underline-offset-2">{{
+        t('recommend_token_link')
+      }}</RouterLink>
+    </p>
   </CollectionGate>
 </template>

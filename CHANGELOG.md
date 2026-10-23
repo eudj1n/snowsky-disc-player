@@ -16,8 +16,9 @@ stay short and group related work; how and why it was done is in the
   world's listen counts), Similar artists (those on your card as cards, the
   rest named) and the albums you lack. Asked by itself when the artist's
   page opens, if you say so, else by a button; only the artist's MusicBrainz
-  id is sent, and the answer stays in your browser for a week. Needs a card
-  release of the server that admits ListenBrainz.
+  id is sent, and the answer stays in your browser for a week. Your
+  ListenBrainz user token is optional: without it, since October 2026,
+  ListenBrainz withholds the most listened tracks.
 
 ### Listening
 

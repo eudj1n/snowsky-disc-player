@@ -50,6 +50,8 @@ interface SourceText {
   /** When it is asked automatically; none for a source used only through others. */
   auto: MessageKey | null
   admitted: () => boolean
+  /** What an optional key adds (ListenBrainz's token). */
+  keyNote?: MessageKey
 }
 const TEXTS: Record<SourceName, SourceText> = {
   musicbrainz: {
@@ -93,6 +95,7 @@ const TEXTS: Record<SourceName, SourceText> = {
     sends: 'source_listenbrainz_sends',
     auto: 'source_listenbrainz_auto',
     admitted: recommendationsAdmitted,
+    keyNote: 'source_listenbrainz_key',
   },
   autoeq: {
     about: 'source_autoeq_about',
@@ -291,8 +294,11 @@ async function chooseRole(event: Event, role: ImageRole): Promise<void> {
               }}</UiTextButton>
             </div>
             <template v-else>
+              <p v-if="TEXTS[source.name].keyNote" class="m-0 text-caption leading-[1.5] text-secondary">
+                {{ t(TEXTS[source.name].keyNote as MessageKey) }}
+              </p>
               <label class="flex min-w-0 flex-col gap-7 text-footnote text-muted">
-                {{ t('source_key') }}
+                {{ t(source.keyOptional ? 'source_key_token' : 'source_key') }}
                 <input
                   v-model="drafts[source.name]"
                   type="password"

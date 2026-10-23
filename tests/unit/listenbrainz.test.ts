@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
+  ListenBrainzTokenNeeded,
   popularGroups,
   popularRecordings,
   resetListenBrainzPacing,
@@ -89,6 +90,25 @@ describe('ListenBrainz', () => {
     expect(await similarArtists(MBID, answer(404, { error: 'not found' }))).toEqual([])
     expect(await popularRecordings(MBID, answer(200, { error: 'odd' }))).toEqual([])
     await expect(popularGroups(MBID, answer(503, ''))).rejects.toThrow('503')
+  })
+
+  it("sends the owner's token to the main API as a Token header, and names a 401 for want of one", async () => {
+    const seen: (string | null)[] = []
+    const fetchImpl: typeof fetch = (input, init) => {
+      const url = input instanceof Request ? input.url : input.toString()
+      const headers = new Headers(init?.headers)
+      seen.push(headers.get('Authorization'))
+      const groups = url.includes('release-groups')
+      const body = groups
+        ? [{ release_group_mbid: 'g1', release_group: { name: 'Parachutes' }, total_listen_count: 1 }]
+        : [{ recording_mbid: 'r1', recording_name: 'Yellow', total_listen_count: 1 }]
+      const status = groups || headers.get('Authorization') === 'Token abc-123' ? 200 : 401
+      return Promise.resolve(new Response(JSON.stringify(body), { status }))
+    }
+    await expect(popularRecordings(MBID, fetchImpl)).rejects.toBeInstanceOf(ListenBrainzTokenNeeded)
+    expect(await popularRecordings(MBID, fetchImpl, 'abc-123')).toHaveLength(1)
+    expect(await popularGroups(MBID, fetchImpl)).toHaveLength(1)
+    expect(seen).toEqual([null, 'Token abc-123', null])
   })
 
   it('waits out the window a 429 names, then asks once more', async () => {
