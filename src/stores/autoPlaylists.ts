@@ -24,7 +24,8 @@ import {
   waveSeeds,
 } from '../domain/autoPlaylists'
 import { deleteList, readList, readLists, writeList, type ListFile } from '../gateway/lists'
-import { deleteRecord, putRecord, readCollection } from '../gateway/store'
+import { deleteRecord, putRecord } from '../gateway/store'
+import { readCollectionSnapshot } from './storeSnapshot'
 import { t } from '../i18n'
 import { connection, http } from './connection'
 import { disliked, isDisliked } from './disliked'
@@ -112,7 +113,10 @@ function name(): void {
 export async function loadAutoPlaylists(): Promise<void> {
   if (!connection.store || !connection.externalLists) return
   try {
-    const [records, files] = await Promise.all([readCollection<unknown>(http, COLLECTION), readLists(http, SCOPE)])
+    const [records, files] = await Promise.all([
+      readCollectionSnapshot<unknown>(http, COLLECTION),
+      readLists(http, SCOPE),
+    ])
     const lists = (records ?? []).flatMap((record) => autoPlaylist(record.value) ?? [])
     state.files = files ?? []
     // Their entries first: an update compares with them, and Recently played names their plays.

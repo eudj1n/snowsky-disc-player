@@ -18,6 +18,7 @@ import {
   autoeqAllowed,
   chooseHeadphone,
   clearHeadphone,
+  loadEqSlots,
   loadHeadphones,
   writeCorrection,
 } from '../stores/autoeq'
@@ -55,6 +56,10 @@ function enableSpdif(): void {
   spdifConfirm.value = false
   void applySound('spdif', 1)
 }
+// The equalizer's slot names are read when the dialog opens (owner, 2026-10-23: not at every page load).
+watch(open, (value) => {
+  if (value && connection.store) void loadEqSlots()
+})
 watch(open, (value) => {
   if (!value) spdifConfirm.value = false
 })

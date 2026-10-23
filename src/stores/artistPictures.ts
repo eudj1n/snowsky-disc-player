@@ -27,7 +27,8 @@ import { credits } from '../domain/artist'
 import { mostPlayed } from '../domain/history'
 import { FANART_LICENSE, fanartArtist, fanartBytes, FanartKeyRefused, type FanartImage } from '../gateway/fanart'
 import { artistLinks, bestArtist, searchArtists, type ArtistCandidate, type ArtistLinks } from '../gateway/musicbrainz'
-import { deleteRecord, putRecord, readCollection } from '../gateway/store'
+import { deleteRecord, putRecord } from '../gateway/store'
+import { readCollectionSnapshot } from './storeSnapshot'
 import { commonsImage, hostOf, imageBytes, wikidataImage } from '../gateway/wikimedia'
 import { cacheGet, cacheSet } from '../lib/idb'
 import { connection, http, originAllowed } from './connection'
@@ -139,7 +140,7 @@ const SOURCES: readonly string[] = ['wikimedia', 'fanarttv']
 export async function loadChosenImages(): Promise<void> {
   if (!connection.store) return
   try {
-    const records = await readCollection<ImageRecord>(http, 'artist_images')
+    const records = await readCollectionSnapshot<ImageRecord>(http, 'artist_images')
     const chosen: Chosen = {}
     for (const { value } of records ?? []) {
       if ((value.role !== 'photo' && value.role !== 'background') || !SOURCES.includes(value.source)) continue

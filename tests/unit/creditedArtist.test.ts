@@ -9,6 +9,8 @@ vi.mock('../../src/stores/connection', () => ({
 }))
 vi.mock('../../src/stores/pairing', () => ({ pairingToken: () => '00000000000000' }))
 vi.mock('../../src/stores/externalSources', () => ({ sourceAllowed: () => true }))
+// The stores read through the browser's snapshot (2026-10-23): the same fake answers it.
+vi.mock('../../src/stores/storeSnapshot', () => ({ readCollectionSnapshot: () => Promise.resolve([]) }))
 vi.mock('../../src/gateway/store', () => ({
   readCollection: () => Promise.resolve([]),
   putRecord: (_http: unknown, _collection: string, value: Record<string, unknown>) => {

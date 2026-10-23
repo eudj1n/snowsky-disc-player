@@ -20,7 +20,8 @@
  * optional there (the most listened recordings need it since that day).
  */
 import { reactive, readonly, watch } from 'vue'
-import { putRecord, readCollection } from '../gateway/store'
+import { putRecord } from '../gateway/store'
+import { readCollectionSnapshot } from './storeSnapshot'
 import { connection, http } from './connection'
 import { pairingToken } from './pairing'
 import { toast } from './ui'
@@ -189,7 +190,7 @@ export const recommendOutside = (): boolean => state.recommend
 export async function loadExternalSources(): Promise<void> {
   if (!connection.store) return
   try {
-    const records = await readCollection<SourceRecord>(http, 'external_sources')
+    const records = await readCollectionSnapshot<SourceRecord>(http, 'external_sources')
     state.available = records !== null
     const choices: SourcesModel['choices'] = {}
     const roles = { ...DEFAULT_ROLES }

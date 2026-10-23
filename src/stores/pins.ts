@@ -6,7 +6,8 @@
  */
 import { computed, reactive, readonly, watch } from 'vue'
 import type { Album } from '../domain/album'
-import { deleteRecord, putRecord, readCollection } from '../gateway/store'
+import { deleteRecord, putRecord } from '../gateway/store'
+import { readCollectionSnapshot } from './storeSnapshot'
 import { connection, http } from './connection'
 import { pairingToken } from './pairing'
 import { toast } from './ui'
@@ -47,8 +48,8 @@ export async function loadPins(): Promise<void> {
   if (!connection.store) return
   try {
     const [artists, albums] = await Promise.all([
-      readCollection<ArtistPin>(http, 'pinned_artists'),
-      readCollection<AlbumPin>(http, 'pinned_albums'),
+      readCollectionSnapshot<ArtistPin>(http, 'pinned_artists'),
+      readCollectionSnapshot<AlbumPin>(http, 'pinned_albums'),
     ])
     state.available = artists !== null && albums !== null
     state.artists = (artists ?? []).map((record) => record.value).filter((pin) => typeof pin.name === 'string')

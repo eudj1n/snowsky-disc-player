@@ -17,6 +17,8 @@ const store = vi.hoisted((): Fake => ({
 vi.mock('../../src/stores/connection', () => ({ connection: { store: true }, http: {} }))
 vi.mock('../../src/stores/pairing', () => ({ pairingToken: () => store.token }))
 vi.mock('../../src/stores/ui', () => ({ toast: (key: string) => store.toasts.push(key) }))
+// The stores read through the browser's snapshot (2026-10-23): the same fake answers it.
+vi.mock('../../src/stores/storeSnapshot', () => ({ readCollectionSnapshot: () => Promise.resolve(store.records) }))
 vi.mock('../../src/gateway/store', () => ({
   readCollection: () => Promise.resolve(store.records),
   putRecord: (_http: unknown, _collection: string, value: Record<string, unknown>) => {

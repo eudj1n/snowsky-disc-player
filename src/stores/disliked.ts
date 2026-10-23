@@ -9,7 +9,8 @@
 import { computed, reactive, readonly, watch } from 'vue'
 import { dislikedKey, dislikedKeyFields, dislikedRecord, isDislikedKey, type DislikedValue } from '../domain/disliked'
 import { trackKey, type Track } from '../domain/track'
-import { deleteRecord, putRecord, readCollection } from '../gateway/store'
+import { deleteRecord, putRecord } from '../gateway/store'
+import { readCollectionSnapshot } from './storeSnapshot'
 import { connection, http } from './connection'
 import { transport } from './controls'
 import { tracks } from './library'
@@ -46,7 +47,7 @@ export const dislikedTracks = computed(() => {
 export async function loadDisliked(): Promise<void> {
   if (!connection.store) return
   try {
-    const records = await readCollection<DislikedValue>(http, COLLECTION)
+    const records = await readCollectionSnapshot<DislikedValue>(http, COLLECTION)
     state.available = records !== null
     state.records = (records ?? []).flatMap((record) => (typeof record.value.path === 'string' ? [record.value] : []))
   } catch {

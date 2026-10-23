@@ -2990,6 +2990,34 @@ the listeners give them together with the page's genre, counted by artists.
 - [x] Next: similar recordings ("in the style of {track}") with the
       recording ids kept when an edition is confirmed: stage 3, below.
 
+## The store read once, then only asked whether it changed (owner, 2026-10-23), card + player
+
+The owner saw eight whole collection reads on every page load (`records?
+limit=500&offset=0` for external_sources, musicbrainz, disliked,
+auto_playlists, artist_images, eq_slots, pinned_artists, pinned_albums) and
+asked whether the API could ask for what the page needs. It filters by one
+scalar field's value, orders by a field or `updated`, counts, reads one
+record by key; it had no "changed since".
+
+- [x] `stores/storeSnapshot.ts`: a collection's records kept in IndexedDB
+      with the total and the newest `updated`; a load asks for one record,
+      the newest by `updated` (`order=updated&desc=1&limit=1`, which tells
+      the total too), and takes the snapshot when both hold; a write
+      stamps a new `updated`, a removal changes the total, and the
+      collection is read whole again. The eight stores read through it.
+- [x] The equalizer's `eq_slots` are read when the Sound dialog opens, not
+      at connect.
+- [x] Evidence: unit test of the snapshot (once whole, then the small
+      request; a write and a removal read again; no collection, an empty
+      one); e2e "reads the player's store collections whole once" (the
+      first load whole, no eq_slots, a reload with one small request a
+      collection, a write reading that collection alone).
+- [x] The server: `records?since=<seconds>` lists the records updated
+      after that moment, `total` counting them, so the page can read the
+      changes alone (snowsky-disc-server PR, `device/src/store.c`); the
+      page moves to delta reads once a server with it is released. The
+      mock suite with the snapshot: no failure (2026-10-23).
+
 ## The owner's three points of the evening (owner, 2026-10-23), player-only
 
 - [x] Home: Recently added is off the "Made for you" cards (its tracks

@@ -49,6 +49,10 @@ stay short and group related work; how and why it was done is in the
 
 ### Your collection
 
+- The page reads what it keeps on the player (identities, pictures,
+  dislikes, pins, lists, sources) once, and on a later load asks only
+  whether each collection changed; the equalizer's preset names are read
+  when the Sound dialog opens.
 - An album a guest joins on one track is the main artist's: the heading
   and the album cards name the artist most tracks carry, and the guest
   stays on their track; "Various artists" is left for compilations.

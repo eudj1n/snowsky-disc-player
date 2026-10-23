@@ -18,7 +18,8 @@ import {
   type HeadphoneResult,
 } from '../domain/autoeq'
 import { fetchCorrection, fetchRecommended } from '../gateway/autoeq'
-import { putRecord, readCollection } from '../gateway/store'
+import { putRecord } from '../gateway/store'
+import { readCollectionSnapshot } from './storeSnapshot'
 import { connection, http, originAllowed } from './connection'
 import { applyPresetBands } from './eq'
 import { sourceAllowed } from './externalSources'
@@ -113,7 +114,7 @@ export function clearHeadphone(): void {
 export async function loadEqSlots(): Promise<void> {
   if (!connection.store) return
   try {
-    const records = await readCollection<SlotRecord>(http, 'eq_slots')
+    const records = await readCollectionSnapshot<SlotRecord>(http, 'eq_slots')
     state.slotsAvailable = records !== null
     const slots: AutoEqModel['slots'] = {}
     for (const { value } of records ?? [])
@@ -124,11 +125,12 @@ export async function loadEqSlots(): Promise<void> {
     // Unreachable for now: what was read last stays.
   }
 }
+// The slots are read when the Sound dialog opens (owner, 2026-10-23: not at every page load), forgotten on
+// disconnect.
 watch(
   () => connection.store,
   (store) => {
-    if (store) void loadEqSlots()
-    else {
+    if (!store) {
       state.slots = {}
       state.slotsAvailable = false
     }

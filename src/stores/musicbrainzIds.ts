@@ -26,7 +26,8 @@ import {
   type ReleaseGroupFacts,
 } from '../gateway/musicbrainz'
 import { rankReleases } from '../domain/covers'
-import { deleteRecord, putRecord, readCollection } from '../gateway/store'
+import { deleteRecord, putRecord } from '../gateway/store'
+import { readCollectionSnapshot } from './storeSnapshot'
 import { connection, http, originAllowed } from './connection'
 import { sourceAllowed } from './externalSources'
 import { pairingToken } from './pairing'
@@ -126,7 +127,7 @@ export function storedArtistFacts(value: unknown, name: string): ArtistFacts | n
 export async function loadMusicbrainzIds(): Promise<void> {
   if (!connection.store) return
   try {
-    const records = await readCollection<IdentityRecord>(http, 'musicbrainz')
+    const records = await readCollectionSnapshot<IdentityRecord>(http, 'musicbrainz')
     state.available = records !== null
     const kept: Record<string, ArtistIdentity> = {}
     const albums: Record<string, AlbumIdentity> = {}

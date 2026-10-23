@@ -3788,3 +3788,39 @@ test('offers My wave among the automatic playlists, drawn from the newest plays,
   await expect(row.getByRole('button', { name: 'Add to the player' })).toBeVisible({ timeout: 15_000 })
   await disconnect(page)
 })
+
+test("reads the player's store collections whole once, then only asks whether they changed", async ({ page }) => {
+  test.skip(external, 'Reads the mock store')
+  const reads: string[] = []
+  page.on('request', (request) => {
+    const url = request.url()
+    if (url.includes('/api/store/') && url.includes('/records')) reads.push(url)
+  })
+  const collections = (filter: string) =>
+    new Set(reads.filter((url) => url.includes(filter)).map((url) => new URL(url).pathname))
+  await english(page)
+  await connectAndPair(page)
+  await expect(page.getByTestId('for-you')).toBeVisible({ timeout: 15_000 })
+  await expect.poll(() => collections('limit=500').size).toBeGreaterThanOrEqual(7)
+  const whole = collections('limit=500')
+  // The equalizer's slots wait for the Sound dialog (owner, 2026-10-23).
+  expect(reads.some((url) => url.includes('/eq_slots/'))).toBe(false)
+  // Once the snapshots settled (a write in the newest record's second could hide for two seconds), a reload
+  // sends one small request a collection (the newest record, which tells the total) and reads nothing whole.
+  await page.waitForTimeout(2200)
+  reads.length = 0
+  await page.reload()
+  await expect(page.getByTestId('for-you')).toBeVisible({ timeout: 15_000 })
+  await expect.poll(() => collections('order=updated&desc=1&limit=1').size).toBe(whole.size)
+  await page.waitForTimeout(500)
+  expect([...collections('limit=500')]).toEqual([])
+  // A write stamps the collection: the next load reads it whole again, the others not.
+  await chooseSources(page, { lrclib: { allowed: true } })
+  reads.length = 0
+  await page.reload()
+  await expect(page.getByTestId('for-you')).toBeVisible({ timeout: 15_000 })
+  await expect.poll(() => [...collections('limit=500')]).toEqual(['/api/store/external_sources/records'])
+  await page.waitForTimeout(500)
+  expect([...collections('limit=500')]).toEqual(['/api/store/external_sources/records'])
+  await disconnect(page)
+})

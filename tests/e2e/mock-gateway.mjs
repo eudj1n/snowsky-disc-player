@@ -667,7 +667,11 @@ const server = createServer((request, response) => {
     const records = player.sourcesMissing && collection === 'external_sources' ? undefined : storeData[collection]
     if (!records) return send(response, 404, 'No such collection or operation\n')
     if (operation === 'records' && request.method === 'GET') {
-      const all = [...records.values()]
+      // As the service lists: insertion order, or by `updated` (the page's snapshot check asks the newest first).
+      const since = Number(url.searchParams.get('since') ?? -1)
+      const all = [...records.values()].filter((record) => record.updated > since)
+      if (url.searchParams.get('order') === 'updated')
+        all.sort((a, b) => (url.searchParams.get('desc') === '1' ? b.updated - a.updated : a.updated - b.updated))
       const offset = Number(url.searchParams.get('offset') ?? 0)
       const limit = Number(url.searchParams.get('limit') ?? 100)
       const page = all.slice(offset, offset + limit)
