@@ -17,6 +17,7 @@ type Palette = readonly [base: string, first: string, second: string, third: str
 const KINDS: Record<Exclude<AutoKind, 'artist_most_played'>, Palette> = {
   most_played: ['#f5a02e', '#ffd95a', '#ee5f22', '#fbc063'],
   daily_mix: ['#ea3a22', '#ff9222', '#bf1230', '#ffcb3a'],
+  my_wave: ['#0f8f7a', '#4fe0c1', '#0a5a6b', '#a7f3d0'],
   recently_added: ['#6a33e4', '#c24cf2', '#ff9fc6', '#3325c6'],
   not_played_lately: ['#127fa5', '#27c8c5', '#0b4d86', '#44d59b'],
 }

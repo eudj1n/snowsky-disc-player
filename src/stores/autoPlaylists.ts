@@ -21,6 +21,7 @@ import {
   type AutoPlaylist,
   type GlobalKind,
   type RotationPeriod,
+  waveSeeds,
 } from '../domain/autoPlaylists'
 import { deleteList, readList, readLists, writeList, type ListFile } from '../gateway/lists'
 import { deleteRecord, putRecord, readCollection } from '../gateway/store'
@@ -31,6 +32,7 @@ import { history, loadHistory, nameLists } from './history'
 import { favorites, library, tracks } from './library'
 import { pairing, pairingToken } from './pairing'
 import { toast } from './ui'
+import { gatherWave, waveInput } from './wave'
 
 const COLLECTION = 'auto_playlists'
 const SCOPE = 'external'
@@ -80,7 +82,13 @@ function input() {
     disliked: isDisliked,
     favorites: favorites.value,
     day: localDay(),
+    wave: waveInput(),
   }
+}
+
+/** Before a wave is drawn: the sources are asked about its seeds (owner, 2026-10-23), once allowed. */
+async function gather(list: Pick<AutoPlaylist, 'kind'>, day: string): Promise<void> {
+  if (list.kind === 'my_wave') await gatherWave(waveSeeds(tracks.value, history.plays, favorites.value, day))
 }
 
 /** What each list that is not an artist's would hold now (the Home offers of lists not made yet). */
@@ -141,6 +149,7 @@ export async function refreshAutoPlaylists(announce = false, only: string | null
     for (const list of state.lists) {
       if (only !== null ? list.name !== only : !announce && !isDue(list, today)) continue
       const current = state.entries[list.name] ?? []
+      await gather(list, today)
       const entries = autoEntries(list, { ...input(), day: today, previous: current })
       if (!entries.length) continue
       if (written + failed) await pause(PACE_MS)
@@ -227,6 +236,7 @@ async function make(list: AutoPlaylist, quiet = false): Promise<boolean> {
       toast('auto_name_taken', true)
       return false
     }
+    await gather(list, localDay())
     const entries = autoEntries(list, input())
     if (!entries.length) {
       toast('auto_empty')

@@ -4,6 +4,7 @@ import {
   groupsNotOnCard,
   popularTracksOnCard,
   recordingOfTrack,
+  similarAlbumsOnCard,
   similarArtistsOnCard,
   similarTracksOnCard,
 } from '../../src/domain/recommendations'
@@ -144,5 +145,47 @@ describe('recommendations against the card', () => {
       ['City Glow', 'Northline', 150],
     ])
     expect(found.absent).toBe(1)
+  })
+
+  it('names the albums of the card near one: by similar artists, then shared genres; its own artists aside', () => {
+    const shelf = (title: string, artist: string, addedAt = 0): Album => ({
+      ...album(title),
+      artists: [artist],
+      trackArtists: [artist],
+      addedAt,
+    })
+    const albums = [
+      shelf('Blue Hours', 'Mira Sol'),
+      shelf('Afterglow', 'Mira Sol'),
+      shelf('Night Drive', 'Northline', 2),
+      shelf('Two Rooms', 'Kite Lines', 1),
+      shelf('Patterns', 'Parallel Lines'),
+      shelf('Daybreak', 'Sundial'),
+    ]
+    const similarOf = (artist: string) =>
+      artist === 'Mira Sol'
+        ? [
+            { name: 'Northline', score: 900 },
+            { name: 'Kite Lines', score: 450 },
+          ]
+        : []
+    const genresOf = (artist: string) =>
+      ({ 'Mira Sol': ['jazz', 'ambient'], 'Parallel Lines': ['Ambient', 'electronic'], Sundial: ['rock'] })[artist] ??
+      []
+    const found = similarAlbumsOnCard(albums, albums[0] as Album, similarOf, genresOf, 5)
+    expect(found.map((item) => [item.album.title, Math.round(item.score * 100) / 100])).toEqual([
+      ['Night Drive', 3],
+      ['Two Rooms', 1.5],
+      ['Patterns', 1],
+    ])
+    expect(
+      similarAlbumsOnCard(
+        albums,
+        albums[0] as Album,
+        () => [],
+        () => [],
+        5,
+      ),
+    ).toEqual([])
   })
 })

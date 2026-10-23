@@ -2990,6 +2990,61 @@ the listeners give them together with the page's genre, counted by artists.
 - [x] Next: similar recordings ("in the style of {track}") with the
       recording ids kept when an edition is confirmed: stage 3, below.
 
+## Similar albums (owner, 2026-10-23), player-only
+
+No source has similar albums (the analysis); built from the bricks the
+page holds: on an album's page, the card's albums by ListenBrainz's
+similar artists of the album's artists (the score normalised within each
+list, ×3) and by the listeners' genres they share (×2 by the share), the
+album's own artists aside (they are "More by"). Asked about the identified
+artists by itself when the source works automatically, else on a click.
+`similarAlbumsOnCard` in `domain/recommendations.ts`; the section
+`similar-albums` on the album page with the hint button.
+
+- [x] Evidence: unit test of the domain (by similar artists, then shared
+      genres, the own artists out, the newest among equals); the
+      ListenBrainz e2e opens Blue Hours after the artist page and finds
+      Northline's and Kite Lines' albums without a request more.
+- [ ] Later, with the Recommendations choice: the albums the card lacks by
+      the similar artists (their most listened release groups).
+
+## My wave (owner, 2026-10-23), card + player
+
+The owner chose a playlist on the player over a live browser queue: the
+wave then plays on the DISC and in the browser alike and fits the
+automatic playlists as they are (M3U in `Playlists/`, 50 tracks, drawn by
+the day, a period of a day, a week or a month). A sixth kind, `my_wave`,
+which the store's `auto_playlists` catalog had to admit (its `kind` is a
+pattern of the kinds): snowsky-disc-server PR #25, taken by the card's
+`.disc/catalog/store.json` override before a release.
+
+- [x] `domain/autoPlaylists.ts` `waveSeeds` (the newest 30 plays' tracks,
+      each once, and up to 20 favorites drawn by the day) and `myWave`: a
+      score per track of the card, the seeds themselves out: similar tracks
+      of the seeds (×4, ListenBrainz's score normalised), similar artists
+      of the seeds' artists (×3), a seed's own artist (+1), the listeners'
+      genres shared with the seeds' artists (×2 by the share) or, without
+      them, the file's genre among the seeds' (+1), not played lately (+1),
+      never played (+0.5), among the newest added (+0.5), a jitter by the
+      day; the best first, the same artist not within three tracks. With
+      nothing from the sources the wave is drawn from the history and the
+      files' genres alone. `stores/wave.ts` lays the tab's ListenBrainz
+      answers out as the wave takes them and, before a wave is drawn (an
+      update or the first making), asks about its seeds: the eight most
+      frequent identified artists (tags, similar artists, popularity) and
+      eight seed tracks (similar recordings), all kept by their stores.
+- [x] The Playlists page offers My wave as the other lists not an
+      artist's, Home as a For-you card, the list page as a preview by
+      kind; its own palette in `listArt`.
+- [x] Evidence: unit tests (the seeds, the composition and its fallbacks,
+      the day's draw among equals, the artist spacing); e2e "offers My wave
+      among the automatic playlists" on the mock (the card on Home, Add to
+      the player, the list's rows from the mock's history, removal). The
+      mock suite with the wave: 180 passed, 18 skipped (2026-10-23).
+- [ ] Later: the wave's own card on Home with a Refresh, skips as a
+      negative signal once the history records them, the browser's live
+      queue on the same scoring.
+
 ## ListenBrainz, stage 3: similar tracks and the recordings kept (owner, 2026-10-23), player-only
 
 The recording ids: `releaseTracks` reads each track's `recording.id`; the

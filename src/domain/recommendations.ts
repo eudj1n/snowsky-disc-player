@@ -226,3 +226,44 @@ export function similarTracksOnCard(
   }
   return { onCard, absent }
 }
+
+export interface SimilarAlbum {
+  album: Album
+  score: number
+}
+
+/**
+ * The albums of the card near this one (owner, 2026-10-23: no source has similar albums; built from the
+ * bricks): by ListenBrainz's similar artists of the album's artists (the score normalised within each list)
+ * and the listeners' genres they share, the nearest first and the newest among equals. The album itself and
+ * the albums of its own artists ("More by") stay out.
+ */
+export function similarAlbumsOnCard(
+  albums: readonly Album[],
+  album: Pick<Album, 'key' | 'artists' | 'trackArtists'>,
+  similarOf: (artist: string) => readonly { name: string; score: number }[],
+  genresOf: (artist: string) => readonly string[],
+  limit: number,
+): SimilarAlbum[] {
+  const own = new Set([...album.artists, ...album.trackArtists].flatMap(creditArtists))
+  const near = new Map<string, number>()
+  const tags = new Set<string>()
+  for (const artist of own) {
+    const similar = similarOf(artist)
+    const top = similar[0]?.score ?? 0
+    for (const other of similar)
+      if (top > 0) near.set(other.name, Math.max(near.get(other.name) ?? 0, other.score / top))
+    for (const tag of genresOf(artist)) tags.add(tag.toLowerCase())
+  }
+  const found: SimilarAlbum[] = []
+  for (const other of albums) {
+    if (other.key === album.key) continue
+    const names = [...new Set([...other.artists, ...other.trackArtists].flatMap(creditArtists))]
+    if (!names.length || names.some((name) => own.has(name))) continue
+    let score = 3 * Math.max(0, ...names.map((name) => near.get(name) ?? 0))
+    const theirs = [...new Set(names.flatMap((name) => genresOf(name)).map((tag) => tag.toLowerCase()))]
+    if (theirs.length && tags.size) score += (2 * theirs.filter((tag) => tags.has(tag)).length) / theirs.length
+    if (score > 0) found.push({ album: other, score })
+  }
+  return found.sort((a, b) => b.score - a.score || (b.album.addedAt ?? 0) - (a.album.addedAt ?? 0)).slice(0, limit)
+}

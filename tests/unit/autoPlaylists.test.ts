@@ -10,6 +10,9 @@ import {
   localDay,
   RECENT_PLAYS,
   sameEntries,
+  WAVE_RECENT,
+  waveSeeds,
+  type WaveInput,
 } from '../../src/domain/autoPlaylists'
 import {
   pathsHash,
@@ -292,5 +295,89 @@ describe('a play from an M3U list', () => {
     )
     expect(m3uList({ is_m3u: false, m3u_file_path: '/tmp/sdcard/A.m3u/x.flac' })).toBeNull()
     expect(m3uList({ is_m3u: true })).toBeNull()
+  })
+
+  describe('my wave', () => {
+    const library = [
+      track('/a/1.flac', { artist: 'Forma', genre: 'Ambient' }),
+      track('/a/2.flac', { artist: 'Forma', genre: 'Ambient' }),
+      track('/b/1.flac', { artist: 'Northline', genre: 'Electronic' }),
+      track('/b/2.flac', { artist: 'Northline', genre: 'Electronic' }),
+      track('/c/1.flac', { artist: 'Mira Sol', genre: 'Jazz' }),
+      track('/c/2.flac', { artist: 'Mira Sol', genre: 'Jazz' }),
+      track('/d/1.flac', { artist: 'Sundial', genre: 'Ambient', addedAt: 1_790_000_000 }),
+      track('/e/1.flac', { artist: 'Kite Lines', genre: 'Rock' }),
+    ]
+    const wave: WaveInput = {
+      similarArtists: new Map([['Forma', [{ name: 'Northline', score: 900 }]]]),
+      genres: new Map([
+        ['Forma', ['ambient', 'electronic']],
+        ['Mira Sol', ['jazz', 'ambient']],
+        ['Kite Lines', ['rock']],
+      ]),
+      similarTracks: new Map([['/a/1.flac', [{ path: '/c/1.flac', score: 300 }]]]),
+    }
+    const input = { tracks: library, most: [], plays: [play('/a/1.flac')], disliked: none, day: '2026-10-23', wave }
+
+    it('starts from the newest plays and some favorites, each once', () => {
+      const plays = [play('/b/1.flac'), play('/a/1.flac'), play('/a/1.flac')]
+      expect(waveSeeds(library, plays, [library[4] as LibraryTrack], 'x').map((t) => t.path)).toEqual([
+        '/a/1.flac',
+        '/b/1.flac',
+        '/c/1.flac',
+      ])
+      const many = Array.from({ length: WAVE_RECENT + 5 }, (_, n) => play(`/a/${String(n)}.flac`))
+      const wide = many.map((item) => track(item.path))
+      expect(waveSeeds(wide, many, [])).toHaveLength(WAVE_RECENT)
+      expect(waveSeeds(library, [], [])).toEqual([])
+    })
+
+    it('draws the neighbours of the seeds: similar tracks first, then similar artists and shared genres, the seeds out', () => {
+      const entries = autoEntries({ kind: 'my_wave' }, input)
+      expect(entries[0]).toBe('/c/1.flac')
+      expect(entries).not.toContain('/a/1.flac')
+      // Northline: similar artist, Sundial: the file's genre (no listeners' genres known), Kite Lines: nothing.
+      expect(entries).toContain('/b/1.flac')
+      expect(entries).toContain('/d/1.flac')
+      expect(entries).not.toContain('/e/1.flac')
+      // The same draw all day; among equals, another order the next day.
+      expect(autoEntries({ kind: 'my_wave' }, input)).toEqual(entries)
+      const equals = Array.from({ length: 20 }, (_, n) =>
+        track(`/q/${String(n)}.flac`, { artist: `A${String(n)}`, genre: 'Ambient' }),
+      )
+      const seededInput = { ...input, tracks: [...library, ...equals] }
+      const today = autoEntries({ kind: 'my_wave' }, seededInput)
+      expect(autoEntries({ kind: 'my_wave' }, seededInput)).toEqual(today)
+      expect(autoEntries({ kind: 'my_wave' }, { ...seededInput, day: '2026-10-24' })).not.toEqual(today)
+      // Nothing to start from, nothing drawn; without the sources, the history and the files' genres alone.
+      expect(autoEntries({ kind: 'my_wave' }, { ...input, plays: [] })).toEqual([])
+      const plain = autoEntries({ kind: 'my_wave' }, { ...input, wave: undefined })
+      expect(plain).toContain('/a/2.flac')
+      expect(plain).toContain('/d/1.flac')
+      expect(plain).not.toContain('/c/1.flac')
+    })
+
+    it('keeps the same artist apart', () => {
+      const crowd = Array.from({ length: 30 }, (_, n) =>
+        track(`/x/${String(n)}.flac`, { artist: n < 25 ? 'Forma' : 'Northline', genre: 'Ambient' }),
+      )
+      const seeded = [...crowd, track('/seed.flac', { artist: 'Else', genre: 'Ambient' })]
+      const entries = autoEntries(
+        { kind: 'my_wave' },
+        { tracks: seeded, most: [], plays: [play('/seed.flac')], disliked: none, day: 'd' },
+      )
+      const artist = (path: string) => seeded.find((item) => item.path === path)?.artist
+      // Northline's five sit among Forma's, never two Northlines or four Formas in a row at the start.
+      expect(entries.slice(0, 8).map(artist)).toEqual([
+        'Forma',
+        'Northline',
+        'Forma',
+        'Forma',
+        'Forma',
+        'Northline',
+        'Forma',
+        'Forma',
+      ])
+    })
   })
 })

@@ -204,6 +204,8 @@ owner's collection, each with the owner's own key.
 
 - Which of the products above come first; whether "My wave" is a playlist
   the page refreshes (as the automatic playlists are) or a live queue.
+  **Decided 2026-10-23: a playlist on the player** (the plan's "My wave");
+  the live queue may follow on the same scoring.
 - Whether anything computed (features, the graph) lives in the app's data
   on the card or in the browser only.
 - Whether the account stage is wanted at all.

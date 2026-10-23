@@ -32,7 +32,16 @@ import {
   saveCover,
 } from '../stores/coverSearch'
 import AlbumCoverDialog from '../layout/AlbumCoverDialog.vue'
-import { albumIdentity } from '../stores/musicbrainzIds'
+import { albumIdentity, artistIdentity } from '../stores/musicbrainzIds'
+import { similarAlbumsOnCard, similarArtistsOnCard } from '../domain/recommendations'
+import { topTags } from '../domain/tags'
+import { artistTags, loadArtistTags } from '../stores/artistTags'
+import {
+  artistRecommendations,
+  lookUpArtistRecommendations,
+  recommendationsAllowed,
+  recommendationsAutomatic,
+} from '../stores/recommendations'
 import { findGenre, playableGenre, sameGenre } from '../domain/genre'
 import { artistImage } from '../stores/artistPictures'
 import { albums, artists, genres, titleGroups, tracks as collection } from '../stores/library'
@@ -42,7 +51,7 @@ import { openInfoPanel, openPlaylistDialog, openTrackMenu, openTrackPanel, showC
 import UiCircleButton from '../ui/UiCircleButton.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumCardRoute, albumRoute, artistRoute, genreRoute, withYear } from './captions'
+import { albumCardRoute, albumLines, albumRoute, artistRoute, genreRoute, withYear } from './captions'
 import { useCrumbs } from './crumbs'
 import CollectionGate from './CollectionGate.vue'
 import { onRowFavorite, onRowUnfavorite, trackRowProps } from './trackRows'
@@ -182,6 +191,57 @@ const moreBy = computed(() => {
     .map((artist) => ({ artist, label: artist, albums: albumsBy(albums.value, artist, name.value) }))
     .filter((shelf) => shelf.albums.length > 0)
 })
+/*
+ * Similar albums (owner, 2026-10-23): the card's albums by ListenBrainz's similar artists of this album's
+ * artists and by the listeners' genres they share; asked about the identified artists by itself when the
+ * source works automatically, else on a click. No source has similar albums: this is built from the bricks.
+ */
+const SIMILAR_ALBUMS = 12
+const albumArtists = computed(() =>
+  [...new Set([...(group.value?.artists ?? []), ...(group.value?.trackArtists ?? [])].flatMap(creditArtists))].filter(
+    (artist) => artistIdentity(artist) !== null,
+  ),
+)
+const canAskSimilar = computed(() => albumArtists.value.length > 0 && recommendationsAllowed())
+const similarAsked = computed(() => albumArtists.value.some((artist) => artistRecommendations(artist) !== null))
+function askSimilar(): void {
+  for (const artist of albumArtists.value) {
+    void lookUpArtistRecommendations(artist)
+    const mbid = artistIdentity(artist)?.mbid
+    if (mbid) void loadArtistTags([mbid])
+  }
+}
+watch(
+  () => (canAskSimilar.value && recommendationsAutomatic() && !similarAsked.value ? name.value : null),
+  (title) => {
+    if (title) askSimilar()
+  },
+  { immediate: true },
+)
+const similarAlbums = computed(() => {
+  if (!group.value || !similarAsked.value) return []
+  const names = artists.value.map((artist) => artist.name)
+  const mbidOf = (artist: string) => artistIdentity(artist)?.mbid ?? null
+  return similarAlbumsOnCard(
+    albums.value,
+    group.value,
+    (artist) => {
+      const found = artistRecommendations(artist)
+      return found?.status === 'ready' ? similarArtistsOnCard(found.similar, names, mbidOf).onCard : []
+    },
+    (artist) => {
+      const tags = artistTags(artist)
+      return tags ? topTags(tags, 10).map((tag) => tag.tag) : []
+    },
+    SIMILAR_ALBUMS,
+  )
+})
+const similarState = computed<'ask' | 'loading' | null>(() => {
+  if (!canAskSimilar.value || similarAlbums.value.length) return null
+  if (!similarAsked.value) return recommendationsAutomatic() ? null : 'ask'
+  return albumArtists.value.some((artist) => artistRecommendations(artist)?.status === 'loading') ? 'loading' : null
+})
+
 /** The artists of a joint album, each with their page (and play, when stock knows them alone). */
 const members = computed(() => {
   const credit = joint.value
@@ -385,6 +445,32 @@ const LINK = 'underline-offset-3 hover:text-ink hover:underline focus-visible:te
           @play="playAlbumCard(album, shelfScope(album, shelf.artist))"
         />
       </CoverRow>
+    </section>
+    <section v-if="similarAlbums.length" :aria-label="t('similar_albums')" data-testid="similar-albums">
+      <SectionHeading :title="t('similar_albums')" :hint="t('similar_albums_by')" />
+      <CoverRow :label="t('similar_albums')">
+        <CoverCard
+          v-for="item in similarAlbums"
+          :key="item.album.key"
+          role="listitem"
+          :title="item.album.title"
+          :to="albumCardRoute(item.album, albumScope(item.album))"
+          :cover="albumCover(item.album, albumScope(item.album))"
+          :lines="withYear(albumLines(item.album), albumYear(item.album, albumScope(item.album)))"
+          :open-label="t('open_item', { name: item.album.title })"
+          :play-label="t('play_item', { name: item.album.title })"
+          @play="playAlbumCard(item.album, albumScope(item.album))"
+        />
+      </CoverRow>
+    </section>
+    <section v-else-if="similarState" :aria-label="t('similar_albums')" data-testid="similar-albums-state">
+      <SectionHeading :title="t('similar_albums')" :hint="t('similar_albums_by')" />
+      <p v-if="similarState === 'ask'" class="m-0">
+        <UiPillButton variant="secondary" data-testid="similar-albums-ask" @click="askSimilar">{{
+          t('recommend_ask')
+        }}</UiPillButton>
+      </p>
+      <p v-else role="status" class="m-0 text-footnote text-secondary">{{ t('recommend_asking') }}</p>
     </section>
     <section v-if="members.length" :aria-label="t('on_this_album')">
       <SectionHeading :title="t('on_this_album')" />

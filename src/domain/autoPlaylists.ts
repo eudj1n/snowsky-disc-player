@@ -10,11 +10,12 @@
  * An entry is a whole file on the card, so a CUE track (a part of an image)
  * cannot be one; disliked tracks stay out, and every file appears once.
  */
-import { credits } from './artist'
+import { creditArtists, credits } from './artist'
 import { mostPlayed, type PlayRecord, type ServicePlay } from './history'
 import { recentlyAdded, type LibraryTrack } from './track'
 
-export type AutoKind = 'most_played' | 'artist_most_played' | 'recently_added' | 'not_played_lately' | 'daily_mix'
+export type AutoKind =
+  'most_played' | 'artist_most_played' | 'recently_added' | 'not_played_lately' | 'daily_mix' | 'my_wave'
 
 /** How long a list stays as written before it is drawn again (owner, 2026-09-30). */
 export type RotationPeriod = 'day' | 'week' | 'month'
@@ -39,10 +40,17 @@ export const AUTO_KINDS: readonly AutoKind[] = [
   'recently_added',
   'not_played_lately',
   'daily_mix',
+  'my_wave',
 ]
 /** The lists that are not an artist's, offered on the Playlists page. */
 export type GlobalKind = Exclude<AutoKind, 'artist_most_played'>
-export const GLOBAL_KINDS: readonly GlobalKind[] = ['most_played', 'daily_mix', 'recently_added', 'not_played_lately']
+export const GLOBAL_KINDS: readonly GlobalKind[] = [
+  'most_played',
+  'daily_mix',
+  'my_wave',
+  'recently_added',
+  'not_played_lately',
+]
 export const AUTO_SIZE = 50
 /** Long not played: a track played at all, but not within the newest plays of the history. */
 export const RECENT_PLAYS = 100
@@ -58,6 +66,8 @@ export interface AutoInput {
   favorites?: readonly LibraryTrack[]
   /** The local date ('2026-09-30') the daily mix is drawn for. */
   day?: string
+  /** What the outside sources say, for My wave; absent, the wave is drawn from the history alone. */
+  wave?: WaveInput
   /** The list's entries as last written: a new daily mix leaves them for last. */
   previous?: readonly string[]
 }
@@ -101,7 +111,131 @@ export function autoEntries(list: Pick<AutoPlaylist, 'kind' | 'artist'>, input: 
       return notPlayedLately(tracks, input.plays)
     case 'daily_mix':
       return dailyMix(tracks, input)
+    case 'my_wave':
+      return myWave(tracks, input)
   }
+}
+
+/* My wave (owner, 2026-10-23; docs/recommendations.md). */
+
+/** What ListenBrainz says, laid against the card, as the wave takes it. */
+export interface WaveInput {
+  /** The similar artists on the card of an artist on the card (by name), with ListenBrainz's scores. */
+  similarArtists: ReadonlyMap<string, readonly { name: string; score: number }[]>
+  /** The listeners' genres of an artist on the card (by name). */
+  genres: ReadonlyMap<string, readonly string[]>
+  /** The similar tracks on the card of a track on the card (by path), with ListenBrainz's scores. */
+  similarTracks: ReadonlyMap<string, readonly { path: string; score: number }[]>
+}
+/** The newest plays the wave starts from. */
+export const WAVE_RECENT = 30
+/** Favorites drawn among the seeds. */
+const WAVE_FAVORITES = 20
+/** The same artist not within this many tracks. */
+const WAVE_SPACING = 3
+
+/**
+ * The seeds of the wave: the tracks of the newest plays (each once) and some favorites, drawn by the day.
+ * The sources are asked about these, so the wave's neighbourhood is theirs.
+ */
+export function waveSeeds(
+  tracks: readonly LibraryTrack[],
+  plays: readonly ServicePlay[],
+  favorites: readonly LibraryTrack[],
+  day = '',
+): LibraryTrack[] {
+  const byPath = new Map(tracks.flatMap((track) => (track.path ? [[track.path, track] as const] : [])))
+  const seeds: LibraryTrack[] = []
+  const seen = new Set<string>()
+  for (let index = plays.length - 1; index >= 0 && seen.size < WAVE_RECENT; index--) {
+    const path = plays[index]?.path
+    const track = path ? byPath.get(path) : undefined
+    if (!path || !track || seen.has(path)) continue
+    seen.add(path)
+    seeds.push(track)
+  }
+  for (const track of shuffle(
+    favorites.filter((track) => track.path && byPath.has(track.path) && !seen.has(track.path)),
+    seeded(`favorites:${day}`),
+  ).slice(0, WAVE_FAVORITES)) {
+    if (track.path) seen.add(track.path)
+    seeds.push(track)
+  }
+  return seeds
+}
+
+/**
+ * The wave: the neighbours of what was played lately and of some favorites, by ListenBrainz's similarity
+ * (tracks, then artists), the listeners' genres and the files' own, with what was not played lately and a
+ * little of the newest; the newest plays themselves and disliked tracks out; the same artist not within a
+ * few tracks. Drawn by the day, so it stays the same all day and changes the next.
+ */
+function myWave(tracks: readonly LibraryTrack[], input: AutoInput): string[] {
+  const random = seeded(`wave:${input.day ?? ''}`)
+  const seeds = waveSeeds(tracks, input.plays, input.favorites ?? [], input.day)
+  if (!seeds.length) return []
+  const wave = input.wave
+  const recent = new Set(seeds.flatMap((track) => (track.path ? [track.path] : [])))
+  const seedArtists = new Map<string, number>()
+  for (const seed of seeds)
+    for (const name of creditArtists(seed.artist ?? '')) seedArtists.set(name, (seedArtists.get(name) ?? 0) + 1)
+  const seedGenres = new Set(seeds.flatMap((seed) => (seed.genre ? [seed.genre.toLowerCase()] : [])))
+  const seedTags = new Set<string>()
+  for (const name of seedArtists.keys()) for (const tag of wave?.genres.get(name) ?? []) seedTags.add(tag.toLowerCase())
+  // The similar artists of the seeds' artists, by their best score, normalised within each list.
+  const nearArtists = new Map<string, number>()
+  for (const name of seedArtists.keys()) {
+    const similar = wave?.similarArtists.get(name) ?? []
+    const top = similar[0]?.score ?? 0
+    for (const other of similar)
+      if (top > 0) nearArtists.set(other.name, Math.max(nearArtists.get(other.name) ?? 0, other.score / top))
+  }
+  // The similar tracks of the seeds, by their best score, normalised within each list.
+  const nearTracks = new Map<string, number>()
+  for (const seed of seeds) {
+    const similar = seed.path ? (wave?.similarTracks.get(seed.path) ?? []) : []
+    const top = similar[0]?.score ?? 0
+    for (const other of similar)
+      if (top > 0) nearTracks.set(other.path, Math.max(nearTracks.get(other.path) ?? 0, other.score / top))
+  }
+  const lately = new Set(input.plays.slice(-RECENT_PLAYS).map((play) => play.path))
+  const played = new Set(input.plays.map((play) => play.path))
+  const newest = new Set(
+    recentlyAdded(
+      tracks.filter((track) => track.addedAt !== null),
+      AUTO_SIZE,
+    ).map((track) => track.path),
+  )
+  const scored = tracks.flatMap((track) => {
+    const path = track.path
+    if (!path || recent.has(path)) return []
+    const names = creditArtists(track.artist ?? '')
+    let score = 0
+    score += 4 * (nearTracks.get(path) ?? 0)
+    score += 3 * Math.max(0, ...names.map((name) => nearArtists.get(name) ?? 0))
+    if (names.some((name) => seedArtists.has(name))) score += 1
+    const tags = names.flatMap((name) => wave?.genres.get(name) ?? []).map((tag) => tag.toLowerCase())
+    if (tags.length && seedTags.size) score += (2 * tags.filter((tag) => seedTags.has(tag)).length) / tags.length
+    else if (track.genre && seedGenres.has(track.genre.toLowerCase())) score += 1
+    if (score === 0) return []
+    if (!lately.has(path)) score += 1
+    if (!played.has(path)) score += 0.5
+    if (newest.has(path)) score += 0.5
+    score += random()
+    return [{ track, score }]
+  })
+  scored.sort((a, b) => b.score - a.score)
+  // The same artist not within a few tracks: the best that keeps its distance, else the best there is.
+  const chosen: LibraryTrack[] = []
+  const pool = [...scored]
+  while (chosen.length < AUTO_SIZE && pool.length) {
+    const last = chosen.slice(-WAVE_SPACING).flatMap((track) => creditArtists(track.artist ?? ''))
+    let index = pool.findIndex((item) => !creditArtists(item.track.artist ?? '').some((name) => last.includes(name)))
+    if (index < 0) index = 0
+    const [next] = pool.splice(index, 1)
+    if (next) chosen.push(next.track)
+  }
+  return chosen.flatMap((track) => (track.path ? [track.path] : []))
 }
 
 /** Loved: the most played this many deep, and the favorites. */

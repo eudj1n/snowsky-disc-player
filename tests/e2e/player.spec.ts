@@ -3563,6 +3563,19 @@ test('shows what ListenBrainz says of an identified artist: popular tracks, simi
     await page.reload()
     await expect(page.getByTestId('popular-tracks')).toBeVisible({ timeout: 15_000 })
     expect(asked).toHaveLength(9)
+    // Similar albums on an album's page, from the same answers: Northline's albums (a similar artist by id),
+    // Kite Lines' by name; Mira Sol's own stay with "More by". Nothing is sent again.
+    await page.goto('/#/album/Blue%20Hours/Mira%20Sol')
+    const similarAlbums = page.getByTestId('similar-albums')
+    await expect(similarAlbums.getByRole('heading', { name: 'Similar albums' })).toBeVisible({ timeout: 15_000 })
+    // Northline's two albums (the newest first among equals); Kite Lines' Two Rooms credits Mira Sol on a
+    // track, so it stays with "More by"; none of Mira Sol's own.
+    await expect(similarAlbums.getByRole('listitem')).toHaveCount(2)
+    await expect(similarAlbums.getByRole('listitem').first()).toContainText('Northline')
+    await expect(similarAlbums).toContainText('Night Drive')
+    await expect(similarAlbums).not.toContainText('Two Rooms')
+    await expect(similarAlbums.getByRole('listitem').filter({ hasText: 'Mira Sol' })).toHaveCount(0)
+    expect(asked).toHaveLength(9)
     await disconnect(page)
   } finally {
     for (const name of ['Mira Sol', 'Northline']) await forgetRecord(page, 'musicbrainz', { kind: 'artist', name })
@@ -3735,4 +3748,43 @@ test("offers a track's similar ones from its panel, by the edition's recording, 
   } finally {
     await forgetRecord(page, 'musicbrainz', { kind: 'album', name: key })
   }
+})
+
+test('offers My wave among the automatic playlists, drawn from the newest plays, and puts it on the player', async ({
+  page,
+}) => {
+  test.skip(external, 'Needs the mock collection')
+  test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
+  await english(page)
+  await connectAndPair(page)
+  // Home offers it as a preview card, like the other lists not made yet.
+  await page.goto('/#/')
+  const card = page.getByTestId('for-you').locator('[data-kind="my_wave"]')
+  await expect(card).toBeVisible({ timeout: 15_000 })
+  await expect(card).toContainText('My wave')
+  await page.goto('/#/playlists')
+  const row = page.getByTestId('auto-playlists').locator('[data-kind="my_wave"]')
+  await expect(row).toContainText('My wave')
+  await row.getByRole('button', { name: 'Add to the player' }).click()
+  await expect(row.getByRole('button', { name: 'Play My wave' })).toBeVisible({ timeout: 15_000 })
+  await expect(row).toContainText('updated daily')
+  // The list: neighbours of what the mock's history played (Inner Space, Forma: the rest of Ambient), never the plays themselves.
+  await row.getByRole('link', { name: 'My wave' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'My wave' })).toBeVisible()
+  const rows = page.getByRole('row')
+  await expect(rows.first()).toBeVisible({ timeout: 15_000 })
+  const titles = await rows.allInnerTexts()
+  expect(titles.join('\n')).not.toContain('Orbit')
+  expect(titles.join('\n')).toMatch(/Still Here|Inner Space|Meridian Line/)
+  await page
+    .getByTestId('auto-playlists')
+    .waitFor({ state: 'detached' })
+    .catch(() => undefined)
+  // Removed again, so the other tests find the Playlists folder as they expect it.
+  await page.goto('/#/playlists')
+  page.once('dialog', (dialog) => void dialog.accept())
+  await row.getByTestId('auto-row-actions').click()
+  await page.getByRole('menuitem', { name: 'Remove from the player' }).click()
+  await expect(row.getByRole('button', { name: 'Add to the player' })).toBeVisible({ timeout: 15_000 })
+  await disconnect(page)
 })

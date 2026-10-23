@@ -19,6 +19,15 @@ stay short and group related work; how and why it was done is in the
   id is sent, and the answer stays in your browser for a week. Your
   ListenBrainz user token is optional: without it, since October 2026,
   ListenBrainz withholds the most listened tracks.
+- Similar albums on an album's page: the albums of your card by similar
+  artists and shared genres, by ListenBrainz listeners.
+- My wave, a sixth automatic playlist: the neighbours of what you played
+  lately and of some favorites, by ListenBrainz's similar tracks and
+  artists and the listeners' genres (your files' genres without them),
+  with what you have not played lately and a little of the newest, the
+  same artist kept apart; drawn anew by the day, week or month like the
+  others. Needs a card catalog that admits it (the server's next release,
+  or its catalog override on the card).
 - Similar tracks: a track's panel offers the tracks of your card
   ListenBrainz listeners play with it, when its album is identified; open
   one, play them here or add them to a playlist. The edition's recording
