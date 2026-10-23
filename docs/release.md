@@ -21,13 +21,17 @@ npm run release               # uses ../snowsky-disc-server, or DISC_SERVER_DIR
 `Disc Player/` with gzip twins of its text files, `app.json` (the version: the
 date and commit, or `DISC_APP_VERSION`; and `homepage`, package.json's project
 address, which the service's application manager links to: an `https://`
-address of at most 200 bytes) and the reviewed `origins.json` kept in
-`release/`. With the service checkout it refuses a `release/origins.json`
-the service no longer renders (`npm run release:origins` brings the current
-one; commit it) and has the service's tool install the zip into a scratch
-card, which applies every rule an installation does. The reviewed catalogs
-are not in the app: the page reads them from the service at `/api/contract/`
-(the image's, or the card's `.disc/catalog` where admitted). The zip lands in
+address of at most 200 bytes) and the app's own `origins.json` kept in
+`release/`: the https origins the page may reach, which the gateway adds to
+the page's policy (combined-009). The file is this repository's (owner,
+2026-10-23): a provider is added in a pull request here, checked by the
+gateway's rules (`npm run check:origins`, part of `npm run check`; the gateway
+rejects the whole file on one bad entry and leaves the page same-origin), and
+needs no release of the server. With the service checkout the release has the
+service's tool install the zip into a scratch card, which applies every rule
+an installation does. The reviewed catalogs are not in the app: the page reads
+them from the service at `/api/contract/` (the image's, or the card's
+`.disc/catalog` where admitted). The zip lands in
 `work/disc-player-<version>.zip`.
 
 ## Publish with a tag
@@ -42,7 +46,7 @@ tag that is not package.json's version or has no dated section
 
 A `v<version>` tag on the released commit (owner, 2026-10-02) runs
 `.github/workflows/release.yml`: the checks, the zip packed without a service
-checkout (`DISC_RELEASE_WITHOUT_SERVICE=1`, from the same `release/origins.json`)
+checkout (`DISC_RELEASE_WITHOUT_SERVICE=1`)
 as a GitHub release with its SHA-256, and the hosted site on GitHub Pages
 (`pages.yml`). The tag goes on a commit that passed CI and, for the owner's
 card, the checks below. The `github-pages` environment admits deployments

@@ -2446,7 +2446,7 @@ V2.57 profile; no `commands.json`); the card ejected.
       `github-pages` environment admits `v*` tags besides `main`. The zip is
       packed by `scripts/pack-app.mjs`, a mirror of the service's
       `app_bundle.py zip`, from the reviewed `origins.json` kept in
-      `release/` (`npm run release:origins`); locally the release also checks
+      `release/` (then `npm run release:origins`, since 2026-10-23 the file is this repository's own); locally the release also checks
       that file against the service and has the service's tool install the
       zip into a scratch card. CI skips commits that change documentation
       only. Evidence: unit `pack-app`; the Node zip of the current `dist/`
@@ -2931,6 +2931,48 @@ player: the world's counts, nothing the owner chose.
       recordings ("in the style of {track}", a queue from it); fresh
       releases on New; My wave; the account (scrobbling, collaborative
       recommendations, LB Radio) only on the owner's decision.
+
+## The app's origins are its own (owner, 2026-10-23), player-only
+
+The owner asked whether a new host in `origins.json` really needs a new
+server version, since users writing their own apps would hit a dead end.
+Found: it does not, and has not since combined-009. The gateway takes an
+app's own `origins.json` beside its index.html without a firmware
+fingerprint and checks only its form (`device/src/origins.c`: https,
+lower-case labels, a wildcard only first, up to 16 origins of 100
+characters, `connect-src` and `img-src`); one bad entry rejects the file
+and the app stays same-origin. The "server catalog first" route was our
+own process left over from combined-008, when the page lived in the image
+and its origins were bound to the firmware profile; it caused the desync
+of 2.57.10 (a server release without the current player in its catalog).
+The CSP never guarded against the app itself (a malicious app declares its
+own hosts); what guards is `script-src 'self'` and the manager's install
+checks. The file is for transparency (Settings says what each source
+reaches) and against a compromised dependency reaching an unknown host.
+
+- [x] `release/origins.json` is this repository's: pretty-printed,
+      reviewed in pull requests, without the image's provenance fields;
+      `scripts/check-origins.mjs` checks it by the gateway's rules and
+      prints the policy (`npm run check:origins`, in `npm run check` and
+      before packing); `scripts/service-origins.mjs` and
+      `npm run release:origins` are gone. The limit stays the gateway's on
+      the card (16) until a server release raises it. Unit test
+      `check-origins.test.mjs` (the release's file, the character rules as
+      the server's test has them, each rejection, the policy's order).
+- [ ] The server's side, to be done by the owner or with the owner's
+      permission (the auto mode refused the edits as weakening security):
+      `firmware/origins/v2.57.json` removed, `scripts/origins_catalog.py`
+      kept as the rules of an app's file (`check_origins`, `load_origins`
+      from a path, `origins_data(catalog, profile=None)`, `policy`),
+      `app_bundle.py zip` keeping and checking the app's own
+      `origins.json` (`--origins <file>` to pack another), the gateway's
+      `DISC_ORIGINS_MAX` 32 and `DISC_POLICY_MAX` 8192, the contract's
+      "The page's external origins" rewritten for combined-009, the apps'
+      document saying an app declares its own hosts, the tests following.
+- Hosted pages (CORS) are a separate list: `hosted.json` of the image, or
+  the card's `.disc/catalog/hosted.json` override, up to four exact
+  origins bound to the firmware profile; one entry today, the GitHub Pages
+  prototype. Also no server release per host.
 
 ## Later
 

@@ -35,7 +35,7 @@ const AUDIO_NAME = /\.(flac|wav|mp3|m4a|aac|ogg|opus|ape|wv|wma|dsf|dff|aiff?)$/
 const PORT = Number(process.env.MOCK_GATEWAY_PORT ?? 4870)
 const DIST = process.env.MOCK_GATEWAY_DIST ?? 'dist'
 const FIXTURES = new URL('./fixtures/', import.meta.url)
-/** The reviewed origins.json a release packs, as the service renders it (npm run release:origins). */
+/** The app's own origins.json a release packs (release/origins.json, this repository's; npm run check:origins). */
 const ORIGINS = new URL('../../release/origins.json', import.meta.url)
 const LANGUAGE = Number(process.env.MOCK_GATEWAY_LANGUAGE ?? 9)
 // Optional latency for data reads, to see loading skeletons in development.
@@ -44,8 +44,8 @@ const DELAY = Number(process.env.MOCK_GATEWAY_DELAY ?? 0)
 const SERIAL = process.env.MOCK_GATEWAY_SERIAL ?? '00000000000000'
 const credential = (value) => value === SERIAL
 /**
- * The page policy with the release's reviewed origins (release/origins.json, which the service
- * renders from its firmware/origins catalog), as the service builds it since combined-008.
+ * The page policy with the app's own origins (release/origins.json), as the service builds it
+ * from an app's file since combined-009.
  */
 const CSP = (() => {
   const { origins } = JSON.parse(readFileSync(ORIGINS, 'utf8'))

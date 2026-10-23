@@ -86,10 +86,12 @@ The service's own state (combined-008) has stores of its own:
 `stores/browser.ts`, which plays card files in an `Audio` element through
 the media route, a CUE track from its offset, without touching the player.
 
-External providers are reached only through origins the release's reviewed
-`origins.json` names (the service adds them to the page's policy; the page
-reads the same file through `loadOrigins()` and `originAllowed()` before
-offering a provider), and only once the owner allowed the source in
+External providers are reached only through origins the app's own
+`origins.json` names (`release/origins.json`, this repository's, checked by
+the gateway's rules in `scripts/check-origins.mjs`; the service adds them to
+the page's policy, and the page reads the same file through `loadOrigins()`
+and `originAllowed()` before offering a provider), and only once the owner
+allowed the source in
 Settings: `stores/externalSources.ts` reads and writes the store's
 `external_sources` collection (allowed, automatic; off without a record or
 without the collection; a source found by MusicBrainz ids also needs

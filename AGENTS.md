@@ -31,6 +31,10 @@ messages. UI strings live in paired `en`/`ru` dictionaries.
   service contract and present in the release's `commands.json` /
   `queries.json`. A needed capability that is missing goes to the service
   repository (catalog review or gateway change) before it is used here.
+  The page's external origins are the exception: `release/origins.json` is
+  this repository's own (the app's `origins.json`, combined-009), reviewed
+  in its pull requests and checked by the gateway's rules
+  (`npm run check:origins`); a new provider needs no server change.
 - **One owner, no replay.** Explicit Connect/Disconnect; no automatic connect
   or reconnect. Serialize requests and match replies by tag. A mutation gets a
   fresh request ID, is followed by a fresh read, and an uncertain outcome is

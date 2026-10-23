@@ -1,25 +1,26 @@
 #!/usr/bin/env node
 // Packs the checked dist/ as the Disc Player app (combined-009): a zip holding
 // "Disc Player/" with gzip twins, app.json (the version and package.json's
-// homepage, which the service's manager links to) and the reviewed
+// homepage, which the service's manager links to) and the app's own
 // origins.json kept in release/ (scripts/pack-app.mjs, a mirror of the DISC
 // service's scripts/app_bundle.py zip). A user copies the folder into Apps/ on
 // the card; nothing is written to a card here (see docs/release.md).
 //
-// With the service checkout (../snowsky-disc-server or DISC_SERVER_DIR), the
-// release refuses a release/origins.json the service no longer renders and has
-// the service's tool install the zip into a scratch card, which applies every
-// rule an installation does. A tag's release on GitHub Actions has no service
-// checkout: it sets DISC_RELEASE_WITHOUT_SERVICE=1 and relies on the same
-// release/origins.json, checked when it was brought here.
+// release/origins.json is this repository's (owner, 2026-10-23): checked here
+// by the gateway's rules (scripts/check-origins.mjs), reviewed in pull
+// requests, never fetched from the service. With the service checkout
+// (../snowsky-disc-server or DISC_SERVER_DIR) the release has the service's
+// tool install the zip into a scratch card, which applies every rule an
+// installation does. A tag's release on GitHub Actions has no service
+// checkout: it sets DISC_RELEASE_WITHOUT_SERVICE=1.
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { checkBundle } from './check-bundle.mjs'
+import { checkOrigins, ORIGINS } from './check-origins.mjs'
 import { buildApp, zipApp } from './pack-app.mjs'
-import { ORIGINS, renderOrigins } from './service-origins.mjs'
 
 const NAME = 'Disc Player'
 const service = resolve(process.env.DISC_SERVER_DIR ?? '../snowsky-disc-server')
@@ -35,8 +36,10 @@ if (bundle.errors.length) {
   process.exit(1)
 }
 const origins = readFileSync(ORIGINS)
-if (withService && !renderOrigins(service).equals(origins)) {
-  console.error('release/origins.json is not the service’s current one: run npm run release:origins and commit it')
+const checked = checkOrigins(origins.toString('utf8'))
+if (checked.errors.length) {
+  for (const error of checked.errors) console.error(`origins: ${error}`)
+  console.error('release/origins.json would be rejected by the gateway; the page would stay same-origin')
   process.exit(1)
 }
 const commit = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).trim()

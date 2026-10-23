@@ -4,22 +4,22 @@ Node.js 20.19+ (CI uses 24). Install once with `npm ci`.
 
 ## Commands
 
-| Command                           | What it does                                                                                                 |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `npm run dev:mock`                | Visual development without a player: starts the synthetic mock gateway and the Vite dev server proxied to it |
-| `npm run dev:emulator`            | Dev server proxied to the service's disposable V2.57 guest at `127.0.0.1:7870`                               |
-| `npm run dev`                     | Dev server proxied to `DISC_GATEWAY` from `.env.local`, e.g. a real player on the LAN                        |
-| `npm run format` / `format:check` | Prettier (with Tailwind class ordering)                                                                      |
-| `npm run lint`                    | ESLint: TypeScript strict rules, Vue rules, layer boundaries                                                 |
-| `npm run typecheck`               | `vue-tsc` for the app and unit tests, `tsc` for configs and e2e                                              |
-| `npm test`                        | Vitest unit and component tests                                                                              |
-| `npm run build`                   | Production build, then the SD bundle contract check                                                          |
-| `npm run build:hosted`            | The hosted build for a public HTTPS site (`dist-hosted/`, `VITE_HOSTED=1`; see below)                        |
-| `npm run check`                   | All of the above except e2e; this is what CI runs first                                                      |
-| `npm run e2e`                     | Playwright against the mock gateway (build first), desktop and phone                                         |
-| `npm run screenshots`             | The README's pictures from the mock with the demo covers (build first; [the pictures](images/README.md))     |
-| `npm run release`                 | Packs the Disc Player app as a zip, checked by the service's tool ([release](release.md))                    |
-| `npm run release:origins`         | Brings the service's current reviewed `origins.json` into `release/` ([release](release.md))                 |
+| Command                           | What it does                                                                                                       |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `npm run dev:mock`                | Visual development without a player: starts the synthetic mock gateway and the Vite dev server proxied to it       |
+| `npm run dev:emulator`            | Dev server proxied to the service's disposable V2.57 guest at `127.0.0.1:7870`                                     |
+| `npm run dev`                     | Dev server proxied to `DISC_GATEWAY` from `.env.local`, e.g. a real player on the LAN                              |
+| `npm run format` / `format:check` | Prettier (with Tailwind class ordering)                                                                            |
+| `npm run lint`                    | ESLint: TypeScript strict rules, Vue rules, layer boundaries                                                       |
+| `npm run typecheck`               | `vue-tsc` for the app and unit tests, `tsc` for configs and e2e                                                    |
+| `npm test`                        | Vitest unit and component tests                                                                                    |
+| `npm run build`                   | Production build, then the SD bundle contract check                                                                |
+| `npm run build:hosted`            | The hosted build for a public HTTPS site (`dist-hosted/`, `VITE_HOSTED=1`; see below)                              |
+| `npm run check`                   | All of the above except e2e; this is what CI runs first                                                            |
+| `npm run e2e`                     | Playwright against the mock gateway (build first), desktop and phone                                               |
+| `npm run screenshots`             | The README's pictures from the mock with the demo covers (build first; [the pictures](images/README.md))           |
+| `npm run release`                 | Packs the Disc Player app as a zip, checked by the service's tool ([release](release.md))                          |
+| `npm run check:origins`           | Checks `release/origins.json`, the app's own, by the gateway's rules and prints the policy ([release](release.md)) |
 
 ## Seeing the interface without touching the player
 
