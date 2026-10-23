@@ -3486,6 +3486,8 @@ test('shows what ListenBrainz says of an identified artist: popular tracks, simi
           ],
     })
   })
+  // The community's tags (stage 2) go with the Ask: answered empty here, apart from the count.
+  await page.route('https://api.listenbrainz.org/1/metadata/**', (route) => route.fulfill({ headers: cors, json: [] }))
   try {
     // Allowed, not automatic: nothing is sent before the click.
     await chooseSources(page, { musicbrainz: { allowed: true }, listenbrainz: { allowed: true } })
@@ -3537,6 +3539,91 @@ test('shows what ListenBrainz says of an identified artist: popular tracks, simi
     await page.reload()
     await expect(page.getByTestId('popular-tracks')).toBeVisible({ timeout: 15_000 })
     expect(asked).toHaveLength(6)
+    await disconnect(page)
+  } finally {
+    for (const name of ['Mira Sol', 'Northline']) await forgetRecord(page, 'musicbrainz', { kind: 'artist', name })
+  }
+})
+
+test("shows the listeners' genres of an artist, and on a genre page the artists they tag so and the related genres", async ({
+  page,
+}) => {
+  test.skip(external, 'Needs the mock collection')
+  test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
+  const MIRA = '6f1d2c3b-0000-4000-8000-00000000b001'
+  const NORTHLINE = '6f1d2c3b-0000-4000-8000-00000000a001'
+  const cors = { 'Access-Control-Allow-Origin': '*' }
+  const at = Math.floor(Date.now() / 1000)
+  for (const [name, mbid] of [
+    ['Mira Sol', MIRA],
+    ['Northline', NORTHLINE],
+  ] as const) {
+    const reply = await page.request.put('/api/store/musicbrainz/record', {
+      headers: changeHeaders(),
+      data: { kind: 'artist', name, mbid, at },
+    })
+    expect(reply.status()).toBe(200)
+  }
+  const genre = (tag: string, count: number) => ({ tag, count, genre_mbid: `genre-${tag}` })
+  const TAGS: Record<string, unknown[]> = {
+    [MIRA]: [genre('jazz', 12), genre('ambient', 5), genre('vocal jazz', 4), { tag: 'british', count: 3 }],
+    [NORTHLINE]: [genre('electronic', 20), genre('ambient', 9), genre('downtempo', 6)],
+  }
+  const asked: string[] = []
+  await page.route('https://api.listenbrainz.org/1/metadata/artist/**', (route) => {
+    const url = new URL(route.request().url())
+    asked.push(url.toString())
+    const wanted = (url.searchParams.get('artist_mbids') ?? '').split(',')
+    return route.fulfill({
+      headers: cors,
+      json: wanted.filter((id) => id in TAGS).map((id) => ({ artist_mbid: id, name: id, tag: { artist: TAGS[id] } })),
+    })
+  })
+  await page.route('https://labs.api.listenbrainz.org/**', (route) => route.fulfill({ headers: cors, json: [] }))
+  await page.route('https://api.listenbrainz.org/1/popularity/**', (route) =>
+    route.fulfill({ headers: cors, json: [] }),
+  )
+  try {
+    await chooseSources(page, { musicbrainz: { allowed: true }, listenbrainz: { allowed: true } })
+    await english(page)
+    await connectAndPair(page)
+    // Ambient's own artist is Forma (not identified); the listeners tag Mira Sol (Jazz here) and Northline (Electronic) so.
+    await page.goto('/#/genre/Ambient')
+    const ask = page.getByTestId('genre-tags-ask')
+    await expect(ask).toBeVisible({ timeout: 15_000 })
+    expect(asked).toEqual([])
+    await ask.click()
+    const also = page.getByTestId('genre-also')
+    await expect(also.getByRole('listitem')).toHaveCount(2, { timeout: 15_000 })
+    // Both identified artists in one batch; the most agreed first.
+    expect(asked).toHaveLength(1)
+    expect(asked[0]).toContain(`artist_mbids=${MIRA}%2C${NORTHLINE}&inc=tag`)
+    await expect(also.getByRole('listitem').first()).toContainText('Northline')
+    await expect(also.getByRole('listitem').nth(1)).toContainText('Mira Sol')
+    // Related genres: those the card has link to their pages, the rest stay words.
+    const related = page.getByTestId('genre-related')
+    await expect(related).toContainText(
+      'electronic 1 artist · jazz 1 artist · downtempo 1 artist · vocal jazz 1 artist',
+    )
+    await expect(related.getByRole('link', { name: 'electronic' })).toHaveAttribute('href', '#/genre/Electronic')
+    await expect(related.getByRole('link', { name: 'jazz' })).toHaveAttribute('href', '#/genre/Jazz')
+    await expect(related.getByRole('link', { name: 'downtempo' })).toHaveCount(0)
+    await expect(page.getByTestId('genre-tags-state')).toHaveCount(0)
+    // The artist's page: the listeners' genres, the card's ones linked; from this tab, nothing sent again.
+    await related.getByRole('link', { name: 'jazz' }).click()
+    await page.getByRole('link', { name: 'Open Mira Sol' }).first().click()
+    const tags = page.getByTestId('artist-tags')
+    await expect(tags).toHaveText('Genres by ListenBrainz listeners: jazz · ambient · vocal jazz')
+    await expect(tags.getByRole('link', { name: 'ambient' })).toHaveAttribute('href', '#/genre/Ambient')
+    await expect(tags.getByRole('link', { name: 'vocal jazz' })).toHaveCount(0)
+    expect(asked).toHaveLength(1)
+    // Automatic: a genre page reads by itself, from this browser's week-old copies.
+    await chooseSources(page, { musicbrainz: { allowed: true }, listenbrainz: { allowed: true, auto: true } })
+    await page.goto('/#/genre/Electronic')
+    await page.reload()
+    await expect(page.getByTestId('genre-related')).toContainText('ambient 1 artist', { timeout: 15_000 })
+    await expect(page.getByTestId('genre-tags-state')).toHaveCount(0)
+    expect(asked).toHaveLength(1)
     await disconnect(page)
   } finally {
     for (const name of ['Mira Sol', 'Northline']) await forgetRecord(page, 'musicbrainz', { kind: 'artist', name })

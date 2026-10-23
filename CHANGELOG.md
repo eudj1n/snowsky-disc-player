@@ -19,6 +19,10 @@ stay short and group related work; how and why it was done is in the
   id is sent, and the answer stays in your browser for a week. Your
   ListenBrainz user token is optional: without it, since October 2026,
   ListenBrainz withholds the most listened tracks.
+- The listeners' genres: an identified artist's page names the genres
+  ListenBrainz listeners give the artist, linked where your card has them;
+  a genre page shows the artists of your collection the listeners tag with
+  it though their files say otherwise, and the related genres.
 
 ### Listening
 

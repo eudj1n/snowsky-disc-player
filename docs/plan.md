@@ -2947,6 +2947,37 @@ player: the world's counts, nothing the owner chose.
       releases on New; My wave; the account (scrobbling, collaborative
       recommendations, LB Radio) only on the owner's decision.
 
+## ListenBrainz, stage 2: the listeners' genres (owner, 2026-10-23), player-only
+
+The owner chose the order: tags first, then similar recordings with the
+recording ids kept. Checked from a terminal: `/1/metadata/artist/?inc=tag`
+answers without a token, 50 ids a request (some 3 KB an artist), tags with
+a `genre_mbid` where MusicBrainz knows the tag as a genre. Labs'
+`tag-similarity` is co-occurrence of any tags ("britpop" gave "mellow",
+"teen pop", "relaxed"), not what a listener means by a related genre, so
+related genres are computed on the card's own artists instead: the genres
+the listeners give them together with the page's genre, counted by artists.
+
+- [x] `gateway/listenbrainz.ts` `artistTags` (batches of 25, genres marked,
+      an unknown artist given none); `domain/tags.ts` (`topTags`,
+      `artistsTaggedWith`, `relatedGenres`); `stores/artistTags.ts` (by
+      MusicBrainz id, a week in this browser; the artist's own with the Ask,
+      every identified artist's for a genre page, by itself when automatic).
+- [x] The artist's page: "Genres by ListenBrainz listeners: jazz · ambient
+      · …" under the heading, the card's genres linked. The genre page:
+      "Also {genre}, by ListenBrainz listeners" (identified artists the
+      listeners tag so though their files say otherwise, as cards) and
+      "Related genres" (words with the number of artists carrying both,
+      the card's genres linked), with the same Ask, asking and Retry state
+      as the artist's page when nothing is read yet.
+- [x] Evidence: unit tests of the domain and the batched request; e2e
+      "shows the listeners' genres of an artist, and on a genre page the
+      artists they tag so and the related genres" (one batch for two
+      identified artists, the cards' order, the links, the artist's line
+      from the tab, then automatic from the browser's copies).
+- [ ] Next: similar recordings ("in the style of {track}") with the
+      recording ids kept when an edition is confirmed.
+
 ## The app's origins are its own (owner, 2026-10-23), player-only
 
 The owner asked whether a new host in `origins.json` really needs a new

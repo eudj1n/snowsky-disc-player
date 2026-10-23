@@ -16,8 +16,10 @@ import SectionHeading from '../components/common/SectionHeading.vue'
 import TrackTiles from '../components/track/TrackTiles.vue'
 import { albumScope, recentAlbums, type Album } from '../domain/album'
 import { creditLabel, credits } from '../domain/artist'
+import { findGenre } from '../domain/genre'
 import { mostPlayed } from '../domain/history'
 import { groupsNotOnCard, popularTracksOnCard, similarArtistsOnCard } from '../domain/recommendations'
+import { topTags } from '../domain/tags'
 import type { Track } from '../domain/track'
 import type { SelectionTarget } from '../gateway/selection'
 import { t } from '../i18n'
@@ -32,7 +34,7 @@ import {
   missingAutoImages,
 } from '../stores/artistPictures'
 import { history, loadHistory } from '../stores/history'
-import { albums, artists, tracks } from '../stores/library'
+import { albums, artists, genres, tracks } from '../stores/library'
 import { isPinnedArtist, pins, togglePinArtist } from '../stores/pins'
 import { nowIsPlaying as isPlaying, nowPlaying } from '../stores/output'
 import { openInfoPanel, openTrackMenu, showCover, ui } from '../stores/ui'
@@ -48,6 +50,8 @@ import {
   recommendationsAllowed,
   recommendationsAutomatic,
 } from '../stores/recommendations'
+import { artistTags, loadArtistTags } from '../stores/artistTags'
+import { genreRoute } from './captions'
 import { albumCardRoute, albumRoute, artistAlbumLines, artistRoute, withYear } from './captions'
 import { useCrumbs } from './crumbs'
 import CollectionGate from './CollectionGate.vue'
@@ -162,13 +166,26 @@ const LACKING_SHOWN = 8
 const recommended = computed(() => artistRecommendations(name.value))
 /** The source may be asked for this artist: it is allowed and the artist is identified. */
 const canRecommend = computed(() => identity.value !== null && recommendationsAllowed())
+/** Asks ListenBrainz about the artist: the recommendations and the community's tags. */
+function askListenBrainz(artist: string): void {
+  void lookUpArtistRecommendations(artist)
+  const mbid = artistIdentity(artist)?.mbid
+  if (mbid) void loadArtistTags([mbid])
+}
 watch(
   () => (canRecommend.value && recommendationsAutomatic() && !recommended.value ? name.value : null),
   (artist) => {
-    if (artist) void lookUpArtistRecommendations(artist)
+    if (artist) askListenBrainz(artist)
   },
   { immediate: true },
 )
+/* The genres the listeners gave the artist (stage 2, the same day): those the card has link to their pages. */
+const TAGS_SHOWN = 8
+const tags = computed(() => {
+  const given = artistTags(name.value)
+  return given ? topTags(given, TAGS_SHOWN) : []
+})
+const genreOnCard = (tag: string) => findGenre(genres.value, tag)?.name ?? null
 const popular = computed(() =>
   recommended.value?.status === 'ready'
     ? popularTracksOnCard(
@@ -270,6 +287,19 @@ const recommendedNothing = computed(
     <template #skeleton>
       <CoverGrid><CoverCardSkeleton v-for="n in 4" :key="n" /></CoverGrid>
     </template>
+    <p v-if="tags.length" class="mt-0 mb-24 text-footnote leading-[1.6] text-secondary" data-testid="artist-tags">
+      <span class="text-muted">{{ t('artist_tags') }}:&nbsp;</span>
+      <template v-for="(tag, index) in tags" :key="tag.tag">
+        <template v-if="index > 0"> · </template>
+        <RouterLink
+          v-if="genreOnCard(tag.tag)"
+          :to="genreRoute(genreOnCard(tag.tag) as string)"
+          class="text-ink underline decoration-line underline-offset-2 hover:decoration-ink"
+          >{{ tag.tag }}</RouterLink
+        >
+        <span v-else>{{ tag.tag }}</span>
+      </template>
+    </p>
     <section v-if="hot.length" :aria-label="t('hot_tracks')" data-testid="hot-tracks">
       <SectionHeading :title="t('hot_tracks')" class="mt-0!">
         <!-- The artist's most played as an automatic playlist the player keeps (owner, 2026-09-30). -->
@@ -353,7 +383,7 @@ const recommendedNothing = computed(
     >
       <SectionHeading :title="t('recommend_title')" />
       <p v-if="!recommended" class="m-0 text-footnote text-secondary">
-        <UiPillButton variant="secondary" data-testid="recommend-ask" @click="lookUpArtistRecommendations(name)">{{
+        <UiPillButton variant="secondary" data-testid="recommend-ask" @click="askListenBrainz(name)">{{
           t('recommend_ask')
         }}</UiPillButton>
       </p>
@@ -365,7 +395,7 @@ const recommendedNothing = computed(
         class="m-0 flex flex-wrap items-center gap-12 text-footnote text-secondary"
       >
         {{ t('recommend_failed') }}
-        <UiPillButton variant="secondary" data-testid="recommend-retry" @click="lookUpArtistRecommendations(name)">{{
+        <UiPillButton variant="secondary" data-testid="recommend-retry" @click="askListenBrainz(name)">{{
           t('identify_retry')
         }}</UiPillButton>
       </p>

@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
+  artistTags,
   ListenBrainzTokenNeeded,
   popularGroups,
   popularRecordings,
   resetListenBrainzPacing,
   similarArtists,
   SIMILAR_ARTISTS_KEPT,
+  TAGS_BATCH,
 } from '../../src/gateway/listenbrainz'
 
 const MBID = 'cc197bad-dc9c-440d-a5b5-d52ba2e14234'
@@ -109,6 +111,43 @@ describe('ListenBrainz', () => {
     expect(await popularRecordings(MBID, fetchImpl, 'abc-123')).toHaveLength(1)
     expect(await popularGroups(MBID, fetchImpl)).toHaveLength(1)
     expect(seen).toEqual([null, 'Token abc-123', null])
+  })
+
+  it("reads artists' tags in batches, genres marked, an artist ListenBrainz does not know given none", async () => {
+    const asked: string[] = []
+    const ids = Array.from(
+      { length: TAGS_BATCH + 2 },
+      (_, n) => `${String(n).padStart(8, '0')}-0000-4000-8000-000000000000`,
+    )
+    const fetchImpl: typeof fetch = (input) => {
+      const url = new URL(input instanceof Request ? input.url : input.toString())
+      asked.push(url.toString())
+      const wanted = (url.searchParams.get('artist_mbids') ?? '').split(',')
+      // The first id of the batch answers; the second is unknown to ListenBrainz.
+      return Promise.resolve(
+        new Response(
+          JSON.stringify([
+            {
+              artist_mbid: wanted[0],
+              name: 'A',
+              tag: { artist: [{ tag: 'british', count: 3 }, { tag: 'rock', count: 10, genre_mbid: 'x' }, { tag: '' }] },
+            },
+          ]),
+          { status: 200 },
+        ),
+      )
+    }
+    const found = await artistTags(ids, fetchImpl)
+    expect(asked).toHaveLength(2)
+    expect(asked[0]).toMatch(/^https:\/\/api\.listenbrainz\.org\/1\/metadata\/artist\/\?artist_mbids=/)
+    expect(asked[0]).toContain('inc=tag')
+    expect(Object.keys(found)).toHaveLength(ids.length)
+    expect(found[ids[0] ?? '']).toEqual([
+      { tag: 'rock', count: 10, genre: true },
+      { tag: 'british', count: 3, genre: false },
+    ])
+    expect(found[ids[1] ?? '']).toEqual([])
+    expect(found[ids[TAGS_BATCH] ?? '']).toHaveLength(2)
   })
 
   it('waits out the window a 429 names, then asks once more', async () => {

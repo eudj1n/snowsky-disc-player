@@ -15,6 +15,7 @@
  * header in its CORS preflight, and needs none.
  */
 import type { PopularGroup, PopularRecording, SimilarArtist } from '../domain/recommendations'
+import type { WeightedTag } from '../domain/tags'
 
 const API = 'https://api.listenbrainz.org/1'
 const LABS = 'https://labs.api.listenbrainz.org'
@@ -27,6 +28,9 @@ export const LISTENBRAINZ_SITE = 'https://listenbrainz.org'
 export const SIMILAR_ARTISTS_KEPT = 40
 export const POPULAR_RECORDINGS_KEPT = 200
 export const POPULAR_GROUPS_KEPT = 60
+/** Artists per metadata request (the answer runs to some 3 KB an artist). */
+export const TAGS_BATCH = 25
+export const TAGS_KEPT = 40
 export type { PopularGroup, PopularRecording, SimilarArtist }
 
 const MBID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
@@ -137,4 +141,38 @@ export async function popularGroups(
     })
   }
   return found.sort((a, b) => b.listens - a.listens).slice(0, POPULAR_GROUPS_KEPT)
+}
+
+/**
+ * The community's tags of artists by id (`/1/metadata/artist/?inc=tag`), in batches, the most given
+ * first: a tag with a `genre_mbid` is one MusicBrainz knows as a genre. An artist ListenBrainz does not know
+ * is absent from the answer; it is given no tags here. Throws when a batch cannot be answered.
+ */
+export async function artistTags(
+  mbids: readonly string[],
+  fetchImpl: typeof fetch = fetch,
+): Promise<Record<string, WeightedTag[]>> {
+  const found: Record<string, WeightedTag[]> = {}
+  for (let at = 0; at < mbids.length; at += TAGS_BATCH) {
+    const batch = mbids.slice(at, at + TAGS_BATCH)
+    const query = new URLSearchParams({ artist_mbids: batch.join(','), inc: 'tag' })
+    const body = await read(`${API}/metadata/artist/?${query}`, fetchImpl)
+    if (!Array.isArray(body)) continue
+    for (const item of body) {
+      const row = record(item)
+      const id = text(row?.artist_mbid) ?? text(row?.mbid)
+      if (!row || !id || !MBID.test(id)) continue
+      const tags: WeightedTag[] = []
+      const given = record(row.tag)?.artist
+      for (const entry of Array.isArray(given) ? given : []) {
+        const tag = record(entry)
+        const name = text(tag?.tag)
+        if (!tag || !name) continue
+        tags.push({ tag: name, count: count(tag.count), genre: typeof tag.genre_mbid === 'string' })
+      }
+      found[id] = tags.sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag)).slice(0, TAGS_KEPT)
+    }
+    for (const id of batch) found[id] ??= []
+  }
+  return found
 }

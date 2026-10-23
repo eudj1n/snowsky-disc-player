@@ -9,7 +9,7 @@
  * as its tile shows them (owner, 2026-09-29). Artists leave the
  * genre scope, as in the reference.
  */
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import CoverCard from '../components/collection/CoverCard.vue'
 import CoverCardSkeleton from '../components/collection/CoverCardSkeleton.vue'
@@ -20,10 +20,13 @@ import SectionHeading from '../components/common/SectionHeading.vue'
 import TrackTiles from '../components/track/TrackTiles.vue'
 import { albumScope, albumTracks, type Album } from '../domain/album'
 import { findGenre, genreAlbums, genreArtists, genreTracks, playableGenre, sameGenre } from '../domain/genre'
+import { artistsTaggedWith, relatedGenres } from '../domain/tags'
 import { recentlyAdded, type Track } from '../domain/track'
 import type { SelectionTarget, TrackKey } from '../gateway/selection'
 import { t } from '../i18n'
 import { albumCover, coverFor } from '../stores/enrichment'
+import { artistTagsState, loadCollectionTags, tagsByArtist, tagsLoading, unreadArtists } from '../stores/artistTags'
+import { recommendationsAllowed, recommendationsAutomatic } from '../stores/recommendations'
 import { artistImage } from '../stores/artistPictures'
 import { albums, artists as allArtists, genres, titleGroups, tracks as collection } from '../stores/library'
 import { nowIsPlaying as isPlaying, nowPlaying } from '../stores/output'
@@ -31,7 +34,7 @@ import { openTrackMenu } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiSkeleton from '../ui/UiSkeleton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
-import { albumLines, albumRoute, artistRoute, genreAlbumRoute } from './captions'
+import { albumLines, albumRoute, artistRoute, genreAlbumRoute, genreRoute } from './captions'
 import { useCrumbs } from './crumbs'
 import CollectionGate from './CollectionGate.vue'
 import { genreRecords } from './genreRecords'
@@ -58,6 +61,8 @@ const shelf = computed(() => (genre.value ? genreAlbums(albums.value, genre.valu
 const artists = computed(() => genreArtists(collection.value, name.value))
 /** An artist's albums as its page shows them (all of them, owner 2026-09-29), else its tracks here. */
 const albumCounts = computed(() => new Map(allArtists.value.map((artist) => [artist.name, artist.albumCount])))
+/** Stock plays an artist it knows by that exact name. */
+const playableArtist = (name: string) => allArtists.value.some((artist) => artist.name === name && artist.literal)
 const artistLine = (artist: { name: string; trackCount: number }) => {
   const albums = albumCounts.value.get(artist.name) ?? 0
   return albums ? t('album_count', { count: albums }) : t('track_count', { count: artist.trackCount })
@@ -107,6 +112,40 @@ function target(track?: TrackKey & { genre?: string | null }): SelectionTarget {
   const own = track?.genre && sameGenre(track.genre, name.value) ? track.genre : literal.value
   return { kind: 'genre', genre: own, ...(track ? { track: { title: track.title, artist: track.artist } } : {}) }
 }
+/*
+ * What ListenBrainz listeners say (stage 2 of the recommendations, 2026-10-23): the card's identified
+ * artists they tag with this genre though the files say otherwise, and the genres they give those artists
+ * together with it. Every identified artist's tags are read for it, by itself when the source works
+ * automatically, else on a click; this browser keeps them for a week.
+ */
+const ALSO_SHOWN = 12
+const RELATED_SHOWN = 8
+const canAsk = computed(() => recommendationsAllowed() && tagsByArtist.value.size + unreadArtists.value.length > 0)
+const unread = computed(() => unreadArtists.value.length > 0)
+watch(
+  () => (canAsk.value && recommendationsAutomatic() && unread.value && !tagsLoading.value ? name.value : null),
+  (genre) => {
+    if (genre) void loadCollectionTags()
+  },
+  { immediate: true },
+)
+const ownArtists = computed(() => new Set(artists.value.map((artist) => artist.name)))
+const also = computed(() => artistsTaggedWith(tagsByArtist.value, shown.value, ownArtists.value).slice(0, ALSO_SHOWN))
+const related = computed(() => relatedGenres(tagsByArtist.value, shown.value, RELATED_SHOWN))
+const relatedOnCard = (tag: string) => findGenre(genres.value, tag)?.name ?? null
+/** Nothing read yet (or all failed) while the source is allowed: a state to show. */
+const tagsState = computed<'ask' | 'loading' | 'failed' | null>(() =>
+  !canAsk.value || tagsByArtist.value.size > 0
+    ? null
+    : tagsLoading.value
+      ? 'loading'
+      : artistTagsState.failed
+        ? 'failed'
+        : recommendationsAutomatic()
+          ? null
+          : 'ask',
+)
+
 const heading = useHeadingAction({
   owns: (track) => tracks.value.some((item) => item.path === track.path),
   label: () => t('play_genre'),
@@ -227,5 +266,56 @@ function playAlbum(item: Album): void {
         />
       </CoverRow>
     </template>
+    <template v-if="also.length">
+      <SectionHeading :title="t('genre_also', { genre: shown })" :subtitle="t('genre_also_by')" />
+      <CoverRow :label="t('genre_also', { genre: shown })" data-testid="genre-also">
+        <CoverCard
+          v-for="artist in also"
+          :key="artist.name"
+          role="listitem"
+          artist
+          :title="artist.name"
+          :cover="artistImage(artist.name)"
+          :to="artistRoute(artist.name)"
+          :lines="[{ text: artistLine({ name: artist.name, trackCount: 0 }) }]"
+          :open-label="t('open_item', { name: artist.name })"
+          :play-label="playableArtist(artist.name) ? t('play_item', { name: artist.name }) : null"
+          @play="playFrom({ kind: 'artist', artist: artist.name })"
+        />
+      </CoverRow>
+    </template>
+    <section v-if="related.length" :aria-label="t('genre_related')" data-testid="genre-related">
+      <SectionHeading :title="t('genre_related')" :subtitle="t('genre_related_by')" />
+      <p class="m-0 text-footnote leading-[1.8] text-secondary">
+        <template v-for="(item, index) in related" :key="item.tag">
+          <template v-if="index > 0"> · </template>
+          <RouterLink
+            v-if="relatedOnCard(item.tag)"
+            :to="genreRoute(relatedOnCard(item.tag) as string)"
+            class="text-ink underline decoration-line underline-offset-2 hover:decoration-ink"
+            >{{ item.tag }}</RouterLink
+          >
+          <span v-else>{{ item.tag }}</span>
+          <span class="text-muted">&nbsp;{{ t('genre_related_artists', { count: item.artists }) }}</span>
+        </template>
+      </p>
+    </section>
+    <section v-if="tagsState" :aria-label="t('recommend_title')" data-testid="genre-tags-state">
+      <SectionHeading :title="t('recommend_title')" />
+      <p v-if="tagsState === 'ask'" class="m-0 text-footnote text-secondary">
+        <UiPillButton variant="secondary" data-testid="genre-tags-ask" @click="loadCollectionTags()">{{
+          t('recommend_ask')
+        }}</UiPillButton>
+      </p>
+      <p v-else-if="tagsState === 'loading'" role="status" class="m-0 text-footnote text-secondary">
+        {{ t('recommend_asking') }}
+      </p>
+      <p v-else class="m-0 flex flex-wrap items-center gap-12 text-footnote text-secondary">
+        {{ t('recommend_failed') }}
+        <UiPillButton variant="secondary" data-testid="genre-tags-retry" @click="loadCollectionTags()">{{
+          t('identify_retry')
+        }}</UiPillButton>
+      </p>
+    </section>
   </CollectionGate>
 </template>
