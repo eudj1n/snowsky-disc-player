@@ -3016,7 +3016,10 @@ record by key; it had no "changed since".
       after that moment, `total` counting them, so the page can read the
       changes alone (snowsky-disc-server PR, `device/src/store.c`); the
       page moves to delta reads once a server with it is released. The
-      mock suite with the snapshot: no failure (2026-10-23).
+      mock suite with the snapshot (2026-10-24): a first run lost one case
+      to a timeout (the cover colours and karaoke) while a MIPS build ran
+      in Docker beside it, and the cases after it did not run; the run
+      with the machine idle passed whole, 18 skipped.
 
 ## The owner's three points of the evening (owner, 2026-10-23), player-only
 
