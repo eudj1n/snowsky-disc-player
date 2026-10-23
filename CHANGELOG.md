@@ -9,6 +9,16 @@ stay short and group related work; how and why it was done is in the
 
 ## [Unreleased]
 
+### Recommendations
+
+- ListenBrainz, a new outside source: once you allow it, an identified
+  artist's page shows Popular (the artist's tracks on your card by the
+  world's listen counts), Similar artists (those on your card as cards, the
+  rest named) and the albums you lack. Asked by itself when the artist's
+  page opens, if you say so, else by a button; only the artist's MusicBrainz
+  id is sent, and the answer stays in your browser for a week. Needs a card
+  release of the server that admits ListenBrainz.
+
 ### Listening
 
 - The browser tab's title names the track playing, on the player or in the

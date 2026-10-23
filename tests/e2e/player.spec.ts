@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test'
 import {
+  changeHeaders,
   chooseSources,
   command,
   forgetRecord,
@@ -3405,5 +3406,117 @@ test('keeps the reference layout on a phone without horizontal scrolling', async
     await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible()
     await expect(page.getByRole('main').getByRole('button').first()).toBeVisible()
     expect(await overflow(), path).toBeLessThanOrEqual(0)
+  }
+})
+
+test('shows what ListenBrainz says of an identified artist: popular tracks, similar artists and the albums the card lacks', async ({
+  page,
+}) => {
+  test.skip(external, 'Needs the mock collection')
+  test.skip(!SERIAL, 'E2E_SERIAL is required against a real gateway')
+  const MIRA = '6f1d2c3b-0000-4000-8000-00000000b001'
+  const NORTHLINE = '6f1d2c3b-0000-4000-8000-00000000a001'
+  const ECHO = '6f1d2c3b-0000-4000-8000-00000000c001'
+  const KITE = '6f1d2c3b-0000-4000-8000-00000000c002'
+  const cors = { 'Access-Control-Allow-Origin': '*' }
+  const at = Math.floor(Date.now() / 1000)
+  // The ids the owner confirmed earlier: Mira Sol's, and Northline's (a similar artist met by id).
+  for (const [name, mbid] of [
+    ['Mira Sol', MIRA],
+    ['Northline', NORTHLINE],
+  ] as const) {
+    const reply = await page.request.put('/api/store/musicbrainz/record', {
+      headers: changeHeaders(),
+      data: { kind: 'artist', name, mbid, at },
+    })
+    expect(reply.status()).toBe(200)
+  }
+  const asked: string[] = []
+  await page.route('https://labs.api.listenbrainz.org/**', (route) => {
+    asked.push(route.request().url())
+    return route.fulfill({
+      headers: cors,
+      json: [
+        { artist_mbid: NORTHLINE, name: 'Northline', comment: 'synth-pop band', score: 900 },
+        { artist_mbid: ECHO, name: 'Echo Field', comment: '', score: 800 },
+        // Met by its name read loosely, no id confirmed for it.
+        { artist_mbid: KITE, name: 'kite lines', comment: '', score: 700 },
+      ],
+    })
+  })
+  await page.route('https://api.listenbrainz.org/**', (route) => {
+    const url = route.request().url()
+    asked.push(url)
+    return route.fulfill({
+      headers: cors,
+      json: url.includes('top-recordings')
+        ? [
+            {
+              recording_mbid: 'r1',
+              recording_name: 'Afterglow (Reprise)',
+              total_listen_count: 900,
+              total_user_count: 9,
+            },
+            { recording_mbid: 'r2', recording_name: 'Late Train', total_listen_count: 500, total_user_count: 5 },
+            { recording_mbid: 'r3', recording_name: 'Nowhere Here', total_listen_count: 300, total_user_count: 3 },
+          ]
+        : [
+            {
+              release_group_mbid: 'g1',
+              release_group: { name: 'Afterglow', date: '2019-03-01', type: 'Album' },
+              total_listen_count: 900,
+            },
+            {
+              release_group_mbid: 'g2',
+              release_group: { name: 'Low Tide', date: '2021-06-01', type: 'EP' },
+              total_listen_count: 800,
+            },
+            {
+              release_group_mbid: 'g3',
+              release_group: { name: 'Late Train', date: '2020-01-01', type: 'Single' },
+              total_listen_count: 700,
+            },
+          ],
+    })
+  })
+  try {
+    // Allowed, not automatic: nothing is sent before the click.
+    await chooseSources(page, { musicbrainz: { allowed: true }, listenbrainz: { allowed: true } })
+    await english(page)
+    await connectAndPair(page)
+    await page.goto('/#/artist/Mira%20Sol')
+    const ask = page.getByTestId('recommend-ask')
+    await expect(ask).toBeVisible({ timeout: 15_000 })
+    expect(asked).toEqual([])
+    await ask.click()
+    const popular = page.getByTestId('popular-tracks')
+    await expect(popular.getByRole('heading', { name: 'Popular' })).toBeVisible({ timeout: 15_000 })
+    expect(asked).toHaveLength(3)
+    // The artist's tracks on the card by the world's listens; one ListenBrainz knows is not here.
+    await expect(popular).toContainText('Afterglow (Reprise)')
+    await expect(popular).toContainText('Late Train')
+    await expect(popular).not.toContainText('Nowhere Here')
+    const similar = page.getByTestId('similar-artists')
+    await expect(similar.getByRole('article')).toHaveCount(2)
+    await expect(similar.getByRole('link', { name: 'Open Northline' })).toBeVisible()
+    await expect(similar.getByRole('link', { name: 'Open Kite Lines' })).toBeVisible()
+    await expect(page.getByTestId('similar-absent')).toHaveText('Not on the card: Echo Field.')
+    // The albums and EPs the card lacks: Afterglow is here, the single is not told.
+    const lacking = page.getByTestId('lacking-albums')
+    await expect(lacking.getByRole('heading', { name: 'Also by Mira Sol' })).toBeVisible()
+    await expect(lacking).toContainText('Low Tide · 2021')
+    await expect(lacking).not.toContainText('Afterglow')
+    await expect(lacking).not.toContainText('Late Train')
+    await expect(page.getByTestId('recommend-state')).toHaveCount(0)
+
+    // Automatic: the page asks by itself, from this browser's week-old copy (nothing sent again).
+    await chooseSources(page, { musicbrainz: { allowed: true }, listenbrainz: { allowed: true, auto: true } })
+    await page.reload()
+    await expect(page.getByTestId('popular-tracks')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByTestId('recommend-ask')).toHaveCount(0)
+    expect(asked).toHaveLength(3)
+    await disconnect(page)
+  } finally {
+    for (const name of ['Mira Sol', 'Northline']) await forgetRecord(page, 'musicbrainz', { kind: 'artist', name })
   }
 })

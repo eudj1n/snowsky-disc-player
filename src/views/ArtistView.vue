@@ -17,6 +17,7 @@ import TrackTiles from '../components/track/TrackTiles.vue'
 import { albumScope, recentAlbums, type Album } from '../domain/album'
 import { creditLabel, credits } from '../domain/artist'
 import { mostPlayed } from '../domain/history'
+import { groupsNotOnCard, popularTracksOnCard, similarArtistsOnCard } from '../domain/recommendations'
 import type { Track } from '../domain/track'
 import type { SelectionTarget } from '../gateway/selection'
 import { t } from '../i18n'
@@ -39,7 +40,14 @@ import { artistList, autoPlaylists, makeArtistList, removeAutoList } from '../st
 import { pairing } from '../stores/pairing'
 import UiCircleButton from '../ui/UiCircleButton.vue'
 import UiPillButton from '../ui/UiPillButton.vue'
-import { artistIdentity } from '../stores/musicbrainzIds'
+import { albumIdentity, artistIdentity } from '../stores/musicbrainzIds'
+import { albumIdentityKey } from '../stores/coverSearch'
+import {
+  artistRecommendations,
+  lookUpArtistRecommendations,
+  recommendationsAllowed,
+  recommendationsAutomatic,
+} from '../stores/recommendations'
 import { albumCardRoute, albumRoute, artistAlbumLines, artistRoute, withYear } from './captions'
 import { useCrumbs } from './crumbs'
 import CollectionGate from './CollectionGate.vue'
@@ -141,6 +149,73 @@ watch(
 function lines(album: Album) {
   return withYear(artistAlbumLines(album, name.value), albumYear(album, scopeOf(album)))
 }
+
+/*
+ * What ListenBrainz says of the identified artist (owner, 2026-10-23): its tracks on the card by the world's
+ * listen counts, the similar artists the card holds and those it lacks, and the albums it lacks. Read by itself
+ * when the source works automatically, else on a click; nothing without the artist's confirmed id.
+ */
+const POPULAR = 6
+const SIMILAR_SHOWN = 12
+const ABSENT_SHOWN = 8
+const LACKING_SHOWN = 8
+const recommended = computed(() => artistRecommendations(name.value))
+/** The source may be asked for this artist: it is allowed and the artist is identified. */
+const canRecommend = computed(() => identity.value !== null && recommendationsAllowed())
+watch(
+  () => (canRecommend.value && recommendationsAutomatic() && !recommended.value ? name.value : null),
+  (artist) => {
+    if (artist) void lookUpArtistRecommendations(artist)
+  },
+  { immediate: true },
+)
+const popular = computed(() =>
+  recommended.value?.status === 'ready'
+    ? popularTracksOnCard(
+        recommended.value.recordings,
+        tracks.value.filter((track) => credits(track.artist, name.value)),
+        POPULAR,
+      )
+    : [],
+)
+const popularTracks = computed(() => popular.value.map((item) => item.track))
+const similar = computed(() =>
+  recommended.value?.status === 'ready'
+    ? similarArtistsOnCard(
+        recommended.value.similar,
+        artists.value.map((artist) => artist.name),
+        (artist) => artistIdentity(artist)?.mbid ?? null,
+      )
+    : { onCard: [], absent: [] },
+)
+const similarOnCard = computed(() => similar.value.onCard.slice(0, SIMILAR_SHOWN))
+const similarAbsent = computed(() =>
+  similar.value.absent
+    .slice(0, ABSENT_SHOWN)
+    .map((artist) => artist.name)
+    .join(', '),
+)
+const lacking = computed(() =>
+  recommended.value?.status === 'ready'
+    ? groupsNotOnCard(
+        recommended.value.groups,
+        [...own.value, ...appears.value],
+        (album) => albumIdentity(albumIdentityKey(album, scopeOf(album)))?.group ?? null,
+        LACKING_SHOWN,
+      )
+    : [],
+)
+const lackingLine = (group: { name: string; date: string | null }) =>
+  [group.name, group.date && /^\d{4}/.test(group.date) ? group.date.slice(0, 4) : null].filter(Boolean).join(' · ')
+/** ListenBrainz answered, but nothing of it meets the card. */
+const recommendedNothing = computed(
+  () =>
+    recommended.value?.status === 'ready' &&
+    !popular.value.length &&
+    !similar.value.onCard.length &&
+    !similar.value.absent.length &&
+    !lacking.value.length,
+)
 </script>
 
 <template>
@@ -225,6 +300,27 @@ function lines(album: Album) {
         @menu="(index, anchor) => hot[index] && openTrackMenu(hot[index], hotTarget(hot[index]), anchor)"
       />
     </section>
+    <section v-if="popular.length" :aria-label="t('popular_tracks')" data-testid="popular-tracks">
+      <SectionHeading :title="t('popular_tracks')" :subtitle="t('popular_by')" :class="{ 'mt-0!': !hot.length }" />
+      <TrackTiles
+        :tracks="popularTracks"
+        :play-label="t('play_label')"
+        :menu-label="t('track_actions')"
+        :cover-of="coverFor"
+        :current-path="current"
+        :playing="isPlaying"
+        :toggle-current="toggleCurrent"
+        :pause-label="t('pause')"
+        :title-to="hotTitleTo"
+        :subtitle-of="hotSubtitle"
+        :artist-to="artistRoute"
+        @play="(index) => popularTracks[index] && playFrom(hotTarget(popularTracks[index]))"
+        @menu="
+          (index, anchor) =>
+            popularTracks[index] && openTrackMenu(popularTracks[index], hotTarget(popularTracks[index]), anchor)
+        "
+      />
+    </section>
     <template
       v-for="(section, index) in [
         { title: t('albums'), list: items },
@@ -249,5 +345,66 @@ function lines(album: Album) {
         </CoverGrid>
       </section>
     </template>
+    <section
+      v-if="canRecommend && (!recommended || recommended.status !== 'ready' || recommendedNothing)"
+      :aria-label="t('recommend_title')"
+      data-testid="recommend-state"
+    >
+      <SectionHeading :title="t('recommend_title')" />
+      <p v-if="!recommended" class="m-0 text-footnote text-secondary">
+        <UiPillButton variant="secondary" data-testid="recommend-ask" @click="lookUpArtistRecommendations(name)">{{
+          t('recommend_ask')
+        }}</UiPillButton>
+      </p>
+      <p v-else-if="recommended.status === 'loading'" role="status" class="m-0 text-footnote text-secondary">
+        {{ t('recommend_asking') }}
+      </p>
+      <p
+        v-else-if="recommended.status === 'failed'"
+        class="m-0 flex flex-wrap items-center gap-12 text-footnote text-secondary"
+      >
+        {{ t('recommend_failed') }}
+        <UiPillButton variant="secondary" data-testid="recommend-retry" @click="lookUpArtistRecommendations(name)">{{
+          t('identify_retry')
+        }}</UiPillButton>
+      </p>
+      <p v-else class="m-0 text-footnote text-secondary">{{ t('recommend_nothing') }}</p>
+    </section>
+    <section
+      v-if="similarOnCard.length || similarAbsent"
+      :aria-label="t('similar_artists')"
+      data-testid="similar-artists"
+    >
+      <SectionHeading :title="t('similar_artists')" :subtitle="t('similar_by')" />
+      <CoverGrid v-if="similarOnCard.length">
+        <CoverCard
+          v-for="artist in similarOnCard"
+          :key="artist.name"
+          :title="artist.name"
+          :to="artistRoute(artist.name)"
+          artist
+          :cover="artistImage(artist.name)"
+          :open-label="t('open_item', { name: artist.name })"
+        />
+      </CoverGrid>
+      <p
+        v-if="similarAbsent"
+        class="mb-0 text-footnote text-secondary"
+        :class="similarOnCard.length ? 'mt-16' : 'mt-0'"
+        data-testid="similar-absent"
+      >
+        {{ t('similar_absent', { names: similarAbsent }) }}
+      </p>
+    </section>
+    <section
+      v-if="lacking.length"
+      :aria-label="t('lacking_albums', { name: creditLabel(name) })"
+      data-testid="lacking-albums"
+    >
+      <SectionHeading :title="t('lacking_albums', { name: creditLabel(name) })" :subtitle="t('lacking_by')" />
+      <ul class="m-0 grid list-none gap-6 p-0 text-footnote text-secondary">
+        <li v-for="group in lacking" :key="group.mbid">{{ lackingLine(group) }}</li>
+      </ul>
+    </section>
   </CollectionGate>
 </template>

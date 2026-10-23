@@ -184,7 +184,9 @@ signal for "in the style of {artist}".
 
 1. ListenBrainz similar artists and popularity: "In the style of {artist}",
    "Best of", "The albums you lack". Two origins in the server's catalog, a
-   source behind the existing switch, domain code only.
+   source behind the existing switch, domain code only. **Built 2026-10-23**
+   (the plan's "ListenBrainz, stage 1"): Popular, Similar artists and
+   "Also by" on the artist's page.
 2. Tags with weights and tag similarity: fuller genres, "in the style of
    {genre}".
 3. Similar recordings: "In the style of {track}", the first queue from it.

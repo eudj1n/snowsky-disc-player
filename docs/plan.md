@@ -2884,6 +2884,54 @@ passes through too (it left `i18n/index.ts`).
       the player's side, on the browser's side and after Disconnect
       (desktop and phone, 2026-10-23).
 
+## ListenBrainz, stage 1: similar artists and popularity (owner, 2026-10-23), card + player
+
+The owner chose to start the recommendations with ListenBrainz ("it will
+open many possibilities later"); the analysis is in
+[recommendations.md](recommendations.md), and this is its first stage. Two
+reviewed origins on the card (`api.listenbrainz.org` for popularity,
+`labs.api.listenbrainz.org` for similarity; the server's PR #23, no server
+release with it: the next one waits for the current player version in its
+catalog, the owner's rule after the desync of 2.57.10). On the page a
+source of a new kind, Recommendations, allowed in Settings as the others,
+needing MusicBrainz, automatic when the owner says so ("when the page of an
+identified artist opens"), else asked on a click ("Ask ListenBrainz" at the
+foot of the artist's page). Only the artist's MusicBrainz id goes out. The
+answers are kept in this browser for a week (IndexedDB), never on the
+player: the world's counts, nothing the owner chose.
+
+- [x] `gateway/listenbrainz.ts`: similar artists (Labs, the algorithm the
+      ListenBrainz site uses), the artist's most listened recordings and
+      release groups; one request at a time, a 429 waits out the window
+      `X-RateLimit-Reset-In` names; answers trimmed to what the page shows
+      (the full ones run to a megabyte for a well-known artist).
+      `domain/recommendations.ts` lays them against the card: similar
+      artists on the card (by confirmed id, else by the name read loosely)
+      and absent; the artist's tracks on the card by the world's listens,
+      each title once; the albums and EPs the card lacks (by the album's
+      confirmed group, else by title; singles aside). `stores/recommendations.ts`
+      reads and keeps them.
+- [x] The artist's page: "Popular" (the tracks on the card by ListenBrainz
+      listen counts, as tiles like Most played) after Most played; after
+      the albums, "Similar artists" (cards of those on the card, then
+      "Not on the card: …" as a line) and "Also by {artist}" (the albums the
+      card lacks, with their years). A state section carries the Ask
+      button, "Asking…", "did not answer" with Retry, and "knows nothing"
+      when an answer meets nothing on the card.
+- [x] Evidence: unit tests of the gateway (parsing, trimming, 404 as
+      nothing, 429 then the window) and the domain (the three matchings);
+      e2e "shows what ListenBrainz says of an identified artist" (desktop
+      and phone: nothing sent before the click, the three requests after
+      it, the sections' content, then automatic from the browser's copy
+      with nothing sent again); screenshots light and dark, desktop and
+      phone (`work/shots-recommend`); Settings shows the new group. The
+      mock suite after it: 175 passed, 17 skipped (2026-10-23).
+- [ ] Next stages, in the analysis' order: tags with weights and tag
+      similarity (fuller genres, "in the style of {genre}"); similar
+      recordings ("in the style of {track}", a queue from it); fresh
+      releases on New; My wave; the account (scrobbling, collaborative
+      recommendations, LB Radio) only on the owner's decision.
+
 ## Later
 
 - Writing tags from the page (owner, 2026-10-22): a route of the server
@@ -2900,8 +2948,9 @@ passes through too (it left `i18n/index.ts`).
   "My wave" over the collection, from ListenBrainz (similar artists and
   recordings, popularity, tags, fresh releases; no key, CORS open), Last.fm
   and Discogs with the owner's keys, and the history on the card; audio
-  features computed in the browser as a later stage. The owner returns to it
-  later.
+  features computed in the browser as a later stage. Stage 1 (similar
+  artists and popularity on the artist's page) is built, 2026-10-23; the
+  rest follows in the analysis' order.
 - AutoEq, stage B (owner, 2026-10-02; the analysis in [autoeq.md](autoeq.md)):
   a parametric fit of our own, closer than the fixed bands, once stage A
   proves itself on the physical player.

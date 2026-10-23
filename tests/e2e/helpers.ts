@@ -42,7 +42,16 @@ export async function english(page: Page): Promise<void> {
 }
 
 /** The outside sources of the page (2026-10-01). */
-const SOURCE_NAMES = ['musicbrainz', 'lrcred', 'lrclib', 'coverartarchive', 'wikimedia', 'fanarttv', 'autoeq']
+const SOURCE_NAMES = [
+  'musicbrainz',
+  'lrcred',
+  'lrclib',
+  'coverartarchive',
+  'wikimedia',
+  'fanarttv',
+  'listenbrainz',
+  'autoeq',
+]
 export const changeHeaders = () => {
   if (!SERIAL) throw new Error('E2E_SERIAL is required to change the store')
   return { 'X-Disc-Token': SERIAL, 'X-Disc-Request': requestId() }

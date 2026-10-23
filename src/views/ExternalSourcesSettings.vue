@@ -31,6 +31,7 @@ import {
 } from '../stores/externalSources'
 import { lyricsSourceAdmitted } from '../stores/lyrics'
 import { pairing } from '../stores/pairing'
+import { recommendationsAdmitted } from '../stores/recommendations'
 import { openDialog } from '../stores/ui'
 import UiPillButton from '../ui/UiPillButton.vue'
 import UiTextButton from '../ui/UiTextButton.vue'
@@ -40,6 +41,7 @@ const KIND_TITLES: Record<SourceKind, MessageKey> = {
   lyrics: 'source_kind_lyrics',
   album_covers: 'source_kind_album_covers',
   artist_images: 'source_kind_artist_images',
+  recommendations: 'source_kind_recommendations',
   equalizer: 'source_kind_equalizer',
 }
 interface SourceText {
@@ -86,6 +88,12 @@ const TEXTS: Record<SourceName, SourceText> = {
     auto: 'source_fanarttv_auto',
     admitted: () => originAllowed('fanart_api') && originAllowed('fanart_assets'),
   },
+  listenbrainz: {
+    about: 'source_listenbrainz_about',
+    sends: 'source_listenbrainz_sends',
+    auto: 'source_listenbrainz_auto',
+    admitted: recommendationsAdmitted,
+  },
   autoeq: {
     about: 'source_autoeq_about',
     sends: 'source_autoeq_sends',
@@ -102,6 +110,7 @@ const ORIGINS: Record<SourceName, readonly string[]> = {
   coverartarchive: ['coverartarchive', 'archive_root', 'archive'],
   fanarttv: ['fanart_api', 'fanart_assets'],
   wikimedia: ['commons', 'wikidata', 'wikimedia_thumb', 'wikimedia_upload'],
+  listenbrainz: ['listenbrainz_api', 'listenbrainz_labs'],
   autoeq: ['jsdelivr'],
 }
 const groups = computed(() =>

@@ -15,6 +15,8 @@
  * at all. AutoEq (owner, 2026-10-20) is a source of its own kind: headphone
  * corrections for the equalizer, read on a click only. lrc.red (the same
  * day) comes before LRCLIB among the lyrics sources: it has word timings.
+ * ListenBrainz (owner, 2026-10-23) brings recommendations by MusicBrainz id:
+ * similar artists and the world's listen counts.
  */
 import { reactive, readonly, watch } from 'vue'
 import { putRecord, readCollection } from '../gateway/store'
@@ -24,8 +26,9 @@ import { toast } from './ui'
 
 /** What a source brings; Settings groups the sources by it, in their order of priority (fanart.tv before
  * Commons for artist images: the owner, 2026-10-01). */
-export type SourceKind = 'metadata' | 'lyrics' | 'album_covers' | 'artist_images' | 'equalizer'
-export type SourceName = 'musicbrainz' | 'lrcred' | 'lrclib' | 'coverartarchive' | 'wikimedia' | 'fanarttv' | 'autoeq'
+export type SourceKind = 'metadata' | 'lyrics' | 'album_covers' | 'artist_images' | 'recommendations' | 'equalizer'
+export type SourceName =
+  'musicbrainz' | 'lrcred' | 'lrclib' | 'coverartarchive' | 'wikimedia' | 'fanarttv' | 'listenbrainz' | 'autoeq'
 
 export interface SourceInfo {
   name: SourceName
@@ -78,6 +81,14 @@ export const SOURCES: readonly SourceInfo[] = [
     automatic: true,
   },
   {
+    name: 'listenbrainz',
+    kind: 'recommendations',
+    title: 'ListenBrainz',
+    site: 'https://listenbrainz.org',
+    needs: ['musicbrainz'],
+    automatic: true,
+  },
+  {
     name: 'autoeq',
     kind: 'equalizer',
     title: 'AutoEq',
@@ -86,7 +97,14 @@ export const SOURCES: readonly SourceInfo[] = [
     automatic: false,
   },
 ]
-export const SOURCE_KINDS: readonly SourceKind[] = ['metadata', 'lyrics', 'album_covers', 'artist_images', 'equalizer']
+export const SOURCE_KINDS: readonly SourceKind[] = [
+  'metadata',
+  'lyrics',
+  'album_covers',
+  'artist_images',
+  'recommendations',
+  'equalizer',
+]
 const info = (name: SourceName): SourceInfo => SOURCES.find((source) => source.name === name) as SourceInfo
 
 export interface SourceChoice {

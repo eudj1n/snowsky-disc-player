@@ -122,6 +122,11 @@ preset through `applyPresetBands` in `stores/eq.ts` (the preset selected,
 ten bands in one message, the master after them, each read back) and keeps
 which headphones the preset holds in the store's `eq_slots` collection;
 `components/sound/AutoEqPanel.vue` is its section of the Sound dialog.
+`gateway/listenbrainz.ts` reads ListenBrainz's similar artists and an
+artist's most listened recordings and release groups by MusicBrainz id;
+`domain/recommendations.ts` lays them against the card and
+`stores/recommendations.ts` keeps them in this browser for a week; the
+artist page shows them as Popular, Similar artists and "Also by".
 `gateway/wikimedia.ts` reads an artist's photo (a Wikidata image, Commons
 image information with author and licence, the thumbnail's bytes) and
 `gateway/fanart.ts` fanart.tv's photos, backgrounds and covers by
