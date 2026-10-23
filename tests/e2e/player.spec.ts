@@ -589,10 +589,13 @@ test.describe('player controls on the mock', () => {
       await expect(toggle).toHaveAttribute('aria-label', 'Pause', { timeout: 15_000 })
     }
     const title = (await page.getByTestId('track-title').textContent())?.trim() ?? ''
+    // The tab's title names the track on either side.
+    await expect(page).toHaveTitle(`${title} · Mira Sol — DISC`)
     await switchSide(page, 'browser')
     // The player paused first (a guarded, confirmed toggle); the same track sounds here.
     await expect.poll(async () => (await mock()).playing).toBe(false)
     await expect(page.getByTestId('track-title')).toHaveText(title)
+    await expect(page).toHaveTitle(`${title} · Mira Sol — DISC`)
     await expect(toggle).toHaveAttribute('aria-label', 'Pause', { timeout: 15_000 })
 
     // Back: the player plays the same track from its queue.
@@ -601,6 +604,7 @@ test.describe('player controls on the mock', () => {
     expect((await mock()).title).toBe(title)
     await expect(page.getByTestId('track-title')).toHaveText(title)
     await disconnect(page)
+    await expect(page).toHaveTitle('DISC — your music')
   })
 
   test('keeps at most four album columns with the listening panel open on a large screen', async ({ page }, info) => {

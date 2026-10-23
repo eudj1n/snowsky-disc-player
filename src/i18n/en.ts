@@ -2,6 +2,7 @@
  * locales where the same screen exists. Plurals use Intl.PluralRules categories. */
 export const en = {
   document_title: 'DISC — your music',
+  document_title_track: '{track} — DISC',
   skip_to_content: 'Skip to content',
   main_navigation: 'Main navigation',
   disc_home: 'DISC — home',

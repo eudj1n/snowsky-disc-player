@@ -2,6 +2,7 @@ import type { Messages } from './en'
 
 export const ru: Messages = {
   document_title: 'DISC — ваша музыка',
+  document_title_track: '{track} — DISC',
   skip_to_content: 'К содержимому',
   main_navigation: 'Главная навигация',
   disc_home: 'DISC — главная',

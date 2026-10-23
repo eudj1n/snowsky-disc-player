@@ -30,6 +30,18 @@ export function sessionMetadata(track: Track | null, artwork: SessionArtwork | n
   }
 }
 
+/**
+ * The page's title while a track is current, on either side (owner,
+ * 2026-10-23): "Orbit · Forma & Lumi Vale", the title first because the tab
+ * cuts the tail. Unlike the media session, the title is the tab's window
+ * into the player, so the DISC's own track belongs there too; paused stays
+ * (a paused tab is also one to find), unknown gives nothing.
+ */
+export function documentTitleLine(track: Track | null): string | null {
+  if (!track) return null
+  return [track.title, track.artist ? creditLabel(track.artist) : null].filter(Boolean).join(' · ')
+}
+
 /** Where playback stood when the system was last told. */
 export interface PositionMark {
   /** The track's identity: a new one is told at once. */

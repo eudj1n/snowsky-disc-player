@@ -9,6 +9,11 @@ stay short and group related work; how and why it was done is in the
 
 ## [Unreleased]
 
+### Listening
+
+- The browser tab's title names the track playing, on the player or in the
+  browser: "Orbit · Forma — DISC", so the tab is found among the others.
+
 ### Your collection
 
 - The editions MusicBrainz proposes for an album pass one at a time, in full

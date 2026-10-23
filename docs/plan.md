@@ -2867,6 +2867,23 @@ Read-only now:
       `many-light` in `work/shots-files`. The mock suite after all of
       today's rounds: 194 passed, 74 skipped (2026-10-22).
 
+## The tab's title names the track (owner, 2026-10-23), player-only
+
+The owner proposed writing the current track into the page's title, as web
+players do. Decided: "{title} · {artist} — DISC" (the title first, the tab
+cuts the tail), on whichever side plays (unlike the media session, the title
+is the tab's window into the player, so the DISC's own track belongs there),
+kept while paused (a paused tab is also one to find), the page's own name
+when no track is known (an unanswered player tells nothing). One owner of
+`document.title`: `layout/documentTitle.ts`, which the language's change
+passes through too (it left `i18n/index.ts`).
+
+- [x] Evidence: unit test of `documentTitleLine` (the credit as shown, the
+      title alone without an artist, nothing without a track); the e2e
+      "switches the music to this browser and back" asserts the title on
+      the player's side, on the browser's side and after Disconnect
+      (desktop and phone, 2026-10-23).
+
 ## Later
 
 - Writing tags from the page (owner, 2026-10-22): a route of the server

@@ -22,9 +22,7 @@ export const locale = ref<Locale>(isLocale(saved) ? saved : 'en')
 let explicit = isLocale(saved)
 
 watchEffect(() => {
-  if (typeof document === 'undefined') return
-  document.documentElement.lang = locale.value
-  document.title = t('document_title')
+  if (typeof document !== 'undefined') document.documentElement.lang = locale.value
 })
 
 /** Adopts the player's language unless the user already chose one. */

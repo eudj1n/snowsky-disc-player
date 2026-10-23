@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { positionDrifted, sessionMetadata, type PositionMark } from '../../src/domain/mediaSession'
+import { documentTitleLine, positionDrifted, sessionMetadata, type PositionMark } from '../../src/domain/mediaSession'
 
 const track = {
   title: 'Orbit',
@@ -19,6 +19,12 @@ const mark = (over: Partial<PositionMark> = {}): PositionMark => ({
 })
 
 describe('media session', () => {
+  it("names the tab's title by the track, the title first, the credit as shown", () => {
+    expect(documentTitleLine(track)).toBe('Orbit · Forma & Lumi Vale')
+    expect(documentTitleLine({ ...track, artist: null })).toBe('Orbit')
+    expect(documentTitleLine(null)).toBeNull()
+  })
+
   it('describes the track with its credit as shown and the cover when there is one', () => {
     expect(sessionMetadata(track, { src: 'blob:x', type: 'image/jpeg' })).toEqual({
       title: 'Orbit',
