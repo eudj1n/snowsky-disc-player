@@ -2867,6 +2867,18 @@ Read-only now:
       `many-light` in `work/shots-files`. The mock suite after all of
       today's rounds: 194 passed, 74 skipped (2026-10-22).
 
+## The tab's icon is the track's cover (owner, 2026-10-23), player-only
+
+The owner asked whether the icon could follow the cover as the title
+follows the track. It can, by the service's same-origin media route
+(`/api/media/cover/<path>`), which `img-src 'self'` allows where a data:
+or blob: icon would not; once the page has seen the cover (`coverFor`), so
+the tab is not sent after a cover that is not there. The page's own icon
+comes back without a track or a cover. `layout/favicon.ts`.
+
+- [x] Evidence: the browser-switch e2e asserts the icon's address and type
+      with the track and the page's own after Disconnect (2026-10-23).
+
 ## The tab's title names the track (owner, 2026-10-23), player-only
 
 The owner proposed writing the current track into the page's title, as web

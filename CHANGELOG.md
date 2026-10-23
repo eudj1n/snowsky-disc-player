@@ -35,7 +35,8 @@ stay short and group related work; how and why it was done is in the
 ### Listening
 
 - The browser tab's title names the track playing, on the player or in the
-  browser: "Orbit · Forma — DISC", so the tab is found among the others.
+  browser: "Orbit · Forma — DISC", so the tab is found among the others;
+  its icon is the track's cover.
 
 ### Your collection
 
