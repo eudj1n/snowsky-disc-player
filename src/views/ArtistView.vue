@@ -11,6 +11,7 @@ import { useRoute } from 'vue-router'
 import CoverCard from '../components/collection/CoverCard.vue'
 import CoverCardSkeleton from '../components/collection/CoverCardSkeleton.vue'
 import CoverGrid from '../components/collection/CoverGrid.vue'
+import CoverRow from '../components/collection/CoverRow.vue'
 import DetailHeading from '../components/collection/DetailHeading.vue'
 import SectionHeading from '../components/common/SectionHeading.vue'
 import TrackTiles from '../components/track/TrackTiles.vue'
@@ -410,17 +411,19 @@ const recommendedNothing = computed(
       data-testid="similar-artists"
     >
       <SectionHeading :title="t('similar_artists')" :hint="t('similar_by')" />
-      <CoverGrid v-if="similarOnCard.length">
+      <!-- A shelf of small cards, as a genre page's artists (owner, 2026-10-23): not the page's main content. -->
+      <CoverRow v-if="similarOnCard.length" :label="t('similar_artists')">
         <CoverCard
           v-for="artist in similarOnCard"
           :key="artist.name"
+          role="listitem"
           :title="artist.name"
           :to="artistRoute(artist.name)"
           artist
           :cover="artistImage(artist.name)"
           :open-label="t('open_item', { name: artist.name })"
         />
-      </CoverGrid>
+      </CoverRow>
       <p
         v-if="similarAbsent"
         class="mb-0 text-footnote text-secondary"

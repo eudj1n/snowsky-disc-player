@@ -2990,6 +2990,24 @@ the listeners give them together with the page's genre, counted by artists.
 - [x] Next: similar recordings ("in the style of {track}") with the
       recording ids kept when an edition is confirmed: stage 3, below.
 
+## The owner's three points of the evening (owner, 2026-10-23), player-only
+
+- [x] Home: Recently added is off the "Made for you" cards (its tracks
+      already lead the page); "All playlists" beside the heading leads to
+      the Playlists page, where every list stays.
+- [x] The artist page's Similar artists are a shelf of small cards
+      (`CoverRow`), as a genre page's artists: not the page's main content.
+- [x] An album's credit: "Tenet (Original Motion Picture Soundtrack)" read
+      "Ludwig Göransson & Travis Scott" in the heading (every distinct
+      credit) and "Various artists" on its card (no artist in every
+      credit), Travis Scott being on one track. Now an album has a lead:
+      the credit more than half of its tracks carry (album artist, else
+      track artist; a joint credit stays a pair), `Album.lead` from
+      `leadCredit`. The heading names the lead's artists and the cards
+      the lead (a pair as "A & B"); a guest keeps its name on its row.
+      "Various artists" is left for albums where no credit has the
+      majority and no artist is in every credit. Unit test of the rule.
+
 ## Similar albums (owner, 2026-10-23), player-only
 
 No source has similar albums (the analysis); built from the bricks the

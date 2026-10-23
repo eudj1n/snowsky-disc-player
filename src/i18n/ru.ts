@@ -98,6 +98,7 @@ export const ru: Messages = {
   your_albums: 'Ваши альбомы',
   the_music_you_always_come_back_to: 'Та самая музыка, к которой возвращаются',
   all_albums: 'Все альбомы',
+  all_playlists: 'Все плейлисты',
   all_artists: 'Все исполнители',
   no_albums_in_your_library_yet: 'В медиатеке пока нет альбомов.',
   from_your_collection: 'Из вашей коллекции',

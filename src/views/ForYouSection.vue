@@ -5,8 +5,11 @@
  * covers; a card opens the list's page and its button plays it on the player.
  * A list not on the player yet looks the same: listening writes it there
  * first (owner, 2026-09-30: one tap); one with nothing to hold is left out.
+ * Recently added is not among them (owner, 2026-10-23: its tracks already
+ * lead the page); "All playlists" leads to the rest.
  */
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import ListArt from '../components/artwork/ListArt.vue'
 import SectionHeading from '../components/common/SectionHeading.vue'
 import { GLOBAL_KINDS } from '../domain/autoPlaylists'
@@ -15,10 +18,14 @@ import { t } from '../i18n'
 import { autoPlaylists, autoPreviews, kindList } from '../stores/autoPlaylists'
 import { trackByPath } from '../stores/library'
 import UiIcon from '../ui/UiIcon.vue'
+import UiTextButton from '../ui/UiTextButton.vue'
 import { listenToKind } from './autoLists'
 
+const router = useRouter()
+/** Recently added stays off Home (owner, 2026-10-23): its tracks already lead the page. */
+const HOME_KINDS = GLOBAL_KINDS.filter((kind) => kind !== 'recently_added')
 const cards = computed(() =>
-  GLOBAL_KINDS.flatMap((kind) => {
+  HOME_KINDS.flatMap((kind) => {
     const list = kindList(kind)
     const title = list?.name ?? t(`auto_name_${kind}`)
     const entries = list ? (autoPlaylists.entries[list.name] ?? []) : autoPreviews.value[kind]
@@ -38,7 +45,11 @@ const cards = computed(() =>
 
 <template>
   <section v-if="cards.length" :aria-label="t('for_you')" data-testid="for-you">
-    <SectionHeading :title="t('for_you')" :subtitle="t('for_you_subtitle')" />
+    <SectionHeading :title="t('for_you')" :subtitle="t('for_you_subtitle')">
+      <UiTextButton icon="arrow" data-testid="for-you-all" @click="router.push('/playlists')">{{
+        t('all_playlists')
+      }}</UiTextButton>
+    </SectionHeading>
     <div class="grid grid-cols-4 gap-14 compact:grid-cols-3 rail:grid-cols-2 phone:grid-cols-2 phone:gap-10">
       <article v-for="card in cards" :key="card.kind" class="group/card relative min-w-0" :data-kind="card.kind">
         <RouterLink

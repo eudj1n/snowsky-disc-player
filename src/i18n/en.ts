@@ -98,6 +98,7 @@ export const en = {
   your_albums: 'Your albums',
   the_music_you_always_come_back_to: 'The music you always come back to',
   all_albums: 'All albums',
+  all_playlists: 'All playlists',
   all_artists: 'All artists',
   no_albums_in_your_library_yet: 'No albums in your library yet.',
   from_your_collection: 'From your collection',

@@ -23,8 +23,15 @@ export function genreAlbumRoute(album: Album, genre: string, mixed: boolean) {
 }
 export const genreRoute = (name: string) => ({ name: 'genre', params: { name } })
 
-/** The artist every credit of an album names (its lead, when others only join on some tracks). */
+/**
+ * The album's lead artist: the one credit more than half of its tracks carry when it names one artist, else
+ * the artist every credit names (others only join on some tracks); null for a joint lead or a compilation.
+ */
 export function leadArtist(album: Album): string | null {
+  if (album.lead) {
+    const names = creditArtists(album.lead)
+    if (names.length === 1 && names[0]) return names[0]
+  }
   const [first] = album.artists
   if (!first) return null
   return creditArtists(first).find((name) => album.artists.every((credit) => credits(credit, name))) ?? null
@@ -34,8 +41,10 @@ export function albumLines(album: Album): CardLine[] {
   const lines: CardLine[] = []
   const [only] = album.artists
   const lead = leadArtist(album)
-  // A joint album names the pair ("A & B") and opens their page.
-  if (album.artists.length === 1 && only && creditArtists(only).length > 1)
+  // A joint album, or one a pair leads, names the pair ("A & B") and opens their page.
+  const pair = album.lead && creditArtists(album.lead).length > 1 ? album.lead : null
+  if (pair) lines.push({ text: creditLabel(pair), to: artistRoute(pair) })
+  else if (album.artists.length === 1 && only && creditArtists(only).length > 1)
     lines.push({ text: creditLabel(only), to: artistRoute(only) })
   else if (lead) lines.push({ text: lead, to: artistRoute(lead) })
   else if (album.artists.length > 1) lines.push({ text: t('various_artists') })

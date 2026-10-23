@@ -5,6 +5,7 @@ const album = (title: string, artist: string): Album => ({
   key: title,
   title,
   artists: [artist],
+  lead: artist,
   trackArtists: [artist],
   paths: {},
   trackCount: 1,

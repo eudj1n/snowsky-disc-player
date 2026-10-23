@@ -3511,7 +3511,7 @@ test('shows what ListenBrainz says of an identified artist: popular tracks, simi
     await expect(
       page.getByTestId('recommend-token').getByRole('link', { name: 'Enter it under External sources' }),
     ).toBeVisible()
-    await expect(similar.getByRole('article')).toHaveCount(2)
+    await expect(similar.getByRole('listitem')).toHaveCount(2)
     await expect(similar.getByRole('link', { name: 'Open Northline' })).toBeVisible()
     await expect(similar.getByRole('link', { name: 'Open Kite Lines' })).toBeVisible()
     // What the card lacks is told only once the owner lets the sources suggest it (owner, 2026-10-23).

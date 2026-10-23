@@ -1,4 +1,4 @@
-import { credits } from './artist'
+import { credits, leadCredit } from './artist'
 import type { LibraryTrack } from './track'
 
 /**
@@ -14,6 +14,11 @@ export interface Album {
   title: string
   /** Distinct display credits (album artist, else track artist) in first-seen order. */
   artists: string[]
+  /**
+   * The credit more than half of the tracks carry (owner, 2026-10-23: a guest on one track does not make
+   * an album "various artists"), as the tracks spell it ("A; B" for a joint one); null when none does.
+   */
+  lead: string | null
   /** Distinct literal track artists in first-seen order: the possible scopes. */
   trackArtists: string[]
   /** A member's card path per scope (the whole title under ''), for its cover. */
@@ -40,6 +45,7 @@ export function groupAlbums(tracks: readonly LibraryTrack[]): Album[] {
         key: JSON.stringify([track.album]),
         title: track.album,
         artists: [],
+        lead: null,
         trackArtists: [],
         paths: {},
         trackCount: 0,
@@ -64,6 +70,10 @@ export function groupAlbums(tracks: readonly LibraryTrack[]): Album[] {
       if (album.addedAt === null || track.addedAt > album.addedAt) album.addedAt = track.addedAt
       if (album.firstAddedAt === null || track.addedAt < album.firstAddedAt) album.firstAddedAt = track.addedAt
     }
+  }
+  for (const album of albums.values()) {
+    const members = tracks.filter((track) => track.album === album.title)
+    album.lead = leadCredit(members.map((track) => track.albumArtist ?? track.artist))
   }
   return [...albums.values()]
 }

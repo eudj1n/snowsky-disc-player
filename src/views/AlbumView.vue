@@ -90,9 +90,16 @@ const tracks = computed(() =>
     ),
   ),
 )
-/** Each artist once, joint credits ("A; B") split into their artists. */
+/**
+ * The heading's artists, each once: the scope's, else the lead credit most tracks carry (a guest on one
+ * track is named on its row, not in the heading; owner, 2026-10-23), else every credit's artists.
+ */
 const credits = computed(() => [
-  ...new Set((scope.value ? [scope.value] : (group.value?.artists ?? [])).flatMap(creditArtists)),
+  ...new Set(
+    (scope.value ? [scope.value] : group.value?.lead ? [group.value.lead] : (group.value?.artists ?? [])).flatMap(
+      creditArtists,
+    ),
+  ),
 ])
 /** The credit rows leave out: the one most tracks carry, else the heading's (a guest's rows keep theirs). */
 const ownCredit = computed(

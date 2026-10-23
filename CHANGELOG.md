@@ -49,6 +49,13 @@ stay short and group related work; how and why it was done is in the
 
 ### Your collection
 
+- An album a guest joins on one track is the main artist's: the heading
+  and the album cards name the artist most tracks carry, and the guest
+  stays on their track; "Various artists" is left for compilations.
+- Home shows the automatic playlists without Recently added (its tracks
+  already lead the page) and links to all playlists; an artist's similar
+  artists are a shelf of small cards.
+
 - The editions MusicBrainz proposes for an album pass one at a time, in full
   (the title, the issue, the track count), with arrows and the arrow keys;
   the album's own title and artist no longer stand beside them. The lists

@@ -136,6 +136,23 @@ describe('albums', () => {
     ])
   })
 
+  it('names the credit more than half of the tracks carry as the lead: a guest on one track does not make a compilation', () => {
+    const soundtrack = groupAlbums([
+      track(1, 'Tenet', 'Ludwig Göransson'),
+      track(2, 'Tenet', 'Ludwig Göransson'),
+      track(3, 'Tenet', 'Travis Scott'),
+      track(4, 'Hits', 'A'),
+      track(5, 'Hits', 'B'),
+      track(6, 'Duo', 'A; B'),
+      track(7, 'Duo', 'B; A'),
+    ])
+    expect(soundtrack.map((album) => [album.title, album.lead])).toEqual([
+      ['Tenet', 'Ludwig Göransson'],
+      ['Hits', null],
+      ['Duo', 'A; B'],
+    ])
+  })
+
   it('prefers the album artist credit when present, but scopes by the literal track artist', () => {
     const [album] = groupAlbums([track(1, 'X', 'Guest', 1, 'Main')])
     expect(album?.artists).toEqual(['Main'])
@@ -182,6 +199,7 @@ describe('album sorting', () => {
       ids: [],
       addedAt,
       firstAddedAt: addedAt,
+      lead: artist,
     })
     const albums = [card('Ёлка', 'Б', 2), card('album 10', 'а', 3), card('Album 9', 'В', 1)]
     expect(sortAlbums(albums, 'recent', 'ru').map((a) => a.title)).toEqual(['album 10', 'Ёлка', 'Album 9'])
