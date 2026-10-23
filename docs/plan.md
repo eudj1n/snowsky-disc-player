@@ -2959,8 +2959,8 @@ reaches) and against a compromised dependency reaching an unknown host.
       the card (16) until a server release raises it. Unit test
       `check-origins.test.mjs` (the release's file, the character rules as
       the server's test has them, each rejection, the policy's order).
-- [ ] The server's side, to be done by the owner or with the owner's
-      permission (the auto mode refused the edits as weakening security):
+- [x] The server's side (snowsky-disc-server PR #24, with the owner's
+      permission; one edit the auto mode refused was applied by the owner):
       `firmware/origins/v2.57.json` removed, `scripts/origins_catalog.py`
       kept as the rules of an app's file (`check_origins`, `load_origins`
       from a path, `origins_data(catalog, profile=None)`, `policy`),
@@ -2968,7 +2968,10 @@ reaches) and against a compromised dependency reaching an unknown host.
       `origins.json` (`--origins <file>` to pack another), the gateway's
       `DISC_ORIGINS_MAX` 32 and `DISC_POLICY_MAX` 8192, the contract's
       "The page's external origins" rewritten for combined-009, the apps'
-      document saying an app declares its own hosts, the tests following.
+      document showing how an app declares its own hosts, the tests on an
+      inline fixture (79 pass against the host build). No server release
+      with it; the card's gateway keeps 16 until the next one, and
+      `scripts/check-origins.mjs` here keeps that limit until then.
 - Hosted pages (CORS) are a separate list: `hosted.json` of the image, or
   the card's `.disc/catalog/hosted.json` override, up to four exact
   origins bound to the firmware profile; one entry today, the GitHub Pages
