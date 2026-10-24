@@ -20,6 +20,7 @@ import { Disconnected, GatewaySession, type CloseReason } from '../gateway/sessi
 import { trackPlayback } from '../gateway/playback'
 import { currentVolume, socVersion } from '../gateway/settings'
 import { readTabState, writeTabState } from '../lib/storage'
+import { forgetSinceRefusal } from './storeSnapshot'
 
 export type ConnectionNotice =
   | 'gateway_unreachable'
@@ -182,6 +183,8 @@ export async function connect(): Promise<void> {
   if (state.connection !== 'disconnected') return
   state.notice = null
   state.connection = 'connecting'
+  // The player may run another service since the last connection: ask it about `since` anew.
+  forgetSinceRefusal()
   try {
     if ((await http.health()).controlActive) {
       state.notice = 'control_busy'

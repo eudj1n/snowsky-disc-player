@@ -3796,31 +3796,71 @@ test("reads the player's store collections whole once, then only asks whether th
     const url = request.url()
     if (url.includes('/api/store/') && url.includes('/records')) reads.push(url)
   })
-  const collections = (filter: string) =>
-    new Set(reads.filter((url) => url.includes(filter)).map((url) => new URL(url).pathname))
+  const collections = (filter: (url: string) => boolean) =>
+    new Set(reads.filter(filter).map((url) => new URL(url).pathname))
+  const whole = (url: string) => url.includes('offset=0') && !url.includes('since=')
+  const changes = (url: string) => url.includes('since=')
+  const heads = (url: string) => url.includes('order=updated&desc=1&limit=1')
   await english(page)
   await connectAndPair(page)
   await expect(page.getByTestId('for-you')).toBeVisible({ timeout: 15_000 })
-  await expect.poll(() => collections('limit=500').size).toBeGreaterThanOrEqual(7)
-  const whole = collections('limit=500')
+  await expect.poll(() => collections(whole).size).toBeGreaterThanOrEqual(7)
+  const all = collections(whole)
   // The equalizer's slots wait for the Sound dialog (owner, 2026-10-23).
   expect(reads.some((url) => url.includes('/eq_slots/'))).toBe(false)
   // Once the snapshots settled (a write in the newest record's second could hide for two seconds), a reload
-  // sends one small request a collection (the newest record, which tells the total) and reads nothing whole.
+  // sends one small request a collection (the newest record, which tells the total) and reads nothing more.
   await page.waitForTimeout(2200)
   reads.length = 0
   await page.reload()
   await expect(page.getByTestId('for-you')).toBeVisible({ timeout: 15_000 })
-  await expect.poll(() => collections('order=updated&desc=1&limit=1').size).toBe(whole.size)
+  await expect.poll(() => collections(heads).size).toBe(all.size)
   await page.waitForTimeout(500)
-  expect([...collections('limit=500')]).toEqual([])
-  // A write stamps the collection: the next load reads it whole again, the others not.
+  expect([...collections(whole)]).toEqual([])
+  expect([...collections(changes)]).toEqual([])
+  // A write stamps the collection: the next load reads its changes since the snapshot, nothing whole (owner, 2026-10-24).
   await chooseSources(page, { lrclib: { allowed: true } })
   reads.length = 0
   await page.reload()
   await expect(page.getByTestId('for-you')).toBeVisible({ timeout: 15_000 })
-  await expect.poll(() => [...collections('limit=500')]).toEqual(['/api/store/external_sources/records'])
+  await expect.poll(() => [...collections(changes)]).toEqual(['/api/store/external_sources/records'])
   await page.waitForTimeout(500)
-  expect([...collections('limit=500')]).toEqual(['/api/store/external_sources/records'])
+  expect([...collections(changes)]).toEqual(['/api/store/external_sources/records'])
+  expect([...collections(whole)]).toEqual([])
   await disconnect(page)
+})
+
+test('reads a changed collection whole on a service from before since, asking about since once a load', async ({
+  page,
+}) => {
+  test.skip(external, 'Reads the mock store')
+  expect((await page.request.post('/__mock/store-old?on=1')).status()).toBe(204)
+  try {
+    const reads: string[] = []
+    page.on('request', (request) => {
+      const url = request.url()
+      if (url.includes('/api/store/') && url.includes('/records')) reads.push(url)
+    })
+    await english(page)
+    await connectAndPair(page)
+    await expect(page.getByTestId('for-you')).toBeVisible({ timeout: 15_000 })
+    await page.waitForTimeout(2200)
+    await chooseSources(page, { lrclib: { allowed: true } })
+    reads.length = 0
+    await page.reload()
+    await expect(page.getByTestId('for-you')).toBeVisible({ timeout: 15_000 })
+    const whole = () => reads.filter((url) => url.includes('offset=0') && !url.includes('since='))
+    await expect
+      .poll(() => whole().map((url) => new URL(url).pathname))
+      .toEqual(['/api/store/external_sources/records'])
+    await page.waitForTimeout(500)
+    // One request with `since`, refused; the collection read whole; no other collection asked with it.
+    expect(reads.filter((url) => url.includes('since=')).map((url) => new URL(url).pathname)).toEqual([
+      '/api/store/external_sources/records',
+    ])
+    expect(whole().map((url) => new URL(url).pathname)).toEqual(['/api/store/external_sources/records'])
+    await disconnect(page)
+  } finally {
+    expect((await page.request.post('/__mock/store-old?on=0')).status()).toBe(204)
+  }
 })

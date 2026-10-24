@@ -3014,12 +3014,33 @@ record by key; it had no "changed since".
       collection, a write reading that collection alone).
 - [x] The server: `records?since=<seconds>` lists the records updated
       after that moment, `total` counting them, so the page can read the
-      changes alone (snowsky-disc-server PR, `device/src/store.c`); the
-      page moves to delta reads once a server with it is released. The
-      mock suite with the snapshot (2026-10-24): a first run lost one case
-      to a timeout (the cover colours and karaoke) while a MIPS build ran
-      in Docker beside it, and the cases after it did not run; the run
-      with the machine idle passed whole, 18 skipped.
+      changes alone (snowsky-disc-server PR #26, `device/src/store.c`,
+      unreleased on 2026-10-24). The mock suite with the snapshot
+      (2026-10-24): a first run lost one case to a timeout (the cover
+      colours and karaoke) while a MIPS build ran in Docker beside it, and
+      the cases after it did not run; the run with the machine idle passed
+      whole, 18 skipped.
+- [x] The page reads a changed collection as its changes (2026-10-24):
+      `readCollection(http, c, since)` asks `since=<newest − 1>` (the
+      second before the snapshot's newest, so a write in that second is
+      seen too, and the two-second distrust only decides whether to ask
+      at all), lays them over the kept records by key, and takes the
+      result when it counts what the player counts and ends at the
+      player's newest; a removal, which the changes cannot name, reads
+      whole. A service from before `since` refuses the parameter with
+      400 "unknown parameter" (the contract's rule for unknown ones):
+      remembered for the page load (`forgetSinceRefusal` on connect),
+      every collection read whole as before. The mock's `store-old` mode
+      refuses `since` as such a service does.
+- [x] Evidence: unit tests (the changes alone after a write; whole after
+      a removal with or without a write beside it; the old service asked
+      once a load, asked again after a connect; an empty snapshot grows
+      by the changes); e2e "reads the player's store collections whole
+      once" (a write followed by one `since` read of that collection,
+      nothing whole) and "reads a changed collection whole on a service
+      from before since" (`store-old`: one refused `since`, the whole
+      read, no other collection asked). The whole mock suite with the
+      delta reads (2026-10-24): 205 passed, 75 skipped, nothing failed.
 
 ## The owner's three points of the evening (owner, 2026-10-23), player-only
 

@@ -179,7 +179,7 @@ const player = {
   treeReads: 0,
   /** Plays this page reported from a browser (/__mock/browser-plays). */
   browserPlays: [],
-  /** The card's store catalog predates the rotation periods (/__mock/store-old). */
+  /** The card's store catalog predates the rotation periods, the service `since` (/__mock/store-old). */
   storeOld: false,
   /** The card's store catalog predates the outside sources (/__mock/sources-missing). */
   sourcesMissing: false,
@@ -668,6 +668,8 @@ const server = createServer((request, response) => {
     if (!records) return send(response, 404, 'No such collection or operation\n')
     if (operation === 'records' && request.method === 'GET') {
       // As the service lists: insertion order, or by `updated` (the page's snapshot check asks the newest first).
+      // A service before 2026-10-23 knows no `since` and refuses it as the contract says of unknown parameters.
+      if (player.storeOld && url.searchParams.has('since')) return send(response, 400, 'unknown parameter\n')
       const since = Number(url.searchParams.get('since') ?? -1)
       const all = [...records.values()].filter((record) => record.updated > since)
       if (url.searchParams.get('order') === 'updated')

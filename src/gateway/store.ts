@@ -16,12 +16,23 @@ export interface StoreRecord<T> {
 const PAGE = 500
 const MAX_PAGES = 40
 
-/** Every record of a collection, oldest first; null where the image or the card release has no store. */
-export async function readCollection<T>(http: GatewayHttp, collection: string): Promise<StoreRecord<T>[] | null> {
+/**
+ * Every record of a collection, oldest first; null where the image or the card
+ * release has no store. With `since` (seconds), only the records updated after
+ * that moment (the service's 2026-10-23 parameter; a service before it refuses
+ * the request with 400 "unknown parameter", as the contract says of unknown
+ * parameters).
+ */
+export async function readCollection<T>(
+  http: GatewayHttp,
+  collection: string,
+  since?: number,
+): Promise<StoreRecord<T>[] | null> {
   const records: StoreRecord<T>[] = []
+  const after = since === undefined ? '' : `&since=${String(since)}`
   for (let page = 0; page < MAX_PAGES; page++) {
     const value = (await http.serviceRead(
-      `/api/store/${encodeURIComponent(collection)}/records?limit=${String(PAGE)}&offset=${String(page * PAGE)}`,
+      `/api/store/${encodeURIComponent(collection)}/records?limit=${String(PAGE)}&offset=${String(page * PAGE)}${after}`,
     )) as { records?: unknown; truncated?: unknown } | null
     if (value === null) return page ? records : null
     if (!Array.isArray(value.records)) throw new SyntaxError('Invalid store page')
